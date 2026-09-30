@@ -12,11 +12,12 @@
     "check:placeholders": "node scripts/check-placeholders.mjs"
   },
   "dependencies": {
+    "motion": "13.4.1",
     "next": "15.5.26",
+    "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "zod": "4.6.5",
-    "pg": "8.23.0"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
