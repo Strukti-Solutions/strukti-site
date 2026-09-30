@@ -1,0 +1,134 @@
+:root {
+  --color-petrol-900: #0b2e38;
+  --color-petrol-800: #0f3c49;
+  --color-petrol-700: #154c5c;
+  --color-petrol-600: #1d6178;
+  --color-petrol-100: #e6eef0;
+  --color-petrol-50: #f4f8f9;
+
+  --color-ink: #10201f;
+  --color-ink-muted: #3f5356;
+  --color-surface: #ffffff;
+  --color-surface-alt: var(--color-petrol-50);
+  --color-border: #d7e2e3;
+
+  --color-whatsapp: #0e6f31;
+  --color-whatsapp-hover: #0a5c28;
+
+  --color-focus: #b34700;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --max-content-width: 1120px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: 2rem;
+  }
+}
+
+.section {
+  padding-block: 3.5rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding-block: 5.5rem;
+  }
+}
+
+.section--alt {
+  background-color: var(--color-surface-alt);
+}
+
+.section-title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  color: var(--color-petrol-900);
+}
+
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.25rem;
+  }
+}
+
+.section-subtitle {
+  font-size: 1.05rem;
+  color: var(--color-ink-muted);
+  margin: 0 0 2.5rem;
+  max-width: 62ch;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: 1rem;
+  background: var(--color-petrol-900);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  z-index: 100;
+  transition: top 0.15s ease-in-out;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
