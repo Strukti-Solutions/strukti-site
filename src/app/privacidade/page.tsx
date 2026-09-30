@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import { landingContent } from "@/content/landing";
+import { siteConfig } from "@/config/site";
+
+function formatPrivacyPolicyDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
 
 export const metadata: Metadata = {
-  title: `${landingContent.privacidade.title} — ${landingContent.seo.ogSiteName}`,
+  title: `${landingContent.privacidade.title} | ${landingContent.seo.ogSiteName}`,
 };
 
 export default function PrivacidadePage() {
-  const { title, lastUpdatedLabel, lastUpdatedDate, intro, sections } = landingContent.privacidade;
+  const { title, lastUpdatedLabel, intro, sections } = landingContent.privacidade;
+  const lastUpdatedDate = formatPrivacyPolicyDate(siteConfig.privacyPolicyVersion);
 
   return (
     <main id="conteudo-principal" className="section">

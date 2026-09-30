@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { landingContent } from "@/content/landing";
 import { diagnosticoFormSchema, PROBLEM_MAX_LENGTH } from "@/lib/validation";
 import { siteConfig } from "@/config/site";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { LinkedText } from "@/components/LinkedText";
 
 type Status = "idle" | "submitting" | "success" | "error";
 type SubmitErrorKind = "rateLimit" | "generic";
@@ -17,7 +18,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.7rem 0.85rem",
   borderRadius: "0.5rem",
-  border: "1px solid var(--color-border)",
+  border: "1px solid var(--color-border-input)",
   fontSize: "1rem",
   fontFamily: "inherit",
   minHeight: "48px",
@@ -37,12 +38,27 @@ const helpStyle: React.CSSProperties = {
 };
 
 export function Diagnostico() {
-  const { title, intro, form } = landingContent.diagnostico;
+  const { title, intro, highlight, howItWorksTitle, steps, form } = landingContent.diagnostico;
   const [status, setStatus] = useState<Status>("idle");
   const [submitErrorKind, setSubmitErrorKind] = useState<SubmitErrorKind>("generic");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [submittedName, setSubmittedName] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
+  const statusErrorRef = useRef<HTMLParagraphElement>(null);
+
+  const errorCount = Object.keys(fieldErrors).length;
+
+  useEffect(() => {
+    if (status === "success") {
+      successHeadingRef.current?.focus();
+    } else if (status === "error" && errorCount === 0) {
+      statusErrorRef.current?.focus();
+    }
+    // errorCount só importa no instante em que status muda para "error";
+    // não precisa re-rodar se só o número de campos inválidos mudar depois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   function focusFirstInvalidField(errors: Partial<Record<FieldKey, string>>) {
     const firstKey = FIELD_ORDER.find((key) => errors[key]);
@@ -53,8 +69,9 @@ export function Diagnostico() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formEl = event.currentTarget;
+    if (status === "submitting") return;
 
+    const formEl = event.currentTarget;
     const formData = new FormData(formEl);
     const payload = {
       name: String(formData.get("name") ?? ""),
@@ -108,19 +125,61 @@ export function Diagnostico() {
     }
   }
 
-  const errorCount = Object.keys(fieldErrors).length;
-
   return (
     <section id="diagnostico" className="section" aria-labelledby="diagnostico-title">
       <div className="container" style={{ maxWidth: "640px" }}>
         <h2 id="diagnostico-title" className="section-title">
           {title}
         </h2>
-        <p className="section-subtitle">{intro}</p>
+        <p className="section-subtitle" style={{ marginBottom: "1rem" }}>
+          {intro}
+        </p>
+        <p style={{ color: "var(--color-petrol-700)", fontWeight: 600, marginBottom: "1.5rem" }}>
+          {highlight}
+        </p>
+
+        <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.75rem" }}>{howItWorksTitle}</h3>
+        <ol
+          style={{
+            margin: "0 0 2.5rem",
+            padding: 0,
+            listStyle: "none",
+            display: "grid",
+            gap: "0.75rem",
+          }}
+        >
+          {steps.map((step, index) => (
+            <li key={step.lead} style={{ display: "flex", gap: "0.75rem" }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  flexShrink: 0,
+                  width: "1.75rem",
+                  height: "1.75rem",
+                  borderRadius: "50%",
+                  backgroundColor: "var(--color-petrol-100)",
+                  color: "var(--color-petrol-900)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                }}
+              >
+                {index + 1}
+              </span>
+              <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>
+                <strong style={{ color: "var(--color-petrol-900)" }}>{step.lead}</strong> {step.rest}
+              </p>
+            </li>
+          ))}
+        </ol>
 
         {status === "success" ? (
           <div role="status">
-            <h3 style={{ color: "var(--color-petrol-900)" }}>{form.success.title}</h3>
+            <h3 ref={successHeadingRef} tabIndex={-1} style={{ color: "var(--color-petrol-900)" }}>
+              {form.success.title}
+            </h3>
             <p style={{ color: "var(--color-ink-muted)" }}>
               {form.success.text.replace("{nome}", submittedName)}
             </p>
@@ -164,6 +223,7 @@ export function Diagnostico() {
                   name="name"
                   type="text"
                   autoComplete="name"
+                  maxLength={120}
                   style={inputStyle}
                   required
                   aria-invalid={Boolean(fieldErrors.name)}
@@ -181,6 +241,7 @@ export function Diagnostico() {
                   name="company"
                   type="text"
                   autoComplete="organization"
+                  maxLength={150}
                   style={inputStyle}
                   required
                   aria-invalid={Boolean(fieldErrors.company)}
@@ -199,12 +260,11 @@ export function Diagnostico() {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
+                  maxLength={20}
                   style={inputStyle}
                   required
                   aria-invalid={Boolean(fieldErrors.whatsapp)}
-                  aria-describedby={
-                    fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"
-                  }
+                  aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"}
                 />
                 {fieldErrors.whatsapp ? (
                   <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
@@ -282,7 +342,8 @@ export function Diagnostico() {
 
               <button
                 type="submit"
-                disabled={status === "submitting"}
+                aria-disabled={status === "submitting"}
+                aria-busy={status === "submitting"}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -313,10 +374,15 @@ export function Diagnostico() {
                 </a>
               </p>
 
-              <div role="status" aria-live="polite" style={{ marginTop: "0.5rem" }}>
+              <div aria-live="polite" style={{ marginTop: "0.5rem" }}>
                 {status === "error" && errorCount === 0 && (
-                  <p style={{ color: "#b3261e" }}>
-                    {submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
+                  <p ref={statusErrorRef} tabIndex={-1} style={{ color: "#b3261e" }}>
+                    <LinkedText
+                      text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
+                      linkLabel="fale com a gente pelo WhatsApp"
+                      href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                      external
+                    />
                   </p>
                 )}
               </div>
@@ -330,7 +396,7 @@ export function Diagnostico() {
 
 function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p id={id} role="alert" style={{ color: "#b3261e", fontSize: "0.9rem", margin: "0.35rem 0 0" }}>
+    <p id={id} style={{ color: "#b3261e", fontSize: "0.9rem", margin: "0.35rem 0 0" }}>
       {message}
     </p>
   );

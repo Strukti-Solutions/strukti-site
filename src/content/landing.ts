@@ -1,7 +1,5 @@
 /**
- * Todo o texto do site vive aqui (exceto o aviso de privacidade completo,
- * que tem seu próprio módulo em src/content/privacy.ts por ser texto
- * jurídico com aprovação separada).
+ * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
  * Texto aprovado pelo cliente em docs/landing-copy.md (v1.1, 30/09/2026),
  * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
@@ -316,6 +314,8 @@ export const landingContent = {
 
   rodape: {
     tagline: "Aplicativos sob medida para distribuidoras e indústrias pequenas.",
+    whatsappLabel: "WhatsApp:",
+    emailLabel: "E-mail:",
     location: "João Pessoa/PB · Atendimento presencial na região e a distância para todo o Brasil",
     privacyLinkLabel: "Aviso de privacidade",
   },
@@ -346,8 +346,9 @@ export const landingContent = {
   privacidade: {
     title: "Aviso de privacidade",
     lastUpdatedLabel: "Última atualização:",
-    // A data do próprio aviso, não do build. Ajustar se este texto mudar.
-    lastUpdatedDate: "30/09/2026",
+    // A data exibida vem de siteConfig.privacyPolicyVersion (fonte única),
+    // formatada em src/app/privacidade/page.tsx — nunca duplicar o valor
+    // aqui, para não divergir da versão gravada no consentimento.
     intro:
       "Este aviso explica, em linguagem simples, o que a Strukti Soluções faz com os dados que você envia pelo formulário do site.",
     sections: [

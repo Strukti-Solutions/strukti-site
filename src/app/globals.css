@@ -10,7 +10,11 @@
   --color-ink-muted: #3f5356;
   --color-surface: #ffffff;
   --color-surface-alt: var(--color-petrol-50);
-  --color-border: #6b7f82;
+  /* Decorativa (divisórias de cartão, cabeçalho, rodapé): não precisa de
+     3:1, então fica mais leve visualmente. */
+  --color-border: #d7e2e3;
+  /* Funcional (borda de campo de formulário): WCAG 1.4.11 exige 3:1. */
+  --color-border-input: #6b7f82;
 
   --color-whatsapp: #0e6f31;
   --color-whatsapp-hover: #0a5c28;

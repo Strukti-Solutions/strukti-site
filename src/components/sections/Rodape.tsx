@@ -2,7 +2,7 @@ import { landingContent } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 
 export function Rodape() {
-  const { tagline, location, privacyLinkLabel } = landingContent.rodape;
+  const { tagline, whatsappLabel, emailLabel, location, privacyLinkLabel } = landingContent.rodape;
   const year = new Date().getFullYear();
 
   return (
@@ -34,6 +34,7 @@ export function Rodape() {
 
         <div style={{ fontSize: "0.9rem", color: "var(--color-ink-muted)" }}>
           <p style={{ margin: "0 0 0.35rem" }}>
+            {whatsappLabel}{" "}
             <a
               href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
               target="_blank"
@@ -44,6 +45,7 @@ export function Rodape() {
             </a>
           </p>
           <p style={{ margin: "0 0 0.35rem" }}>
+            {emailLabel}{" "}
             <a href={`mailto:${siteConfig.email}`} style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}>
               {siteConfig.email}
             </a>

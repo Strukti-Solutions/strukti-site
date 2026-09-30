@@ -1,5 +1,6 @@
 import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { LinkedText } from "@/components/LinkedText";
 
 export function Faq() {
   const { title, items, closing, button } = landingContent.faq;
@@ -32,7 +33,7 @@ export function Faq() {
               </summary>
               <p style={{ margin: "0.75rem 0 0", color: "var(--color-ink-muted)" }}>
                 {"answerLinkLabel" in item && item.answerLinkLabel ? (
-                  <AnswerWithPrivacyLink text={item.answer} linkLabel={item.answerLinkLabel} />
+                  <LinkedText text={item.answer} linkLabel={item.answerLinkLabel} href="/privacidade" />
                 ) : (
                   item.answer
                 )}
@@ -45,25 +46,5 @@ export function Faq() {
         <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
       </div>
     </section>
-  );
-}
-
-function AnswerWithPrivacyLink({ text, linkLabel }: { text: string; linkLabel: string }) {
-  const index = text.indexOf(linkLabel);
-  if (index === -1) {
-    return <>{text}</>;
-  }
-
-  const before = text.slice(0, index);
-  const after = text.slice(index + linkLabel.length);
-
-  return (
-    <>
-      {before}
-      <a href="/privacidade" style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}>
-        {linkLabel}
-      </a>
-      {after}
-    </>
   );
 }

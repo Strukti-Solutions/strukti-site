@@ -81,6 +81,7 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run lint`      | ESLint                                       |
 | `npm run typecheck` | `tsc --noEmit`                               |
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário e acessibilidade (axe) |
+| `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
 
 ## Estrutura
 
@@ -138,6 +139,18 @@ registra `consent_at` e `privacy_version`, e o aviso de privacidade completo est
 em `/privacidade`. A rota de API nunca loga os dados pessoais enviados; para
 conter spam, registra por pouco tempo o IP de quem envia (declarado no aviso).
 
+O aviso promete apagar os dados até 12 meses depois do último contato
+(`landingContent.privacidade`). **Ainda não há rotina automática para isso** —
+por ora, a exclusão é manual:
+
+```sql
+DELETE FROM leads WHERE created_at < NOW() - INTERVAL '12 months';
+```
+
+Quem roda essa consulta e com que frequência ainda não foi decidido com o
+Claudinho; decidir isso antes da publicação (L5) ou assim que houver o
+primeiro lead.
+
 ## Pendências que bloqueiam a publicação (L5)
 
 Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas como
@@ -150,3 +163,4 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
    equipe e, depois, em `metadataBase`.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
+Rode `npm run check:placeholders` antes do deploy para confirmar.
