@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diagnosticoFormSchema } from "./validation";
+import { diagnosticoFormSchema, PROBLEM_MAX_LENGTH } from "./validation";
 
 const validPayload = {
   name: "Maria Souza",
@@ -15,19 +15,40 @@ describe("diagnosticoFormSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejeita nome muito curto", () => {
-    const result = diagnosticoFormSchema.safeParse({ ...validPayload, name: "M" });
+  it("rejeita nome vazio", () => {
+    const result = diagnosticoFormSchema.safeParse({ ...validPayload, name: "" });
     expect(result.success).toBe(false);
   });
 
-  it("rejeita descrição de problema muito curta", () => {
-    const result = diagnosticoFormSchema.safeParse({ ...validPayload, problem: "curto" });
+  it("rejeita descrição de problema vazia", () => {
+    const result = diagnosticoFormSchema.safeParse({ ...validPayload, problem: "" });
     expect(result.success).toBe(false);
   });
 
-  it("rejeita whatsapp com letras", () => {
+  it("rejeita descrição de problema maior que o limite", () => {
+    const result = diagnosticoFormSchema.safeParse({
+      ...validPayload,
+      problem: "a".repeat(PROBLEM_MAX_LENGTH + 1),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejeita whatsapp vazio com a mensagem de campo obrigatório", () => {
+    const result = diagnosticoFormSchema.safeParse({ ...validPayload, whatsapp: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("Informe o seu WhatsApp.");
+    }
+  });
+
+  it("rejeita whatsapp com letras com a mensagem de número inválido", () => {
     const result = diagnosticoFormSchema.safeParse({ ...validPayload, whatsapp: "não é telefone" });
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        "Confira o número: ele precisa ter o DDD e o telefone completo.",
+      );
+    }
   });
 
   it("rejeita quando o consentimento não é verdadeiro", () => {
@@ -36,12 +57,12 @@ describe("diagnosticoFormSchema", () => {
   });
 
   it("aceita quando o honeypot vem vazio", () => {
-    const result = diagnosticoFormSchema.safeParse({ ...validPayload, website: "" });
+    const result = diagnosticoFormSchema.safeParse({ ...validPayload, codigoParceiro: "" });
     expect(result.success).toBe(true);
   });
 
   it("aceita quando o honeypot vem preenchido (a rota de API decide o que fazer)", () => {
-    const result = diagnosticoFormSchema.safeParse({ ...validPayload, website: "spam" });
+    const result = diagnosticoFormSchema.safeParse({ ...validPayload, codigoParceiro: "spam" });
     expect(result.success).toBe(true);
   });
 });

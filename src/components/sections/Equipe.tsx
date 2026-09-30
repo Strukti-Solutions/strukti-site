@@ -2,7 +2,7 @@ import { landingContent } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 
 export function Equipe() {
-  const { title, subtitle } = landingContent.equipe;
+  const { title, intro } = landingContent.equipe;
 
   return (
     <section id="equipe" className="section section--alt" aria-labelledby="equipe-title">
@@ -10,7 +10,7 @@ export function Equipe() {
         <h2 id="equipe-title" className="section-title">
           {title}
         </h2>
-        <p className="section-subtitle">{subtitle}</p>
+        <p className="section-subtitle">{intro}</p>
 
         <ul
           style={{

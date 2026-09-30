@@ -1,15 +1,15 @@
 import { landingContent } from "@/content/landing";
 
 export function ComoResolvemos() {
-  const { title, subtitle, items } = landingContent.comoResolvemos;
+  const { title, intro, items } = landingContent.comoResolvemos;
 
   return (
-    <section id="como-resolvemos" className="section" aria-labelledby="como-resolvemos-title">
+    <section id="como-trabalhamos" className="section" aria-labelledby="como-trabalhamos-title">
       <div className="container">
-        <h2 id="como-resolvemos-title" className="section-title">
+        <h2 id="como-trabalhamos-title" className="section-title">
           {title}
         </h2>
-        <p className="section-subtitle">{subtitle}</p>
+        <p className="section-subtitle">{intro}</p>
         <ol
           style={{
             listStyle: "none",

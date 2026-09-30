@@ -1,7 +1,10 @@
 import { siteConfig } from "@/config/site";
+import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 export function Header() {
+  const { nav, whatsappButton } = landingContent.header;
+
   return (
     <header
       style={{
@@ -25,8 +28,21 @@ export function Header() {
         <span style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--color-petrol-900)" }}>
           {siteConfig.brand}
         </span>
-        <WhatsAppButton message="Olá! Vim pelo site da Strukti Soluções e gostaria de conversar.">
-          WhatsApp
+
+        <nav aria-label="Principal" className="header-nav">
+          {nav.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              style={{ color: "var(--color-ink-muted)", fontWeight: 500, textDecoration: "none" }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <WhatsAppButton message={landingContent.whatsappMessages.general}>
+          {whatsappButton}
         </WhatsAppButton>
       </div>
     </header>

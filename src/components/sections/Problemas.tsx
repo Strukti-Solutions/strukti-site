@@ -1,7 +1,8 @@
 import { landingContent } from "@/content/landing";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 export function Problemas() {
-  const { title, subtitle, items } = landingContent.problemas;
+  const { title, items, closing, button } = landingContent.problemas;
 
   return (
     <section id="problemas" className="section section--alt" aria-labelledby="problemas-title">
@@ -9,11 +10,10 @@ export function Problemas() {
         <h2 id="problemas-title" className="section-title">
           {title}
         </h2>
-        <p className="section-subtitle">{subtitle}</p>
         <ul
           style={{
             listStyle: "none",
-            margin: 0,
+            margin: "0 0 2rem",
             padding: 0,
             display: "grid",
             gap: "1.25rem",
@@ -43,6 +43,8 @@ export function Problemas() {
             </li>
           ))}
         </ul>
+        <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>{closing}</p>
+        <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
       </div>
     </section>
   );

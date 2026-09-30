@@ -10,7 +10,7 @@
   --color-ink-muted: #3f5356;
   --color-surface: #ffffff;
   --color-surface-alt: var(--color-petrol-50);
-  --color-border: #d7e2e3;
+  --color-border: #6b7f82;
 
   --color-whatsapp: #0e6f31;
   --color-whatsapp-hover: #0a5c28;
@@ -28,6 +28,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
 }
 
 body {
@@ -131,4 +132,43 @@ button {
 
 .skip-link:focus {
   top: 1rem;
+}
+
+.floating-whatsapp-label {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .floating-whatsapp-label {
+    display: inline;
+  }
+}
+
+.header-nav {
+  display: none;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .header-nav {
+    display: flex;
+  }
+}
+
+.screenshot-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .screenshot-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .screenshot-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

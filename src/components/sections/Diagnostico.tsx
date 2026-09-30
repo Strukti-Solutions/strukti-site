@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { landingContent } from "@/content/landing";
-import { diagnosticoFormSchema } from "@/lib/validation";
+import { diagnosticoFormSchema, PROBLEM_MAX_LENGTH } from "@/lib/validation";
+import { siteConfig } from "@/config/site";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 type Status = "idle" | "submitting" | "success" | "error";
+type SubmitErrorKind = "rateLimit" | "generic";
+
+type FieldKey = "name" | "company" | "whatsapp" | "problem" | "consent";
+
+const FIELD_ORDER: FieldKey[] = ["name", "company", "whatsapp", "problem", "consent"];
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -23,36 +30,56 @@ const labelStyle: React.CSSProperties = {
   color: "var(--color-petrol-900)",
 };
 
+const helpStyle: React.CSSProperties = {
+  margin: "0.3rem 0 0",
+  fontSize: "0.85rem",
+  color: "var(--color-ink-muted)",
+};
+
 export function Diagnostico() {
-  const { title, subtitle, form } = landingContent.diagnostico;
+  const { title, intro, form } = landingContent.diagnostico;
   const [status, setStatus] = useState<Status>("idle");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [submitErrorKind, setSubmitErrorKind] = useState<SubmitErrorKind>("generic");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const [submittedName, setSubmittedName] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function focusFirstInvalidField(errors: Partial<Record<FieldKey, string>>) {
+    const firstKey = FIELD_ORDER.find((key) => errors[key]);
+    if (!firstKey) return;
+    const el = formRef.current?.querySelector<HTMLElement>(`#${firstKey}`);
+    el?.focus();
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formEl = event.currentTarget;
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(formEl);
     const payload = {
       name: String(formData.get("name") ?? ""),
       company: String(formData.get("company") ?? ""),
       whatsapp: String(formData.get("whatsapp") ?? ""),
       problem: String(formData.get("problem") ?? ""),
       consent: formData.get("consent") === "on",
-      website: String(formData.get("website") ?? ""),
+      codigoParceiro: String(formData.get("codigoParceiro") ?? ""),
     };
 
     const parsed = diagnosticoFormSchema.safeParse(payload);
 
     if (!parsed.success) {
-      const errors: Record<string, string> = {};
+      const errors: Partial<Record<FieldKey, string>> = {};
       for (const issue of parsed.error.issues) {
         const key = issue.path[0];
-        if (typeof key === "string" && !(key in errors)) {
-          errors[key] = issue.message;
-        }
+        if (typeof key !== "string" || !(FIELD_ORDER as string[]).includes(key)) continue;
+        const field = key as FieldKey;
+        if (errors[field]) continue;
+        errors[field] = issue.message;
       }
       setFieldErrors(errors);
       setStatus("error");
+      setSubmitErrorKind("generic");
+      focusFirstInvalidField(errors);
       return;
     }
 
@@ -67,16 +94,21 @@ export function Diagnostico() {
       });
 
       if (!response.ok) {
+        setSubmitErrorKind(response.status === 429 ? "rateLimit" : "generic");
         setStatus("error");
         return;
       }
 
+      setSubmittedName(parsed.data.name);
       setStatus("success");
-      event.currentTarget.reset();
+      formEl.reset();
     } catch {
+      setSubmitErrorKind("generic");
       setStatus("error");
     }
   }
+
+  const errorCount = Object.keys(fieldErrors).length;
 
   return (
     <section id="diagnostico" className="section" aria-labelledby="diagnostico-title">
@@ -84,114 +116,221 @@ export function Diagnostico() {
         <h2 id="diagnostico-title" className="section-title">
           {title}
         </h2>
-        <p className="section-subtitle">{subtitle}</p>
+        <p className="section-subtitle">{intro}</p>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label htmlFor="name" style={labelStyle}>
-              {form.nameLabel}
-            </label>
-            <input id="name" name="name" type="text" style={inputStyle} required />
-            {fieldErrors.name && <FieldError message={fieldErrors.name} />}
+        {status === "success" ? (
+          <div role="status">
+            <h3 style={{ color: "var(--color-petrol-900)" }}>{form.success.title}</h3>
+            <p style={{ color: "var(--color-ink-muted)" }}>
+              {form.success.text.replace("{nome}", submittedName)}
+            </p>
+            <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>
+              {form.success.text2}
+            </p>
+            <WhatsAppButton message={landingContent.whatsappMessages.general}>
+              {form.success.button}
+            </WhatsAppButton>
           </div>
+        ) : (
+          <>
+            <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.25rem" }}>{form.title}</h3>
+            <p style={{ color: "var(--color-ink-muted)", marginBottom: "0.25rem" }}>{form.intro}</p>
+            <p style={{ color: "var(--color-ink-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+              {form.requiredNotice}
+            </p>
 
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label htmlFor="company" style={labelStyle}>
-              {form.companyLabel}
-            </label>
-            <input id="company" name="company" type="text" style={inputStyle} required />
-            {fieldErrors.company && <FieldError message={fieldErrors.company} />}
-          </div>
-
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label htmlFor="whatsapp" style={labelStyle}>
-              {form.whatsappLabel}
-            </label>
-            <input
-              id="whatsapp"
-              name="whatsapp"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              style={inputStyle}
-              required
-            />
-            {fieldErrors.whatsapp && <FieldError message={fieldErrors.whatsapp} />}
-          </div>
-
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label htmlFor="problem" style={labelStyle}>
-              {form.problemLabel}
-            </label>
-            <textarea id="problem" name="problem" rows={4} style={inputStyle} required />
-            {fieldErrors.problem && <FieldError message={fieldErrors.problem} />}
-          </div>
-
-          {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
-          <div
-            aria-hidden="true"
-            style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
-          >
-            <label htmlFor="website">Deixe este campo em branco</label>
-            <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
-          </div>
-
-          <div style={{ marginBottom: "1.5rem", display: "flex", gap: "0.6rem" }}>
-            <input
-              id="consent"
-              name="consent"
-              type="checkbox"
-              required
-              style={{ width: "1.25rem", height: "1.25rem", marginTop: "0.15rem", flexShrink: 0 }}
-            />
-            <label htmlFor="consent" style={{ color: "var(--color-ink-muted)" }}>
-              {form.consentLabel}{" "}
-              <a href="/privacidade" style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}>
-                {form.consentLinkLabel}
-              </a>
-              .
-            </label>
-          </div>
-          {fieldErrors.consent && <FieldError message={fieldErrors.consent} />}
-
-          <button
-            type="submit"
-            disabled={status === "submitting"}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "0.85rem 1.75rem",
-              borderRadius: "999px",
-              backgroundColor: "var(--color-petrol-800)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              minHeight: "48px",
-              cursor: status === "submitting" ? "not-allowed" : "pointer",
-              opacity: status === "submitting" ? 0.7 : 1,
-            }}
-          >
-            {status === "submitting" ? "Enviando..." : form.submitLabel}
-          </button>
-
-          <div role="status" aria-live="polite" style={{ marginTop: "1rem" }}>
-            {status === "success" && (
-              <p style={{ color: "var(--color-whatsapp)" }}>{form.successMessage}</p>
+            {errorCount > 0 && (
+              <p
+                role="alert"
+                style={{
+                  color: "#b3261e",
+                  fontWeight: 600,
+                  marginBottom: "1rem",
+                }}
+              >
+                {errorCount === 1
+                  ? form.errorSummarySingle
+                  : form.errorSummaryMultiple.replace("{n}", String(errorCount))}
+              </p>
             )}
-            {status === "error" && Object.keys(fieldErrors).length === 0 && (
-              <p style={{ color: "#b3261e" }}>{form.errorMessage}</p>
-            )}
-          </div>
-        </form>
+
+            <form ref={formRef} onSubmit={handleSubmit} noValidate>
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label htmlFor="name" style={labelStyle}>
+                  {form.fields.name.label}
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  style={inputStyle}
+                  required
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                />
+                {fieldErrors.name && <FieldError id="name-error" message={fieldErrors.name} />}
+              </div>
+
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label htmlFor="company" style={labelStyle}>
+                  {form.fields.company.label}
+                </label>
+                <input
+                  id="company"
+                  name="company"
+                  type="text"
+                  autoComplete="organization"
+                  style={inputStyle}
+                  required
+                  aria-invalid={Boolean(fieldErrors.company)}
+                  aria-describedby={fieldErrors.company ? "company-error" : undefined}
+                />
+                {fieldErrors.company && <FieldError id="company-error" message={fieldErrors.company} />}
+              </div>
+
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label htmlFor="whatsapp" style={labelStyle}>
+                  {form.fields.whatsapp.label}
+                </label>
+                <input
+                  id="whatsapp"
+                  name="whatsapp"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  style={inputStyle}
+                  required
+                  aria-invalid={Boolean(fieldErrors.whatsapp)}
+                  aria-describedby={
+                    fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"
+                  }
+                />
+                {fieldErrors.whatsapp ? (
+                  <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
+                ) : (
+                  <p id="whatsapp-help" style={helpStyle}>
+                    {form.fields.whatsapp.help}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label htmlFor="problem" style={labelStyle}>
+                  {form.fields.problem.label}
+                </label>
+                <textarea
+                  id="problem"
+                  name="problem"
+                  rows={4}
+                  maxLength={PROBLEM_MAX_LENGTH}
+                  style={inputStyle}
+                  required
+                  aria-invalid={Boolean(fieldErrors.problem)}
+                  aria-describedby={fieldErrors.problem ? "problem-error" : "problem-help"}
+                />
+                {fieldErrors.problem ? (
+                  <FieldError id="problem-error" message={fieldErrors.problem} />
+                ) : (
+                  <p id="problem-help" style={helpStyle}>
+                    {form.fields.problem.help}
+                  </p>
+                )}
+              </div>
+
+              {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: "-9999px",
+                  width: "1px",
+                  height: "1px",
+                  overflow: "hidden",
+                }}
+              >
+                <label htmlFor="codigoParceiro">{form.honeypotLabel}</label>
+                <input
+                  id="codigoParceiro"
+                  name="codigoParceiro"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.6rem" }}>
+                <input
+                  id="consent"
+                  name="consent"
+                  type="checkbox"
+                  required
+                  aria-invalid={Boolean(fieldErrors.consent)}
+                  aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
+                  style={{ width: "1.25rem", height: "1.25rem", marginTop: "0.15rem", flexShrink: 0 }}
+                />
+                <label htmlFor="consent" style={{ color: "var(--color-ink-muted)" }}>
+                  {form.consentLabelPrefix}
+                  <a href="/privacidade" style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}>
+                    {form.consentLinkLabel}
+                  </a>
+                  {form.consentLabelSuffix}
+                </label>
+              </div>
+              {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
+              <p style={{ ...helpStyle, marginBottom: "1.5rem" }}>{form.consentHelperLine}</p>
+
+              <button
+                type="submit"
+                disabled={status === "submitting"}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "0.85rem 1.75rem",
+                  borderRadius: "999px",
+                  backgroundColor: "var(--color-petrol-800)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  border: "none",
+                  minHeight: "48px",
+                  cursor: status === "submitting" ? "not-allowed" : "pointer",
+                  opacity: status === "submitting" ? 0.7 : 1,
+                }}
+              >
+                {status === "submitting" ? form.submittingLabel : form.submitLabel}
+              </button>
+
+              <p style={{ marginTop: "1rem", color: "var(--color-ink-muted)" }}>
+                {form.whatsappAlternativePrefix}
+                <a
+                  href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}
+                >
+                  {form.whatsappAlternativeLinkLabel}
+                </a>
+              </p>
+
+              <div role="status" aria-live="polite" style={{ marginTop: "0.5rem" }}>
+                {status === "error" && errorCount === 0 && (
+                  <p style={{ color: "#b3261e" }}>
+                    {submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
+                  </p>
+                )}
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </section>
   );
 }
 
-function FieldError({ message }: { message: string }) {
+function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p role="alert" style={{ color: "#b3261e", fontSize: "0.9rem", margin: "0.35rem 0 0" }}>
+    <p id={id} role="alert" style={{ color: "#b3261e", fontSize: "0.9rem", margin: "0.35rem 0 0" }}>
       {message}
     </p>
   );
