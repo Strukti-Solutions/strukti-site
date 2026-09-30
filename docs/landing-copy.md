@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.1 · 30/09/2026 · Tarefa L1 · Redação: Manchete
+Status: **rascunho para aprovação do cliente** · Versão 1.2 · 30/09/2026 · Tarefa L1 · Redação: Manchete
 
 ## Como ler este documento
 
@@ -154,6 +154,8 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 **Fecho:** O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.
 
 **Botão:** Pedir diagnóstico gratuito
+
+**Legenda das capturas:** Todas as capturas usam dados fictícios.
 
 *Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som.*
 
