@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
@@ -41,9 +42,15 @@ function overlaps(a: DOMRect, b: DOMRect) {
  * JavaScript, fica oculto. No hero "classic", o botão do cabeçalho continua
  * lá; no hero "video", abaixo de 1024 px o menu da barra não abre sem
  * JavaScript, e o WhatsApp fica no botão principal do hero.
+ *
+ * Fica num layout persistente (nunca desmonta na troca de rota), então o
+ * efeito depende do pathname (usePathname) para reler os marcadores
+ * [data-hides-fab] da página que acabou de entrar — sem isso, a navegação
+ * client-side mantinha os marcadores (e os listeners) da página anterior.
  */
 export function FloatingWhatsApp() {
   const { desktopLabel, accessibleName } = landingContent.floatingWhatsapp;
+  const pathname = usePathname();
   const tapHover = useTapHover();
   const fabRef = useRef<HTMLAnchorElement>(null);
   const [visible, setVisible] = useState(false);
@@ -113,7 +120,7 @@ export function FloatingWhatsApp() {
       window.removeEventListener("resize", schedule);
       document.removeEventListener("focusin", schedule);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <motion.a

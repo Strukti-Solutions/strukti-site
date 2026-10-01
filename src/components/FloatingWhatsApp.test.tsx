@@ -2,6 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { FloatingWhatsApp } from "./FloatingWhatsApp";
 
+// A barra fica num layout persistente: a troca de rota client-side nunca
+// desmonta o componente. O mock deixa o teste simular essa troca mudando
+// o valor que usePathname devolve, sem precisar de um app router de verdade.
+let mockPathname = "/";
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+}));
+
 /**
  * Stub de IntersectionObserver que guarda os alvos observados e deixa o
  * teste disparar o callback manualmente — o stub padrão do projeto
@@ -62,6 +70,7 @@ describe("FloatingWhatsApp", () => {
     cleanup();
     document.body.innerHTML = "";
     SpyIntersectionObserver.instances = [];
+    mockPathname = "/";
     vi.unstubAllGlobals();
   });
 
@@ -115,5 +124,26 @@ describe("FloatingWhatsApp", () => {
 
     await waitFor(() => expect(fab.getAttribute("data-visible")).toBe("true"));
     expect(fab.hasAttribute("inert")).toBe(false);
+  });
+
+  it("na troca de rota (usePathname), relê os marcadores [data-hides-fab] da página nova", async () => {
+    vi.stubGlobal("IntersectionObserver", SpyIntersectionObserver);
+
+    const { container, rerender } = render(<FloatingWhatsApp />);
+    const fab = container.querySelector("a.fab-whatsapp")!;
+
+    // Página inicial sem marcador: fica visível.
+    await waitFor(() => expect(fab.getAttribute("data-visible")).toBe("true"));
+
+    // "Navega" para outra página, que chega com seu próprio marcador. O
+    // componente nunca desmonta (layout persistente); só o pathname muda.
+    const marker = addHidesFabMarker();
+    mockPathname = "/outra-pagina";
+    rerender(<FloatingWhatsApp />);
+
+    fireIntersecting(marker, true);
+
+    await waitFor(() => expect(fab.getAttribute("data-visible")).toBe("false"));
+    expect(fab.hasAttribute("inert")).toBe(true);
   });
 });
