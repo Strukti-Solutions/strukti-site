@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { inter } from "@/fonts";
+import type { Metadata, Viewport } from "next";
+import { geologica } from "@/fonts";
 import { landingContent } from "@/content/landing";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import "./globals.css";
@@ -23,13 +23,19 @@ export const metadata: Metadata = {
   },
 };
 
+// Cor da barra do navegador no celular: o "espaço" do cabeçalho
+// (design-system/strukti-solucoes/MASTER.md, §2).
+export const viewport: Viewport = {
+  themeColor: "#08121d",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={geologica.variable}>
       <body>
         <a href="#conteudo-principal" className="skip-link">
           {landingContent.header.skipLink}

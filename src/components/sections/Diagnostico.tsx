@@ -17,29 +17,6 @@ type FieldKey = "name" | "company" | "whatsapp" | "problem" | "consent";
 
 const FIELD_ORDER: FieldKey[] = ["name", "company", "whatsapp", "problem", "consent"];
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.7rem 0.85rem",
-  borderRadius: "0.5rem",
-  border: "1px solid var(--color-border-input)",
-  fontSize: "1rem",
-  fontFamily: "inherit",
-  minHeight: "48px",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  marginBottom: "0.35rem",
-  fontWeight: 600,
-  color: "var(--color-petrol-900)",
-};
-
-const helpStyle: React.CSSProperties = {
-  margin: "0.3rem 0 0",
-  fontSize: "0.85rem",
-  color: "var(--color-ink-muted)",
-};
-
 export function Diagnostico() {
   const { title, intro, highlight, howItWorksTitle, steps, form } = landingContent.diagnostico;
   const [status, setStatus] = useState<Status>("idle");
@@ -130,272 +107,223 @@ export function Diagnostico() {
   }
 
   return (
-    <section id="diagnostico" className="section" aria-labelledby="diagnostico-title">
-      <div className="container" style={{ maxWidth: "640px" }}>
-        <h2 id="diagnostico-title" className="section-title">
-          {title}
-        </h2>
-        <p className="section-subtitle" style={{ marginBottom: "1rem" }}>
-          {intro}
-        </p>
-        <p style={{ color: "var(--color-petrol-700)", fontWeight: 600, marginBottom: "1.5rem" }}>
-          {highlight}
-        </p>
+    <section id="diagnostico" className="section surface-paper" aria-labelledby="diagnostico-title">
+      <div className="container diag">
+        <div>
+          <h2 id="diagnostico-title" className="section-title">
+            {title}
+          </h2>
+          <p className="body-muted" style={{ marginTop: "var(--space-4)", maxWidth: "62ch" }}>
+            {intro}
+          </p>
+          <p className="diag__highlight">{highlight}</p>
 
-        <Reveal>
-          <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.75rem" }}>{howItWorksTitle}</h3>
-          <ol
-            style={{
-              margin: "0 0 2.5rem",
-              padding: 0,
-              listStyle: "none",
-              display: "grid",
-              gap: "0.75rem",
-            }}
-          >
-            {steps.map((step, index) => (
-              <li key={step.lead} style={{ display: "flex", gap: "0.75rem" }}>
-                <span
+          <Reveal>
+            <h3 className="block-title diag__steps-title">{howItWorksTitle}</h3>
+            <ol className="wall">
+              {steps.map((step, index) => (
+                <li key={step.lead} className="block step">
+                  <span className="step__number" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <p className="step__text">
+                    <strong>{step.lead}</strong> {step.rest}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+        </div>
+
+        <div className="form-card">
+          {status === "success" ? (
+            <div role="status" className="form-success">
+              <h3 ref={successHeadingRef} tabIndex={-1} className="block-title form-card__title">
+                {form.success.title}
+              </h3>
+              <p>{form.success.text.replace("{nome}", submittedName)}</p>
+              <p>{form.success.text2}</p>
+              <WhatsAppButton message={landingContent.whatsappMessages.general}>
+                {form.success.button}
+              </WhatsAppButton>
+            </div>
+          ) : (
+            <>
+              <h3 className="block-title form-card__title">{form.title}</h3>
+              <p className="body-muted">{form.intro}</p>
+              <p className="form-card__notice">{form.requiredNotice}</p>
+
+              {errorCount > 0 && (
+                <p role="alert" className="form-error-summary">
+                  {errorCount === 1
+                    ? form.errorSummarySingle
+                    : form.errorSummaryMultiple.replace("{n}", String(errorCount))}
+                </p>
+              )}
+
+              <form ref={formRef} onSubmit={handleSubmit} noValidate>
+                <div className="field">
+                  <label htmlFor="name" className="field__label">
+                    {form.fields.name.label}
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    maxLength={120}
+                    className="field__input"
+                    required
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                  />
+                  {fieldErrors.name && <FieldError id="name-error" message={fieldErrors.name} />}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="company" className="field__label">
+                    {form.fields.company.label}
+                  </label>
+                  <input
+                    id="company"
+                    name="company"
+                    type="text"
+                    autoComplete="organization"
+                    maxLength={150}
+                    className="field__input"
+                    required
+                    aria-invalid={Boolean(fieldErrors.company)}
+                    aria-describedby={fieldErrors.company ? "company-error" : undefined}
+                  />
+                  {fieldErrors.company && <FieldError id="company-error" message={fieldErrors.company} />}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="whatsapp" className="field__label">
+                    {form.fields.whatsapp.label}
+                  </label>
+                  <input
+                    id="whatsapp"
+                    name="whatsapp"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={20}
+                    className="field__input"
+                    required
+                    aria-invalid={Boolean(fieldErrors.whatsapp)}
+                    aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"}
+                  />
+                  {fieldErrors.whatsapp ? (
+                    <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
+                  ) : (
+                    <p id="whatsapp-help" className="field__help">
+                      {form.fields.whatsapp.help}
+                    </p>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="problem" className="field__label">
+                    {form.fields.problem.label}
+                  </label>
+                  <textarea
+                    id="problem"
+                    name="problem"
+                    rows={4}
+                    maxLength={PROBLEM_MAX_LENGTH}
+                    className="field__input"
+                    required
+                    aria-invalid={Boolean(fieldErrors.problem)}
+                    aria-describedby={fieldErrors.problem ? "problem-error" : "problem-help"}
+                  />
+                  {fieldErrors.problem ? (
+                    <FieldError id="problem-error" message={fieldErrors.problem} />
+                  ) : (
+                    <p id="problem-help" className="field__help">
+                      {form.fields.problem.help}
+                    </p>
+                  )}
+                </div>
+
+                {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
+                <div
                   aria-hidden="true"
                   style={{
-                    flexShrink: 0,
-                    width: "1.75rem",
-                    height: "1.75rem",
-                    borderRadius: "50%",
-                    backgroundColor: "var(--color-petrol-100)",
-                    color: "var(--color-petrol-900)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
+                    position: "absolute",
+                    left: "-9999px",
+                    width: "1px",
+                    height: "1px",
+                    overflow: "hidden",
                   }}
                 >
-                  {index + 1}
-                </span>
-                <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>
-                  <strong style={{ color: "var(--color-petrol-900)" }}>{step.lead}</strong> {step.rest}
+                  <label htmlFor="codigoParceiro">{form.honeypotLabel}</label>
+                  <input
+                    id="codigoParceiro"
+                    name="codigoParceiro"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="consent">
+                  <input
+                    id="consent"
+                    name="consent"
+                    type="checkbox"
+                    required
+                    aria-invalid={Boolean(fieldErrors.consent)}
+                    aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
+                  />
+                  <label htmlFor="consent">
+                    {form.consentLabelPrefix}
+                    <a href="/privacidade">{form.consentLinkLabel}</a>
+                    {form.consentLabelSuffix}
+                  </label>
+                </div>
+                {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
+                <p className="field__help" style={{ marginBottom: "var(--space-5)" }}>
+                  {form.consentHelperLine}
                 </p>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
 
-        {status === "success" ? (
-          <div role="status">
-            <h3 ref={successHeadingRef} tabIndex={-1} style={{ color: "var(--color-petrol-900)" }}>
-              {form.success.title}
-            </h3>
-            <p style={{ color: "var(--color-ink-muted)" }}>
-              {form.success.text.replace("{nome}", submittedName)}
-            </p>
-            <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>
-              {form.success.text2}
-            </p>
-            <WhatsAppButton message={landingContent.whatsappMessages.general}>
-              {form.success.button}
-            </WhatsAppButton>
-          </div>
-        ) : (
-          <>
-            <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.25rem" }}>{form.title}</h3>
-            <p style={{ color: "var(--color-ink-muted)", marginBottom: "0.25rem" }}>{form.intro}</p>
-            <p style={{ color: "var(--color-ink-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
-              {form.requiredNotice}
-            </p>
-
-            {errorCount > 0 && (
-              <p
-                role="alert"
-                style={{
-                  color: "#b3261e",
-                  fontWeight: 600,
-                  marginBottom: "1rem",
-                }}
-              >
-                {errorCount === 1
-                  ? form.errorSummarySingle
-                  : form.errorSummaryMultiple.replace("{n}", String(errorCount))}
-              </p>
-            )}
-
-            <form ref={formRef} onSubmit={handleSubmit} noValidate>
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label htmlFor="name" style={labelStyle}>
-                  {form.fields.name.label}
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  maxLength={120}
-                  style={inputStyle}
-                  required
-                  aria-invalid={Boolean(fieldErrors.name)}
-                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                />
-                {fieldErrors.name && <FieldError id="name-error" message={fieldErrors.name} />}
-              </div>
-
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label htmlFor="company" style={labelStyle}>
-                  {form.fields.company.label}
-                </label>
-                <input
-                  id="company"
-                  name="company"
-                  type="text"
-                  autoComplete="organization"
-                  maxLength={150}
-                  style={inputStyle}
-                  required
-                  aria-invalid={Boolean(fieldErrors.company)}
-                  aria-describedby={fieldErrors.company ? "company-error" : undefined}
-                />
-                {fieldErrors.company && <FieldError id="company-error" message={fieldErrors.company} />}
-              </div>
-
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label htmlFor="whatsapp" style={labelStyle}>
-                  {form.fields.whatsapp.label}
-                </label>
-                <input
-                  id="whatsapp"
-                  name="whatsapp"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  maxLength={20}
-                  style={inputStyle}
-                  required
-                  aria-invalid={Boolean(fieldErrors.whatsapp)}
-                  aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"}
-                />
-                {fieldErrors.whatsapp ? (
-                  <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
-                ) : (
-                  <p id="whatsapp-help" style={helpStyle}>
-                    {form.fields.whatsapp.help}
-                  </p>
-                )}
-              </div>
-
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label htmlFor="problem" style={labelStyle}>
-                  {form.fields.problem.label}
-                </label>
-                <textarea
-                  id="problem"
-                  name="problem"
-                  rows={4}
-                  maxLength={PROBLEM_MAX_LENGTH}
-                  style={inputStyle}
-                  required
-                  aria-invalid={Boolean(fieldErrors.problem)}
-                  aria-describedby={fieldErrors.problem ? "problem-error" : "problem-help"}
-                />
-                {fieldErrors.problem ? (
-                  <FieldError id="problem-error" message={fieldErrors.problem} />
-                ) : (
-                  <p id="problem-help" style={helpStyle}>
-                    {form.fields.problem.help}
-                  </p>
-                )}
-              </div>
-
-              {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  left: "-9999px",
-                  width: "1px",
-                  height: "1px",
-                  overflow: "hidden",
-                }}
-              >
-                <label htmlFor="codigoParceiro">{form.honeypotLabel}</label>
-                <input
-                  id="codigoParceiro"
-                  name="codigoParceiro"
-                  type="text"
-                  tabIndex={-1}
-                  autoComplete="off"
-                />
-              </div>
-
-              <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.6rem" }}>
-                <input
-                  id="consent"
-                  name="consent"
-                  type="checkbox"
-                  required
-                  aria-invalid={Boolean(fieldErrors.consent)}
-                  aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
-                  style={{ width: "1.25rem", height: "1.25rem", marginTop: "0.15rem", flexShrink: 0 }}
-                />
-                <label htmlFor="consent" style={{ color: "var(--color-ink-muted)" }}>
-                  {form.consentLabelPrefix}
-                  <a href="/privacidade" style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}>
-                    {form.consentLinkLabel}
-                  </a>
-                  {form.consentLabelSuffix}
-                </label>
-              </div>
-              {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
-              <p style={{ ...helpStyle, marginBottom: "1.5rem" }}>{form.consentHelperLine}</p>
-
-              <motion.button
-                type="submit"
-                aria-disabled={status === "submitting"}
-                aria-busy={status === "submitting"}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "0.85rem 1.75rem",
-                  borderRadius: "999px",
-                  backgroundColor: "var(--color-petrol-800)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  border: "none",
-                  minHeight: "48px",
-                  cursor: status === "submitting" ? "not-allowed" : "pointer",
-                  opacity: status === "submitting" ? 0.7 : 1,
-                }}
-                {...(status === "submitting" ? {} : tapHover)}
-              >
-                {status === "submitting" ? form.submittingLabel : form.submitLabel}
-              </motion.button>
-
-              <p style={{ marginTop: "1rem", color: "var(--color-ink-muted)" }}>
-                {form.whatsappAlternativePrefix}
-                <a
-                  href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}
+                <motion.button
+                  type="submit"
+                  className="btn btn--primary"
+                  aria-disabled={status === "submitting"}
+                  aria-busy={status === "submitting"}
+                  {...(status === "submitting" ? {} : tapHover)}
                 >
-                  {form.whatsappAlternativeLinkLabel}
-                </a>
-              </p>
+                  {status === "submitting" ? form.submittingLabel : form.submitLabel}
+                </motion.button>
 
-              <div aria-live="polite" style={{ marginTop: "0.5rem" }}>
-                {status === "error" && errorCount === 0 && (
-                  <p ref={statusErrorRef} tabIndex={-1} style={{ color: "#b3261e" }}>
-                    <LinkedText
-                      text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
-                      linkLabel="fale com a gente pelo WhatsApp"
-                      href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
-                      external
-                    />
-                  </p>
-                )}
-              </div>
-            </form>
-          </>
-        )}
+                <p className="form-card__alt">
+                  {form.whatsappAlternativePrefix}
+                  <a
+                    href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {form.whatsappAlternativeLinkLabel}
+                  </a>
+                </p>
+
+                <div aria-live="polite">
+                  {status === "error" && errorCount === 0 && (
+                    <p ref={statusErrorRef} tabIndex={-1} className="form-status-error">
+                      <LinkedText
+                        text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
+                        linkLabel="fale com a gente pelo WhatsApp"
+                        href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                        external
+                      />
+                    </p>
+                  )}
+                </div>
+              </form>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -403,8 +331,13 @@ export function Diagnostico() {
 
 function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p id={id} style={{ color: "#b3261e", fontSize: "0.9rem", margin: "0.35rem 0 0" }}>
-      {message}
+    <p id={id} className="field__error">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="8" cy="8" r="7" fill="currentColor" />
+        <path d="M8 4.2v4.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="8" cy="11.4" r="1.05" fill="#fff" />
+      </svg>
+      <span>{message}</span>
     </p>
   );
 }

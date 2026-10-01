@@ -25,7 +25,6 @@ export function LinkedText({ text, linkLabel, href, external }: LinkedTextProps)
         href={href}
         target={external ? "_blank" : undefined}
         rel={external ? "noopener noreferrer" : undefined}
-        style={{ color: "var(--color-petrol-700)", textDecoration: "underline" }}
       >
         {linkLabel}
       </a>

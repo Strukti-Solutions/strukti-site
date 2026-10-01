@@ -24,16 +24,24 @@ interface HeroBackgroundProps {
   children: ReactNode;
 }
 
+/**
+ * Pilha de camadas do hero (design-system/strukti-solucoes/MASTER.md, §9.1).
+ * Só a camada do visual é trocável; a base (navy-950), o fade e o véu são do
+ * design system, por isso o contraste do texto e o fundo do resto da página
+ * não dependem do visual escolhido. A composição (lado a lado ≥ 1024 px,
+ * faixa embaixo abaixo disso) está em globals.css, seção "Hero".
+ */
 export function HeroBackground({ children }: HeroBackgroundProps) {
   const narrow = useNarrowViewport();
   const Visual = HERO_VISUALS[siteConfig.heroVisual];
 
   return (
-    <div className="relative isolate min-h-[92svh] w-full overflow-hidden md:min-h-[720px]">
-      <Visual narrow={narrow} />
-      <div className="relative z-10 flex h-full min-h-[92svh] items-start px-6 pt-14 sm:px-10 md:min-h-[720px] md:items-center md:pt-0 lg:px-20">
-        <div className="max-w-[34rem]">{children}</div>
+    <div className="hero">
+      <div className="hero__visual" aria-hidden="true">
+        <Visual narrow={narrow} />
       </div>
+      <div className="hero__veil" aria-hidden="true" />
+      <div className="container hero__content">{children}</div>
     </div>
   );
 }

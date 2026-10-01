@@ -6,14 +6,15 @@ import type { ReactNode } from "react";
  * HeroBackground.tsx — não mexe no HeroContent nem no resto da página.
  */
 export interface HeroVisualProps {
-  /** Verdadeiro abaixo do ponto de corte mobile da seção (ver useNarrowViewport). */
+  /** Verdadeiro na composição em faixa do hero, abaixo de 1024 px (ver useNarrowViewport). */
   narrow: boolean;
 }
 
 /**
  * Uma peça de fundo é responsável por preencher sozinha a área do hero —
- * a raiz que ela renderiza deve ocupar `absolute inset-0 h-full w-full` (ou
- * equivalente) por conta própria, já que fica atrás do conteúdo (texto e
- * botões) posicionado por HeroBackground.
+ * a raiz que ela renderiza deve ocupar `absolute inset-0` (ou equivalente)
+ * por conta própria, já que fica atrás do véu e do conteúdo (texto e botões)
+ * posicionados por HeroBackground. Contrato completo (ponto focal, área livre
+ * do texto, estado parado): design-system/strukti-solucoes/MASTER.md, §9.1.
  */
 export type HeroVisualComponent = (props: HeroVisualProps) => ReactNode;

@@ -4,50 +4,29 @@ import { siteConfig } from "@/config/site";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { motion } from "motion/react";
 import { useTapHover } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 type WhatsAppButtonProps = {
   message: string;
   children: React.ReactNode;
-  variant?: "solid" | "outline";
+  /** Versão de 44 px para o cabeçalho (MASTER §8.3). */
+  compact?: boolean;
   className?: string;
 };
 
-export function WhatsAppButton({
-  message,
-  children,
-  variant = "solid",
-  className,
-}: WhatsAppButtonProps) {
+/** Botão que abre o WhatsApp: sempre o de maior destaque (MASTER §8.1). */
+export function WhatsAppButton({ message, children, compact = false, className }: WhatsAppButtonProps) {
   const tapHover = useTapHover();
-
-  const baseStyle: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.85rem 1.5rem",
-    borderRadius: "999px",
-    fontWeight: 600,
-    fontSize: "1rem",
-    textDecoration: "none",
-    minHeight: "48px",
-    border: "2px solid var(--color-whatsapp)",
-  };
-
-  const variantStyle: React.CSSProperties =
-    variant === "solid"
-      ? { backgroundColor: "var(--color-whatsapp)", color: "#fff" }
-      : { backgroundColor: "transparent", color: "var(--color-whatsapp)" };
 
   return (
     <motion.a
       href={siteConfig.whatsapp.linkWithMessage(message)}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ ...baseStyle, ...variantStyle }}
-      className={className}
+      className={cn("btn btn--whatsapp", compact && "btn--compact", className)}
       {...tapHover}
     >
-      <WhatsAppIcon />
+      <WhatsAppIcon size={compact ? 18 : 20} />
       {children}
     </motion.a>
   );

@@ -1,44 +1,156 @@
 /*
  * Tailwind entra só com theme + utilities, sem o preflight (reset de base).
  * Motivo e versões: docs/DECISOES.md, ADR-001.
+ *
+ * Este arquivo implementa o design system v2 ("Encaixe"):
+ * design-system/strukti-solucoes/MASTER.md (fonte da verdade, ADR-006).
+ * Valor novo de cor, fonte, espaço ou raio nasce lá primeiro.
  */
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-:root {
-  --color-petrol-900: #0b2e38;
-  --color-petrol-800: #0f3c49;
-  --color-petrol-700: #154c5c;
-  --color-petrol-600: #1d6178;
-  --color-petrol-100: #e6eef0;
-  --color-petrol-50: #f4f8f9;
+/* ------------------------------------------------------------------ */
+/* 1. Paleta e escalas (MASTER §3.1, §5) — viram utilitários do         */
+/*    Tailwind (bg-navy-950, text-electric-700…) e variáveis CSS.       */
+/* ------------------------------------------------------------------ */
+@theme static {
+  --color-navy-950: #08121d;
+  --color-navy-900: #0e1c2b;
+  --color-navy-800: #15273b;
+  --color-navy-700: #1e3550;
+  --color-navy-600: #2a4766;
+  --color-navy-500: #3d5e80;
+  --color-navy-400: #5f7e9e;
+  --color-navy-300: #8ea6be;
+  --color-navy-200: #bfcedc;
+  --color-navy-100: #dfe7ef;
+  --color-navy-50: #f1f5f8;
 
-  --color-ink: #10201f;
-  --color-ink-muted: #3f5356;
-  --color-surface: #ffffff;
-  --color-surface-alt: var(--color-petrol-50);
-  /* Decorativa (divisórias de cartão, cabeçalho, rodapé): não precisa de
-     3:1, então fica mais leve visualmente. */
-  --color-border: #d7e2e3;
-  /* Funcional (borda de campo de formulário): WCAG 1.4.11 exige 3:1. */
-  --color-border-input: #6b7f82;
+  --color-electric-300: #7cc0fa;
+  --color-electric-400: #3aa0f5;
+  --color-electric-500: #0185e7;
+  --color-electric-600: #0178ec;
+  --color-electric-700: #0166d2;
+  --color-electric-800: #0353ad;
+  --color-electric-900: #063f82;
 
-  --color-whatsapp: #0e6f31;
-  --color-whatsapp-hover: #0a5c28;
+  --color-cyan-200: #a6f1f3;
+  --color-cyan-300: #5fe3e8;
+  --color-cyan-400: #00d1d8;
+  --color-cyan-500: #00c7d6;
+  --color-cyan-600: #00a3b4;
+  --color-cyan-700: #00808f;
 
-  --color-focus: #b34700;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #1fbf5b;
+  --color-danger: #c0262d;
+  --color-success: #11793f;
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-geologica), system-ui, "Segoe UI", Roboto, sans-serif;
 
-  --max-content-width: 1120px;
+  --radius-joint: 2px;
+  --radius-1: 4px;
+  --radius-2: 6px;
+  --radius-3: 10px;
 }
 
+/* ------------------------------------------------------------------ */
+/* 2. Tokens de layout, motion e superfícies (MASTER §3.3, §5, §6)      */
+/* ------------------------------------------------------------------ */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  --gutter: 20px;
+  --content-max: 1200px;
+  --section-space: clamp(64px, 9vw, 128px);
+  --header-height: 64px;
+  --joint-width: 3px;
+
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 450ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --shadow-float: 0 12px 32px -12px rgb(8 18 29 / 0.45);
+  --shadow-screen: 0 40px 80px -40px rgb(1 102 210 / 0.45);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 40px;
+    --header-height: 72px;
+  }
+}
+
+/* Superfície clara (papel) é o padrão da página. */
+:root,
+.surface-paper {
+  --surface: var(--color-navy-50);
+  --surface-raised: #ffffff;
+  --text: var(--color-navy-800);
+  --text-muted: var(--color-navy-600);
+  --text-subtle: var(--color-navy-500);
+  --link: var(--color-electric-700);
+  --link-hover: var(--color-electric-800);
+  --focus: var(--color-electric-700);
+  --border: var(--color-navy-100);
+  --border-input: var(--color-navy-400);
+  --joint: var(--color-navy-100);
+  --outline-border: var(--color-navy-800);
+  --outline-hover: var(--color-navy-100);
+}
+
+.surface-space,
+.surface-night {
+  --surface-raised: var(--color-navy-800);
+  --text: #ffffff;
+  --text-muted: var(--color-navy-200);
+  --text-subtle: var(--color-navy-300);
+  --link: var(--color-cyan-300);
+  --link-hover: #ffffff;
+  --focus: var(--color-cyan-400);
+  --border: var(--color-navy-700);
+  --joint: var(--color-navy-950);
+  --outline-border: var(--color-navy-300);
+  --outline-hover: rgb(255 255 255 / 0.06);
+}
+
+.surface-space {
+  --surface: var(--color-navy-950);
+}
+
+.surface-night {
+  --surface: var(--color-navy-900);
+}
+
+.surface-paper,
+.surface-space,
+.surface-night {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Base                                                             */
+/* ------------------------------------------------------------------ */
 * {
   box-sizing: border-box;
 }
 
 html {
-  scroll-padding-top: 6rem;
+  /* Cor do "espaço" nas sobras de rolagem do topo e do rodapé. */
+  background-color: var(--color-navy-950);
+  scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -49,11 +161,23 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--color-surface);
-  color: var(--color-ink);
+  background-color: var(--surface);
+  color: var(--text);
   font-family: var(--font-sans);
+  font-size: 1rem;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 1.125rem;
+  }
+}
+
+p {
+  text-wrap: pretty;
 }
 
 img,
@@ -62,8 +186,20 @@ video {
   display: block;
 }
 
-a {
-  color: inherit;
+/* :where() deixa a especificidade em zero: classes como .btn mandam. */
+:where(a) {
+  color: var(--link);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    text-decoration-thickness var(--duration-fast) var(--ease-standard);
+}
+
+:where(a):hover {
+  color: var(--link-hover);
+  text-decoration-thickness: 2px;
 }
 
 button {
@@ -71,65 +207,17 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 /*
- * O vídeo da Seção 4 vive dentro de um cartão (ScrollTiltCard) com
- * `overflow: hidden` e sem padding interno — o contorno de foco padrão
- * (offset positivo) ficaria cortado e sumiria para quem navega pelo
- * teclado (WCAG 2.4.7). Aqui ele desenha para dentro do próprio vídeo.
+ * O vídeo vive dentro de molduras com `overflow: hidden` — o contorno de
+ * foco padrão (offset positivo) ficaria cortado e sumiria para quem navega
+ * pelo teclado (WCAG 2.4.7). Aqui ele desenha para dentro do próprio vídeo.
  */
 video:focus-visible {
   outline-offset: -3px;
-}
-
-.container {
-  width: 100%;
-  max-width: var(--max-content-width);
-  margin-inline: auto;
-  padding-inline: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .container {
-    padding-inline: 2rem;
-  }
-}
-
-.section {
-  padding-block: 3.5rem;
-}
-
-@media (min-width: 768px) {
-  .section {
-    padding-block: 5.5rem;
-  }
-}
-
-.section--alt {
-  background-color: var(--color-surface-alt);
-}
-
-.section-title {
-  font-size: 1.75rem;
-  line-height: 1.2;
-  margin: 0 0 0.75rem;
-  color: var(--color-petrol-900);
-}
-
-@media (min-width: 768px) {
-  .section-title {
-    font-size: 2.25rem;
-  }
-}
-
-.section-subtitle {
-  font-size: 1.05rem;
-  color: var(--color-ink-muted);
-  margin: 0 0 2.5rem;
-  max-width: 62ch;
 }
 
 .visually-hidden {
@@ -146,18 +234,1193 @@ video:focus-visible {
 
 .skip-link {
   position: absolute;
-  top: -3rem;
+  top: -4rem;
   left: 1rem;
-  background: var(--color-petrol-900);
-  color: #fff;
-  padding: 0.75rem 1rem;
-  border-radius: 0.25rem;
   z-index: 100;
-  transition: top 0.15s ease-in-out;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-2);
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top var(--duration-fast) var(--ease-standard);
 }
 
 .skip-link:focus {
   top: 1rem;
+  outline-color: var(--color-cyan-400);
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. Layout                                                           */
+/* ------------------------------------------------------------------ */
+.container {
+  width: 100%;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-block: var(--section-space);
+}
+
+/*
+ * Duas seções seguidas na mesma superfície: a de baixo começa com uma
+ * régua de 1 px na largura do conteúdo (MASTER §2), no lugar de alternar a
+ * cor de fundo.
+ */
+.section--seam {
+  padding-top: 0;
+}
+
+.section--seam > .container::before {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-bottom: calc(var(--section-space) * 0.75);
+  background-color: var(--border);
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Tipografia (MASTER §4)                                           */
+/* ------------------------------------------------------------------ */
+.display {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  font-weight: 760;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.section-title {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(2rem, 1.4rem + 2.2vw, 3rem);
+  font-weight: 720;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.block-title {
+  margin: 0 0 var(--space-2);
+  color: var(--text);
+  font-size: 1.3125rem;
+  font-weight: 640;
+  font-variation-settings: "SHRP" 60;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 56ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 1024px) {
+  .lead {
+    font-size: 1.3125rem;
+  }
+}
+
+.body-muted {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.caption {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.section-head {
+  margin-bottom: var(--space-7);
+}
+
+.section-head .lead {
+  margin-top: var(--space-4);
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Botões (MASTER §8.1)                                             */
+/* ------------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0.6rem 20px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-2);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.btn--whatsapp {
+  background-color: var(--color-whatsapp);
+  color: var(--color-navy-950);
+}
+
+.btn--whatsapp:hover {
+  background-color: var(--color-whatsapp-hover);
+  color: var(--color-navy-950);
+}
+
+.btn--primary {
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+}
+
+.btn--primary:hover {
+  background-color: var(--color-electric-800);
+  color: #ffffff;
+}
+
+.btn--primary[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn--outline {
+  border-color: var(--outline-border);
+  background-color: transparent;
+  color: var(--text);
+}
+
+.btn--outline:hover {
+  background-color: var(--outline-hover);
+  color: var(--text);
+}
+
+.btn--compact {
+  min-height: 44px;
+  padding-inline: 16px;
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 400px) {
+  .btn--compact {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. Cabeçalho (MASTER §8.3)                                          */
+/* ------------------------------------------------------------------ */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--color-navy-800);
+}
+
+.site-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  height: var(--header-height);
+}
+
+.site-header__brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: var(--radius-1);
+}
+
+.site-header__brand img {
+  width: auto;
+  height: 24px;
+}
+
+@media (min-width: 401px) {
+  .site-header__brand img {
+    height: 28px;
+  }
+}
+
+@media (min-width: 768px) {
+  .site-header__brand img {
+    height: 32px;
+  }
+}
+
+.site-header__nav {
+  display: none;
+  gap: 28px;
+}
+
+/* Marca + 5 links + botão só cabem numa linha a partir de 1100 px
+   (na v1, a 1024 px o menu quebrava em duas linhas). */
+@media (min-width: 1100px) {
+  .site-header__nav {
+    display: flex;
+  }
+}
+
+.site-header__nav a {
+  padding-block: 6px;
+  color: var(--color-navy-200);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration-line: none;
+  text-underline-offset: 8px;
+}
+
+.site-header__nav a:hover {
+  color: #ffffff;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 8. Hero (MASTER §9) — camadas: base, visual, fade+véu, conteúdo     */
+/* ------------------------------------------------------------------ */
+.hero {
+  --hero-band: clamp(260px, 42svh, 360px);
+  --hero-text-max: 40rem;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--color-navy-950);
+}
+
+/* A base fica dentro do grupo do visual: o z-index isola esta camada, e o
+   `screen` do buraco negro precisa da cor do espaço atrás dele. */
+.hero__visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--color-navy-950);
+}
+
+/*
+ * Véu e fade-base são do DS, não do visual: qualquer peça trocada em
+ * siteConfig.heroVisual fica atrás deles. Na zona do texto o véu tem
+ * opacidade ≥ 0,86 — mesmo com um pixel branco atrás, o texto passa no AA
+ * (MASTER §3.4). Faixa (< 1024 px): texto em cima, visual embaixo.
+ */
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(0deg, var(--color-navy-950) 0, rgb(8 18 29 / 0) 8%),
+    linear-gradient(
+      180deg,
+      rgb(8 18 29 / 0.94) 0,
+      rgb(8 18 29 / 0.9) calc(100% - var(--hero-band) - 24px),
+      rgb(8 18 29 / 0) calc(100% - var(--hero-band) + 120px)
+    );
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  padding-top: var(--space-7);
+  padding-bottom: var(--hero-band);
+}
+
+.hero__text {
+  max-width: var(--hero-text-max);
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    /* Borda direita da coluna de texto, medida a partir da esquerda. */
+    --hero-text-edge: calc(
+      max(var(--gutter), (100% - var(--content-max)) / 2) + min(var(--hero-text-max), 100% - 2 * var(--gutter))
+    );
+  }
+
+  .hero__veil {
+    background:
+      linear-gradient(0deg, var(--color-navy-950) 0, rgb(8 18 29 / 0) 16%),
+      linear-gradient(
+        90deg,
+        rgb(8 18 29 / 0.94) 0,
+        rgb(8 18 29 / 0.88) var(--hero-text-edge),
+        rgb(8 18 29 / 0) calc(var(--hero-text-edge) + 280px)
+      );
+  }
+
+  .hero__content {
+    display: flex;
+    align-items: center;
+    min-height: min(calc(100svh - var(--header-height)), 820px);
+    padding-block: 72px;
+  }
+}
+
+.hero__eyebrow {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .hero__eyebrow {
+    font-size: 1.125rem;
+  }
+}
+
+.hero__body {
+  margin: var(--space-5) 0 var(--space-6);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: 20px;
+}
+
+.hero__support {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+/* Visual "static": o símbolo em vista explodida (MASTER §9.4). */
+.hero-static {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-static__light {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    closest-side at 54% calc(100% - var(--hero-band) / 2),
+    rgb(1 102 210 / 0.32),
+    rgb(1 102 210 / 0.1) 55%,
+    rgb(1 102 210 / 0) 100%
+  );
+}
+
+.hero-static__symbol {
+  position: absolute;
+  bottom: -14px;
+  left: 54%;
+  width: auto;
+  max-width: none;
+  height: clamp(230px, 36svh, 330px);
+  transform: translateX(-50%);
+}
+
+@media (min-width: 1024px) {
+  .hero-static__light {
+    background: radial-gradient(
+      closest-side at 76% 48%,
+      rgb(1 102 210 / 0.3),
+      rgb(1 102 210 / 0.1) 55%,
+      rgb(1 102 210 / 0) 100%
+    );
+  }
+
+  .hero-static__symbol {
+    top: 48%;
+    bottom: auto;
+    left: 76%;
+    height: 68%;
+    max-height: 600px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/*
+ * Visual "blackhole". O céu do shader é quase preto; em `screen` o preto
+ * vira a cor do espaço e só a luz do disco soma — o hero continua
+ * terminando em navy-950. Sob o canvas fica só a base (sem a luz, que
+ * tingiria a sombra do buraco); se o WebGL falhar (o componente marca
+ * `data-webgl` no host), aparece o visual estático inteiro.
+ */
+.hero-blackhole {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-blackhole__canvas {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+}
+
+.hero-blackhole .hero-static {
+  display: none;
+}
+
+.hero-blackhole:has(.hero-blackhole__canvas[data-webgl]:not([data-webgl=""])) .hero-static {
+  display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* 9. Parede de blocos — a junta (MASTER §5.5)                         */
+/* ------------------------------------------------------------------ */
+.wall {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--joint-width);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+  background-color: var(--joint);
+  list-style: none;
+}
+
+.wall > * {
+  margin: 0;
+  border-radius: var(--radius-joint);
+  background-color: var(--surface-raised);
+}
+
+/* Dentro da parede, o foco desenha para dentro (overflow: hidden). */
+.wall :focus-visible {
+  outline-offset: -3px;
+}
+
+/* Equipe: 2 colunas já no celular (blocos curtos), 4 a partir de 1024. */
+.wall--team {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .wall--2,
+  .wall--3,
+  .wall--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .wall--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wall--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.block {
+  padding: 20px 20px 24px;
+}
+
+@media (min-width: 768px) {
+  .block {
+    padding: 28px 28px 32px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 10. Composições de seção (MASTER §5.2)                              */
+/* ------------------------------------------------------------------ */
+.section-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+}
+
+/* Título fixo + lista */
+.split {
+  display: grid;
+  gap: var(--space-7);
+}
+
+@media (min-width: 1024px) {
+  .split {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    column-gap: calc(100% / 12 + var(--space-5));
+  }
+
+  .split__aside {
+    align-self: start;
+    position: sticky;
+    top: calc(var(--header-height) + 32px);
+  }
+}
+
+/* Lista com régua (Como trabalhamos) */
+.ruled-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.ruled-list > li {
+  padding-block: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.ruled-list > li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (min-width: 1024px) {
+  .ruled-list > li:first-child {
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. Portfólio de vídeos (MASTER §8.8)                               */
+/* ------------------------------------------------------------------ */
+.tilt-card__title {
+  max-width: 48rem;
+}
+
+.tilt-card__frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: var(--space-6);
+  padding: 6px;
+  border: 1px solid var(--color-navy-600);
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-800);
+  box-shadow: var(--shadow-screen);
+}
+
+@media (min-width: 768px) {
+  .tilt-card__frame {
+    margin-top: var(--space-7);
+    padding: 8px;
+  }
+}
+
+.tilt-card__screen {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-2);
+  background-color: #000000;
+}
+
+.portfolio__video-title {
+  margin-top: var(--space-6);
+}
+
+.portfolio__video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000000;
+}
+
+.portfolio__meta {
+  max-width: 66ch;
+  margin-top: var(--space-5);
+}
+
+.portfolio__meta summary {
+  width: fit-content;
+  margin-top: var(--space-3);
+  border-radius: var(--radius-1);
+  color: var(--link);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.portfolio__meta summary:hover {
+  color: var(--link-hover);
+}
+
+.portfolio__meta details p {
+  margin: var(--space-3) 0 0;
+  color: var(--text-muted);
+}
+
+.highlights {
+  display: grid;
+  gap: var(--space-5) var(--space-7);
+  margin: var(--space-7) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Marcador = o ponto do i do logo (MASTER §1). */
+.highlights > li {
+  position: relative;
+  padding-left: 26px;
+  color: var(--text-muted);
+}
+
+.highlights > li::before {
+  content: "";
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #1c93f2;
+}
+
+.highlights strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.portfolio__more {
+  margin-top: var(--space-9);
+}
+
+.portfolio__more-title {
+  margin-bottom: var(--space-5);
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-5);
+}
+
+.project-card__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: #000000;
+}
+
+.project-card__play {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.project-card__play img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-card__play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-2);
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+  transform: translate(-50%, -50%);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.project-card__play:hover .project-card__play-icon {
+  background-color: var(--color-electric-800);
+}
+
+.project-card__body {
+  padding: var(--space-4) 20px 0;
+}
+
+.project-card__summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tags > li {
+  padding: 2px 10px;
+  border: 1px solid var(--color-navy-600);
+  border-radius: var(--radius-1);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. Diagnóstico e formulário (MASTER §8.6, §8.7)                    */
+/* ------------------------------------------------------------------ */
+.diag {
+  display: grid;
+  gap: var(--space-8);
+}
+
+@media (min-width: 1024px) {
+  .diag {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    column-gap: calc(100% / 12 + var(--space-5));
+    align-items: start;
+  }
+}
+
+.diag__highlight {
+  margin: var(--space-5) 0 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.diag__steps-title {
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-4);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.step__number {
+  min-width: 1.4ch;
+  color: var(--color-electric-700);
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1;
+}
+
+.step__text {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.step__text strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text);
+  font-weight: 640;
+}
+
+.form-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  background-color: var(--surface-raised);
+}
+
+@media (min-width: 768px) {
+  .form-card {
+    padding: var(--space-6);
+  }
+}
+
+.form-card__title {
+  font-size: 1.5rem;
+}
+
+.form-card__notice {
+  margin: var(--space-2) 0 var(--space-5);
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+.form-error-summary {
+  margin: 0 0 var(--space-5);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.field__input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid var(--border-input);
+  border-radius: var(--radius-1);
+  background-color: #ffffff;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+textarea.field__input {
+  min-height: 9.5rem;
+  resize: vertical;
+}
+
+.field__input:focus-visible {
+  border-color: var(--color-electric-700);
+  outline-offset: 2px;
+}
+
+.field__input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.field__help {
+  margin: 6px 0 0;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.field__error {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 6px 0 0;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.field__error svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.consent input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 3px 0 0;
+  accent-color: var(--color-electric-700);
+  cursor: pointer;
+}
+
+.consent label {
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.form-card__alt {
+  margin: var(--space-4) 0 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.form-status-error {
+  margin: var(--space-2) 0 0;
+  color: var(--color-danger);
+  font-size: 1rem;
+}
+
+.form-success {
+  padding-left: 20px;
+  border-left: 4px solid var(--color-success);
+}
+
+.form-success p {
+  margin: var(--space-3) 0 0;
+  color: var(--text-muted);
+}
+
+.form-success .btn {
+  margin-top: var(--space-5);
+}
+
+/* Título que recebe foco por programação (tabIndex={-1}). */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+[tabindex="-1"]:focus-visible {
+  outline: 3px solid var(--focus);
+}
+
+/* ------------------------------------------------------------------ */
+/* 13. Equipe — hexágono de pé (MASTER §8.9)                           */
+/* ------------------------------------------------------------------ */
+.member {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.member__hex {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 59px;
+  height: 72px;
+  color: #ffffff;
+}
+
+.member__hex svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.member__initials {
+  position: relative;
+  font-size: 1.375rem;
+  font-weight: 700;
+  font-variation-settings: "SHRP" 100;
+  letter-spacing: 0.02em;
+}
+
+.member .block-title {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. Dúvidas — acordeão (MASTER §8.10)                               */
+/* ------------------------------------------------------------------ */
+.faq {
+  display: grid;
+  gap: var(--space-7);
+  grid-template-areas:
+    "head"
+    "list"
+    "cta";
+}
+
+.faq__head {
+  grid-area: head;
+}
+
+.faq__list {
+  grid-area: list;
+}
+
+.faq__cta {
+  grid-area: cta;
+}
+
+@media (min-width: 1024px) {
+  .faq {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "head list"
+      "cta list";
+    column-gap: calc(100% / 12 + var(--space-5));
+    row-gap: var(--space-6);
+  }
+
+  .faq__cta {
+    align-self: start;
+  }
+}
+
+.faq__item summary {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px;
+  color: var(--text);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  list-style: none;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .faq__item summary {
+    padding: 22px 28px;
+    font-size: 1.125rem;
+  }
+}
+
+.faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq__plus {
+  position: relative;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.3em;
+  color: var(--color-electric-700);
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.faq__plus::before,
+.faq__plus::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 0;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background-color: currentColor;
+}
+
+.faq__plus::after {
+  transform: rotate(90deg);
+}
+
+.faq__item[open] .faq__plus {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq__plus {
+    transition: none;
+  }
+}
+
+.faq__answer {
+  margin: 0;
+  padding: 0 20px 22px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .faq__answer {
+    padding: 0 28px 26px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. Rodapé (MASTER §8.11)                                           */
+/* ------------------------------------------------------------------ */
+.site-footer {
+  padding-block: var(--space-8) var(--space-6);
+  font-size: 1rem;
+}
+
+.site-footer__grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .site-footer__grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 0.8fr);
+  }
+}
+
+.site-footer__brand {
+  width: auto;
+  height: 28px;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer .site-footer__tagline {
+  max-width: 34ch;
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+}
+
+.site-footer__contacts {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--text-muted);
+}
+
+.site-footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  justify-content: space-between;
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-navy-800);
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* 16. WhatsApp flutuante (MASTER §8.12)                               */
+/* ------------------------------------------------------------------ */
+.fab-whatsapp {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-radius: var(--radius-2);
+  background-color: var(--color-whatsapp);
+  box-shadow: var(--shadow-float);
+  color: var(--color-navy-950);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.fab-whatsapp:hover {
+  background-color: var(--color-whatsapp-hover);
+  color: var(--color-navy-950);
+}
+
+.fab-whatsapp:focus-visible {
+  outline-color: var(--color-electric-700);
 }
 
 .floating-whatsapp-label {
@@ -170,16 +1433,39 @@ video:focus-visible {
   }
 }
 
-.header-nav {
-  display: none;
-  gap: 1.5rem;
+/* No fim da página, o botão flutuante não cobre a última linha do rodapé. */
+.site-footer__legal {
+  padding-bottom: 72px;
 }
 
-/* Marca + 5 links + botão de WhatsApp só cabem numa linha a partir de
-   ~840px; a 768px o botão era empurrado para fora e criava rolagem
-   horizontal. Abaixo de 1024px o cabeçalho fica como no celular. */
-@media (min-width: 1024px) {
-  .header-nav {
-    display: flex;
+@media (min-width: 640px) {
+  .site-footer__legal {
+    padding-bottom: 0;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* 17. Aviso de privacidade                                            */
+/* ------------------------------------------------------------------ */
+.prose > * {
+  max-width: 46rem;
+}
+
+.prose h2 {
+  margin: var(--space-7) 0 var(--space-3);
+  color: var(--text);
+  font-size: 1.3125rem;
+  font-weight: 640;
+  font-variation-settings: "SHRP" 60;
+  line-height: 1.25;
+}
+
+.prose p,
+.prose ul {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+}
+
+.prose li + li {
+  margin-top: var(--space-1);
 }
