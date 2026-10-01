@@ -328,3 +328,14 @@ pares de contraste novos na §3.4. Os textos de interface novos ("Menu",
 `docs/landing-copy.md`. Testes novos: `TopBar.test.tsx` e
 `HeroVideo.test.tsx`; o teste de hidratação e o `check:browser` cobrem a
 página com o hero novo.
+
+**Revisão HR1 (Crivo):** o painel do menu também fecha quando o foco sai
+da barra (o painel é fixo e cobria o controle focado, WCAG 2.4.11); o
+controle do vídeo ganhou um anel de espaço sob o contorno de foco (o ciano
+sobre o céu claro ficava em ~1,1:1) e veio para antes do texto no DOM; no
+lado a lado, o vídeo passou a ser **mascarado** antes da coluna de texto,
+em vez de coberto por um véu de 0,88, que deixava ver o céu e a crista do
+morro como um "retângulo" atrás das letras; a moldura passou a noite
+(navy-900), dentro da margem de espaço, para o recorte da aba e da
+moldura continuar visível. Os testes de hidratação e do axe rodam com os
+dois heroes ("video" e "classic").

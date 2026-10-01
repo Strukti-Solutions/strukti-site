@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type FocusEvent } from "react";
 import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
@@ -51,8 +51,22 @@ export function TopBar() {
     };
   }, [open]);
 
+  // Fecha quando o foco sai da barra (Tab depois do último item, Shift+Tab
+  // antes da marca): o painel é fixo e cobriria o controle focado (WCAG
+  // 2.4.11; achado da Crivo, revisão HR1). Sem destino (relatedTarget null),
+  // é clique fora ou troca de janela: o pointerdown acima cuida do clique.
+  const closeWhenFocusLeaves = (event: FocusEvent<HTMLElement>) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && !event.currentTarget.contains(next)) setOpen(false);
+  };
+
   return (
-    <header ref={headerRef} className="topbar" data-open={open ? "true" : "false"}>
+    <header
+      ref={headerRef}
+      className="topbar"
+      data-open={open ? "true" : "false"}
+      onBlur={closeWhenFocusLeaves}
+    >
       <div className="topbar__tab">
         <a href="#inicio" className="topbar__brand">
           <Image

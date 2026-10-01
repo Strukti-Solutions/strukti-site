@@ -46,7 +46,7 @@ tipográfico.
 | Superfície | Token | Hex | Onde |
 |---|---|---|---|
 | Espaço | `--color-navy-950` | `#08121D` | Cabeçalho, hero, rodapé |
-| Noite | `--color-navy-900` | `#0E1C2B` | O que já construímos (sala de projeção) |
+| Noite | `--color-navy-900` | `#0E1C2B` | O que já construímos (sala de projeção); moldura do hero "video", dentro da margem de espaço |
 | Papel | `--color-navy-50` | `#F1F5F8` | Problemas, Como trabalhamos, Diagnóstico, Equipe, Dúvidas |
 | Branco | `--color-white` | `#FFFFFF` | Peças elevadas sobre o papel: blocos, formulário, acordeão |
 
@@ -179,12 +179,10 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | **Pior caso do hero:** branco sobre véu de 0,86 com pixel branco atrás | 12,78 | 4,5 ✅ |
 | **Pior caso do hero:** navy-200 sobre véu de 0,86 com pixel branco atrás | 7,96 | 4,5 ✅ |
 | **Pior caso do hero:** navy-300 (linha de apoio) sobre véu de 0,86 com pixel branco atrás | 5,08 | 4,5 ✅ |
-| **Hero "video" (≥ 1024):** branco sobre véu de 0,88 com pixel branco atrás | 13,72 | 4,5 ✅ |
-| **Hero "video" (≥ 1024):** navy-200 sobre véu de 0,88 com pixel branco atrás | 8,55 | 4,5 ✅ |
-| **Hero "video" (≥ 1024):** navy-300 sobre véu de 0,88 com pixel branco atrás | 5,46 | 4,5 ✅ |
-| Hero "video" (< 1024): texto sobre o espaço sólido, abaixo da faixa do vídeo | 18,84 / 11,73 | 4,5 ✅ |
+| **Hero "video":** texto sobre a noite sólida da moldura (o vídeo é mascarado antes da coluna de texto ≥ 1024 e fica só na faixa < 1024): branco / navy-200 / navy-300 | 17,22 / 10,72 / 6,84 | 4,5 ✅ |
+| Contorno da pílula de contorno navy-300 / noite | 6,84 | 3 ✅ |
 | Ícone branco do controle do vídeo sobre fundo de 0,72 com pixel branco atrás | 7,67 | 3 ✅ |
-| Contorno da pílula de contorno navy-300 sobre véu de 0,88 com pixel branco atrás | 5,46 | 3 ✅ |
+| Foco cyan-400 do controle do vídeo sobre o anel de espaço (7 px) que o separa do céu claro | 9,97 | 3 ✅ |
 | Contorno do botão Menu navy-400 / espaço | 4,45 | 3 ✅ |
 | Links da barra navy-200 / espaço | 11,73 | 4,5 ✅ |
 
@@ -461,7 +459,9 @@ moldura do vídeo; sobre o papel, é uma peça escura pendurada no topo.
   de 48 px, separados por régua navy-800, e o WhatsApp na largura toda no
   fim. Foco dentro do painel desenhado para dentro.
 - Comportamento: `aria-expanded` e `aria-controls` no botão; fecha com Esc
-  (o foco volta ao botão), ao escolher um link, ao tocar fora e ao passar
+  (o foco volta ao botão), ao sair com Tab (o foco deixando a barra: o
+  painel é fixo e cobriria o controle focado, WCAG 2.4.11), ao escolher um
+  link, ao tocar fora e ao passar
   para ≥ 1024 px. Abre com fade + 8 px (`@starting-style`) só sem reduced
   motion.
 - O botão vem antes do painel no DOM: com o painel aberto, o Tab segue do
@@ -627,7 +627,9 @@ quadro, e de novo 150 ms depois de a rolagem parar).
 Oculto de verdade: `data-visible="false"`, atributo `inert` (fora do Tab e
 do leitor de tela) e `visibility: hidden`, não só opacidade. Começa oculto
 no SSR (o hero está na tela ao carregar: sem divergência de hidratação e
-sem piscar); sem JavaScript fica oculto, e o botão do cabeçalho continua lá.
+sem piscar); sem JavaScript fica oculto: no hero "classic", o botão do
+cabeçalho continua lá; no hero "video", abaixo de 1024 px o menu da barra
+não abre sem JavaScript, e o WhatsApp fica no botão principal do hero.
 A transição só existe com `prefers-reduced-motion: no-preference` e só na
 entrada (fade de opacidade, `--duration-base`); a saída é instantânea, para
 o botão nunca ficar "sumindo" por cima do que acabou de chegar embaixo
@@ -754,24 +756,31 @@ cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
 espaço de 8 px, 12 px ≥ 768, onde a aba da barra se encaixa):
 
 ```
-5. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
-4. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
-3. Véu                 do DS; garante o AA do texto
+5. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
+4. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
+                       (antes do texto no DOM: vem logo depois da barra no Tab)
+3. Véu                 do DS: o desbotamento da faixa (< 1024) e o
+                       escurecimento de baixo que assenta a palavra (≥ 1024)
 2. Grão                ruído SVG parado, 18%, overlay
-1. Visual              <picture> (pôster) + <video>, object-fit: cover
-0. Base                espaço (navy-950)
+1. Visual              <picture> (pôster) + <video>, object-fit: cover;
+                       ≥ 1024, mascarado antes da coluna de texto
+0. Base                noite (navy-900), dentro da margem de espaço
 ```
 
 **Composição:**
 
 | Largura | Como fica | Véu |
 |---|---|---|
-| < 1024 px | **Faixa em cima:** o vídeo ocupa uma faixa no alto da moldura (`--hero-band`: `clamp(300px, 52svh, 460px)`; `clamp(340px, 50svh, 520px)` ≥ 768), com o recorte em pé (720 × 1280). A palavra gigante cruza o pé da faixa; o texto vem abaixo, **sobre o espaço sólido** (fora do vídeo). | Só desbota a faixa para o espaço no fim (0 → 0,72 → 1) |
-| ≥ 1024 px | **Diagonal:** vídeo na moldura inteira (recorte deitado, 1920 × 1080). Texto nas colunas 1–6, no alto (máx. 34rem); palavra gigante nas colunas 7–12, embaixo, alinhada à direita, por cima do pé da estrada. | `linear-gradient(90deg)` de 0,92 a **0,88 até a borda direita do texto** (`--hero-text-edge`), depois desbota em curva até 0 em +700 px; e um escurecimento de baixo (0,82 → 0 em 34%) que assenta a palavra no chão |
+| < 1024 px | **Faixa em cima:** o vídeo ocupa uma faixa no alto da moldura (`--hero-band`: `clamp(300px, 52svh, 460px)`; `clamp(340px, 50svh, 520px)` ≥ 768), com o recorte em pé (720 × 1280). A palavra gigante cruza o pé da faixa; o texto vem abaixo, **sobre a noite sólida** (fora do vídeo). | Só desbota a faixa para a noite no fim (0 → 0,72 → 1) |
+| ≥ 1024 px | **Diagonal:** vídeo na moldura inteira (recorte deitado, 1920 × 1080). Texto nas colunas 1–6, no alto (máx. 34rem); palavra gigante nas colunas 7–12, embaixo, alinhada à direita, por cima do pé da estrada. | **Máscara no visual** (`mask-image`): o vídeo é transparente até a borda direita do texto (`--hero-text-edge`) e surge em curva S (smoothstep) ao longo de `--hero-reveal` (`clamp(320px, 75% do resto, 620px)`). Véu: só um escurecimento de baixo (0,82 → 0 em 34%) que assenta a palavra no chão |
 
 - Altura: `min-height: calc(100svh − 2 × margem)`; o conteúdo cresce se
   precisar (telas baixas). Conteúdo no container do site.
-- Contraste: no lado a lado, o véu é ≥ 0,88 em toda a zona do texto (§3.4);
+- Contraste: o texto nunca fica sobre o vídeo; fica sobre a noite sólida
+  (§3.4). Por que máscara, e não véu: um véu de 0,88 deixava ver o céu claro
+  e a crista do morro atrás das letras, lidos como um "retângulo" de borda
+  reta (revisão HR1). A moldura em noite, um tom acima da margem e da aba
+  em espaço, mantém visíveis o recorte da moldura e o da aba;
   abaixo de 1024 o texto nem fica sobre o vídeo.
 
 **Palavra gigante** ("Strukti", `aria-hidden`; o título é o H1):

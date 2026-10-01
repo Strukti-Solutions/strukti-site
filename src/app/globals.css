@@ -983,13 +983,15 @@ video:focus-visible {
   }
 }
 
+/* Moldura em "noite" dentro da margem de "espaço": o recorte da moldura e
+   da aba (espaço) aparece mesmo onde não há vídeo atrás do texto. */
 .hero-video__frame {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   min-height: calc(100svh - 2 * var(--mat));
   border-radius: var(--radius-3);
-  background-color: var(--color-navy-950);
+  background-color: var(--color-navy-900);
 }
 
 .hero-video__visual {
@@ -1027,9 +1029,9 @@ video:focus-visible {
 }
 
 /*
- * Véu do DS. Abaixo de 1024 px o texto fica fora do vídeo, sobre o espaço
- * sólido: a faixa só desbota para o espaço no fim, onde a palavra gigante a
- * cruza. A partir de 1024 px, ver a media query abaixo.
+ * Véu do DS. Abaixo de 1024 px o texto fica fora do vídeo, sobre a noite
+ * sólida da moldura: a faixa só desbota para ela no fim, onde a palavra
+ * gigante a cruza. A partir de 1024 px, ver a media query abaixo.
  */
 .hero-video__veil {
   position: absolute;
@@ -1038,9 +1040,9 @@ video:focus-visible {
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgb(8 18 29 / 0) calc(var(--hero-band) - 220px),
-    rgb(8 18 29 / 0.72) calc(var(--hero-band) - 72px),
-    var(--color-navy-950) var(--hero-band)
+    rgb(14 28 43 / 0) calc(var(--hero-band) - 220px),
+    rgb(14 28 43 / 0.72) calc(var(--hero-band) - 72px),
+    var(--color-navy-900) var(--hero-band)
   );
 }
 
@@ -1192,6 +1194,13 @@ video:focus-visible {
   background-color: rgb(8 18 29 / 0.86);
 }
 
+/* Sobre o céu claro, o ciano do foco sozinho fica em ~1,1:1: um anel de
+   espaço por baixo põe o contorno sobre fundo escuro (9,97:1; achado da
+   Crivo, revisão HR1). */
+.hero-video__toggle:focus-visible {
+  box-shadow: 0 0 0 7px var(--color-navy-950);
+}
+
 /* Pausar = duas barras; tocar = triângulo. */
 .hero-video__toggle-icon {
   width: 14px;
@@ -1213,15 +1222,52 @@ video:focus-visible {
     --hero-text-edge: calc(
       max(var(--gutter), (100% - var(--content-max)) / 2) + min(var(--hero-text-max), 100% - 2 * var(--gutter))
     );
+    /* Largura em que o vídeo surge depois da borda do texto. */
+    --hero-reveal: clamp(320px, (100% - var(--hero-text-edge)) * 0.75, 620px);
   }
 
   .hero-video__frame {
     display: flex;
   }
 
+  /*
+   * Lado a lado: o próprio vídeo some antes da coluna de texto, por máscara,
+   * e surge depois dela em curva S (smoothstep, sem quina). Embaixo do texto
+   * fica só a noite sólida da moldura: AA máximo com qualquer quadro e
+   * nenhuma linha do horizonte atrás das letras. (Um véu de 0,88 deixava
+   * ver o céu e a crista do morro como um "retângulo"; revisão HR1.)
+   */
   .hero-video__visual {
     inset: 0;
     height: auto;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent var(--hero-text-edge),
+      rgb(0 0 0 / 0.028) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.1),
+      rgb(0 0 0 / 0.104) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.2),
+      rgb(0 0 0 / 0.216) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.3),
+      rgb(0 0 0 / 0.352) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.4),
+      rgb(0 0 0 / 0.5) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.5),
+      rgb(0 0 0 / 0.648) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.6),
+      rgb(0 0 0 / 0.784) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.7),
+      rgb(0 0 0 / 0.896) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.8),
+      rgb(0 0 0 / 0.972) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.9),
+      #000 calc(var(--hero-text-edge) + var(--hero-reveal))
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent var(--hero-text-edge),
+      rgb(0 0 0 / 0.028) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.1),
+      rgb(0 0 0 / 0.104) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.2),
+      rgb(0 0 0 / 0.216) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.3),
+      rgb(0 0 0 / 0.352) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.4),
+      rgb(0 0 0 / 0.5) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.5),
+      rgb(0 0 0 / 0.648) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.6),
+      rgb(0 0 0 / 0.784) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.7),
+      rgb(0 0 0 / 0.896) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.8),
+      rgb(0 0 0 / 0.972) calc(var(--hero-text-edge) + var(--hero-reveal) * 0.9),
+      #000 calc(var(--hero-text-edge) + var(--hero-reveal))
+    );
   }
 
   .hero-video__poster,
@@ -1229,26 +1275,9 @@ video:focus-visible {
     object-position: 50% 50%;
   }
 
-  /*
-   * Lado a lado: texto no alto à esquerda, sobre o véu (≥ 0,88 até a borda
-   * do texto: AA com qualquer pixel atrás, MASTER §3.4); depois o véu
-   * desbota devagar, em curva, para não virar uma faixa de borda reta. Embaixo,
-   * um escurecimento leve assenta a palavra gigante no chão do vídeo.
-   */
+  /* Embaixo, um escurecimento leve assenta a palavra gigante no chão do vídeo. */
   .hero-video__veil {
-    background:
-      linear-gradient(0deg, rgb(8 18 29 / 0.82) 0, rgb(8 18 29 / 0.42) 16%, rgb(8 18 29 / 0) 34%),
-      linear-gradient(
-        90deg,
-        rgb(8 18 29 / 0.92) 0,
-        rgb(8 18 29 / 0.88) var(--hero-text-edge),
-        rgb(8 18 29 / 0.84) calc(var(--hero-text-edge) + 60px),
-        rgb(8 18 29 / 0.72) calc(var(--hero-text-edge) + 150px),
-        rgb(8 18 29 / 0.5) calc(var(--hero-text-edge) + 280px),
-        rgb(8 18 29 / 0.26) calc(var(--hero-text-edge) + 430px),
-        rgb(8 18 29 / 0.08) calc(var(--hero-text-edge) + 580px),
-        rgb(8 18 29 / 0) calc(var(--hero-text-edge) + 700px)
-      );
+    background: linear-gradient(0deg, rgb(14 28 43 / 0.82) 0, rgb(14 28 43 / 0.42) 16%, rgb(14 28 43 / 0) 34%);
   }
 
   /* Diagonal: o texto ocupa as colunas 1–6 de cima; a palavra, as 7–12 de

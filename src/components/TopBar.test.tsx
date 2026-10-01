@@ -68,6 +68,23 @@ describe("TopBar", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
   });
 
+  it("o foco saindo da barra (Tab depois do último item) fecha o painel; andando dentro dela, não", () => {
+    render(<TopBar />);
+    const outside = document.createElement("button");
+    document.body.appendChild(outside);
+    const toggle = getToggle();
+    fireEvent.click(toggle);
+    const whatsapp = screen.getByRole("link", { name: landingContent.header.whatsappButton });
+    const firstLink = screen.getByRole("link", { name: landingContent.header.nav[0].label });
+
+    fireEvent.focusOut(firstLink, { relatedTarget: whatsapp });
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+
+    fireEvent.focusOut(whatsapp, { relatedTarget: outside });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    outside.remove();
+  });
+
   it("tocar fora da barra fecha o painel; tocar dentro, não", () => {
     render(<TopBar />);
     const toggle = getToggle();
