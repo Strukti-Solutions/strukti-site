@@ -339,3 +339,20 @@ morro como um "retângulo" atrás das letras; a moldura passou a noite
 (navy-900), dentro da margem de espaço, para o recorte da aba e da
 moldura continuar visível. Os testes de hidratação e do axe rodam com os
 dois heroes ("video" e "classic").
+
+**Nota TB1 (01/10/2026, pedido do cliente: "quero que a top bar ocupe até
+as bordas, essa centralização tá feia"):** a "aba" centrada com cantos
+cortados deu lugar a uma **barra fixa de borda a borda**, colada no topo,
+sólida em espaço, com a junta de 3 px em navy-800 embaixo. O conteúdo
+segue o container do site: marca à esquerda; links e WhatsApp num grupo à
+direita a partir de 1024 px; marca e Menu abaixo disso, com o mesmo painel
+acessível, agora preso embaixo da barra, também de borda a borda. O
+restante desta ADR continua valendo. Consequências no hero, decididas pelo
+Nanquim e sem levar o hero às bordas: (1) a moldura com margem começa
+**abaixo** da barra. Com a barra por cima, o topo da moldura sumia e ela
+virava um "U"; assim, a barra vira o lado de cima da margem de espaço. (2)
+A partir de 768 px, o respiro do conteúdo dentro da moldura desconta a
+margem (`--hero-gutter`), e o texto alinha com a marca da barra e com as
+seções. O `check:browser` ganhou um percurso com Tab pela página a 360, 390
+e 1024 px, que falha se um controle focado parar sob a barra. Capturas em
+`docs/capturas-tb1/`.

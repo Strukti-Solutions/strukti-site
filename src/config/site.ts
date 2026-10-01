@@ -1,8 +1,8 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
- * - "video": aba escura no topo, vídeo de fundo em tela cheia e a palavra
- *   "Strukti" gigante (MASTER §9.6);
+ * - "video": barra escura fixa de borda a borda no topo, vídeo de fundo e
+ *   a palavra "Strukti" gigante (MASTER §8.3.1 e §9.6);
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
  *   §9.1–9.5), escolhido em `siteConfig.heroVisual`.
  */

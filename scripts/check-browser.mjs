@@ -19,6 +19,13 @@
 // (regra aceita pelo Claudinho, 2ª vez que um problema só aparecia depois
 // de uma interação — MASTER §8.8, src/lib/videoCoordination.ts).
 //
+// E percorre a página inteira com Tab a 360, 390 e 1024px: a barra do topo
+// é fixa e ocupa a largura toda (TB1), então nenhum controle focado pode
+// parar embaixo dela, nem pela metade, nem coberto por outro elemento fixo.
+// (No Chrome, a rolagem do foco centraliza o controle; o scroll-padding-top
+// do globals.css cobre as âncoras do menu e os outros navegadores. A
+// detecção foi conferida com um botão forçado para baixo da barra.)
+//
 // Precisa do site no ar: `npm run dev` (ou `npm run start`) antes.
 // Uso: npm run check:browser [-- http://localhost:3000]
 // Navegador: detectado sozinho; ou defina BROWSER_PATH.
@@ -33,6 +40,9 @@ const FAB_CHECK_WIDTHS = new Set([360, 390]);
 const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
 const INTERACTION_WIDTH = 360;
+// 360/390: celular (regra do elemento fixo); 1024: a barra larga, com os links.
+const TAB_WALK_WIDTHS = [360, 390, 1024];
+const TAB_WALK_MAX_STEPS = 200;
 
 // Pela estrutura, não pelo nome do projeto (que muda) — ver ProjectGrid.tsx
 // e OQueJaFizemos.tsx: o destaque vem antes da grade no DOM, então
@@ -233,6 +243,37 @@ const FOCUS_COVERED_EXPR = `(() => {
   return { active: label, covered };
 })()`;
 
+// Depois de um Tab: espera a rolagem que o foco provoca assentar (com ou sem
+// scroll-behavior: smooth) e diz se o controle focado ficou sob a barra fixa
+// do topo (o ponto do meio da borda de cima é da barra) ou coberto no centro
+// por outro elemento. O que está dentro da própria barra não conta.
+const FOCUS_VS_TOPBAR_EXPR = `(async () => {
+  let last = -1;
+  let stable = 0;
+  // Pelo menos ~200 ms: o skip link entra com transição de 150 ms.
+  for (let i = 0; i < 90 && (i < 12 || stable < 3); i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    if (scrollY === last) stable++;
+    else { stable = 0; last = scrollY; }
+  }
+  const active = document.activeElement;
+  if (!active || active === document.body) return { active: null };
+  const cls = typeof active.className === "string" ? active.className.trim().split(/\\s+/)[0] : "";
+  const section = active.closest("section[id], header, footer");
+  const label = (section && section !== active ? (section.id ? "#" + section.id : section.tagName.toLowerCase()) + " > " : "") +
+    active.tagName.toLowerCase() + (cls ? "." + cls : "") + (active.textContent?.trim() ? " (" + active.textContent.trim().slice(0, 30) + ")" : "");
+  const bar = document.querySelector(".topbar");
+  if (bar && bar.contains(active)) return { active: label, inBar: true };
+  const r = active.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0 || r.bottom <= 0 || r.top >= innerHeight) return { active: label, offscreen: r.width > 0 };
+  const isActive = (el) => !!el && (el === active || active.contains(el) || el.contains(active));
+  const cx = Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1);
+  const centerCovered = !isActive(document.elementFromPoint(cx, Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1)));
+  const topPoint = document.elementFromPoint(cx, Math.max(r.top + 1, 0));
+  const underBar = !!bar && !!topPoint && bar.contains(topPoint);
+  return { active: label, centerCovered, underBar, top: Math.round(r.top), barBottom: bar ? Math.round(bar.getBoundingClientRect().bottom) : 0 };
+})()`;
+
 async function evalValue(cdp, expression, { awaitPromise = false } = {}) {
   const { result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
     expression,
@@ -430,7 +471,7 @@ try {
   }
 
   // --- Vídeos: só um toca por vez, e o autoplay do hero não toca por cima ---
-  consoleErrors = [];
+  // (sem zerar consoleErrors: os erros do passo do menu também contam)
   loaded = cdp.once("Page.loadEventFired");
   await cdp.send("Page.navigate", { url: URL_TO_CHECK });
   await withTimeout(loaded, "carregar para o passo de interação (vídeos)");
@@ -465,6 +506,48 @@ try {
     );
   }
 
+  // --- Tab pela página inteira: nenhum controle focado fica sob a barra fixa ---
+  for (const width of TAB_WALK_WIDTHS) {
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width,
+      height: VIEWPORT_HEIGHT,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    loaded = cdp.once("Page.loadEventFired");
+    await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+    await withTimeout(loaded, `carregar para o Tab pela página a ${width}px`);
+    await sleep(1500);
+
+    let firstLabel = null;
+    let visited = 0;
+    let hidden = 0;
+    const hits = [];
+    for (let i = 0; i < TAB_WALK_MAX_STEPS; i++) {
+      await pressTab(cdp);
+      const focus = await withTimeout(evalValue(cdp, FOCUS_VS_TOPBAR_EXPR, { awaitPromise: true }), `Tab a ${width}px`);
+      if (!focus.active) {
+        if (visited > 0) break; // saiu do documento: a volta terminou
+        continue;
+      }
+      if (focus.active === firstLabel) break;
+      firstLabel ??= focus.active;
+      visited++;
+      if (focus.offscreen) hidden++;
+      if (focus.underBar || focus.centerCovered) hits.push(focus);
+    }
+    console.log(
+      `  Tab a ${width}px: ${visited} controles${hidden ? ` (${hidden} fora da tela depois do Tab!)` : ""}, ${hits.length === 0 ? "nenhum sob a barra ou coberto" : `${hits.length} coberto(s)!`}`,
+    );
+    if (visited < 10) failures.push(`Tab a ${width}px: só ${visited} controles focados — o percurso não andou pela página`);
+    if (hidden > 0) failures.push(`Tab a ${width}px: ${hidden} controle(s) focado(s) ficaram fora da tela (a rolagem do foco não aconteceu)`);
+    for (const hit of hits) {
+      failures.push(
+        `Tab a ${width}px: ${hit.active} ${hit.underBar ? `ficou sob a barra do topo (topo em y=${hit.top}, barra até y=${hit.barBottom})` : "ficou coberto no centro por outro elemento"}`,
+      );
+    }
+  }
+
   for (const error of consoleErrors) {
     failures.push(`passo de interação: erro no console: ${error.split("\n")[0]}`);
   }
@@ -486,5 +569,6 @@ if (failures.length > 0) {
 
 console.log(
   "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390px) em nenhuma largura. " +
-    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima.",
+    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima; " +
+    "no Tab pela página (360/390/1024px), nenhum controle focado fica sob a barra fixa do topo.",
 );
