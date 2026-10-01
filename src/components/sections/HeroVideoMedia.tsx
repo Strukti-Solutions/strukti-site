@@ -54,8 +54,10 @@ function prefersSavingData() {
  * retrato do servidor é `false` (sem vídeo tocando), sem divergência de
  * hidratação. Com reduced motion, sem JavaScript ou antes de tocar, fica o
  * pôster. O controle (WCAG 2.2.2) manda acima disso: "Pausar" para de vez;
- * "Tocar" toca mesmo com reduced motion, porque foi a pessoa que pediu — o
- * vídeo é mudo, então pode tocar junto com um vídeo do portfólio.
+ * "Tocar" toca mesmo com reduced motion ou com um vídeo do portfólio
+ * tocando, porque foi a pessoa que pediu — e, como qualquer play, pausa esse
+ * vídeo do portfólio (o listener de OQueJaFizemos.tsx não distingue quem
+ * pediu o play), mantendo só um vídeo tocando por vez.
  */
 export function HeroVideoProvider({ children }: { children: ReactNode }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);

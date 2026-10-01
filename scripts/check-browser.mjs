@@ -34,9 +34,12 @@ const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
 const INTERACTION_WIDTH = 360;
 
-const ROTA_VIDEO_SELECTOR = '[aria-label="Vídeo de demonstração do Rota de Vendas"]';
-const FLEET_PLAY_BUTTON_SELECTOR = '[aria-label="Assistir ao vídeo: Fleet Analytics BI"]';
-const FLEET_VIDEO_SELECTOR = '[aria-label="Vídeo de demonstração do Fleet Analytics BI"]';
+// Pela estrutura, não pelo nome do projeto (que muda) — ver ProjectGrid.tsx
+// e OQueJaFizemos.tsx: o destaque vem antes da grade no DOM, então
+// "video[controls]" dentro da seção sempre acha o do destaque primeiro.
+const FEATURED_VIDEO_SELECTOR = "#o-que-construimos video[controls]";
+const GRID_PLAY_BUTTON_SELECTOR = "#o-que-construimos .project-card__play";
+const GRID_VIDEO_SELECTOR = "#o-que-construimos .project-card video";
 const HERO_VIDEO_SELECTOR = ".hero-video__video";
 
 const BROWSER_CANDIDATES = [
@@ -275,14 +278,21 @@ async function pressTab(cdp) {
   await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...base });
 }
 
-/** Clica no vídeo (ou no botão que o revela) e garante o play sob o mesmo gesto, se o clique sozinho não tiver bastado. */
+/**
+ * Garante que o vídeo está tocando. Com `viaButton` (grade: o vídeo nasce já
+ * em autoplay), só clica o botão e espera — clicar no vídeo de novo
+ * pausaria o autoplay, já que o clique alterna. Sem `viaButton` (destaque:
+ * `controls`, sem autoplay), clica no próprio vídeo para iniciar. Em
+ * qualquer caso, reforça com `play()` sob o mesmo gesto se precisar.
+ */
 async function playVideo(cdp, videoSelector, { viaButton } = {}) {
   if (viaButton) {
     await clickSelector(cdp, viaButton);
     await sleep(400);
+  } else {
+    await clickSelector(cdp, videoSelector);
+    await sleep(200);
   }
-  await clickSelector(cdp, videoSelector);
-  await sleep(200);
   await evalValue(
     cdp,
     `(() => { const v = document.querySelector(${JSON.stringify(videoSelector)}); if (v && v.paused) v.play().catch(() => {}); })()`,
@@ -426,32 +436,32 @@ try {
   await withTimeout(loaded, "carregar para o passo de interação (vídeos)");
   await sleep(1500);
 
-  const rotaPlaying = await playVideo(cdp, ROTA_VIDEO_SELECTOR);
-  if (!rotaPlaying) {
-    failures.push("vídeos: o Rota de Vendas não tocou depois do clique");
+  const featuredPlaying = await playVideo(cdp, FEATURED_VIDEO_SELECTOR);
+  if (!featuredPlaying) {
+    failures.push("vídeos: o vídeo em destaque não tocou depois do clique");
   } else {
     await evalValue(cdp, `window.scrollTo({ top: 0, behavior: "instant" })`);
     await sleep(1500); // IntersectionObserver + efeito do hero
     const heroPaused = await isPaused(cdp, HERO_VIDEO_SELECTOR);
     if (!heroPaused) {
-      failures.push("vídeos: o hero tocou sozinho por cima do Rota de Vendas (que a pessoa estava ouvindo)");
+      failures.push("vídeos: o hero tocou sozinho por cima do vídeo em destaque (que a pessoa estava ouvindo)");
     }
-    if (await isPaused(cdp, ROTA_VIDEO_SELECTOR)) {
-      failures.push("vídeos: o Rota de Vendas parou de tocar sozinho ao rolar até o hero");
+    if (await isPaused(cdp, FEATURED_VIDEO_SELECTOR)) {
+      failures.push("vídeos: o vídeo em destaque parou de tocar sozinho ao rolar até o hero");
     }
 
-    const fleetPlaying = await playVideo(cdp, FLEET_VIDEO_SELECTOR, { viaButton: FLEET_PLAY_BUTTON_SELECTOR });
-    let fleetPausedRota = false;
-    if (!fleetPlaying) {
-      failures.push("vídeos: o Fleet Analytics BI não tocou depois do clique em 'Assistir'");
+    const gridPlaying = await playVideo(cdp, GRID_VIDEO_SELECTOR, { viaButton: GRID_PLAY_BUTTON_SELECTOR });
+    let gridPausedFeatured = false;
+    if (!gridPlaying) {
+      failures.push("vídeos: o vídeo da grade não tocou depois do clique em 'Assistir'");
     } else {
-      fleetPausedRota = await isPaused(cdp, ROTA_VIDEO_SELECTOR);
-      if (!fleetPausedRota) {
-        failures.push("vídeos: tocar o Fleet Analytics BI não pausou o Rota de Vendas (só um vídeo deveria tocar por vez)");
+      gridPausedFeatured = await isPaused(cdp, FEATURED_VIDEO_SELECTOR);
+      if (!gridPausedFeatured) {
+        failures.push("vídeos: tocar o vídeo da grade não pausou o destaque (só um vídeo deveria tocar por vez)");
       }
     }
     console.log(
-      `  vídeos: Rota tocou (hero ${heroPaused ? "ficou parado" : "tocou por cima!"}); Fleet ${fleetPlaying ? `tocou (Rota ${fleetPausedRota ? "pausou" : "continuou tocando!"})` : "não tocou"}`,
+      `  vídeos: destaque tocou (hero ${heroPaused ? "ficou parado" : "tocou por cima!"}); grade ${gridPlaying ? `tocou (destaque ${gridPausedFeatured ? "pausou" : "continuou tocando!"})` : "não tocou"}`,
     );
   }
 
