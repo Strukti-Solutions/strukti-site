@@ -135,8 +135,29 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-O hero (`src/components/sections/Hero.tsx`) é uma pilha de camadas
-(design system, `MASTER.md` §9). Só a camada do visual é trocável:
+Há duas versões do topo da página (barra + hero), escolhidas numa linha de
+`src/config/site.ts`:
+
+```ts
+heroVariant: "video", // ou "classic"
+```
+
+- `"video"` (padrão) — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
+  palavra "Strukti" gigante e a barra em forma de aba, fixa no topo, com
+  menu recolhível abaixo de 1024px (`MASTER.md` §8.3.1 e §9.6, ADR-007).
+- `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
+  trocável descrito abaixo.
+
+**Trocar o vídeo do hero "video":** os arquivos ficam em
+`public/video/hero/` (servidos pelo site, nunca de CDN) e são apontados em
+`siteConfig.heroVideo`: um recorte deitado e um em pé, cada um com o MP4 e
+o pôster em AVIF e JPG (o pôster é o 1º quadro do loop). Vídeo novo só com
+licença de uso comercial conferida, registrada em `THIRD_PARTY_NOTICES.md`.
+Como o atual foi tratado (loop, tom, recortes): `docs/hero-video-opcoes/README.md`.
+Com `heroVideo: null` o hero fica só com a base, o grão e o véu.
+
+O hero "classic" (`src/components/sections/Hero.tsx`) é uma pilha de
+camadas (design system, `MASTER.md` §9). Só a camada do visual é trocável:
 
 - **`HeroContent`** — o texto aprovado e os botões. Sempre o mesmo, não
   importa o visual de fundo.
@@ -147,8 +168,8 @@ O hero (`src/components/sections/Hero.tsx`) é uma pilha de camadas
   (texto em cima, visual embaixo) abaixo disso — tudo em `globals.css`,
   seção "Hero".
 
-Para **trocar entre os visuais que já existem**, mude uma linha em
-`src/config/site.ts`:
+Para **trocar entre os visuais do classic que já existem**, mude uma linha
+em `src/config/site.ts`:
 
 ```ts
 heroVisual: "blackhole", // ou "static"

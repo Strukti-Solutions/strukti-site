@@ -23,8 +23,10 @@ logo. O que é para *ver* (o topo, os vídeos do portfólio, o rodapé) fica no
 escuro; o que é para *ler e agir* (problemas, como trabalhamos, formulário,
 equipe, dúvidas) fica no claro.
 
-**Uma ousadia só.** O momento memorável é o topo (hoje, o buraco negro).
-Todo o resto é quieto, preciso e tipográfico.
+**Uma ousadia só.** O momento memorável é o topo (hoje, o hero "video":
+a estrada ao entardecer e a palavra "Strukti" gigante, §9.6; o buraco negro
+segue disponível no hero "classic"). Todo o resto é quieto, preciso e
+tipográfico.
 
 ### Três assinaturas da marca (as únicas "decorações" permitidas)
 
@@ -34,7 +36,8 @@ Todo o resto é quieto, preciso e tipográfico.
    da equipe e no visual estático do topo. Não vira padrão de fundo nem
    ícone genérico.
 3. **O ponto do i**: o círculo azul do logo (`--color-electric-500`), usado
-   como marcador da lista de destaques do portfólio, e só ali.
+   como marcador da lista de destaques do portfólio e como o pingo do "i" da
+   palavra "Strukti" gigante do hero "video" (§9.6), e só ali.
 
 ---
 
@@ -176,6 +179,14 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | **Pior caso do hero:** branco sobre véu de 0,86 com pixel branco atrás | 12,78 | 4,5 ✅ |
 | **Pior caso do hero:** navy-200 sobre véu de 0,86 com pixel branco atrás | 7,96 | 4,5 ✅ |
 | **Pior caso do hero:** navy-300 (linha de apoio) sobre véu de 0,86 com pixel branco atrás | 5,08 | 4,5 ✅ |
+| **Hero "video" (≥ 1024):** branco sobre véu de 0,88 com pixel branco atrás | 13,72 | 4,5 ✅ |
+| **Hero "video" (≥ 1024):** navy-200 sobre véu de 0,88 com pixel branco atrás | 8,55 | 4,5 ✅ |
+| **Hero "video" (≥ 1024):** navy-300 sobre véu de 0,88 com pixel branco atrás | 5,46 | 4,5 ✅ |
+| Hero "video" (< 1024): texto sobre o espaço sólido, abaixo da faixa do vídeo | 18,84 / 11,73 | 4,5 ✅ |
+| Ícone branco do controle do vídeo sobre fundo de 0,72 com pixel branco atrás | 7,67 | 3 ✅ |
+| Contorno da pílula de contorno navy-300 sobre véu de 0,88 com pixel branco atrás | 5,46 | 3 ✅ |
+| Contorno do botão Menu navy-400 / espaço | 4,45 | 3 ✅ |
+| Links da barra navy-200 / espaço | 11,73 | 4,5 ✅ |
 
 Decorativos (sem exigência): junta navy-100 sobre branco 1,25; ponto do i
 electric-500 sobre branco 3,81; verde WhatsApp sobre papel 1,81 (o botão é
@@ -277,7 +288,9 @@ Elements of Typographic Style*.
 | `--radius-3` | 10 | Cantos externos de uma parede, moldura de vídeo, formulário |
 
 Sem pílula (`999px`) em lugar nenhum: os botões da v1 eram pílulas e
-passam a `--radius-2`. Círculo, só o ponto do i.
+passam a `--radius-2`. Círculo, só o ponto do i. **Exceção única (ADR-007):**
+os dois botões do hero "video" são pílulas, e o de diagnóstico leva a seta
+num círculo electric-700 (§9.6).
 
 ### 5.4 Elevação
 
@@ -318,8 +331,13 @@ desfoque.
    portfólio. Só a moldura muda de aparência (§8.8).
 3. **Micro-interações de botão**: `useTapHover` (`src/lib/motion.ts`).
    Hover `scale 1.03`, toque `scale 0.96`, 150 ms.
-4. **Movimento do buraco negro**: o gás do disco gira e a câmera fica
-   parada (`orbitSpeed: 0`).
+4. **Movimento do buraco negro** (hero "classic"): o gás do disco gira e a
+   câmera fica parada (`orbitSpeed: 0`).
+5. **Hero "video"** (§9.6): o vídeo de fundo em loop (só por JavaScript,
+   nunca com reduced motion) e, no carregamento, a palavra "Strukti" sobe
+   de trás de uma linha (word pull-up, 900 ms) e o ponto do i cai no lugar
+   (520 ms, depois dela). Só CSS (ADR-004): começa no 1º quadro, sem
+   esperar a hidratação, e some com prefers-reduced-motion.
 
 **Tokens:**
 
@@ -333,9 +351,9 @@ desfoque.
 
 **Regras de uso:**
 - O visual do hero é o único movimento que acontece sozinho no
-  carregamento. Nenhuma animação de entrada no texto do hero (o H1 é o
-  maior elemento da primeira tela e não pode esperar uma animação para
-  aparecer).
+  carregamento (no hero "video", o vídeo e a subida da palavra gigante,
+  que é decorativa). Nenhuma animação de entrada no texto do hero (o H1
+  não pode esperar uma animação para aparecer).
 - `Reveal` vai no **grupo** (cabeçalho de seção, uma parede inteira), não
   em cada parágrafo. Paredes usam o escalonamento existente, com no máximo
   60 ms entre blocos.
@@ -392,6 +410,13 @@ fim do texto.
 Foco: `outline: 3px solid var(--focus); outline-offset: 3px`. Enviando:
 texto "Enviando…" e `aria-disabled`, sem ícone girando.
 
+**Exceção do hero "video" (ADR-007, só ali):** os dois botões viram
+pílulas (`.btn--pill`). O WhatsApp continua verde, com o ícone, e é o de
+maior destaque; "Pedir diagnóstico gratuito" é de contorno (escuro), com
+`padding: 0 8px 0 22px` e a seta (SVG de 18 px, branca) num círculo de
+32 px em electric-700 no fim (`.btn--arrow`, `.btn__arrow`); no hover a
+seta anda 2 px (só sem reduced motion).
+
 ### 8.2 Links
 
 `--link`, sublinhado de 1 px com `text-underline-offset: 3px`; no hover, 2
@@ -410,6 +435,37 @@ Direita: botão WhatsApp compacto (44 px).
   aprovado.
 - Até 400 px: botão com `padding: 0 14px` e 15 px, para caber com a
   assinatura a 360 px sem rolagem horizontal.
+- Este cabeçalho é o do hero "classic". O hero "video" usa a barra da
+  §8.3.1.
+
+### 8.3.1 Barra do topo — a aba (hero "video")
+
+`src/components/TopBar.tsx`. Uma aba em espaço (navy-950) presa no topo da
+tela, centrada, **fixa a página toda** (substitui o cabeçalho sticky). Os
+dois cantos de baixo são cortados a 30° (21 × 12 px), o ângulo das faces do
+hexágono do logo. Sobre o hero, ela se encaixa na margem de espaço da
+moldura do vídeo; sobre o papel, é uma peça escura pendurada no topo.
+
+- Desenho pelo fundo (quatro camadas de gradiente), **sem clip-path**: o
+  clip-path cortaria o contorno de foco e o painel do menu.
+- Foco: cyan-400 (é superfície escura).
+- **≥ 1024 px** (60 px de altura): assinatura de 24 px (28 px ≥ 1280), os
+  5 links em navy-200, 600, 15 px, alvo de 44 px, hover branco com
+  sublinhado de 2 px, e o WhatsApp compacto (44 px). Nada quebra linha; a
+  1024 px tudo cabe em ~970 px (respiros de 16 px, que crescem a partir de
+  1280).
+- **< 1024 px** (56 px): assinatura e o botão **Menu** (44 px, borda 1,5 px
+  navy-400, ícone de duas barras que vira X). O botão abre um painel solto
+  abaixo da aba, na largura da tela menos 8 px de cada lado: espaço, borda
+  navy-800, `--radius-3`, elevação nível 2; links brancos de 18 px com alvo
+  de 48 px, separados por régua navy-800, e o WhatsApp na largura toda no
+  fim. Foco dentro do painel desenhado para dentro.
+- Comportamento: `aria-expanded` e `aria-controls` no botão; fecha com Esc
+  (o foco volta ao botão), ao escolher um link, ao tocar fora e ao passar
+  para ≥ 1024 px. Abre com fade + 8 px (`@starting-style`) só sem reduced
+  motion.
+- O botão vem antes do painel no DOM: com o painel aberto, o Tab segue do
+  botão para os links.
 
 ### 8.4 Parede de blocos (Problemas)
 
@@ -558,6 +614,12 @@ Crivo): ele some enquanto
   conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
   campo, link ou controle de vídeo.
 
+**Com a barra do hero "video" (§8.3.1), o FAB só existe abaixo de 1024
+px** (decisão do Claudinho no HR1): a partir daí o WhatsApp já está sempre à
+mostra na barra fixa. É CSS (`.topbar ~ .fab-whatsapp { display: none }` em
+≥ 1024 px), então vale só nas páginas com a barra; no /privacidade, sem
+barra, nada muda. Abaixo de 1024 px valem todas as regras acima.
+
 Esconder é imediato; mostrar só depois de conferir com o quadro assentado
 (dois `requestAnimationFrame`, porque o motion aplica o tilt dentro do
 quadro, e de novo 150 ms depois de a rolagem parar).
@@ -679,6 +741,77 @@ Sobretítulo (§4) → H1 display branco → abertura em navy-200 (≤ 56ch) →
 botões WhatsApp e contorno (escuro) → linha de apoio em navy-300, 14 px.
 Sem animação de entrada (§6).
 
+### 9.6 Hero "video" (padrão desde o HR1)
+
+As §9.1–9.5 descrevem o hero **"classic"**, que continua no código. A
+versão em uso é escolhida em `siteConfig.heroVariant` (`"video"` ou
+`"classic"`, em `src/config/site.ts`); a barra do topo muda junto
+(§8.3 ou §8.3.1). Implementação própria (ADR-005) no estilo pedido pelo
+cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
+`HeroWordmark.tsx`; decisões na ADR-007.
+
+**Camadas** (dentro de uma moldura com `--radius-3` e uma margem de
+espaço de 8 px, 12 px ≥ 768, onde a aba da barra se encaixa):
+
+```
+5. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
+4. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
+3. Véu                 do DS; garante o AA do texto
+2. Grão                ruído SVG parado, 18%, overlay
+1. Visual              <picture> (pôster) + <video>, object-fit: cover
+0. Base                espaço (navy-950)
+```
+
+**Composição:**
+
+| Largura | Como fica | Véu |
+|---|---|---|
+| < 1024 px | **Faixa em cima:** o vídeo ocupa uma faixa no alto da moldura (`--hero-band`: `clamp(300px, 52svh, 460px)`; `clamp(340px, 50svh, 520px)` ≥ 768), com o recorte em pé (720 × 1280). A palavra gigante cruza o pé da faixa; o texto vem abaixo, **sobre o espaço sólido** (fora do vídeo). | Só desbota a faixa para o espaço no fim (0 → 0,72 → 1) |
+| ≥ 1024 px | **Diagonal:** vídeo na moldura inteira (recorte deitado, 1920 × 1080). Texto nas colunas 1–6, no alto (máx. 34rem); palavra gigante nas colunas 7–12, embaixo, alinhada à direita, por cima do pé da estrada. | `linear-gradient(90deg)` de 0,92 a **0,88 até a borda direita do texto** (`--hero-text-edge`), depois desbota em curva até 0 em +700 px; e um escurecimento de baixo (0,82 → 0 em 34%) que assenta a palavra no chão |
+
+- Altura: `min-height: calc(100svh − 2 × margem)`; o conteúdo cresce se
+  precisar (telas baixas). Conteúdo no container do site.
+- Contraste: no lado a lado, o véu é ≥ 0,88 em toda a zona do texto (§3.4);
+  abaixo de 1024 o texto nem fica sobre o vídeo.
+
+**Palavra gigante** ("Strukti", `aria-hidden`; o título é o H1):
+- Geologica 640, SHRP 100, entrelinha 0,8, espacejamento −0,045em. A
+  palavra mede 3,17 em; o tamanho vem da largura do conteúdo em `cqi`:
+  31,4cqi (largura toda, < 1024) e 15,4cqi (colunas 7–12, ≥ 1024).
+- O "i" é o i sem pingo (ı) e o pingo é o ponto do i do logo: círculo
+  electric-500 de 0,19em, com o topo na altura do topo do "k" e um pouco à
+  direita do eixo da haste, como no logo.
+- Movimento (§6): sobe de trás de uma linha (`clip-path` só embaixo) e o
+  ponto cai depois. Só CSS; sem animação com reduced motion.
+
+**Texto e botões:** o texto aprovado do hero (o mesmo do "classic"); H1 na
+escala do título de seção (32 → 48 px, 720, SHRP 100), sobretítulo
+navy-200 (16 → 18 px), abertura em navy-200 no corpo, linha de apoio
+navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
+
+**Vídeo** ("Rota ao entardecer", Pexels; licença, origem e tratamento em
+`docs/hero-video-opcoes/README.md` e `THIRD_PARTY_NOTICES.md`):
+- Servido pelo site (`public/video/hero/`), nunca de CDN. Loop de 12 s,
+  sem áudio, H.264 com faststart: 1920 × 1080 (~1,65 MB) e o recorte em pé
+  720 × 1280 (~0,66 MB) para `(orientation: portrait)`. Tom marinho já no
+  arquivo.
+- Pôster: `<picture>` com AVIF e JPG, recorte em pé ou deitado, `alt=""`,
+  `fetchpriority="high"`. É o 1º quadro do loop, então a troca para o vídeo
+  não se nota.
+- O `<video>` não tem `autoplay` e usa `preload="none"`; fica com
+  `opacity: 0` até tocar de fato. O JavaScript chama `play()` só com as
+  quatro condições: sem prefers-reduced-motion, sem "economizar dados",
+  hero na tela e aba visível; pausa quando alguma falha. Sem som, por
+  propriedade (`muted`), antes de tocar.
+- Com reduced motion, sem JavaScript ou com o navegador recusando: fica o
+  pôster, e o vídeo nem é baixado.
+- **Controle** (WCAG 2.2.2: movimento automático de mais de 5 s precisa
+  poder parar): botão de 44 px, ícone de pausa ou triângulo, fundo espaço a
+  0,72, `--radius-2`. Nome acessível "Pausar o vídeo de fundo" / "Tocar o
+  vídeo de fundo". "Pausar" para de vez; "Tocar" toca mesmo com reduced
+  motion (foi a pessoa que pediu). Só aparece depois de montar.
+- O hero tem `data-hides-fab` (§8.12).
+
 ---
 
 ## 10. Checklist anti-cara-de-IA (em toda entrega)
@@ -692,9 +825,10 @@ Sem animação de entrada (§6).
 - [ ] Texto alinhado à esquerda; nada centralizado "por padrão".
 - [ ] Sem sobretítulo em caixa-alta espacejada, sem palavra do título
       destacada em cor ou itálico, sem "A · B · C", sem "→" no fim de botão
-      ou link, sem fonte mono decorativa.
+      ou link (exceção: a seta no círculo do botão de diagnóstico do hero
+      "video", ADR-007), sem fonte mono decorativa.
 - [ ] Sem sombra cinza genérica em todo cartão, sem raio único para tudo,
-      sem pílula.
+      sem pílula (exceção: os dois botões do hero "video", ADR-007).
 - [ ] Movimento só onde a §6 permite; nada de fade-e-sobe em cada parágrafo.
 - [ ] Os detalhes vêm da marca (junta, hexágono, ponto do i) e têm função.
 - [ ] Texto é o aprovado em `src/content/landing.ts`; nenhum número,
