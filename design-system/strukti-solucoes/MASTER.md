@@ -546,21 +546,30 @@ A partir de 640 px: ícone e "WhatsApp". Fica a 16 px das bordas.
 **Quando aparece** (`src/components/FloatingWhatsApp.tsx`; revisão DS1 da
 Crivo): ele some enquanto
 
-- algum elemento com `data-hides-fab` está na tela (IntersectionObserver).
-  Hoje: o hero (`section#inicio`, que já tem dois botões de WhatsApp — sem
-  isso, a 360 px eram três chamadas na primeira tela), o cartão do
-  formulário (`.form-card`, que tem o link do WhatsApp) e o rodapé (idem);
+- algum elemento com `data-hides-fab` está na tela (IntersectionObserver,
+  com 200 px de margem embaixo: ele já está oculto quando o marcador chega
+  à faixa do botão). Hoje: o hero (`section#inicio`, que já tem dois botões
+  de WhatsApp — sem isso, a 360 px eram três chamadas na primeira tela), o
+  vídeo em destaque do portfólio (`video.portfolio__video`, com o tilt da
+  rolagem), o cartão do formulário (`.form-card`, que tem o link do
+  WhatsApp) e o rodapé (idem);
 - a caixa dele cruza a de qualquer controle focável visível (`a[href]`,
   `button`, campos, `summary`, `video[controls]`, `[tabindex] ≥ 0`),
   conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
   campo, link ou controle de vídeo.
 
+Esconder é imediato; mostrar só depois de conferir com o quadro assentado
+(dois `requestAnimationFrame`, porque o motion aplica o tilt dentro do
+quadro, e de novo 150 ms depois de a rolagem parar).
+
 Oculto de verdade: `data-visible="false"`, atributo `inert` (fora do Tab e
 do leitor de tela) e `visibility: hidden`, não só opacidade. Começa oculto
 no SSR (o hero está na tela ao carregar: sem divergência de hidratação e
 sem piscar); sem JavaScript fica oculto, e o botão do cabeçalho continua lá.
-A transição (opacidade e visibilidade, `--duration-base`) só existe com
-`prefers-reduced-motion: no-preference`. No celular, `html` tem
+A transição só existe com `prefers-reduced-motion: no-preference` e só na
+entrada (fade de opacidade, `--duration-base`); a saída é instantânea, para
+o botão nunca ficar "sumindo" por cima do que acabou de chegar embaixo
+dele. No celular, `html` tem
 `scroll-padding-bottom: 88px`: a rolagem por foco para o controle acima da
 faixa do botão.
 

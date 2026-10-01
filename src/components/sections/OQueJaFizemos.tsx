@@ -52,6 +52,9 @@ export function OQueJaFizemos() {
                 poster={featured.video.poster}
                 className="portfolio__video"
                 aria-label={featured.video.accessibleName}
+                // O botão flutuante do WhatsApp some enquanto o vídeo está na
+                // tela (FloatingWhatsApp.tsx, MASTER §8.12).
+                data-hides-fab=""
               >
                 <source src={featured.video.src} type="video/mp4" />
               </video>

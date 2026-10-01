@@ -1438,12 +1438,15 @@ textarea.field__input {
   pointer-events: none;
 }
 
+/* Aparece com fade; some na hora. A transição fica só no estado visível:
+   ao ocultar, vale a do estado oculto (nenhuma), então ele nunca fica
+   "sumindo" por cima do que acabou de chegar embaixo dele. */
 @media (prefers-reduced-motion: no-preference) {
-  .fab-whatsapp {
+  .fab-whatsapp[data-visible="true"] {
     transition:
       background-color var(--duration-fast) var(--ease-standard),
       opacity var(--duration-base) var(--ease-standard),
-      visibility var(--duration-base) var(--ease-standard);
+      visibility 0s;
   }
 }
 
