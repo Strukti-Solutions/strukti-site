@@ -1,13 +1,12 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.6 · 01/10/2026 · Tarefa P2 · Seção 4: textos do segundo projeto do portfólio, o Fleet Analytics BI (mostrado com autorização do cliente de 01/10). Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 1.6 · 01/10/2026 · Tarefa P2 · Seção 4: textos do segundo projeto do portfólio, o Fleet Analytics BI (mostrado com autorização do cliente de 01/10; texto final com as respostas do cliente de 01/10). Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
 - O texto depois de cada rótulo em negrito (**Título (H1):**, **Botão:** etc.) é o **texto final** e vai para o site exatamente assim, com a mesma pontuação e acentuação.
 - Linhas que começam com *Nota:* orientam o Dev e o cliente. **Não vão para o site.**
 - `[A PREENCHER: ...]` é um dado que ainda falta. **Não publicar enquanto houver algum.** A lista completa está no fim.
-- `[CONFIRMAR: ...]` marca um fato que o material recebido não comprova sozinho. O texto vai para o site **sem** a marcação, só depois de o Claudinho confirmar. Também está na lista do fim.
 - `{nome}`, `{n}` e `{max}` são valores que o site preenche sozinho.
 
 ## Ângulo
@@ -183,14 +182,16 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 **Fleet Analytics BI no cartão da grade:**
 - **Nome:** Fleet Analytics BI
 - **Resumo:** O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.
-- **Etiquetas de plataforma:** Web [CONFIRMAR: o vídeo não mostra navegador nem aparelho; os indícios de web são o endereço ifanalitico.com.br e o mapa feito com Leaflet, biblioteca de mapas para páginas web. Nenhuma tela de celular aparece, então não há etiqueta de Android ou iPhone.]
+- **Etiquetas de plataforma:** Web · Celular
 - **Nome acessível do vídeo:** Vídeo de demonstração do Fleet Analytics BI
 - **Nome acessível do botão de reproduzir:** Assistir ao vídeo: Fleet Analytics BI
-- **Legenda abaixo do vídeo:** Vídeo de demonstração, só com música [CONFIRMAR: não ouvi o áudio; pelo espectro do som, é música sem narração]. Os números são reais; placas, nomes e endereços aparecem borrados.
+- **Legenda abaixo do vídeo:** Vídeo de demonstração, só com música.
 - **Descrição do vídeo (texto que abre no link "Ler a descrição do vídeo"):** Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.
 - **Título do vídeo (H3), só se o projeto virar destaque:** Veja o Fleet Analytics BI
 
-*Nota (autorização do cliente, 01/10/2026): em 01/10/2026 o cliente decidiu, e o Claudinho registrou na tarefa P2, que o Fleet Analytics BI foi feito pelo grupo e pode ser mostrado como está, com o nome e o domínio ifanalitico.com.br, e que os números do vídeo são reais e autorizados. Por isso este projeto não leva o aviso de dados fictícios do Rota de Vendas.*
+*Nota (autorização do cliente, 01/10/2026): em 01/10/2026 o cliente decidiu, e o Claudinho registrou na tarefa P2, que o Fleet Analytics BI foi feito pelo grupo e pode ser mostrado como está, com o nome e o domínio ifanalitico.com.br, e que os números do vídeo são reais e autorizados. Por isso este projeto não leva o aviso de dados fictícios do Rota de Vendas. A autorização fica só nesta nota; o site não fala dela.*
+
+*Nota (respostas do cliente, 01/10/2026): o Fleet Analytics BI roda na web e no celular (etiquetas "Web" e "Celular"); o vídeo é só com música; a legenda não diz que os números são reais nem que há partes borradas. A nota do condutor fica fora da descrição (ver abaixo). A última frase da descrição ("Placas, nomes e endereços aparecem borrados.") continua porque descreve o que se vê na tela, para quem não enxerga o vídeo.*
 
 *Nota: vídeo `WhatsApp Video 2026-10-01 at 00.37.30.mp4` (52 s, 1080p, com áudio), recebido pelo Claudinho; o Dev define onde ele fica no site. Sem reprodução automática com som. A descrição traz só o que aparece na tela, conferido em quadros extraídos a cada segundo; os números são os valores finais dos contadores animados (por exemplo, o de quilômetros passa por 403 e para em 450). A frase "Transforme dados brutos do rastreador em inteligência operacional" é do próprio vídeo e vai entre aspas só na descrição; não usar no resto do site.*
 
@@ -450,10 +451,3 @@ Ficam para a publicação (L5):
 
 1. Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.
 2. Endereço do site (compartilhamento e mensagem da equipe).
-
-## Pendências [CONFIRMAR]
-
-Antes de o Fleet Analytics BI ir ao ar (Seção 4, portfólio):
-
-1. Etiqueta de plataforma "Web": o vídeo não mostra navegador nem aparelho.
-2. Legenda "só com música": o áudio não foi ouvido; pelo espectro do som, é música sem narração.
