@@ -118,6 +118,8 @@ export const landingContent = {
       { label: "Dúvidas", href: "#duvidas" },
     ],
     whatsappButton: "Falar no WhatsApp",
+    /** Botão que abre o menu abaixo de 1024 px (barra do hero "video"). */
+    menuButton: "Menu",
   },
 
   hero: {
@@ -127,6 +129,9 @@ export const landingContent = {
     primaryCta: "Chamar no WhatsApp",
     secondaryCta: "Pedir diagnóstico gratuito",
     supportLine: "Primeiro entendemos o problema. Depois falamos de aplicativo.",
+    /** Nome acessível do controle do vídeo de fundo (WCAG 2.2.2), conforme o estado. */
+    videoPause: "Pausar o vídeo de fundo",
+    videoPlay: "Tocar o vídeo de fundo",
   },
 
   problemas: {

@@ -1,13 +1,27 @@
 import { act } from "react";
 import { renderToString } from "react-dom/server";
 import { hydrateRoot } from "react-dom/client";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { HeroVariant } from "@/config/site";
 import Home from "./page";
 
 // Regra da definição de pronto (ADR-004): a página inteira hidrata sem
 // divergência entre o HTML do servidor e o 1º render do cliente, com
 // prefers-reduced-motion ligado e desligado. Falha em onRecoverableError ou
 // em qualquer console.error (divergência de atributo só aparece lá).
+// Roda com as duas versões do topo (siteConfig.heroVariant): "video", o
+// padrão, e "classic", que segue no código (revisão HR1 da Crivo).
+
+const heroVariant = vi.hoisted(() => ({ current: "video" as HeroVariant }));
+vi.mock("@/config/site", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/config/site")>();
+  return {
+    ...actual,
+    siteConfig: new Proxy(actual.siteConfig, {
+      get: (target, key) => (key === "heroVariant" ? heroVariant.current : Reflect.get(target, key)),
+    }),
+  };
+});
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -78,16 +92,22 @@ async function hydrateHome(clientPrefersReducedMotion: boolean) {
   });
   act(() => root?.unmount());
 
-  return { consoleErrors, recoverableErrors };
+  return { consoleErrors, recoverableErrors, serverHtml };
 }
 
-describe("página inicial — hidratação", () => {
+describe.each(["video", "classic"] as const)("página inicial (hero %s) — hidratação", (variant) => {
+  beforeEach(() => {
+    heroVariant.current = variant;
+  });
+
   it.each([
     ["ligado", true],
     ["desligado", false],
   ])("com prefers-reduced-motion %s, hidrata sem divergência", async (_label, reduce) => {
-    const { consoleErrors, recoverableErrors } = await hydrateHome(reduce);
+    const { consoleErrors, recoverableErrors, serverHtml } = await hydrateHome(reduce);
 
+    // Confere que a versão pedida é a que renderizou.
+    expect(serverHtml).toContain(variant === "video" ? 'class="topbar"' : 'class="site-header');
     expect(recoverableErrors).toEqual([]);
     expect(consoleErrors.map((args) => args.map(String).join(" "))).toEqual([]);
   });

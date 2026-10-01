@@ -43,7 +43,7 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Botão:** Falar no WhatsApp
 
-*Nota: no celular (360 px), mostrar só a marca e o botão do WhatsApp; o menu pode ficar escondido ou sair.*
+*Nota: no celular (360 px), mostrar só a marca e o botão do WhatsApp; o menu pode ficar escondido ou sair.* *(Vale para o hero "classic". No hero "video", abaixo de 1024 px a barra mostra a marca e o botão "Menu", e o WhatsApp fica dentro do menu; ver "Hero e top bar (textos de interface)".)*
 
 ---
 
@@ -62,6 +62,18 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 **Linha de apoio (abaixo dos botões):** Primeiro entendemos o problema. Depois falamos de aplicativo.
 
 *Nota: sem captura do Rota de Vendas no hero. O app aparece na seção 4; no topo ele daria a impressão de produto à venda.*
+
+### Hero e top bar (textos de interface)
+
+Aprovados pelo Claudinho em 01/10/2026 (tarefa HR1, hero "video").
+
+**Botão que abre o menu (abaixo de 1024 px):** Menu
+
+**Nome acessível do controle do vídeo de fundo, com o vídeo tocando:** Pausar o vídeo de fundo
+
+**Nome acessível do controle do vídeo de fundo, com o vídeo parado:** Tocar o vídeo de fundo
+
+*Nota: o controle é um botão só com ícone (pausa ou triângulo); o texto acima é o nome que o leitor de tela anuncia e aparece como dica ao passar o mouse. A palavra "Strukti" gigante do hero é decorativa (o leitor de tela não a lê): o título continua sendo o H1 acima.*
 
 ---
 

@@ -38,7 +38,9 @@ function overlaps(a: DOMRect, b: DOMRect) {
  *
  * Começa oculto no servidor e no 1º render do cliente (o hero está na tela
  * ao carregar), então não há divergência de hidratação nem pisca. Sem
- * JavaScript, fica oculto: o botão do cabeçalho continua lá.
+ * JavaScript, fica oculto. No hero "classic", o botão do cabeçalho continua
+ * lá; no hero "video", abaixo de 1024 px o menu da barra não abre sem
+ * JavaScript, e o WhatsApp fica no botão principal do hero.
  */
 export function FloatingWhatsApp() {
   const { desktopLabel, accessibleName } = landingContent.floatingWhatsapp;
