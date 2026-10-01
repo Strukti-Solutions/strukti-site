@@ -692,6 +692,638 @@ video:focus-visible {
 }
 
 /* ------------------------------------------------------------------ */
+/* 8b. Barra do topo — a aba (MASTER §8.3.1; só no hero "video")       */
+/* ------------------------------------------------------------------ */
+.topbar {
+  --topbar-height: 56px;
+  /* Canto de baixo cortado a 30°, o ângulo das faces do hexágono do logo. */
+  --topbar-cut-x: 21px;
+  --topbar-cut-y: 12px;
+  --focus: var(--color-cyan-400);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/*
+ * A aba é desenhada pelo fundo (quatro camadas: corpo, faixa de baixo e os
+ * dois cantos cortados), sem clip-path: clip-path cortaria o contorno de
+ * foco e o painel do menu, que fica dentro dela.
+ */
+.topbar__tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--topbar-height);
+  padding-inline: calc(var(--topbar-cut-x) + 8px);
+  pointer-events: auto;
+  background:
+    linear-gradient(var(--color-navy-950), var(--color-navy-950)) top / 100% calc(100% - var(--topbar-cut-y))
+      no-repeat,
+    linear-gradient(var(--color-navy-950), var(--color-navy-950)) bottom / calc(100% - 2 * var(--topbar-cut-x))
+      var(--topbar-cut-y) no-repeat,
+    linear-gradient(to bottom left, var(--color-navy-950) 50%, transparent calc(50% + 0.6px)) bottom left /
+      var(--topbar-cut-x) var(--topbar-cut-y) no-repeat,
+    linear-gradient(to bottom right, var(--color-navy-950) 50%, transparent calc(50% + 0.6px)) bottom right /
+      var(--topbar-cut-x) var(--topbar-cut-y) no-repeat;
+}
+
+.topbar__brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: 44px;
+  border-radius: var(--radius-1);
+}
+
+.topbar__brand img {
+  width: auto;
+  height: 24px;
+}
+
+.topbar__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-navy-400);
+  border-radius: var(--radius-2);
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.topbar__toggle:hover {
+  background-color: rgb(255 255 255 / 0.06);
+}
+
+/* Duas barras que viram um X quando o menu abre. */
+.topbar__toggle-icon {
+  position: relative;
+  width: 18px;
+  height: 12px;
+}
+
+.topbar__toggle-icon::before,
+.topbar__toggle-icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background-color: currentColor;
+}
+
+.topbar__toggle-icon::before {
+  top: 1px;
+}
+
+.topbar__toggle-icon::after {
+  top: 9px;
+}
+
+.topbar[data-open="true"] .topbar__toggle-icon::before {
+  top: 5px;
+  transform: rotate(45deg);
+}
+
+.topbar[data-open="true"] .topbar__toggle-icon::after {
+  top: 5px;
+  transform: rotate(-45deg);
+}
+
+/* Painel do menu (< 1024 px): solto embaixo da aba, na largura da tela. */
+.topbar__nav {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 8px;
+  left: 8px;
+  display: none;
+  padding: 8px 0 16px;
+  border: 1px solid var(--color-navy-800);
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-950);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+
+.topbar[data-open="true"] .topbar__nav {
+  display: block;
+}
+
+.topbar__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topbar__links a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 20px;
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration-line: none;
+  text-underline-offset: 6px;
+}
+
+.topbar__links a:hover {
+  color: #ffffff;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+}
+
+/* Dentro do painel, o foco desenha para dentro (MASTER §5.5). */
+.topbar__links a:focus-visible {
+  outline-offset: -3px;
+}
+
+.topbar__links li + li {
+  border-top: 1px solid var(--color-navy-800);
+}
+
+.topbar__nav .topbar__whatsapp {
+  display: flex;
+  width: calc(100% - 32px);
+  min-height: 48px;
+  margin: 12px 16px 0;
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .topbar__toggle-icon::before,
+  .topbar__toggle-icon::after {
+    transition:
+      transform var(--duration-base) var(--ease-standard),
+      top var(--duration-base) var(--ease-standard);
+  }
+
+  .topbar[data-open="true"] .topbar__nav {
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  @starting-style {
+    .topbar[data-open="true"] .topbar__nav {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .topbar {
+    --topbar-height: 60px;
+  }
+
+  /* A 1024 px marca, 5 links e o botão mal cabem numa linha (~980 px):
+     nada quebra linha, e os respiros crescem a partir de 1280. */
+  .topbar__tab {
+    gap: var(--space-4);
+    padding-inline: calc(var(--topbar-cut-x) + 4px);
+    white-space: nowrap;
+  }
+
+  .topbar__toggle {
+    display: none;
+  }
+
+  .topbar__nav,
+  .topbar[data-open="true"] .topbar__nav {
+    position: static;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .topbar__links {
+    display: flex;
+    gap: 16px;
+  }
+
+  .topbar__links li + li {
+    border-top: 0;
+  }
+
+  .topbar__links a {
+    min-height: 44px;
+    padding: 0;
+    color: var(--color-navy-200);
+    font-size: 0.9375rem;
+  }
+
+  .topbar__links a:focus-visible {
+    outline-offset: 3px;
+  }
+
+  .topbar__nav .topbar__whatsapp {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding-inline: 14px;
+    font-size: 0.9375rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .topbar__tab,
+  .topbar__nav,
+  .topbar[data-open="true"] .topbar__nav {
+    gap: var(--space-5);
+  }
+
+  .topbar__tab {
+    padding-inline: calc(var(--topbar-cut-x) + 12px);
+  }
+
+  .topbar__brand img {
+    height: 28px;
+  }
+
+  .topbar__links {
+    gap: 28px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 8c. Hero com vídeo (MASTER §9.6)                                    */
+/* ------------------------------------------------------------------ */
+.hero-video {
+  /* Margem de espaço em volta da moldura: a aba se encaixa nela. */
+  --mat: 8px;
+  /* Abaixo de 1024 px o vídeo é uma faixa no alto da moldura. */
+  --hero-band: clamp(300px, 52svh, 460px);
+  --hero-text-max: 34rem;
+  padding: var(--mat);
+}
+
+@media (min-width: 768px) {
+  .hero-video {
+    --mat: 12px;
+    --hero-band: clamp(340px, 50svh, 520px);
+  }
+}
+
+.hero-video__frame {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: calc(100svh - 2 * var(--mat));
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-950);
+}
+
+.hero-video__visual {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: var(--hero-band);
+}
+
+.hero-video__poster,
+.hero-video__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+}
+
+/* O vídeo só aparece tocando; parado, fica o pôster (o mesmo quadro). */
+.hero-video__video[data-playing="false"] {
+  opacity: 0;
+}
+
+/* Grão parado por cima do vídeo: tira o "liso de banco de imagem" e
+   esconde o degradê em faixas do céu comprimido. */
+.hero-video__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+/*
+ * Véu do DS. Abaixo de 1024 px o texto fica fora do vídeo, sobre o espaço
+ * sólido: a faixa só desbota para o espaço no fim, onde a palavra gigante a
+ * cruza. A partir de 1024 px, ver a media query abaixo.
+ */
+.hero-video__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(8 18 29 / 0) calc(var(--hero-band) - 220px),
+    rgb(8 18 29 / 0.72) calc(var(--hero-band) - 72px),
+    var(--color-navy-950) var(--hero-band)
+  );
+}
+
+/* O conteúdo é o contêiner de medida da palavra gigante (unidades cqi):
+   o tamanho dela vem da largura do conteúdo, não da tela. */
+.hero-video__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--hero-band);
+  padding-bottom: var(--space-7);
+  container-type: inline-size;
+}
+
+/* Abaixo de 1024 px: a palavra ocupa a largura do conteúdo e sobe para
+   cima da faixa do vídeo, cruzando o desbotamento. */
+.hero-wordmark {
+  /* "Strukti" mede 3,17 em nesta afinação: 31,4cqi ocupa a largura toda. */
+  --wordmark-size: 31.4cqi;
+  margin-top: calc(var(--wordmark-size) * -0.6);
+  color: #ffffff;
+  font-size: var(--wordmark-size);
+  font-weight: 640;
+  font-variation-settings: "SHRP" 100;
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  /* Recorta só embaixo: a palavra sobe de trás desta linha; o pingo, que
+     cai de cima, pode passar do topo. */
+  clip-path: inset(-40% -6% 0 -6%);
+}
+
+.hero-wordmark__word {
+  display: inline-block;
+}
+
+.hero-wordmark__i {
+  position: relative;
+  display: inline-block;
+}
+
+/* O ponto do i do logo (MASTER §1): electric-500, um círculo, só aqui e
+   nos marcadores do portfólio. */
+/* Como no logo: grande, com o topo na altura do topo do "k" e um pouco à
+   direita do eixo da haste. */
+.hero-wordmark__dot {
+  position: absolute;
+  top: 0.015em;
+  left: 50%;
+  width: 0.19em;
+  height: 0.19em;
+  margin-left: -0.05em;
+  border-radius: 50%;
+  background-color: var(--color-electric-500);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-wordmark__word {
+    animation: wordmark-pull-up 900ms var(--ease-out) 120ms both;
+  }
+
+  .hero-wordmark__dot {
+    animation: wordmark-dot-drop 520ms var(--ease-out) 820ms both;
+  }
+}
+
+@keyframes wordmark-pull-up {
+  from {
+    transform: translateY(104%);
+  }
+}
+
+@keyframes wordmark-dot-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-160%);
+  }
+}
+
+.hero-video__text {
+  max-width: var(--hero-text-max);
+  margin-top: var(--space-6);
+}
+
+.hero-video__eyebrow {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.hero-video__title {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(2rem, 1.4rem + 2.2vw, 3rem);
+  font-weight: 720;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.hero-video__body {
+  margin: var(--space-5) 0 var(--space-6);
+  color: var(--text-muted);
+}
+
+.hero-video__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: 20px;
+}
+
+.hero-video__support {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+}
+
+/* Controle do vídeo (WCAG 2.2.2): no canto de cima do vídeo, logo abaixo
+   da altura da aba, longe da palavra gigante e dos botões. */
+.hero-video__toggle {
+  position: absolute;
+  top: calc(56px + var(--space-3));
+  right: var(--space-3);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: var(--radius-2);
+  /* 0,72 de espaço: o ícone branco fica ≥ 4,5:1 mesmo sobre o céu claro. */
+  background-color: rgb(8 18 29 / 0.72);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.hero-video__toggle[hidden] {
+  display: none;
+}
+
+.hero-video__toggle:hover {
+  background-color: rgb(8 18 29 / 0.86);
+}
+
+/* Pausar = duas barras; tocar = triângulo. */
+.hero-video__toggle-icon {
+  width: 14px;
+  height: 16px;
+  background-color: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.hero-video__toggle[data-playing="true"] .hero-video__toggle-icon {
+  width: 12px;
+  height: 14px;
+  background: linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px, currentColor 8px 12px);
+  clip-path: none;
+}
+
+@media (min-width: 1024px) {
+  .hero-video {
+    /* Borda direita da coluna de texto, medida a partir da esquerda da moldura. */
+    --hero-text-edge: calc(
+      max(var(--gutter), (100% - var(--content-max)) / 2) + min(var(--hero-text-max), 100% - 2 * var(--gutter))
+    );
+  }
+
+  .hero-video__frame {
+    display: flex;
+  }
+
+  .hero-video__visual {
+    inset: 0;
+    height: auto;
+  }
+
+  .hero-video__poster,
+  .hero-video__video {
+    object-position: 50% 50%;
+  }
+
+  /*
+   * Lado a lado: texto no alto à esquerda, sobre o véu (≥ 0,88 até a borda
+   * do texto: AA com qualquer pixel atrás, MASTER §3.4); depois o véu
+   * desbota devagar, em curva, para não virar uma faixa de borda reta. Embaixo,
+   * um escurecimento leve assenta a palavra gigante no chão do vídeo.
+   */
+  .hero-video__veil {
+    background:
+      linear-gradient(0deg, rgb(8 18 29 / 0.82) 0, rgb(8 18 29 / 0.42) 16%, rgb(8 18 29 / 0) 34%),
+      linear-gradient(
+        90deg,
+        rgb(8 18 29 / 0.92) 0,
+        rgb(8 18 29 / 0.88) var(--hero-text-edge),
+        rgb(8 18 29 / 0.84) calc(var(--hero-text-edge) + 60px),
+        rgb(8 18 29 / 0.72) calc(var(--hero-text-edge) + 150px),
+        rgb(8 18 29 / 0.5) calc(var(--hero-text-edge) + 280px),
+        rgb(8 18 29 / 0.26) calc(var(--hero-text-edge) + 430px),
+        rgb(8 18 29 / 0.08) calc(var(--hero-text-edge) + 580px),
+        rgb(8 18 29 / 0) calc(var(--hero-text-edge) + 700px)
+      );
+  }
+
+  /* Diagonal: o texto ocupa as colunas 1–6 de cima; a palavra, as 7–12 de
+     baixo, por cima do pé da estrada. */
+  .hero-video__content {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: 1fr auto;
+    column-gap: 24px;
+    padding-top: calc(60px + var(--space-8));
+    padding-bottom: var(--space-6);
+  }
+
+  .hero-video__text {
+    grid-column: 1 / span 6;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin-top: 0;
+  }
+
+  .hero-wordmark {
+    /* Colunas 7–12 = 49cqi; 49 / 3,17 ≈ 15,4cqi. */
+    --wordmark-size: 15.4cqi;
+    grid-column: 7 / -1;
+    grid-row: 2;
+    justify-self: end;
+    margin-top: 0;
+  }
+
+  .hero-video__eyebrow {
+    font-size: 1.125rem;
+  }
+
+  .hero-video__toggle {
+    top: calc(60px + var(--space-3));
+    right: var(--space-4);
+  }
+}
+
+/*
+ * Pílula com seta: exceção do DS só no hero "video" (ADR-007). No resto do
+ * site os botões seguem com --radius-2 e sem seta.
+ */
+.btn--pill {
+  border-radius: 999px;
+}
+
+.btn--arrow {
+  gap: 14px;
+  padding-right: 8px;
+  padding-left: 22px;
+}
+
+.btn__arrow {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn__arrow {
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+
+  .btn--arrow:hover .btn__arrow {
+    transform: translateX(2px);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* 9. Parede de blocos — a junta (MASTER §5.5)                         */
 /* ------------------------------------------------------------------ */
 .wall {
@@ -1452,6 +2084,15 @@ textarea.field__input {
 
 .fab-whatsapp:focus-visible {
   outline-color: var(--color-electric-700);
+}
+
+/* Com a barra do hero "video", a partir de 1024 px o WhatsApp já está
+   sempre à mostra na barra fixa: o FAB só existe abaixo disso (decisão do
+   Claudinho no HR1). Sem a barra (ex.: /privacidade), nada muda. */
+@media (min-width: 1024px) {
+  .topbar ~ .fab-whatsapp {
+    display: none;
+  }
 }
 
 .floating-whatsapp-label {

@@ -1,6 +1,6 @@
 # Avisos de terceiros
 
-Código de terceiros incluído no site, com a licença que acompanha a cópia
+Código e mídia de terceiros incluídos no site, com a licença que acompanha a cópia
 (regra da ADR-005, `docs/DECISOES.md`).
 
 ---
@@ -38,3 +38,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+---
+
+## Vídeo de fundo do hero: "Aerial Footage of Truck on the Road"
+
+- **Arquivos:** `public/video/hero/rota-entardecer-*` (dois loops MP4 e quatro
+  pôsteres AVIF/JPG), editados por nós: trecho de 12 s em loop, tom puxado
+  para o marinho da marca, correção do deslocamento do drone, recortes
+  deitado e em pé. Receita em `docs/hero-video-opcoes/README.md`.
+- **Autor:** K (@kelly), Pexels
+- **Origem:** https://www.pexels.com/video/aerial-footage-of-truck-on-the-road-9339061/
+- **Licença:** Pexels License (https://www.pexels.com/license/, conferida em
+  01/10/2026): uso gratuito, inclusive comercial; atribuição não
+  obrigatória (registramos a origem mesmo assim); edição permitida. Proíbe
+  mostrar pessoas identificáveis de forma ofensiva, sugerir endosso de
+  pessoas ou marcas da imagem, vender cópias sem modificação, redistribuir
+  em outros bancos de imagem e usar como marca registrada. O vídeo não tem
+  pessoas nem marcas visíveis e entra só como fundo decorativo.
