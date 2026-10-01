@@ -78,7 +78,8 @@ Rodapé ............... espaço
 ```
 
 Entre duas seções na mesma superfície: espaço generoso e uma **régua** de
-1 px (`--border`) na largura do container. Nunca alternar papel e branco
+1 px (`--border`) na largura do container (classe `.section--seam`; a régua
+fica a ¾ do respiro da seção acima do conteúdo). Nunca alternar papel e branco
 seção a seção (é o padrão `section--alt` de template).
 
 **O fundo fora do hero não depende do visual do hero.** O contrato da §9.1
@@ -224,6 +225,8 @@ Elements of Typographic Style*.
 - Nunca: caixa-alta em rótulo, espacejamento aberto em sobretítulo, itálico
   ou cor para destacar uma palavra do título, fonte mono para "dar ar
   técnico".
+- A abertura (`.lead`) é só para textos de entrada curtos (até ~3 linhas).
+  Texto de entrada longo, como o do Diagnóstico, usa o tamanho do corpo.
 - O sobretítulo do hero é texto aprovado ("Aplicativos sob medida para…"):
   vai em 16–18 px, peso 500, `--text-muted`, sem caixa-alta e sem ponto
   colorido antes.
@@ -398,8 +401,8 @@ só da cor).
 
 Superfície espaço, sólido, `position: sticky`, 72 px de altura (64 px
 abaixo de 768), borda inferior de 1 px navy-800. Esquerda: assinatura
-horizontal para fundo escuro, com 32 px de altura (24 px até 400 px de
-largura). Meio: menu em navy-200, 600 15 px, hover branco com sublinhado.
+horizontal para fundo escuro, com 32 px de altura (28 px entre 401 e 767
+px; 24 px até 400 px), como link para o topo. Meio: menu em navy-200, 600 15 px, hover branco com sublinhado.
 Direita: botão WhatsApp compacto (44 px).
 - O menu só aparece a partir de **1100 px** (na v1, a 1024 px ele quebrava
   em duas linhas). Abaixo disso: marca e botão, como pede a nota do texto
@@ -423,9 +426,9 @@ qualidades, não etapas.
 
 ### 8.6 Passos (Diagnóstico, "Como funciona")
 
-É uma sequência de verdade, então leva número: parede de 4 blocos (1
-coluna < 768, 2 em 768–1023, 4 ≥ 1024), número em Geologica 700 32 px,
-electric-700, `tabular-nums`, acima do título do passo.
+É uma sequência de verdade, então leva número: parede vertical de 4 blocos
+na coluna do texto (composição "texto + formulário", §5.2), número em
+Geologica 700 32 px, electric-700, `tabular-nums`, à esquerda do passo.
 
 ### 8.7 Formulário
 
@@ -491,15 +494,17 @@ fecho + botão primário (diagnóstico)
 - **1 projeto (hoje):** só o destaque. Nada de grade vazia, "em breve" ou
   cartão fictício.
 - **2 ou mais:** a grade aparece abaixo do destaque, com 1 coluna (< 768),
-  2 (768–1023) ou 3 (≥ 1024). O título da grade é texto a definir com o
-  Claudinho.
-- **Mais de 6 na grade:** mostra 6 e um botão de contorno para ver o resto
-  (texto a definir com o Claudinho), que revela os demais sem mudar de
-  página.
+  2 (768–1023) ou 3 (≥ 1024), sob o título (H3) "Outros projetos"; o nome
+  de cada projeto é H4.
+- **Mais de 6 na grade:** mostra 6 e um botão de contorno "Mostrar mais
+  projetos", que revela os demais sem mudar de página e leva o foco ao
+  primeiro cartão revelado.
+- Textos de interface aprovados em `docs/landing-copy.md` v1.5, "Portfólio
+  (textos de interface)".
 - **Cartão:** `--surface-raised` (navy-800), pôster 16:9 com
   `loading="lazy"` e largura e altura declaradas, botão de reproduzir
   sobre o pôster (56 px, `--radius-2`, electric-700 com triângulo branco,
-  nome acessível "Assistir ao vídeo do {nome}"). Ao clicar, o pôster dá
+  nome acessível "Assistir ao vídeo: {nome}"). Ao clicar, o pôster dá
   lugar a um `<video controls>` no mesmo lugar, já tocando (há gesto de
   quem visita), e o foco vai para o vídeo. Só um vídeo toca por vez.
   Etiquetas de plataforma em 14 px, borda de 1 px navy-600, `--radius-1`
@@ -596,12 +601,16 @@ Componente `BlackHoleHeroSection` (21st.dev, MIT). Parâmetros do DS:
 | `starBrightness` | `0` | Sem estrelas: céu estrelado é clichê e compete com o texto |
 | `glow` | `0.8` (lado a lado) / `0.7` (faixa) | Brilho contido |
 | `scrim` | `"none"` | O véu é do DS (camada 3), igual para qualquer visual |
-| `focus` | `[0.76, 0.48]` / faixa `[0.54, 0.85]` | §9.2 |
+| `focus` | `[0.76, 0.48]` / faixa `[0.5, 0.84]` | §9.2 |
+| `fov` | `42` / faixa `72` | Na faixa o canvas é alto e estreito: o campo de visão maior mantém o buraco do tamanho da faixa |
 | `maxDpr` / `resolution` | 1,5 / 0,7 (lado a lado); 1,25 / 0,6 (faixa) | Desempenho |
 | `paused` | fora da tela, aba oculta ou reduced motion | Bateria e acessibilidade |
 
-Sem laranja e sem roxo: o disco usa só a paleta da marca. Sem WebGL, ou
-com o contexto perdido, aparece o visual estático (§9.4).
+Sem laranja e sem roxo: o disco usa só a paleta da marca. O canvas entra
+em `mix-blend-mode: screen` sobre a base: o céu quase preto do shader vira
+exatamente o espaço `#08121D`, e só a luz do disco soma. Sem WebGL, ou com
+o contexto perdido, o componente marca `data-webgl` e o CSS (`:has()`)
+mostra o visual estático (§9.4) inteiro, sem estado no React.
 
 ### 9.4 Visual "static" (fundo do tema, sem WebGL)
 
@@ -614,7 +623,8 @@ mostrando onde as peças se encaixam.
   rgb(1 102 210 / .30), rgb(1 102 210 / .10) 55%, transparent)`.
 - Símbolo centrado no ponto focal: altura de 68% do hero (máx. 600 px) no
   lado a lado, cortado pela borda direita se faltar espaço; na faixa,
-  `height: clamp(230px, 36svh, 330px)`, encostado embaixo (−14 px).
+  centrado em x 54%, `height: clamp(230px, 36svh, 330px)`, encostado
+  embaixo (−14 px).
 - Imagem decorativa (`alt=""`), parada, funciona sem JavaScript.
 - Por baixo do canvas do buraco negro, a camada de espera é só a base e a
   luz (sem o símbolo), para o símbolo não piscar antes do primeiro quadro.

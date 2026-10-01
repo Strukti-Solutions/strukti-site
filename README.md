@@ -9,9 +9,12 @@ indústrias pequenas), com formulário de diagnóstico gratuito.
 - PostgreSQL (via `pg`), para gravar os leads do formulário
 - Zod para validação (compartilhada entre cliente e servidor)
 - Vitest + Testing Library + axe-core para testes
-- Fonte Inter via `next/font/google`: baixada em tempo de build e servida pelo
-  próprio site (self-hosted). Não há requisição a servidor externo em tempo de
-  execução — decisão confirmada com o Claudinho.
+- Fonte Geologica (variável, com o eixo `SHRP`) via `next/font/google`: baixada
+  em tempo de build e servida pelo próprio site (self-hosted). Não há requisição
+  a servidor externo em tempo de execução — decisão confirmada com o Claudinho.
+- Design system: `design-system/strukti-solucoes/MASTER.md` (fonte da verdade
+  visual, ADR-006); tokens e classes em `src/app/globals.css`; marca em SVG em
+  `public/brand/`.
 
 ## Como rodar
 
@@ -132,13 +135,17 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-O hero (`src/components/sections/Hero.tsx`) é dividido em duas camadas
-independentes:
+O hero (`src/components/sections/Hero.tsx`) é uma pilha de camadas
+(design system, `MASTER.md` §9). Só a camada do visual é trocável:
 
 - **`HeroContent`** — o texto aprovado e os botões. Sempre o mesmo, não
   importa o visual de fundo.
-- **`HeroBackground`** — escolhe e renderiza a peça de fundo, com base em
-  `siteConfig.heroVisual` (`src/config/site.ts`).
+- **`HeroBackground`** — a base na cor do "espaço" (`navy-950`), a peça de
+  fundo escolhida em `siteConfig.heroVisual` (`src/config/site.ts`) e, por
+  cima dela, o véu do design system, que garante o contraste do texto com
+  qualquer visual. A composição é lado a lado a partir de 1024px e em faixa
+  (texto em cima, visual embaixo) abaixo disso — tudo em `globals.css`,
+  seção "Hero".
 
 Para **trocar entre os visuais que já existem**, mude uma linha em
 `src/config/site.ts`:
@@ -147,20 +154,22 @@ Para **trocar entre os visuais que já existem**, mude uma linha em
 heroVisual: "blackhole", // ou "static"
 ```
 
-- `"blackhole"` — `HeroVisualBlackhole.tsx`: o buraco negro (WebGL), com
-  `HeroVisualStatic` atrás como fundo de verdade — é o que aparece se o
-  navegador não tiver WebGL ou perder o contexto, sem precisar de nenhum
-  código extra.
-- `"static"` — `HeroVisualStatic.tsx`: só o fundo do tema (gradiente nos tons
-  da marca), sem WebGL.
+- `"blackhole"` — `HeroVisualBlackhole.tsx`: o buraco negro (WebGL), com o
+  disco nas cores da marca. `HeroVisualStatic` fica por baixo, escondido; se o
+  navegador não tiver WebGL ou perder o contexto, o componente marca
+  `data-webgl` e o CSS mostra o visual estático — sem nenhum código extra.
+- `"static"` — `HeroVisualStatic.tsx`: o fundo do tema sem WebGL — o símbolo
+  da Strukti em vista explodida (`public/brand/strukti-encaixe.svg`) com uma
+  luz azul atrás.
 
 Para **acrescentar um visual novo**, sem mexer em `HeroContent` nem no resto
 da página:
 
 1. Crie um componente em `src/components/sections/` que implemente
    `HeroVisualProps` (`src/components/sections/hero-visual.ts`) — ele recebe
-   `narrow` (true abaixo de 768px) e deve preencher sozinho a área do hero
-   (`absolute inset-0 h-full w-full` ou equivalente).
+   `narrow` (true abaixo de 1024px, na composição em faixa) e deve preencher
+   sozinho a área do hero (`absolute inset-0` ou equivalente), respeitando o
+   ponto focal e a área livre do texto (`MASTER.md` §9.1–9.2).
 2. Acrescente uma entrada no mapa `HERO_VISUALS` de
    `src/components/sections/HeroBackground.tsx` e no tipo `HeroVisual` de
    `src/config/site.ts`.

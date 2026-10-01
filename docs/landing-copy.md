@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.4 · 30/09/2026 · Tarefa A1 · Seção 4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 1.5 · 01/10/2026 · Tarefa DS1 · Seção 4: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
@@ -158,6 +158,24 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 *Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som. Sem capturas (prints) nesta seção — decisão do cliente em 30/09: o vídeo ficou bom, as capturas ficaram feias.*
 
 *Nota: ordem na página (v1.4): título, texto e título do vídeo sobem juntos enquanto o cartão com o vídeo se endireita na rolagem; depois vêm a legenda, a descrição, os destaques, o fecho e o botão. O vídeo é a prova principal, por isso vem antes da lista.*
+
+### Portfólio (textos de interface)
+
+*Nota (v1.5): a seção vira um portfólio de vídeos. Os projetos ficam numa lista de dados (`src/content/landing.ts`); o primeiro é o destaque, com o vídeo e o cartão 3D acima, e os demais formam uma grade que só aparece quando houver dois projetos ou mais. Hoje há um projeto só, então nada desta subseção aparece no site ainda.*
+
+**Título da grade (H3):** Outros projetos
+
+**Botão (quando a grade tiver mais de 6 projetos):** Mostrar mais projetos
+
+**Nome acessível do botão de reproduzir no cartão:** Assistir ao vídeo: {nome}
+
+*Nota: `{nome}` é o nome do projeto. A forma "Assistir ao vídeo: {nome}" funciona com qualquer nome (não depende de "do" ou "da").*
+
+**Rota de Vendas no cartão da grade:**
+- **Resumo:** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.
+- **Etiquetas de plataforma:** Android · Windows
+
+*Nota: o resumo é a primeira frase do texto da seção, já aprovada. As etiquetas são fatos do aplicativo (Android do vendedor, Windows do escritório).*
 
 ---
 
