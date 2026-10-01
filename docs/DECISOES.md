@@ -275,3 +275,67 @@ pílulas e o foco deixa de ser laranja. Ajustes no hero que tocam o código
 do Andaime (ponto de corte de 1024 px, véu do DS no lugar do `scrim` do
 componente, camada de espera sem o símbolo) são combinados com ele na
 Fase B.
+
+---
+
+## ADR-007 — Hero "video" com aba no topo; pílula com seta só no hero
+
+**Data:** 01/10/2026
+**Decisão de:** Claudinho (maestro), a pedido do cliente, na tarefa HR1; proposta e implementação do Nanquim (Designer)
+**Status:** aceita (decisões 1 a 4 aprovadas pelo Claudinho em 01/10/2026; vídeo escolhido pelo cliente)
+
+**Contexto:** o cliente quis trocar a tela inicial (cabeçalho atual e
+buraco negro) por um hero no estilo do "PrismaHero" da 21st.dev: vídeo de
+fundo em tela cheia com ruído e gradiente, navegação numa "aba" escura no
+topo, uma palavra gigante que sobe ao carregar e um botão em pílula com
+seta. O PrismaHero tem "License: unknown" na 21st e o vídeo dele vem de uma
+CDN sem licença. O MASTER v2 (ADR-006) proibia pílula e seta em botão.
+
+**Decisão:**
+- **Implementação própria** (ADR-005): nada do código nem do vídeo do
+  PrismaHero; só a ideia visual, refeita com CSS e o `motion/react` que já
+  temos.
+- **Trocável por config:** `siteConfig.heroVariant` = `"video"` (padrão) ou
+  `"classic"` (o hero anterior, com buraco negro ou estático em
+  `siteConfig.heroVisual`, e o cabeçalho sticky). O classic não foi
+  apagado.
+- **Vídeo:** "Rota ao entardecer" (Pexels, Pexels License, escolhido pelo
+  cliente entre 3 opções), hospedado em `public/video/hero/`, nunca de CDN
+  externa; loop de 12 s sem salto, tom marinho, recortes deitado e em pé,
+  ~1,65 MB e ~0,66 MB. Só toca por JavaScript, sem reduced motion, com o
+  hero na tela e sem "economizar dados"; senão, fica o pôster. Controle de
+  pausar/tocar (WCAG 2.2.2).
+- **Palavra gigante "Strukti"** com o ponto do i do logo como detalhe,
+  decorativa (`aria-hidden`); o H1 semântico continua sendo o título
+  aprovado. A subida (word pull-up) é **só CSS** (ADR-004, forma
+  preferida): começa no 1º quadro, sem esperar a hidratação, sem piscar e
+  sem animação com reduced motion. O `motion/react` fica no menu e nos
+  botões.
+- **Barra do topo fixa** (a "aba"): marca, 5 links e WhatsApp a partir de
+  1024 px; abaixo, marca e "Menu", com painel de itens de 48 px e texto de
+  18 px (resolve o A2 do backlog: antes, abaixo de 1100 px não havia menu).
+- **FAB só abaixo de 1024 px** quando a barra existe: acima disso o
+  WhatsApp já está sempre visível na barra, e o FAB duplicava a chamada.
+- **Pílula com seta, exceção só no hero "video":** os dois botões do hero
+  são pílulas; o WhatsApp segue verde, com ícone e de maior destaque; "Pedir
+  diagnóstico gratuito" é de contorno com a seta num círculo electric-700.
+  No resto do site os botões seguem a §8.1 (sem pílula, sem seta).
+
+**Consequência:** o MASTER ganhou a §8.3.1 (barra), a §9.6 (hero
+"video"), a regra do FAB na §8.12, as exceções nas §5.3, §8.1 e §10 e os
+pares de contraste novos na §3.4. Os textos de interface novos ("Menu",
+"Pausar o vídeo de fundo", "Tocar o vídeo de fundo") estão no
+`docs/landing-copy.md`. Testes novos: `TopBar.test.tsx` e
+`HeroVideo.test.tsx`; o teste de hidratação e o `check:browser` cobrem a
+página com o hero novo.
+
+**Revisão HR1 (Crivo):** o painel do menu também fecha quando o foco sai
+da barra (o painel é fixo e cobria o controle focado, WCAG 2.4.11); o
+controle do vídeo ganhou um anel de espaço sob o contorno de foco (o ciano
+sobre o céu claro ficava em ~1,1:1) e veio para antes do texto no DOM; no
+lado a lado, o vídeo passou a ser **mascarado** antes da coluna de texto,
+em vez de coberto por um véu de 0,88, que deixava ver o céu e a crista do
+morro como um "retângulo" atrás das letras; a moldura passou a noite
+(navy-900), dentro da margem de espaço, para o recorte da aba e da
+moldura continuar visível. Os testes de hidratação e do axe rodam com os
+dois heroes ("video" e "classic").
