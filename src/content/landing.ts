@@ -1,7 +1,7 @@
 /**
  * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
- * Texto aprovado pelo cliente em docs/landing-copy.md (v1.1, 30/09/2026),
+ * Texto aprovado pelo cliente em docs/landing-copy.md (v1.4, 30/09/2026),
  * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
  * `[A PREENCHER: ...]`, o valor abaixo usa a mesma marcação — não
  * inventar o dado.
@@ -151,39 +151,6 @@ export const landingContent = {
     videoPoster: "/video/brag.jpg",
     closing: "O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.",
     button: "Pedir diagnóstico gratuito",
-    screenshots: [
-      {
-        src: "/capturas/cliente-detalhe.png",
-        alt: "Rota de Vendas no celular: cadastro de um cliente, com botões para ligar, chamar no WhatsApp e abrir no mapa.",
-        width: 576,
-        height: 1280,
-      },
-      {
-        src: "/capturas/duplicado.png",
-        alt: 'Rota de Vendas no computador: ao digitar um número de pedido que já existe, o aplicativo avisa "Já existe o pedido nº 0001" e oferece abrir o pedido.',
-        width: 1600,
-        height: 900,
-      },
-      {
-        src: "/capturas/roteiro-entrega.png",
-        alt: "Primeira página de um roteiro de entrega do Rota de Vendas: resumo com 12 paradas em 7 cidades, lista de carga, brindes a levar e as paradas da primeira cidade, cada uma com os números dos pedidos e o caminho até a porta.",
-        width: 1654,
-        height: 2339,
-      },
-      {
-        src: "/capturas/funciona-offline.png",
-        alt: 'Rota de Vendas sem internet: o cadastro de cliente avisa "Sem internet agora. Preencha o endereço manualmente." e continua funcionando.',
-        width: 576,
-        height: 1280,
-      },
-      {
-        src: "/capturas/pedido-formulario.png",
-        alt: "Rota de Vendas no celular com a letra ampliada: o formulário de novo pedido continua legível, sem texto cortado.",
-        width: 576,
-        height: 1280,
-      },
-    ],
-    screenshotsDisclaimer: "Todas as capturas usam dados fictícios.",
   },
 
   diagnostico: {

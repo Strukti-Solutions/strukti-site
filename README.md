@@ -32,13 +32,22 @@ telemetria do Next.js.
 
 ### Dependências: quarentena de 7 dias
 
-Todas as versões no `package.json` são exatas. Ao instalar ou atualizar qualquer
-pacote (direto ou transitivo), use `--min-release-age=7` para garantir que nada
-publicado nos últimos 7 dias entre no projeto:
+Todas as versões no `package.json` são exatas. Nada publicado nos últimos 7 dias
+entra no projeto, direto ou transitivo (ADR-003):
 
-```bash
-npm install --min-release-age=7
-```
+- O `.npmrc` do projeto tem `min-release-age=7`, então todo `npm install` já
+  ignora versões recentes — o mesmo que rodar:
+
+  ```bash
+  npm install --min-release-age=7
+  ```
+
+- Quando um range (`^`, `~`) de dependência ainda resolver uma transitiva
+  recente, fixe a versão em `overrides` no `package.json`.
+- `npm run check:quarantine` confere o `package-lock.json` inteiro e falha se
+  algum pacote tiver menos de 7 dias.
+- O CLI do shadcn não fica no `package.json`: rode sob demanda, com a versão
+  fixada (`npx shadcn@4.21.0 ...`).
 
 ## Configuração
 
@@ -80,8 +89,23 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run start`     | Roda o build de produção                     |
 | `npm run lint`      | ESLint                                       |
 | `npm run typecheck` | `tsc --noEmit`                               |
-| `npm run test`      | Testes (Vitest): validação, rota de API, formulário e acessibilidade (axe) |
+| `npm run test`      | Testes (Vitest): validação, rota de API, formulário, acessibilidade (axe) e hidratação da página inteira com e sem prefers-reduced-motion |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
+| `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
+| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim e falha se houver rolagem horizontal ou erro no console (ex.: hidratação). Mostra qual elemento passou da borda. Navegador detectado sozinho, ou `BROWSER_PATH` |
+
+### Definição de pronto
+
+Toda tarefa só está pronta com, nesta ordem:
+
+1. `npm run typecheck`, `npm run lint` e `npm run test` passando. O `test`
+   inclui `src/app/page.hydration.test.tsx`: a página inteira hidrata sem
+   `onRecoverableError` e sem nenhum `console.error`, com prefers-reduced-motion
+   ligado e desligado (ADR-004).
+2. `npm run check:quarantine` passando.
+3. `npm run build` passando — com o servidor de desenvolvimento **parado** (o
+   build reescreve o `.next`).
+4. `npm run check:browser` passando, com o site no ar de novo (`npm run dev`).
 
 ## Estrutura
 

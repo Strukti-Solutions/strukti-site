@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
 import { diagnosticoFormSchema, PROBLEM_MAX_LENGTH } from "@/lib/validation";
 import { siteConfig } from "@/config/site";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LinkedText } from "@/components/LinkedText";
+import { Reveal } from "@/components/motion/Reveal";
+import { useTapHover } from "@/lib/motion";
 
 type Status = "idle" | "submitting" | "success" | "error";
 type SubmitErrorKind = "rateLimit" | "generic";
@@ -46,6 +49,7 @@ export function Diagnostico() {
   const formRef = useRef<HTMLFormElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const statusErrorRef = useRef<HTMLParagraphElement>(null);
+  const tapHover = useTapHover();
 
   const errorCount = Object.keys(fieldErrors).length;
 
@@ -138,42 +142,44 @@ export function Diagnostico() {
           {highlight}
         </p>
 
-        <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.75rem" }}>{howItWorksTitle}</h3>
-        <ol
-          style={{
-            margin: "0 0 2.5rem",
-            padding: 0,
-            listStyle: "none",
-            display: "grid",
-            gap: "0.75rem",
-          }}
-        >
-          {steps.map((step, index) => (
-            <li key={step.lead} style={{ display: "flex", gap: "0.75rem" }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  flexShrink: 0,
-                  width: "1.75rem",
-                  height: "1.75rem",
-                  borderRadius: "50%",
-                  backgroundColor: "var(--color-petrol-100)",
-                  color: "var(--color-petrol-900)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: "0.9rem",
-                }}
-              >
-                {index + 1}
-              </span>
-              <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>
-                <strong style={{ color: "var(--color-petrol-900)" }}>{step.lead}</strong> {step.rest}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <Reveal>
+          <h3 style={{ color: "var(--color-petrol-900)", marginBottom: "0.75rem" }}>{howItWorksTitle}</h3>
+          <ol
+            style={{
+              margin: "0 0 2.5rem",
+              padding: 0,
+              listStyle: "none",
+              display: "grid",
+              gap: "0.75rem",
+            }}
+          >
+            {steps.map((step, index) => (
+              <li key={step.lead} style={{ display: "flex", gap: "0.75rem" }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    width: "1.75rem",
+                    height: "1.75rem",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--color-petrol-100)",
+                    color: "var(--color-petrol-900)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {index + 1}
+                </span>
+                <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>
+                  <strong style={{ color: "var(--color-petrol-900)" }}>{step.lead}</strong> {step.rest}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </Reveal>
 
         {status === "success" ? (
           <div role="status">
@@ -340,7 +346,7 @@ export function Diagnostico() {
               {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
               <p style={{ ...helpStyle, marginBottom: "1.5rem" }}>{form.consentHelperLine}</p>
 
-              <button
+              <motion.button
                 type="submit"
                 aria-disabled={status === "submitting"}
                 aria-busy={status === "submitting"}
@@ -358,9 +364,10 @@ export function Diagnostico() {
                   cursor: status === "submitting" ? "not-allowed" : "pointer",
                   opacity: status === "submitting" ? 0.7 : 1,
                 }}
+                {...(status === "submitting" ? {} : tapHover)}
               >
                 {status === "submitting" ? form.submittingLabel : form.submitLabel}
-              </button>
+              </motion.button>
 
               <p style={{ marginTop: "1rem", color: "var(--color-ink-muted)" }}>
                 {form.whatsappAlternativePrefix}

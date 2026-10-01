@@ -1,8 +1,13 @@
+"use client";
+
+import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { useTapHover } from "@/lib/motion";
 
 export function Hero() {
   const { eyebrow, headline, body, primaryCta, secondaryCta, supportLine } = landingContent.hero;
+  const tapHover = useTapHover();
 
   return (
     <section id="inicio" className="section" aria-labelledby="hero-title">
@@ -42,7 +47,7 @@ export function Hero() {
           <WhatsAppButton message={landingContent.whatsappMessages.general}>
             {primaryCta}
           </WhatsAppButton>
-          <a
+          <motion.a
             href="#diagnostico"
             style={{
               display: "inline-flex",
@@ -55,9 +60,10 @@ export function Hero() {
               textDecoration: "none",
               minHeight: "48px",
             }}
+            {...tapHover}
           >
             {secondaryCta}
-          </a>
+          </motion.a>
         </div>
         <p style={{ color: "var(--color-ink-muted)", fontSize: "0.95rem" }}>{supportLine}</p>
       </div>

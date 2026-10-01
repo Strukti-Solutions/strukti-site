@@ -9,17 +9,23 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:placeholders": "node scripts/check-placeholders.mjs"
+    "check:placeholders": "node scripts/check-placeholders.mjs",
+    "check:quarantine": "node scripts/check-quarantine.mjs",
+    "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
+    "clsx": "2.1.1",
+    "motion": "13.4.1",
     "next": "15.5.26",
+    "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "zod": "4.6.5",
-    "pg": "8.23.0"
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
+    "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/node": "24.13.6",
@@ -31,7 +37,14 @@
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.26",
     "jsdom": "30.1.1",
+    "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
+  },
+  "overrides": {
+    "framer-motion": "13.4.1",
+    "motion-dom": "13.4.1",
+    "caniuse-lite": "1.0.30001810",
+    "enhanced-resolve": "5.25.1"
   }
 }

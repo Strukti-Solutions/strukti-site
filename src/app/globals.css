@@ -1,3 +1,10 @@
+/*
+ * Tailwind entra só com theme + utilities, sem o preflight (reset de base).
+ * Motivo e versões: docs/DECISOES.md, ADR-001.
+ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
 :root {
   --color-petrol-900: #0b2e38;
   --color-petrol-800: #0f3c49;
@@ -31,8 +38,13 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -61,6 +73,16 @@ button {
 :focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/*
+ * O vídeo da Seção 4 vive dentro de um cartão (ScrollTiltCard) com
+ * `overflow: hidden` e sem padding interno — o contorno de foco padrão
+ * (offset positivo) ficaria cortado e sumiria para quem navega pelo
+ * teclado (WCAG 2.4.7). Aqui ele desenha para dentro do próprio vídeo.
+ */
+video:focus-visible {
+  outline-offset: -3px;
 }
 
 .container {
@@ -153,26 +175,11 @@ button {
   gap: 1.5rem;
 }
 
-@media (min-width: 768px) {
+/* Marca + 5 links + botão de WhatsApp só cabem numa linha a partir de
+   ~840px; a 768px o botão era empurrado para fora e criava rolagem
+   horizontal. Abaixo de 1024px o cabeçalho fica como no celular. */
+@media (min-width: 1024px) {
   .header-nav {
     display: flex;
-  }
-}
-
-.screenshot-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 640px) {
-  .screenshot-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .screenshot-grid {
-    grid-template-columns: repeat(3, 1fr);
   }
 }

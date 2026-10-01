@@ -1,16 +1,22 @@
+"use client";
+
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { motion } from "motion/react";
+import { useTapHover } from "@/lib/motion";
 
 export function FloatingWhatsApp() {
   const { desktopLabel, accessibleName } = landingContent.floatingWhatsapp;
+  const tapHover = useTapHover();
 
   return (
-    <a
+    <motion.a
       href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={accessibleName}
+      {...tapHover}
       style={{
         position: "fixed",
         right: "1.25rem",
@@ -32,6 +38,6 @@ export function FloatingWhatsApp() {
     >
       <WhatsAppIcon size={22} />
       <span className="floating-whatsapp-label">{desktopLabel}</span>
-    </a>
+    </motion.a>
   );
 }

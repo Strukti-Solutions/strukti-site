@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.2 · 30/09/2026 · Tarefa L1 · Redação: Manchete
+Status: **rascunho para aprovação do cliente** · Versão 1.4 · 30/09/2026 · Tarefa A1 · Seção 4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
@@ -133,14 +133,6 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Texto:** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta. Ele não é um sistema de prateleira; mostra como trabalhamos.
 
-**Destaques (lista):**
-- **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
-- **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
-- **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
-- **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
-- **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
-- **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
-
 **Título do vídeo (H3):** Veja o Rota de Vendas
 
 **Nome acessível do vídeo:** Vídeo de demonstração do Rota de Vendas
@@ -151,13 +143,21 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Descrição do vídeo (texto que abre no link):** Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.
 
+**Destaques (lista):**
+- **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
+- **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
+- **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
+- **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
+- **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
+- **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
+
 **Fecho:** O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.
 
 **Botão:** Pedir diagnóstico gratuito
 
-**Legenda das capturas:** Todas as capturas usam dados fictícios.
+*Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som. Sem capturas (prints) nesta seção — decisão do cliente em 30/09: o vídeo ficou bom, as capturas ficaram feias.*
 
-*Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som.*
+*Nota: ordem na página (v1.4): título, texto e título do vídeo sobem juntos enquanto o cartão com o vídeo se endireita na rolagem; depois vêm a legenda, a descrição, os destaques, o fecho e o botão. O vídeo é a prova principal, por isso vem antes da lista.*
 
 ---
 
@@ -393,11 +393,11 @@ Todas as capturas usam dados fictícios. Arquivos em `C:\dev\_qa\q4` e `C:\dev\_
 
 | Imagem | Uso sugerido | Texto alternativo |
 |---|---|---|
-| `q4/fonte200_cliente_detail_ok.png` | Seção 4 | Rota de Vendas no celular: cadastro de um cliente, com botões para ligar, chamar no WhatsApp e abrir no mapa. |
-| `q5/video/duplicado.png` | Seção 4 | Rota de Vendas no computador: ao digitar um número de pedido que já existe, o aplicativo avisa "Já existe o pedido nº 0001" e oferece abrir o pedido. |
-| `q5/video/roteiro_com_numeros.pdf`, página 1 (convertida em imagem) | Seção 4 | Primeira página de um roteiro de entrega do Rota de Vendas: resumo com 12 paradas em 7 cidades, lista de carga, brindes a levar e as paradas da primeira cidade, cada uma com os números dos pedidos e o caminho até a porta. |
-| `q4/viacep_offline_ok.png` | Seção 4 | Rota de Vendas sem internet: o cadastro de cliente avisa "Sem internet agora. Preencha o endereço manualmente." e continua funcionando. |
-| `q4/fonte200_pedido_form_ok.png` | Seção 4 | Rota de Vendas no celular com a letra ampliada: o formulário de novo pedido continua legível, sem texto cortado. |
+| `q4/fonte200_cliente_detail_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no celular: cadastro de um cliente, com botões para ligar, chamar no WhatsApp e abrir no mapa. |
+| `q5/video/duplicado.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no computador: ao digitar um número de pedido que já existe, o aplicativo avisa "Já existe o pedido nº 0001" e oferece abrir o pedido. |
+| `q5/video/roteiro_com_numeros.pdf`, página 1 (convertida em imagem) | não usada (decisão do cliente, 30/09) | Primeira página de um roteiro de entrega do Rota de Vendas: resumo com 12 paradas em 7 cidades, lista de carga, brindes a levar e as paradas da primeira cidade, cada uma com os números dos pedidos e o caminho até a porta. |
+| `q4/viacep_offline_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas sem internet: o cadastro de cliente avisa "Sem internet agora. Preencha o endereço manualmente." e continua funcionando. |
+| `q4/fonte200_pedido_form_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no celular com a letra ampliada: o formulário de novo pedido continua legível, sem texto cortado. |
 | `q5/video/formulario_numero.png` | Não recomendada | Rota de Vendas no computador: formulário de novo pedido com o número 0500 digitado como veio impresso no outro sistema. |
 | `q4/logo_config_ok.png` | Não recomendada | Configurações do Rota de Vendas: tema claro, escuro ou do sistema, e modo de alto contraste para uso sob sol forte. |
 | Iniciais da equipe | Seção 6 | Decorativas: texto alternativo vazio. |
