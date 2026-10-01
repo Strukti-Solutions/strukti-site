@@ -44,7 +44,7 @@ export function OQueJaFizemos() {
             controls
             preload="none"
             poster={videoPoster}
-            className="h-full w-full rounded-2xl object-cover"
+            className="h-full w-full rounded-2xl object-contain"
             style={{ backgroundColor: "#000" }}
             aria-label={videoAccessibleName}
           >

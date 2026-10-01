@@ -23,9 +23,14 @@ inline nos componentes de seção — não há Tailwind nem shadcn no projeto.
   publicados em 2026-07-16, fora da janela de quarentena de 7 dias) e as
   convenções do shadcn: `components.json`, componentes de UI de terceiros em
   `src/components/ui/`, função `cn()` em `src/lib/utils.ts` (via `clsx` 2.1.1
-  e `tailwind-merge` 3.7.0). O CLI `shadcn@4.21.0` fica fixado como
-  devDependency para os próximos `npx shadcn add` (também fora da
-  quarentena).
+  e `tailwind-merge` 3.7.0). **O CLI `shadcn` não fica no `package.json`:**
+  roda sob demanda, de versão fixada na hora (`npx shadcn@4.21.0 add ...`,
+  conferindo a quarentena daquela versão naquele dia). Motivo: `shadcn` traz
+  uma árvore de dependências própria e pesada (MCP, scaffolding, etc.) só
+  para gerar código uma vez; depois de rodado, o componente vira código
+  nosso em `src/components/ui/` e o CLI não precisa mais aparecer no lock.
+  Isso também evita que o lockfile arraste pacotes transitivos do CLI
+  publicados há poucos dias (ver ADR-003).
 - **Adoção gradual:** os componentes de seção já existentes
   (`src/components/sections/*`, `Header`, `WhatsAppButton` etc.) continuam
   como estão, com `style={}` inline e as classes utilitárias do
@@ -49,7 +54,7 @@ inline nos componentes de seção — não há Tailwind nem shadcn no projeto.
   via valor arbitrário do Tailwind (`bg-[var(--color-petrol-900)]`), sem
   duplicar cor em formato hexadecimal solto.
 - Dependências novas ficam no mínimo necessário hoje: `tailwindcss`,
-  `@tailwindcss/postcss`, `shadcn` (CLI), `clsx`, `tailwind-merge`. Não
+  `@tailwindcss/postcss`, `clsx`, `tailwind-merge`. Não
   entraram `class-variance-authority`, `lucide-react` nem `tw-animate-css`
   porque nenhum componente atual usa variantes de classe (CVA) ou ícones do
   Lucide; entram quando um componente futuro realmente precisar, sempre com
@@ -80,3 +85,78 @@ como dependência.
 
 **Consequência:** uma única biblioteca de animação no projeto, sem
 dependência duplicada fazendo a mesma coisa.
+
+---
+
+## ADR-003 — Checagem automática da quarentena de 7 dias
+
+**Data:** 30/09/2026
+**Decisão de:** Claudinho (maestro), a partir de achado da revisão (Crivo)
+**Status:** aceita
+
+**Contexto:** a regra de quarentena (CLAUDE.md) hoje só é checada à mão,
+olhando a data de publicação das dependências diretas que entram no
+`package.json`. A revisão da entrega A1 pegou 15 pacotes **transitivos** no
+`package-lock.json` publicados há menos de 7 dias — a maior parte veio do
+CLI `shadcn` (ver ADR-001) e do range `^13.4.1` do pacote `motion`, que
+resolvia `framer-motion` e `motion-dom` para versões (13.4.6/13.4.5)
+publicadas dias atrás, mesmo com `motion` fixado em `13.4.1` no
+`package.json`.
+
+**Decisão:**
+- `npm run check:quarantine` (`scripts/check-quarantine.mjs`) lê
+  `package-lock.json` inteiro (diretos e transitivos), consulta a data de
+  publicação de cada pacote no registry do npm e falha se algum tiver
+  menos de 7 dias. Entra na definição de pronto, junto de typecheck, lint,
+  test e build.
+- Quando um range semver (`^`, `~`) de uma dependência direta puder
+  resolver para uma versão transitiva recente, fixar essa transitiva via
+  `overrides` no `package.json` (caso do `framer-motion` e `motion-dom`,
+  trazidos pelo `motion`: fixados em `13.4.1`, mesma versão já aprovada).
+- Para regenerar o lock inteiro respeitando a quarentena de uma vez, use
+  `npm install --min-release-age=7` (flag nativa do npm, já documentada no
+  README) — ela mesma calcula "7 dias atrás de agora" a cada execução, sem
+  precisar escrever uma data fixa que fica velha no dia seguinte. (Uma
+  variante com data fixa, `npm install --before=<data>`, existe no npm mas
+  não é a usada aqui, por essa razão.) Mesmo assim, `check:quarantine`
+  continua sendo a checagem que vale: o `--min-release-age`/`--before` só
+  ajuda a regenerar o lock, a checagem é o que garante.
+
+**Consequência:** a quarentena passa a ser garantida pela árvore de
+dependências inteira, não só pelo que o grupo escreve à mão no
+`package.json`.
+
+---
+
+## ADR-004 — Reduzir movimento só por CSS, nunca ramificando a árvore React
+
+**Data:** 30/09/2026
+**Decisão de:** Claudinho (maestro), a partir de achado da revisão (Crivo)
+**Status:** aceita
+
+**Contexto:** a primeira versão do `ContainerScroll` (ADR-001) tinha um
+`if (useReducedMotion()) return <...estático...>`. `useReducedMotion()`
+devolve `null` no servidor (não há `matchMedia` lá) e só resolve a
+preferência real no primeiro render do cliente — então, quando o visitante
+prefere menos movimento, o servidor manda a árvore animada e o cliente
+troca pela estática assim que hidrata. O React detecta a divergência,
+descarta o HTML do servidor e renderiza tudo de novo (erro de hidratação,
+salto de layout visível).
+
+**Decisão:** nenhum componente deste projeto ramifica a árvore React por
+`prefers-reduced-motion` (nem por `useReducedMotion()`, nem checando
+`matchMedia` no primeiro render). Uma de duas:
+- **Preferida — CSS puro:** uma árvore só; a redução usa os modificadores
+  `motion-reduce:`/`motion-safe:` do Tailwind (ou `@media
+  (prefers-reduced-motion: reduce)` direto no CSS), que valem igual no
+  servidor e no cliente, com ou sem JavaScript. É o que o `ContainerScroll`
+  usa hoje.
+- **Mínimo aceitável, quando a diferença não dá para fazer só em CSS:** o
+  mesmo portão de montagem do `Reveal`
+  (`src/components/motion/Reveal.tsx`) — a árvore animada só aparece
+  depois de montar no cliente (`useEffect` + `useState`); antes disso (SSR
+  e primeiro render do cliente, iguais) e sem JavaScript, renderiza o
+  conteúdo final direto, sem transformação.
+
+**Consequência:** nenhum conteúdo pisca, some ou troca de lugar durante a
+hidratação por causa de preferência de movimento.

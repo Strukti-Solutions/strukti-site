@@ -82,6 +82,10 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run typecheck` | `tsc --noEmit`                               |
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário e acessibilidade (axe) |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
+| `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
+
+Definição de pronto de qualquer tarefa: `typecheck`, `lint`, `test`, `build`
+e `check:quarantine` passando.
 
 ## Estrutura
 

@@ -38,8 +38,13 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -68,6 +73,16 @@ button {
 :focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/*
+ * O vídeo do Container Scroll Animation vive dentro de um cartão com
+ * `overflow: hidden` e, abaixo de `md`, sem padding — o contorno de foco
+ * padrão (offset positivo) fica cortado e some para quem navega pelo
+ * teclado (WCAG 2.4.7). Aqui ele desenha para dentro do próprio vídeo.
+ */
+video:focus-visible {
+  outline-offset: -3px;
 }
 
 .container {
