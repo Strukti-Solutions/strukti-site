@@ -153,6 +153,14 @@ html {
   scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
+/* Celular: ao rolar até um controle focado (Tab), ele para acima da faixa
+   do botão flutuante do WhatsApp (56 px + 16 px de margem + folga). */
+@media (max-width: 639px) {
+  html {
+    scroll-padding-bottom: 88px;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -521,7 +529,8 @@ video:focus-visible {
  * Véu e fade-base são do DS, não do visual: qualquer peça trocada em
  * siteConfig.heroVisual fica atrás deles. Na zona do texto o véu tem
  * opacidade ≥ 0,86 — mesmo com um pixel branco atrás, o texto passa no AA
- * (MASTER §3.4). Faixa (< 1024 px): texto em cima, visual embaixo.
+ * (MASTER §3.4). Faixa (< 1024 px): texto em cima, visual embaixo; o véu fica
+ * em 0,90 até o fim do texto (o começo da faixa) e só então desbota.
  */
 .hero__veil {
   position: absolute;
@@ -533,8 +542,8 @@ video:focus-visible {
     linear-gradient(
       180deg,
       rgb(8 18 29 / 0.94) 0,
-      rgb(8 18 29 / 0.9) calc(100% - var(--hero-band) - 24px),
-      rgb(8 18 29 / 0) calc(100% - var(--hero-band) + 120px)
+      rgb(8 18 29 / 0.9) calc(100% - var(--hero-band)),
+      rgb(8 18 29 / 0) calc(100% - var(--hero-band) + 144px)
     );
 }
 
@@ -658,8 +667,10 @@ video:focus-visible {
  * Visual "blackhole". O céu do shader é quase preto; em `screen` o preto
  * vira a cor do espaço e só a luz do disco soma — o hero continua
  * terminando em navy-950. Sob o canvas fica só a base (sem a luz, que
- * tingiria a sombra do buraco); se o WebGL falhar (o componente marca
- * `data-webgl` no host), aparece o visual estático inteiro.
+ * tingiria a sombra do buraco); se o WebGL faltar, falhar ou perder o
+ * contexto (o componente marca `data-webgl` no host), aparece o visual
+ * estático inteiro — por seletor de irmão, que funciona em qualquer
+ * navegador (sem depender de :has()).
  */
 .hero-blackhole {
   position: absolute;
@@ -676,7 +687,7 @@ video:focus-visible {
   display: none;
 }
 
-.hero-blackhole:has(.hero-blackhole__canvas[data-webgl]:not([data-webgl=""])) .hero-static {
+.hero-blackhole__canvas[data-webgl]:not([data-webgl=""]) ~ .hero-static {
   display: block;
 }
 
@@ -1417,6 +1428,23 @@ textarea.field__input {
 .fab-whatsapp:hover {
   background-color: var(--color-whatsapp-hover);
   color: var(--color-navy-950);
+}
+
+/* Oculto de verdade: o componente também põe `inert` (fora do Tab e do
+   leitor de tela). Começa assim no SSR; ver FloatingWhatsApp.tsx. */
+.fab-whatsapp[data-visible="false"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fab-whatsapp {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      opacity var(--duration-base) var(--ease-standard),
+      visibility var(--duration-base) var(--ease-standard);
+  }
 }
 
 .fab-whatsapp:focus-visible {

@@ -135,7 +135,7 @@ export function Diagnostico() {
           </Reveal>
         </div>
 
-        <div className="form-card">
+        <div className="form-card" data-hides-fab="">
           {status === "success" ? (
             <div role="status" className="form-success">
               <h3 ref={successHeadingRef} tabIndex={-1} className="block-title form-card__title">

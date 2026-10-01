@@ -212,7 +212,7 @@ dúvida, ele vira inspiração, não arquivo do projeto.
 
 **Data:** 30/09/2026
 **Decisão de:** Nanquim (Designer), na tarefa DS1 pedida pelo Claudinho
-**Status:** proposta (aguarda revisão)
+**Status:** aceita (conceito aprovado pelo Claudinho em 01/10/2026; revisão DS1 da Crivo)
 
 **Contexto:** o cliente pediu um design system novo, com as cores do logo,
 visual moderno sem cara de IA, as animações mantidas, um buraco negro

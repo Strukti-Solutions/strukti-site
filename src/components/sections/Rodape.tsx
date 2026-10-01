@@ -8,7 +8,7 @@ export function Rodape() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="site-footer surface-space">
+    <footer className="site-footer surface-space" data-hides-fab="">
       <div className="container">
         <div className="site-footer__grid">
           <div>

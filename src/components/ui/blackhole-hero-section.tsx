@@ -2,14 +2,43 @@
 
 /**
  * Componente de terceiro, licença MIT (ADR-005, docs/DECISOES.md).
- * Origem: "Black Hole Hero Section", autor yura, 21st.dev.
+ * Origem: "Black Hole Hero Section", de Yura Oak (@yura), 21st.dev.
  * https://21st.dev/@yura/components/blackhole-hero-section
- * Licença conferida pelo Claudinho em 30/09/2026.
+ * Licença conferida pelo Claudinho em 30/09/2026. A página de origem publica
+ * "License: mit" e o autor, sem ano nem arquivo de licença; o aviso abaixo
+ * usa o nome do autor como está lá. Cópia também em THIRD_PARTY_NOTICES.md.
+ *
+ * MIT License
+ *
+ * Copyright (c) Yura Oak
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  *
  * Adaptado ao projeto: sem `any` (extensão WebGL tipada abaixo), sem fundo
  * fixo (a cor de fundo fica por conta de quem usa o componente — ver
- * src/components/sections/HeroVisualBlackhole.tsx) e com o índice do Halton
- * sequence anotado para o `noUncheckedIndexedAccess` do tsconfig.
+ * src/components/sections/HeroVisualBlackhole.tsx), com o índice do Halton
+ * sequence anotado para o `noUncheckedIndexedAccess` do tsconfig e, na
+ * revisão DS1 (Crivo): pausa fora da tela mesmo depois de trocar de aba
+ * (duas flags: na tela e aba visível), troca de DPR/resolução aplicada quando
+ * as props mudam, `data-webgl="lost"` na perda de contexto, `console.warn` no
+ * lugar de `console.error` (o fallback já cobre a falha) e
+ * `powerPreference: "default"` (fundo decorativo não precisa da GPU dedicada).
  */
 
 import * as React from "react";
@@ -661,6 +690,10 @@ export function BlackHoleHeroSection({
 }: BlackHoleHeroSectionProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // O resize lê maxDpr/resolution de `props`, mas só roda quando o tamanho do
+  // host muda. Este ref deixa o efeito de baixo reaplicá-lo quando essas duas
+  // props mudam (ex.: `narrow` vira true depois de montar, no celular).
+  const resizeRef = useRef<(() => void) | null>(null);
 
   const props = useRef({
     distance, elevation, azimuth, orbitSpeed, roll, fov, diskInner, diskOuter,
@@ -689,7 +722,7 @@ export function BlackHoleHeroSection({
       antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: "high-performance",
+      powerPreference: "default",
       preserveDrawingBuffer: false,
     };
     const gl = (canvas.getContext("webgl2", opts) ||
@@ -737,7 +770,7 @@ export function BlackHoleHeroSection({
         // Short and once per shader. When a context dies every shader fails at
         // the same moment with an empty log, and dumping five listings of GLSL
         // into the console buries whatever the real problem was.
-        console.error("blackhole: shader failed —", gl!.getShaderInfoLog(sh) || "no log (context lost?)");
+        console.warn("blackhole: shader failed —", gl!.getShaderInfoLog(sh) || "no log (context lost?)");
         gl!.deleteShader(sh);
         return null;
       }
@@ -757,7 +790,7 @@ export function BlackHoleHeroSection({
       gl!.deleteShader(vs);
       gl!.deleteShader(fs);
       if (!gl!.getProgramParameter(program, gl!.LINK_STATUS)) {
-        console.error(gl!.getProgramInfoLog(program));
+        console.warn("blackhole: link failed —", gl!.getProgramInfoLog(program));
         return null;
       }
       const u: Record<string, WebGLUniformLocation | null> = {};
@@ -926,7 +959,11 @@ export function BlackHoleHeroSection({
     let clock = reduced ? 6 : 0;
     let lastFrame = 0;
     let running = true;
-    let visible = true;
+    // Só renderiza com as duas verdadeiras: na tela (IntersectionObserver) e
+    // com a aba visível. Uma flag só fazia o visibilitychange sobrescrever o
+    // "fora da tela" e o loop voltava a desenhar a ~60 fps sem ninguém ver.
+    let inView = true;
+    let pageVisible = !document.hidden;
     let raf = 0;
 
     function pass(prog: Prog, target: Target | null) {
@@ -1101,7 +1138,7 @@ export function BlackHoleHeroSection({
     function tick(now: number) {
       if (!running) return;
       raf = requestAnimationFrame(tick);
-      if (!visible) { lastFrame = now; return; }
+      if (!inView || !pageVisible) { lastFrame = now; return; }
       const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0;
       lastFrame = now;
       if (!props.current.paused && !reduced) clock += dt;
@@ -1118,19 +1155,23 @@ export function BlackHoleHeroSection({
 
     /* --- the world ------------------------------------------------------- */
 
-    const ro = new ResizeObserver(() => {
+    const applySize = () => {
+      if (!running) return;
       resize();
       if (reduced || props.current.paused) settle(16);
-    });
+    };
+    resizeRef.current = applySize;
+
+    const ro = new ResizeObserver(applySize);
     ro.observe(host);
 
     const io = new IntersectionObserver(
-      (entries) => { visible = entries[0]?.isIntersecting ?? true; },
+      (entries) => { inView = entries[0]?.isIntersecting ?? true; },
       { threshold: 0 }
     );
     io.observe(host);
 
-    const onVisibility = () => { visible = !document.hidden; lastFrame = 0; };
+    const onVisibility = () => { pageVisible = !document.hidden; lastFrame = 0; };
     const onLost = (e: Event) => {
       // Asking for the context back is only worth it if it comes back working.
       // Until it does the canvas is hidden, because a dead one paints white.
@@ -1138,6 +1179,7 @@ export function BlackHoleHeroSection({
       running = false;
       cancelAnimationFrame(raf);
       canvas.style.display = "none";
+      host.dataset.webgl = "lost";
     };
     const onRestored = () => {
       width = height = sceneW = sceneH = 0;
@@ -1160,6 +1202,7 @@ export function BlackHoleHeroSection({
 
     return () => {
       running = false;
+      resizeRef.current = null;
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();
@@ -1180,6 +1223,10 @@ export function BlackHoleHeroSection({
       // allocated is enough; the context goes when the canvas does.
     };
   }, []);
+
+  useEffect(() => {
+    resizeRef.current?.();
+  }, [resolution, maxDpr]);
 
   return (
     <div

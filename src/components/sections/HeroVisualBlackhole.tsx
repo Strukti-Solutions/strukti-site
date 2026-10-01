@@ -21,14 +21,14 @@ const DISC_COOL = "#0166D2";
  * para fora da tela ou com a aba oculta.
  *
  * O canvas entra em `mix-blend-mode: screen` (globals.css): o céu quase preto
- * do shader vira a cor do espaço. HeroVisualStatic fica por baixo, escondido;
- * se o WebGL faltar ou falhar, o componente marca `data-webgl` e o CSS mostra
- * o visual estático inteiro.
+ * do shader vira a cor do espaço. HeroVisualStatic vem logo depois, escondido;
+ * se o WebGL faltar, falhar ou perder o contexto, o componente marca
+ * `data-webgl` no host e o CSS (seletor de irmão `~`, sem depender de
+ * `:has()`) mostra o visual estático inteiro.
  */
 export function HeroVisualBlackhole({ narrow }: HeroVisualProps) {
   return (
     <div className="hero-blackhole">
-      <HeroVisualStatic />
       <BlackHoleHeroSection
         className="hero-blackhole__canvas"
         focus={narrow ? [0.5, 0.84] : [0.76, 0.48]}
@@ -45,6 +45,7 @@ export function HeroVisualBlackhole({ narrow }: HeroVisualProps) {
         midColor={DISC_MID}
         coolColor={DISC_COOL}
       />
+      <HeroVisualStatic />
     </div>
   );
 }

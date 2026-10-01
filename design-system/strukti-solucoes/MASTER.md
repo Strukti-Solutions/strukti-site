@@ -175,6 +175,7 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | Contorno do botão secundário navy-300 / espaço | 7,49 | 3 ✅ |
 | **Pior caso do hero:** branco sobre véu de 0,86 com pixel branco atrás | 12,78 | 4,5 ✅ |
 | **Pior caso do hero:** navy-200 sobre véu de 0,86 com pixel branco atrás | 7,96 | 4,5 ✅ |
+| **Pior caso do hero:** navy-300 (linha de apoio) sobre véu de 0,86 com pixel branco atrás | 5,08 | 4,5 ✅ |
 
 Decorativos (sem exigência): junta navy-100 sobre branco 1,25; ponto do i
 electric-500 sobre branco 3,81; verde WhatsApp sobre papel 1,81 (o botão é
@@ -540,9 +541,28 @@ o ©. Régua navy-800 acima do ©.
 
 Verde `#25D366`, ícone navy-950, `--radius-2`, elevação nível 2. No
 celular: 56 × 56 px, só o ícone (com o nome acessível do texto aprovado).
-A partir de 640 px: ícone e "WhatsApp". Fica a 16 px das bordas e não
-cobre o botão de envio do formulário (o formulário tem `padding-bottom`
-que compensa).
+A partir de 640 px: ícone e "WhatsApp". Fica a 16 px das bordas.
+
+**Quando aparece** (`src/components/FloatingWhatsApp.tsx`; revisão DS1 da
+Crivo): ele some enquanto
+
+- algum elemento com `data-hides-fab` está na tela (IntersectionObserver).
+  Hoje: o hero (`section#inicio`, que já tem dois botões de WhatsApp — sem
+  isso, a 360 px eram três chamadas na primeira tela), o cartão do
+  formulário (`.form-card`, que tem o link do WhatsApp) e o rodapé (idem);
+- a caixa dele cruza a de qualquer controle focável visível (`a[href]`,
+  `button`, campos, `summary`, `video[controls]`, `[tabindex] ≥ 0`),
+  conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
+  campo, link ou controle de vídeo.
+
+Oculto de verdade: `data-visible="false"`, atributo `inert` (fora do Tab e
+do leitor de tela) e `visibility: hidden`, não só opacidade. Começa oculto
+no SSR (o hero está na tela ao carregar: sem divergência de hidratação e
+sem piscar); sem JavaScript fica oculto, e o botão do cabeçalho continua lá.
+A transição (opacidade e visibilidade, `--duration-base`) só existe com
+`prefers-reduced-motion: no-preference`. No celular, `html` tem
+`scroll-padding-bottom: 88px`: a rolagem por foco para o controle acima da
+faixa do botão.
 
 ---
 
@@ -577,11 +597,16 @@ não muda quando o topo muda.
 
 | Largura | Composição | Ponto focal do visual | Véu (camada 3) |
 |---|---|---|---|
-| ≥ 1024 px | **Lado a lado:** texto nas colunas 1–7 (máx. 34rem), visual à direita | x 76%, y 48% | `linear-gradient(90deg, espaço 0%, espaço/0.90 34%, espaço/0.45 54%, transparente 72%)` |
-| < 1024 px | **Faixa:** texto em cima; visual numa faixa reservada embaixo (`padding-bottom: clamp(260px, 42svh, 360px)`); o texto nunca fica sobre ela | x 50–58%, centro da faixa (y ≈ 85%) | `linear-gradient(180deg, espaço 0%, espaço/0.92 52%, espaço/0.20 74%, transparente)` |
+| ≥ 1024 px | **Lado a lado:** texto à esquerda (máx. 40rem), visual à direita | x 76%, y 48% | `linear-gradient(90deg, espaço/0.94 0, espaço/0.88 <borda direita do texto>, transparente <borda + 280px>)` |
+| < 1024 px | **Faixa:** texto em cima; visual numa faixa reservada embaixo (`padding-bottom: var(--hero-band)`, `clamp(260px, 42svh, 360px)`); o texto nunca fica sobre ela | x 50–54%, centro da faixa (y ≈ 84%) | `linear-gradient(180deg, espaço/0.94 0, espaço/0.90 calc(100% - band), transparente calc(100% - band + 144px))` |
 
-- Na zona do texto, o véu tem opacidade **≥ 0,86**: mesmo com um pixel
-  branco atrás, o branco fica em 12,8:1 e o navy-200 em 8,0:1.
+- Na zona do texto, o véu tem opacidade **≥ 0,86** (0,88 no lado a lado,
+  0,90 na faixa, até a última linha de texto; o desbotamento só começa
+  depois dela): mesmo com um pixel branco atrás, o branco fica em 12,8:1, o
+  navy-200 em 8,0:1 e o navy-300 da linha de apoio em 5,1:1.
+- A borda direita do texto no lado a lado é
+  `max(gutter, (100% − 1200px) / 2) + min(40rem, 100% − 2 × gutter)`
+  (`--hero-text-edge` em `globals.css`).
 - Altura: `min-height: min(calc(100svh - 72px), 820px)` no lado a lado;
   na faixa, a altura é a do conteúdo mais a faixa.
 - O conteúdo segue a grade do site (o mesmo container das seções), não um
@@ -608,9 +633,18 @@ Componente `BlackHoleHeroSection` (21st.dev, MIT). Parâmetros do DS:
 
 Sem laranja e sem roxo: o disco usa só a paleta da marca. O canvas entra
 em `mix-blend-mode: screen` sobre a base: o céu quase preto do shader vira
-exatamente o espaço `#08121D`, e só a luz do disco soma. Sem WebGL, ou com
-o contexto perdido, o componente marca `data-webgl` e o CSS (`:has()`)
-mostra o visual estático (§9.4) inteiro, sem estado no React.
+exatamente o espaço `#08121D`, e só a luz do disco soma. Sem WebGL, com a
+compilação falhando ou com o contexto perdido, o componente marca
+`data-webgl` no host e o CSS mostra o visual estático (§9.4) inteiro, que
+vem logo depois do host no DOM (seletor de irmão `~`: funciona em qualquer
+navegador, sem `:has()` e sem estado no React).
+
+O componente só desenha com as duas condições verdadeiras: hero na tela
+(IntersectionObserver) e aba visível. Quando `narrow` muda depois de montar,
+a troca de `maxDpr`/`resolution` é reaplicada na hora (o celular não fica
+com o DPR e a resolução de desktop). `powerPreference: "default"`: um fundo
+decorativo não precisa acordar a GPU dedicada do notebook. Licença MIT com o
+aviso do autor no topo do arquivo e em `THIRD_PARTY_NOTICES.md`.
 
 ### 9.4 Visual "static" (fundo do tema, sem WebGL)
 
@@ -626,8 +660,9 @@ mostrando onde as peças se encaixam.
   centrado em x 54%, `height: clamp(230px, 36svh, 330px)`, encostado
   embaixo (−14 px).
 - Imagem decorativa (`alt=""`), parada, funciona sem JavaScript.
-- Por baixo do canvas do buraco negro, a camada de espera é só a base e a
-  luz (sem o símbolo), para o símbolo não piscar antes do primeiro quadro.
+- Por baixo do canvas do buraco negro fica só a base (sem a luz, que
+  tingiria a sombra do buraco em `screen`, e sem o símbolo, que piscaria
+  antes do primeiro quadro).
 
 ### 9.5 Conteúdo do hero
 
