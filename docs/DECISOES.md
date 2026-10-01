@@ -205,3 +205,73 @@ comercial.
 **Consequência:** o MCP da 21st continua útil para buscar referências
 visuais, mas o código retornado só entra se a licença estiver clara; na
 dúvida, ele vira inspiração, não arquivo do projeto.
+
+---
+
+## ADR-006 — Design system v2 ("Encaixe"): fundo, paleta do logo, Geologica e hero trocável
+
+**Data:** 30/09/2026
+**Decisão de:** Nanquim (Designer), na tarefa DS1 pedida pelo Claudinho
+**Status:** aceita (conceito aprovado pelo Claudinho em 01/10/2026; revisão DS1 da Crivo)
+
+**Contexto:** o cliente pediu um design system novo, com as cores do logo,
+visual moderno sem cara de IA, as animações mantidas, um buraco negro
+(WebGL) no hero e um fundo coerente com o projeto. Pediu também que o
+visual do hero seja trocável no futuro (com uma opção "static", sem WebGL)
+e que "O que já construímos" vire um portfólio de vídeos que cresça com os
+próximos projetos. A v1 do design system usava azul-petróleo, Inter e
+botões em pílula, sem relação com o logo; o `MASTER.md` da v1 dizia que o
+código vencia em caso de conflito.
+
+**Decisão:**
+- **`design-system/strukti-solucoes/MASTER.md` v2 passa a ser a fonte da
+  verdade visual.** `globals.css` e `src/fonts/index.ts` o implementam; se
+  divergirem, o código é que está errado.
+- **Fundo, "escuro para mostrar, claro para ler":** espaço (`#08121D`, o
+  marinho do logo aprofundado) no cabeçalho, no hero e no rodapé; noite
+  (`#0E1C2B`) no portfólio de vídeos; papel frio (`#F1F5F8`) nas seções de
+  leitura e de formulário, com peças elevadas em branco. Descartados: site
+  todo escuro (leitura longa e formulário pioram para o público, e "preto
+  com um acento" é um clichê de página gerada) e o branco puro da v1 (sem
+  relação com o topo cósmico nem com o logo).
+- **Paleta só do logo:** escalas marinho, elétrico e ciano montadas a partir
+  das cores amostradas do logo oficial, mais o verde do WhatsApp (só para o
+  WhatsApp) e as cores de erro e sucesso. Tokens semânticos por superfície;
+  todos os pares de texto e interface conferidos no AA (tabela na §3.4 do
+  `MASTER.md`).
+- **Tipografia: Geologica** (licença SIL OFL, Google Fonts), uma família
+  variável com o eixo `SHRP`, que corta as terminações no ângulo do
+  hexágono. Auto-hospedada pelo `next/font` (baixada no build, ~29 KB no
+  subconjunto latino, menos que os ~48 KB da Inter). Substitui a Inter.
+- **Conceito "Encaixe":** blocos que se encaixam com uma junta de 3 px (a
+  fresta do logo) no lugar de cartões soltos com sombra; raios por
+  hierarquia (2, 4, 6 e 10 px), sem pílula; profundidade pela cor da
+  superfície, não por sombra. O hexágono e o ponto do i são os únicos
+  outros detalhes de marca.
+- **Hero trocável:** o DS define as camadas que não mudam (base espaço,
+  fade para o espaço no fim, véu com opacidade ≥ 0,86 na zona do texto e o
+  conteúdo) e só a camada do visual é trocável. Assim o contraste do texto
+  e o fundo do resto do site não dependem do visual. Composição lado a lado
+  a partir de 1024 px e em faixa abaixo disso. Visual "static": o símbolo
+  em vista explodida (`public/brand/strukti-encaixe.svg`) sobre o espaço,
+  com uma luz azul. Buraco negro com o disco nas cores da marca, sem
+  estrelas, pausado fora da tela e com reduced motion.
+- **Portfólio de vídeos escalável:** projetos numa lista de dados; um
+  destaque (o vídeo com o cartão 3D que já existe) e uma grade que só
+  aparece com dois projetos ou mais. Com um projeto só, não há grade vazia
+  nem cartão fictício.
+- **Marca em SVG** em `public/brand/`: símbolo e assinaturas (horizontal e
+  vertical), versões para fundo claro e escuro, vetorizadas do logo
+  oficial.
+- **Motion:** as animações existentes ficam (revelação ao rolar, cartão 3D
+  na rolagem, micro-interações dos botões); o único movimento automático
+  novo é o do visual do hero.
+
+**Consequência:** a Fase B troca os tokens de `globals.css` (mapa de
+migração na §12 do `MASTER.md`), a fonte, o cabeçalho, o estilo das seções
+e o portfólio. Componentes passam a usar só tokens semânticos, então uma
+seção muda de superfície trocando uma classe. Os botões deixam de ser
+pílulas e o foco deixa de ser laranja. Ajustes no hero que tocam o código
+do Andaime (ponto de corte de 1024 px, véu do DS no lugar do `scrim` do
+componente, camada de espera sem o símbolo) são combinados com ele na
+Fase B.

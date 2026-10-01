@@ -3,50 +3,49 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LinkedText } from "@/components/LinkedText";
 import { Reveal } from "@/components/motion/Reveal";
 
+/**
+ * Acordeão em parede (MASTER §8.10). No desktop, título e chamada para o
+ * WhatsApp ficam à esquerda e as perguntas à direita; no celular, a chamada
+ * vem depois das perguntas.
+ */
 export function Faq() {
   const { title, items, closing, button } = landingContent.faq;
 
   return (
-    <section id="duvidas" className="section" aria-labelledby="duvidas-title">
-      <div className="container" style={{ maxWidth: "760px" }}>
-        <Reveal>
-          <h2 id="duvidas-title" className="section-title">
-            {title}
-          </h2>
+    <section id="duvidas" className="section section--seam surface-paper" aria-labelledby="duvidas-title">
+      <div className="container">
+        <div className="faq">
+          <Reveal className="faq__head">
+            <h2 id="duvidas-title" className="section-title">
+              {title}
+            </h2>
+          </Reveal>
 
-          <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
-            {items.map((item) => (
-              <details
-                key={item.question}
-                style={{
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  padding: "0.9rem 1.1rem",
-                }}
-              >
-                <summary
-                  style={{
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    color: "var(--color-petrol-900)",
-                  }}
-                >
-                  {item.question}
-                </summary>
-                <p style={{ margin: "0.75rem 0 0", color: "var(--color-ink-muted)" }}>
-                  {"answerLinkLabel" in item && item.answerLinkLabel ? (
-                    <LinkedText text={item.answer} linkLabel={item.answerLinkLabel} href="/privacidade" />
-                  ) : (
-                    item.answer
-                  )}
-                </p>
-              </details>
-            ))}
-          </div>
+          <Reveal className="faq__list">
+            <div className="wall">
+              {items.map((item) => (
+                <details key={item.question} className="faq__item">
+                  <summary>
+                    {item.question}
+                    <span className="faq__plus" aria-hidden="true" />
+                  </summary>
+                  <p className="faq__answer">
+                    {"answerLinkLabel" in item && item.answerLinkLabel ? (
+                      <LinkedText text={item.answer} linkLabel={item.answerLinkLabel} href="/privacidade" />
+                    ) : (
+                      item.answer
+                    )}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </Reveal>
 
-          <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>{closing}</p>
-          <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
-        </Reveal>
+          <Reveal className="faq__cta section-actions" style={{ marginTop: 0 }}>
+            <p className="body-muted">{closing}</p>
+            <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
+          </Reveal>
+        </div>
       </div>
     </section>
   );

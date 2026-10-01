@@ -20,4 +20,23 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
   global.IntersectionObserver = IntersectionObserverStub;
 }
 
+// jsdom não implementa nenhum contexto de canvas (precisaria do pacote
+// `canvas`, que não instalamos — ADR-003, quarentena de dependência nova).
+// Sem este stub, toda chamada a getContext (ex.: BlackHoleHeroSection pedindo
+// "webgl"/"webgl2", ou o axe-core pedindo "2d" para conferir contraste)
+// imprime "Not implemented: HTMLCanvasElement's getContext()" pelo
+// VirtualConsole padrão do jsdom — não é um console.error de verdade (os
+// testes de hidratação e do axe continuam exigindo zero console.error), só
+// polui a saída do `npm test` (achado da Crivo, revisão DS1). Devolver `null`
+// sempre deixa explícito, no teste, o caminho "sem canvas" que o próprio
+// componente trata (ver giveUp() em blackhole-hero-section.tsx) e que o
+// axe-core já tolera.
+if (typeof HTMLCanvasElement !== "undefined") {
+  type GetContext = typeof HTMLCanvasElement.prototype.getContext;
+
+  HTMLCanvasElement.prototype.getContext = function (): ReturnType<GetContext> {
+    return null;
+  } as GetContext;
+}
+
 export {};

@@ -35,18 +35,16 @@ export function ScrollTiltCard({ title, children }: ScrollTiltCardProps) {
   const scale = useTransform(scrollYProgress, [0, 1], [0.9, 1]);
 
   return (
-    <div ref={blockRef} className="py-6 md:py-12" style={{ perspective: "1200px" }}>
-      <motion.div
-        style={{ y: titleY }}
-        className="mx-auto max-w-3xl text-center motion-reduce:transform-none!"
-      >
+    <div ref={blockRef} className="pb-6 md:pb-12" style={{ perspective: "1200px" }}>
+      {/* Aparência da moldura: globals.css, "Portfólio de vídeos" (MASTER §8.8). */}
+      <motion.div style={{ y: titleY }} className="tilt-card__title motion-reduce:transform-none!">
         {title}
       </motion.div>
       <motion.div
         style={{ rotateX: tilt, scale, transformOrigin: "center top" }}
-        className="mx-auto mt-8 aspect-video w-full max-w-5xl rounded-3xl border-4 border-[var(--color-petrol-600)] bg-[var(--color-petrol-900)] p-1.5 shadow-[0_30px_60px_-20px_rgba(11,46,56,0.5)] motion-reduce:transform-none! md:p-3"
+        className="tilt-card__frame motion-reduce:transform-none!"
       >
-        <div className="h-full w-full overflow-hidden rounded-2xl bg-black">{children}</div>
+        <div className="tilt-card__screen">{children}</div>
       </motion.div>
     </div>
   );

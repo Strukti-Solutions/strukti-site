@@ -4,127 +4,94 @@ import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
 import { ScrollTiltCard } from "@/components/ui/scroll-tilt-card";
 import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
+import { ProjectGrid } from "@/components/sections/ProjectGrid";
 import { useTapHover } from "@/lib/motion";
 
+/**
+ * Portfólio de vídeos (MASTER §8.8), na superfície "noite" (sala de
+ * projeção). O projeto em destaque usa o cartão 3D da rolagem; os demais
+ * formam a grade, que só aparece com dois projetos ou mais — com um projeto
+ * só, não há grade vazia nem cartão fictício.
+ */
 export function OQueJaFizemos() {
-  const {
-    title,
-    intro,
-    highlights,
-    videoTitle,
-    videoAccessibleName,
-    videoCaption,
-    videoDescriptionLinkLabel,
-    videoDescription,
-    videoSrc,
-    videoPoster,
-    closing,
-    button,
-  } = landingContent.oQueJaConstruimos;
+  const { title, intro, projects, videoDescriptionLinkLabel, grid, closing, button } =
+    landingContent.oQueJaConstruimos;
+  const featured = projects.find((project) => project.featured) ?? projects[0];
+  const others = projects.filter((project) => project !== featured);
 
   const tapHover = useTapHover();
 
   return (
     <section
       id="o-que-construimos"
-      className="section section--alt"
+      className="section surface-night"
       aria-labelledby="ojc-title"
       // Inclinado em 3D, o cartão projeta a borda de baixo mais larga que a
       // coluna; `clip` corta isso sem criar rolagem horizontal na página.
       style={{ overflowX: "clip" }}
     >
       <div className="container">
-        <ScrollTiltCard
-          title={
-            <>
-              <h2 id="ojc-title" className="section-title">
-                {title}
-              </h2>
-              <p className="section-subtitle" style={{ marginInline: "auto" }}>
-                {intro}
-              </p>
-              <h3 style={{ color: "var(--color-petrol-900)", marginTop: "0.5rem" }}>{videoTitle}</h3>
-            </>
-          }
-        >
-          <video
-            controls
-            preload="none"
-            poster={videoPoster}
-            className="h-full w-full rounded-2xl object-contain"
-            style={{ backgroundColor: "#000" }}
-            aria-label={videoAccessibleName}
-          >
-            <source src={videoSrc} type="video/mp4" />
-          </video>
-        </ScrollTiltCard>
-
-        <Reveal style={{ marginBottom: "2.5rem" }}>
-          <p
-            style={{
-              margin: "0 0 0.35rem",
-              color: "var(--color-ink-muted)",
-              fontSize: "0.9rem",
-              maxWidth: "720px",
-            }}
-          >
-            {videoCaption}
-          </p>
-
-          <details style={{ maxWidth: "720px" }}>
-            <summary
-              style={{
-                cursor: "pointer",
-                color: "var(--color-petrol-700)",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-              }}
+        {featured && (
+          <>
+            <ScrollTiltCard
+              title={
+                <>
+                  <h2 id="ojc-title" className="section-title">
+                    {title}
+                  </h2>
+                  <p className="lead" style={{ marginTop: "var(--space-4)" }}>
+                    {intro}
+                  </p>
+                  <h3 className="block-title portfolio__video-title">{featured.videoTitle}</h3>
+                </>
+              }
             >
-              {videoDescriptionLinkLabel}
-            </summary>
-            <p style={{ margin: "0.5rem 0 0", color: "var(--color-ink-muted)" }}>{videoDescription}</p>
-          </details>
-        </Reveal>
+              <video
+                controls
+                preload="none"
+                poster={featured.video.poster}
+                className="portfolio__video"
+                aria-label={featured.video.accessibleName}
+                // O botão flutuante do WhatsApp some enquanto o vídeo está na
+                // tela (FloatingWhatsApp.tsx, MASTER §8.12).
+                data-hides-fab=""
+              >
+                <source src={featured.video.src} type="video/mp4" />
+              </video>
+            </ScrollTiltCard>
 
-        <RevealStaggerList
-          style={{
-            listStyle: "none",
-            margin: "0 0 2.5rem",
-            padding: 0,
-            display: "grid",
-            gap: "1rem",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          }}
-        >
-          {highlights.map((item) => (
-            <RevealStaggerItem key={item.lead} style={{ color: "var(--color-ink-muted)" }}>
-              <strong style={{ color: "var(--color-petrol-900)" }}>{item.lead}</strong> {item.rest}
-            </RevealStaggerItem>
-          ))}
-        </RevealStaggerList>
+            <Reveal className="portfolio__meta">
+              <p className="caption">{featured.video.caption}</p>
+              <details>
+                <summary>{videoDescriptionLinkLabel}</summary>
+                <p>{featured.video.description}</p>
+              </details>
+            </Reveal>
 
-        <Reveal>
-          <p style={{ color: "var(--color-ink-muted)", maxWidth: "62ch", marginBottom: "1.5rem" }}>
+            {featured.highlights && featured.highlights.length > 0 && (
+              <RevealStaggerList className="highlights">
+                {featured.highlights.map((item) => (
+                  <RevealStaggerItem key={item.lead}>
+                    <strong>{item.lead}</strong> {item.rest}
+                  </RevealStaggerItem>
+                ))}
+              </RevealStaggerList>
+            )}
+          </>
+        )}
+
+        <Reveal className="section-actions">
+          <p className="body-muted" style={{ maxWidth: "62ch" }}>
             {closing}
           </p>
-          <motion.a
-            href="#diagnostico"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "0.85rem 1.5rem",
-              borderRadius: "999px",
-              backgroundColor: "var(--color-petrol-800)",
-              color: "#fff",
-              fontWeight: 600,
-              textDecoration: "none",
-              minHeight: "48px",
-            }}
-            {...tapHover}
-          >
+          <motion.a href="#diagnostico" className="btn btn--primary" {...tapHover}>
             {button}
           </motion.a>
         </Reveal>
+
+        {others.length > 0 && (
+          <ProjectGrid projects={others} labels={grid} descriptionLinkLabel={videoDescriptionLinkLabel} />
+        )}
       </div>
     </section>
   );

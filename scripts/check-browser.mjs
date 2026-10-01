@@ -4,7 +4,11 @@
 // desligado. Em cada caso rola a página do topo ao fim e falha (exit 1) se:
 //   - em algum ponto da rolagem houver rolagem horizontal
 //     (scrollWidth > clientWidth), ou
-//   - o console do navegador registrar erro (ex.: hidratação divergente).
+//   - o console do navegador registrar erro (ex.: hidratação divergente), ou
+//   - a 360 ou 390px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
+//     caixa de um botão, campo ou qualquer controle focável visível, em
+//     qualquer ponto da rolagem (regra aceita pelo Claudinho, proposta da
+//     Crivo na revisão DS1 — 2ª vez que o FAB cobria conteúdo).
 //
 // Precisa do site no ar: `npm run dev` (ou `npm run start`) antes.
 // Uso: npm run check:browser [-- http://localhost:3000]
@@ -16,6 +20,7 @@ import { join } from "node:path";
 
 const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
 const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1280, 1440];
+const FAB_CHECK_WIDTHS = new Set([360, 390]);
 const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
 
@@ -152,16 +157,46 @@ const MEASURE_SCRIPT = `(async () => {
     const all = [...document.body.querySelectorAll("*")].filter((el) => el.getBoundingClientRect().right > limit);
     return all.filter((el) => !all.includes(el.parentElement)).slice(0, 3).map(describe);
   };
+
+  // Mesma definição de "controle focável" do FloatingWhatsApp.tsx — conferência
+  // independente de que a caixa do FAB nunca cruza a de um controle (regra do
+  // Claudinho, proposta da Crivo na revisão DS1).
+  const FOCUSABLE_SELECTOR =
+    'a[href], button, input:not([type="hidden"]), select, textarea, summary, video[controls], [tabindex]:not([tabindex="-1"])';
+  const isBoxVisible = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    const s = getComputedStyle(el);
+    return s.visibility !== "hidden" && s.display !== "none";
+  };
+  const rectsOverlap = (a, b) =>
+    a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  const fabOverlap = () => {
+    const fab = document.querySelector("a.fab-whatsapp");
+    if (!fab || !isBoxVisible(fab)) return null;
+    const fabRect = fab.getBoundingClientRect();
+    for (const el of document.querySelectorAll(FOCUSABLE_SELECTOR)) {
+      if (el === fab || fab.contains(el) || !isBoxVisible(el)) continue;
+      if (rectsOverlap(fabRect, el.getBoundingClientRect())) return describe(el);
+    }
+    return null;
+  };
+
   const step = Math.max(150, Math.floor(innerHeight / 4));
   let worst = { overflow: 0, y: 0, offenders: [] };
+  let fabHit = null;
   for (let y = 0; y <= doc.scrollHeight; y += step) {
     window.scrollTo({ top: y, behavior: "instant" });
     await settle();
     const overflow = doc.scrollWidth - doc.clientWidth;
     if (overflow > worst.overflow) worst = { overflow, y: Math.round(scrollY), offenders: offenders() };
+    if (!fabHit) {
+      const hitWith = fabOverlap();
+      if (hitWith) fabHit = { y: Math.round(scrollY), with: hitWith };
+    }
   }
   window.scrollTo({ top: 0, behavior: "instant" });
-  return worst;
+  return { ...worst, fabHit };
 })()`;
 
 const failures = [];
@@ -188,7 +223,9 @@ try {
   });
 
   console.log(`Navegador: ${browserPath}\nPágina: ${URL_TO_CHECK}\n`);
-  console.log("largura | reduced motion | rolagem horizontal (pior ponto) | erros no console");
+  console.log(
+    "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390)",
+  );
 
   for (const reduce of [false, true]) {
     await cdp.send("Emulation.setEmulatedMedia", {
@@ -217,8 +254,10 @@ try {
       const errors = [...consoleErrors];
 
       const overflowLabel = worst.overflow > 0 ? `${worst.overflow}px (em y=${worst.y})` : "nenhuma";
+      const checksFab = FAB_CHECK_WIDTHS.has(width);
+      const fabLabel = !checksFab ? "—" : worst.fabHit ? `cruza ${worst.fabHit.with}` : "nenhum cruzamento";
       console.log(
-        `${String(width).padStart(7)} | ${(reduce ? "ligado" : "desligado").padEnd(14)} | ${overflowLabel.padEnd(31)} | ${errors.length}`,
+        `${String(width).padStart(7)} | ${(reduce ? "ligado" : "desligado").padEnd(14)} | ${overflowLabel.padEnd(31)} | ${String(errors.length).padEnd(17)} | ${fabLabel}`,
       );
 
       if (worst.overflow > 0) {
@@ -229,6 +268,11 @@ try {
       }
       for (const error of errors) {
         failures.push(`${width}px, reduced motion ${reduce ? "ligado" : "desligado"}: erro no console: ${error.split("\n")[0]}`);
+      }
+      if (checksFab && worst.fabHit) {
+        failures.push(
+          `${width}px, reduced motion ${reduce ? "ligado" : "desligado"}: o FAB do WhatsApp cruza ${worst.fabHit.with} em y=${worst.fabHit.y}`,
+        );
       }
     }
   }
@@ -248,4 +292,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("\nSem rolagem horizontal e sem erro no console em nenhuma largura.");
+console.log(
+  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390px) em nenhuma largura.",
+);

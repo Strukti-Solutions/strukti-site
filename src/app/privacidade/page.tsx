@@ -16,26 +16,22 @@ export default function PrivacidadePage() {
   const lastUpdatedDate = formatPrivacyPolicyDate(siteConfig.privacyPolicyVersion);
 
   return (
-    <main id="conteudo-principal" className="section">
-      <div className="container" style={{ maxWidth: "760px" }}>
+    <main id="conteudo-principal" className="section surface-paper">
+      <div className="container prose">
         <h1 className="section-title">{title}</h1>
-        <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.5rem" }}>
+        <p className="caption" style={{ margin: "var(--space-4) 0 var(--space-5)" }}>
           {lastUpdatedLabel} {lastUpdatedDate}
         </p>
-        <p style={{ color: "var(--color-ink-muted)", marginBottom: "2rem" }}>{intro}</p>
+        <p className="lead">{intro}</p>
 
         {sections.map((section) => (
-          <section key={section.heading} style={{ marginBottom: "1.75rem" }}>
-            <h2 style={{ color: "var(--color-petrol-900)", fontSize: "1.2rem" }}>
-              {section.heading}
-            </h2>
+          <section key={section.heading}>
+            <h2>{section.heading}</h2>
             {section.paragraphs.map((paragraph) => (
-              <p key={paragraph} style={{ color: "var(--color-ink-muted)" }}>
-                {paragraph}
-              </p>
+              <p key={paragraph}>{paragraph}</p>
             ))}
             {"list" in section && section.list && (
-              <ul style={{ color: "var(--color-ink-muted)" }}>
+              <ul>
                 {section.list.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -43,9 +39,7 @@ export default function PrivacidadePage() {
             )}
             {"paragraphsAfterList" in section &&
               section.paragraphsAfterList?.map((paragraph) => (
-                <p key={paragraph} style={{ color: "var(--color-ink-muted)" }}>
-                  {paragraph}
-                </p>
+                <p key={paragraph}>{paragraph}</p>
               ))}
           </section>
         ))}

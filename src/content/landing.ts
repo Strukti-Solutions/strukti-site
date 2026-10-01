@@ -12,6 +12,80 @@ const WHATSAPP_GENERAL_MESSAGE =
 const WHATSAPP_DIAGNOSTICO_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito.";
 
+/**
+ * Um projeto do portfólio de vídeos ("O que já construímos"). O primeiro com
+ * `featured` (ou o primeiro da lista) é o destaque, com o cartão 3D; os
+ * demais formam a grade, que só aparece com dois projetos ou mais
+ * (design-system/strukti-solucoes/MASTER.md, §8.8). Vídeos novos são os de
+ * lançamento feitos com /brag.
+ */
+export interface Project {
+  slug: string;
+  name: string;
+  /** Uma frase, para o cartão da grade. */
+  summary: string;
+  /** Título (H3) do vídeo quando o projeto é o destaque. */
+  videoTitle: string;
+  video: {
+    src: string;
+    poster: string;
+    accessibleName: string;
+    caption: string;
+    description: string;
+  };
+  /** Lista de destaques; só o projeto em destaque mostra. */
+  highlights?: readonly { lead: string; rest: string }[];
+  platforms: readonly string[];
+  featured?: boolean;
+}
+
+const PROJECTS: readonly Project[] = [
+  {
+    slug: "rota-de-vendas",
+    name: "Rota de Vendas",
+    summary:
+      "O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.",
+    videoTitle: "Veja o Rota de Vendas",
+    video: {
+      src: "/video/brag.mp4",
+      poster: "/video/brag.jpg",
+      accessibleName: "Vídeo de demonstração do Rota de Vendas",
+      caption:
+        "Vídeo de demonstração, só com música. Os clientes, pedidos e endereços que aparecem são fictícios.",
+      description:
+        'Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.',
+    },
+    highlights: [
+      {
+        lead: "Clientes na mão do vendedor.",
+        rest: "Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.",
+      },
+      {
+        lead: "Pedido com o número do sistema que você já usa.",
+        rest: "O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.",
+      },
+      {
+        lead: "Rota de entrega por cidade.",
+        rest: "As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.",
+      },
+      {
+        lead: "Funciona sem internet.",
+        rest: "Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.",
+      },
+      {
+        lead: "Fácil de ler na rua.",
+        rest: "Letra até duas vezes maior e modo de alto contraste para usar sob o sol.",
+      },
+      {
+        lead: "No celular e no computador.",
+        rest: "O mesmo aplicativo no Android do vendedor e no Windows do escritório.",
+      },
+    ],
+    platforms: ["Android", "Windows"],
+    featured: true,
+  },
+];
+
 export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
@@ -114,41 +188,13 @@ export const landingContent = {
     title: "O que já construímos",
     intro:
       "O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta. Ele não é um sistema de prateleira; mostra como trabalhamos.",
-    highlights: [
-      {
-        lead: "Clientes na mão do vendedor.",
-        rest: "Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.",
-      },
-      {
-        lead: "Pedido com o número do sistema que você já usa.",
-        rest: "O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.",
-      },
-      {
-        lead: "Rota de entrega por cidade.",
-        rest: "As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.",
-      },
-      {
-        lead: "Funciona sem internet.",
-        rest: "Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.",
-      },
-      {
-        lead: "Fácil de ler na rua.",
-        rest: "Letra até duas vezes maior e modo de alto contraste para usar sob o sol.",
-      },
-      {
-        lead: "No celular e no computador.",
-        rest: "O mesmo aplicativo no Android do vendedor e no Windows do escritório.",
-      },
-    ],
-    videoTitle: "Veja o Rota de Vendas",
-    videoAccessibleName: "Vídeo de demonstração do Rota de Vendas",
-    videoCaption:
-      "Vídeo de demonstração, só com música. Os clientes, pedidos e endereços que aparecem são fictícios.",
+    projects: PROJECTS,
     videoDescriptionLinkLabel: "Ler a descrição do vídeo",
-    videoDescription:
-      'Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.',
-    videoSrc: "/video/brag.mp4",
-    videoPoster: "/video/brag.jpg",
+    grid: {
+      title: "Outros projetos",
+      showMore: "Mostrar mais projetos",
+      playLabel: "Assistir ao vídeo: {nome}",
+    },
     closing: "O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.",
     button: "Pedir diagnóstico gratuito",
   },
