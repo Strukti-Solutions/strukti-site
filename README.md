@@ -240,6 +240,48 @@ Quem roda essa consulta e com que frequência ainda não foi decidido com o
 Claudinho; decidir isso antes da publicação (L5) ou assim que houver o
 primeiro lead.
 
+## Backups
+
+Antes de uma mudança grande (ex.: trocar o hero), cria-se um ponto de restauração
+fora do git normal: uma tag anotada no repositório e um bundle completo fora da
+pasta do projeto.
+
+Backup de 2026-10-01 (antes do hero novo — DS Encaixe + buraco negro):
+
+- Tag: `backup/2026-10-01-ds1-encaixe` (aponta para `f0eeaef`, ponta do `main`
+  na época).
+- Bundle e capturas: fora do repositório, na máquina que fez o backup (pasta
+  `_backup/negocio/` ao lado da pasta do projeto — o caminho exato depende de
+  onde está `C:/dev` nessa máquina). O bundle tem o histórico completo, todas
+  as refs; as capturas são a cópia de `docs/capturas-ds1/`.
+
+### Como voltar a um estado salvo
+
+A tag é só um ponto de consulta: **nunca** `git reset --hard` nem reescreva o
+`main` a partir dela — o fluxo do grupo é só merge, histórico nunca se
+reescreve. Para olhar o estado da tag sem mudar o branch atual:
+
+```bash
+git switch --detach backup/2026-10-01-ds1-encaixe
+```
+
+Para trazer esse conteúdo de volta, crie um branch curto, restaure os
+arquivos a partir da tag e passe pela revisão normal (commit → revisão →
+merge no `main`, como qualquer outra mudança):
+
+```bash
+git switch -c volta-ao-backup
+git restore --source=backup/2026-10-01-ds1-encaixe --staged --worktree :/
+git commit -m "revert: volta ao estado do backup/2026-10-01-ds1-encaixe"
+```
+
+Pelo bundle, só se o repositório local for perdido (clona a partir do arquivo
+do bundle, no caminho onde ele estiver guardado):
+
+```bash
+git clone <caminho-do-bundle>/negocio_20261001_ds1.bundle negocio-restaurado
+```
+
 ## Pendências que bloqueiam a publicação (L5)
 
 Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas como

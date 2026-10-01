@@ -138,6 +138,29 @@ describe("HeroVideo", () => {
     expect(pause).toHaveBeenCalledTimes(1);
   });
 
+  it("não toca sozinho por cima de um vídeo do portfólio, e volta quando ele para (MASTER §8.8, videoCoordination.ts)", () => {
+    // Fica fora do render de <HeroVideo />: representa o vídeo com `controls`
+    // do Rota de Vendas ou do Fleet Analytics BI, noutra seção da página.
+    const portfolioVideo = document.createElement("video");
+    portfolioVideo.controls = true;
+    Object.defineProperty(portfolioVideo, "paused", { configurable: true, value: false });
+    document.body.appendChild(portfolioVideo);
+
+    const { container } = render(<HeroVideo />);
+    const video = getVideo(container);
+
+    act(() => SpyIntersectionObserver.fire(video, true));
+    expect(play).not.toHaveBeenCalled();
+
+    // O vídeo do portfólio termina (ou a pessoa pausa): o hero reavalia pelo
+    // useSyncExternalStore e volta a tocar sozinho.
+    Object.defineProperty(portfolioVideo, "paused", { configurable: true, value: true });
+    act(() => fireEvent.pause(portfolioVideo));
+    expect(play).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(portfolioVideo);
+  });
+
   it("com reduced motion, fica o pôster; o controle toca só se a pessoa pedir", () => {
     reducedMotion.set(true);
     const { container } = render(<HeroVideo />);

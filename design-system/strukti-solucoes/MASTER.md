@@ -550,9 +550,17 @@ fecho + botão primário (diagnóstico)
 
 - **1 projeto (hoje):** só o destaque. Nada de grade vazia, "em breve" ou
   cartão fictício.
-- **2 ou mais:** a grade aparece abaixo do destaque, com 1 coluna (< 768),
-  2 (768–1023) ou 3 (≥ 1024), sob o título (H3) "Outros projetos"; o nome
-  de cada projeto é H4.
+- **2 ou mais:** a grade aparece abaixo do destaque, sob o título (H3)
+  "Outros projetos"; o nome de cada projeto é H4. A parede **nunca deixa
+  coluna vazia**; o layout segue o tanto de cartões na grade:
+  - **1 cartão (2 projetos):** o **cartão largo** (`.project-card--wide`).
+    A partir de 1024 px, pôster nas colunas 1–7 e texto nas 8–12 (máx.
+    30rem), o pôster centrado na altura do texto; o player toca no lugar
+    do pôster. Abaixo de 1024, empilha como os outros cartões. Sem isso, o
+    cartão único virava um pôster de 1200 px, do tamanho do destaque.
+  - **2 cartões:** duas colunas a partir de 768 px (`.wall--2`).
+  - **3 ou mais:** 1 coluna (< 768), 2 (768–1023) ou 3 (≥ 1024)
+    (`.wall--3`).
 - **Mais de 6 na grade:** mostra 6 e um botão de contorno "Mostrar mais
   projetos", que revela os demais sem mudar de página e leva o foco ao
   primeiro cartão revelado.
@@ -756,9 +764,11 @@ cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
 espaço de 8 px, 12 px ≥ 768, onde a aba da barra se encaixa):
 
 ```
-5. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
-4. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
-                       (antes do texto no DOM: vem logo depois da barra no Tab)
+5. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
+                       (z-index 3; no DOM vem antes do conteúdo, logo
+                       depois da barra no Tab)
+4. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
+                       (z-index 2)
 3. Véu                 do DS: o desbotamento da faixa (< 1024) e o
                        escurecimento de baixo que assenta a palavra (≥ 1024)
 2. Grão                ruído SVG parado, 18%, overlay

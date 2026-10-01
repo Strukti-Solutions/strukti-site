@@ -36,6 +36,12 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
 
   const visible = expanded ? projects : projects.slice(0, PROJECT_GRID_STEP);
   const hiddenCount = projects.length - visible.length;
+  // Layout para poucos projetos (MASTER §8.8): a parede nunca deixa coluna
+  // vazia. 3 ou mais cartões: a grade (3 colunas ≥ 1024); 2: duas colunas;
+  // 1: o cartão largo, com o pôster ao lado do texto (≥ 1024), para não
+  // virar um pôster do tamanho do destaque.
+  const wallClass = visible.length >= 3 ? "wall wall--3" : visible.length === 2 ? "wall wall--2" : "wall";
+  const wide = visible.length === 1;
 
   useEffect(() => {
     if (expanded && focusRevealed.current) {
@@ -47,7 +53,7 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
   return (
     <div className="portfolio__more">
       <h3 className="block-title portfolio__more-title">{labels.title}</h3>
-      <ul className="wall wall--3">
+      <ul className={wallClass}>
         {visible.map((project, index) => (
           <ProjectCard
             key={project.slug}
@@ -57,6 +63,7 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
             playLabel={labels.playLabel.replace("{nome}", project.name)}
             playButtonRef={index === PROJECT_GRID_STEP ? firstRevealedRef : undefined}
             descriptionLinkLabel={descriptionLinkLabel}
+            wide={wide}
           />
         ))}
       </ul>
@@ -84,9 +91,11 @@ interface ProjectCardProps {
   playLabel: string;
   playButtonRef?: Ref<HTMLButtonElement>;
   descriptionLinkLabel: string;
+  /** Único cartão da grade: pôster ao lado do texto a partir de 1024 px. */
+  wide: boolean;
 }
 
-function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descriptionLinkLabel }: ProjectCardProps) {
+function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descriptionLinkLabel, wide }: ProjectCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -94,7 +103,7 @@ function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descr
   }, [playing]);
 
   return (
-    <li className="project-card">
+    <li className={wide ? "project-card project-card--wide" : "project-card"}>
       <div className="project-card__media">
         {playing ? (
           <video
@@ -120,7 +129,11 @@ function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descr
               src={project.video.poster}
               alt=""
               fill
-              sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+              sizes={
+                wide
+                  ? "(min-width: 1024px) 700px, 100vw"
+                  : "(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+              }
               unoptimized
             />
             <span className="project-card__play-icon" aria-hidden="true">

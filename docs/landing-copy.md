@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.5 · 01/10/2026 · Tarefa DS1 · Seção 4: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 1.7 · 01/10/2026 · Junta num documento só os textos já aprovados da frente A (HR1 — hero "vídeo" e barra do topo) e da frente B (P2 — Fleet Analytics BI no portfólio); sem texto novo (consolidação do Claudinho, o Manchete ficou indisponível). Na v1.6: texto final do Fleet Analytics BI, com as respostas do cliente de 01/10. Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
@@ -13,7 +13,7 @@ Status: **rascunho para aprovação do cliente** · Versão 1.5 · 01/10/2026 ·
 
 **"Um aplicativo feito do jeito que a sua empresa já trabalha."**
 
-A página fala com o dono ou gerente de distribuidora ou indústria pequena. Começa pelos problemas do dia a dia (pedido, entrega, relatório) e mostra que a Strukti constrói sob medida, ligado ao que a empresa já usa, com gente por perto e manutenção mensal. Todo caminho da página termina no mesmo passo: **uma conversa**, pelo WhatsApp ou pelo diagnóstico gratuito. O Rota de Vendas aparece como prova do que sabemos construir, nunca como produto à venda.
+A página fala com o dono ou gerente de distribuidora ou indústria pequena. Começa pelos problemas do dia a dia (pedido, entrega, relatório) e mostra que a Strukti constrói sob medida, ligado ao que a empresa já usa, com gente por perto e manutenção mensal. Todo caminho da página termina no mesmo passo: **uma conversa**, pelo WhatsApp ou pelo diagnóstico gratuito. O Rota de Vendas e o Fleet Analytics BI aparecem como prova do que sabemos construir, nunca como produtos à venda.
 
 ## Mapa da página
 
@@ -175,6 +175,8 @@ Aprovados pelo Claudinho em 01/10/2026 (tarefa HR1, hero "video").
 
 *Nota (v1.5): a seção vira um portfólio de vídeos. Os projetos ficam numa lista de dados (`src/content/landing.ts`); o primeiro é o destaque, com o vídeo e o cartão 3D acima, e os demais formam uma grade que só aparece quando houver dois projetos ou mais. Hoje há um projeto só, então nada desta subseção aparece no site ainda.*
 
+*Nota (v1.6): com o Fleet Analytics BI, a lista passa a ter dois projetos e a grade "Outros projetos" aparece. O Rota de Vendas continua como destaque.*
+
 **Título da grade (H3):** Outros projetos
 
 **Botão (quando a grade tiver mais de 6 projetos):** Mostrar mais projetos
@@ -188,6 +190,24 @@ Aprovados pelo Claudinho em 01/10/2026 (tarefa HR1, hero "video").
 - **Etiquetas de plataforma:** Android · Windows
 
 *Nota: o resumo é a primeira frase do texto da seção, já aprovada. As etiquetas são fatos do aplicativo (Android do vendedor, Windows do escritório).*
+
+**Fleet Analytics BI no cartão da grade:**
+- **Nome:** Fleet Analytics BI
+- **Resumo:** O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.
+- **Etiquetas de plataforma:** Web · Celular
+- **Nome acessível do vídeo:** Vídeo de demonstração do Fleet Analytics BI
+- **Nome acessível do botão de reproduzir:** Assistir ao vídeo: Fleet Analytics BI
+- **Legenda abaixo do vídeo:** Vídeo de demonstração, só com música.
+- **Descrição do vídeo (texto que abre no link "Ler a descrição do vídeo"):** Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.
+- **Título do vídeo (H3), só se o projeto virar destaque:** Veja o Fleet Analytics BI
+
+*Nota (autorização do cliente, 01/10/2026): em 01/10/2026 o cliente decidiu, e o Claudinho registrou na tarefa P2, que o Fleet Analytics BI foi feito pelo grupo e pode ser mostrado como está, com o nome e o domínio ifanalitico.com.br, e que os números do vídeo são reais e autorizados. Por isso este projeto não leva o aviso de dados fictícios do Rota de Vendas. A autorização fica só nesta nota; o site não fala dela.*
+
+*Nota (respostas do cliente, 01/10/2026): o Fleet Analytics BI roda na web e no celular (etiquetas "Web" e "Celular"); o vídeo é só com música; a legenda não diz que os números são reais nem que há partes borradas. A nota do condutor fica fora da descrição (ver abaixo). A última frase da descrição ("Placas, nomes e endereços aparecem borrados.") continua porque descreve o que se vê na tela, para quem não enxerga o vídeo.*
+
+*Nota: vídeo `WhatsApp Video 2026-10-01 at 00.37.30.mp4` (52 s, 1080p, com áudio), recebido pelo Claudinho; o Dev define onde ele fica no site. Sem reprodução automática com som. A descrição traz só o que aparece na tela, conferido em quadros extraídos a cada segundo; os números são os valores finais dos contadores animados (por exemplo, o de quilômetros passa por 403 e para em 450). A frase "Transforme dados brutos do rastreador em inteligência operacional" é do próprio vídeo e vai entre aspas só na descrição; não usar no resto do site.*
+
+*Nota: a descrição não cita a nota do condutor porque, no mesmo trecho, o número sobreposto no vídeo (65) e o da tela do sistema (63) aparecem diferentes.*
 
 ---
 
