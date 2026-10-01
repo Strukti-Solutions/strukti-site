@@ -16,7 +16,7 @@
 `CLAUDE.md`, "Conclusões da análise do negócio". Nicho: distribuidoras e
 indústrias pequenas.
 **Dial de movimento adotado:** sutil/padrão (fade + leve subida; sem
-coreografia complexa, sem pin de scroll fora do Container Scroll Animation).
+coreografia complexa, sem pin nem trava de rolagem).
 
 ---
 
@@ -90,9 +90,11 @@ removido por não se aplicar ao projeto.
    150ms. Usado em `WhatsAppButton`, `FloatingWhatsApp` e nos CTAs
    principais — o WhatsApp é sempre o que mais chama a atenção.
 
-**Efeito scroll-linked (Container Scroll Animation):** única exceção com
-valores que seguem o progresso do scroll (`useScroll`/`useTransform`), não
-um disparo único. A redução de movimento aqui é **só CSS**
+**Efeito scroll-linked (`src/components/ui/scroll-tilt-card.tsx`, Seção
+4):** única exceção com valores que seguem o progresso do scroll
+(`useScroll`/`useTransform`), não um disparo único — cartão que entra
+inclinado em 3D e fica reto no centro da tela, com o título subindo. Código
+próprio (ADR-005). A redução de movimento aqui é **só CSS**
 (`motion-reduce:` do Tailwind), nunca um `if` que troque a árvore React —
 ver ADR-004 para o motivo (erro de hidratação).
 

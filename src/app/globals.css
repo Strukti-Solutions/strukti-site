@@ -76,9 +76,9 @@ button {
 }
 
 /*
- * O vídeo do Container Scroll Animation vive dentro de um cartão com
- * `overflow: hidden` e, abaixo de `md`, sem padding — o contorno de foco
- * padrão (offset positivo) fica cortado e some para quem navega pelo
+ * O vídeo da Seção 4 vive dentro de um cartão (ScrollTiltCard) com
+ * `overflow: hidden` e sem padding interno — o contorno de foco padrão
+ * (offset positivo) ficaria cortado e sumiria para quem navega pelo
  * teclado (WCAG 2.4.7). Aqui ele desenha para dentro do próprio vídeo.
  */
 video:focus-visible {

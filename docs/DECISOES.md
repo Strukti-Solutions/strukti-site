@@ -13,7 +13,8 @@ reescreve uma antiga.
 **Status:** aceita
 
 **Contexto:** o cliente pediu uma primeira leva de componentes vindos do
-catálogo 21st.dev (o primeiro é o Container Scroll Animation, da Aceternity).
+catálogo 21st.dev (o primeiro foi o Container Scroll Animation, da Aceternity
+— depois substituído por código próprio, ver ADR-005).
 Esses componentes são publicados no padrão shadcn/Tailwind. Até aqui, o site
 usa CSS simples (`src/app/globals.css`, com tokens em `:root`) e `style={}`
 inline nos componentes de seção — não há Tailwind nem shadcn no projeto.
@@ -35,7 +36,7 @@ inline nos componentes de seção — não há Tailwind nem shadcn no projeto.
   (`src/components/sections/*`, `Header`, `WhatsAppButton` etc.) continuam
   como estão, com `style={}` inline e as classes utilitárias do
   `globals.css` (`.container`, `.section`, `.section-title` …). Só os
-  componentes novos vindos da 21st usam classes Tailwind. Não há migração
+  componentes novos de `src/components/ui/` usam classes Tailwind. Não há migração
   retroativa dos componentes atuais só para "padronizar".
 - **`globals.css`:** o import do Tailwind entra sem o preset layer
   `preflight` (o reset de base do Tailwind), importando só `theme` e
@@ -134,8 +135,9 @@ dependências inteira, não só pelo que o grupo escreve à mão no
 **Decisão de:** Claudinho (maestro), a partir de achado da revisão (Crivo)
 **Status:** aceita
 
-**Contexto:** a primeira versão do `ContainerScroll` (ADR-001) tinha um
-`if (useReducedMotion()) return <...estático...>`. `useReducedMotion()`
+**Contexto:** a primeira versão do cartão de rolagem da Seção 4 (o
+`ContainerScroll` adaptado da 21st, ADR-001, depois trocado por código
+próprio, ADR-005) tinha um `if (useReducedMotion()) return <...estático...>`. `useReducedMotion()`
 devolve `null` no servidor (não há `matchMedia` lá) e só resolve a
 preferência real no primeiro render do cliente — então, quando o visitante
 prefere menos movimento, o servidor manda a árvore animada e o cliente
@@ -149,8 +151,8 @@ salto de layout visível).
 - **Preferida — CSS puro:** uma árvore só; a redução usa os modificadores
   `motion-reduce:`/`motion-safe:` do Tailwind (ou `@media
   (prefers-reduced-motion: reduce)` direto no CSS), que valem igual no
-  servidor e no cliente, com ou sem JavaScript. É o que o `ContainerScroll`
-  usa hoje.
+  servidor e no cliente, com ou sem JavaScript. É o que o `ScrollTiltCard`
+  (`src/components/ui/scroll-tilt-card.tsx`) usa hoje.
 - **Mínimo aceitável, quando a diferença não dá para fazer só em CSS:** o
   mesmo portão de montagem do `Reveal`
   (`src/components/motion/Reveal.tsx`) — a árvore animada só aparece
@@ -160,3 +162,36 @@ salto de layout visível).
 
 **Consequência:** nenhum conteúdo pisca, some ou troca de lugar durante a
 hidratação por causa de preferência de movimento.
+
+---
+
+## ADR-005 — Componente de terceiro só com licença explícita; sem ela, código próprio
+
+**Data:** 30/09/2026
+**Decisão de:** Claudinho (maestro)
+**Status:** aceita
+
+**Contexto:** o Container Scroll Animation veio da API do 21st.dev, dentro
+da cota do plano gratuito. Mas a mesma peça aparece no site da Aceternity
+(autora) entre os componentes do plano pago "All-Access", e nem a página da
+21st nem a da Aceternity publicam uma licença para o código (MIT ou outra).
+Conseguir baixar o código não significa ter direito de usá-lo num site
+comercial.
+
+**Decisão:**
+- Componente de terceiro (21st.dev, Aceternity, shadcn ou qualquer outro)
+  só entra no projeto com **licença explícita e compatível com uso
+  comercial** (MIT, Apache-2.0, BSD, ISC ou equivalente). A licença e o link
+  de onde ela foi conferida ficam anotados num comentário no topo do
+  arquivo, junto com a URL de origem e a data da conferência.
+- Sem licença clara, **reproduzimos o efeito com código próprio**, escrito a
+  partir da documentação pública da biblioteca (no caso, a do motion), sem
+  copiar o código do terceiro. Uma técnica (ex.: "cartão que se endireita
+  ao rolar") não tem dono; uma implementação específica tem.
+- Aplicado agora: o `ContainerScroll` derivado da Aceternity/21st foi
+  apagado e substituído por `src/components/ui/scroll-tilt-card.tsx`,
+  escrito do zero com `useScroll`/`useTransform`.
+
+**Consequência:** o MCP da 21st continua útil para buscar referências
+visuais, mas o código retornado só entra se a licença estiver clara; na
+dúvida, ele vira inspiração, não arquivo do projeto.

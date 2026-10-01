@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
-import { ContainerScroll } from "@/components/ui/container-scroll-animation";
+import { ScrollTiltCard } from "@/components/ui/scroll-tilt-card";
 import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
 import { useTapHover } from "@/lib/motion";
 
@@ -27,8 +27,8 @@ export function OQueJaFizemos() {
   return (
     <section id="o-que-construimos" className="section section--alt" aria-labelledby="ojc-title">
       <div className="container">
-        <ContainerScroll
-          titleComponent={
+        <ScrollTiltCard
+          title={
             <>
               <h2 id="ojc-title" className="section-title">
                 {title}
@@ -50,7 +50,7 @@ export function OQueJaFizemos() {
           >
             <source src={videoSrc} type="video/mp4" />
           </video>
-        </ContainerScroll>
+        </ScrollTiltCard>
 
         <Reveal style={{ marginBottom: "2.5rem" }}>
           <p
