@@ -130,6 +130,41 @@ O texto em `src/content/landing.ts` é o texto aprovado pelo cliente em
 `docs/landing-copy.md` (v1.1). Qualquer mudança de texto deve primeiro ser
 aprovada nesse documento e só depois replicada aqui.
 
+### Como trocar o visual do hero
+
+O hero (`src/components/sections/Hero.tsx`) é dividido em duas camadas
+independentes:
+
+- **`HeroContent`** — o texto aprovado e os botões. Sempre o mesmo, não
+  importa o visual de fundo.
+- **`HeroBackground`** — escolhe e renderiza a peça de fundo, com base em
+  `siteConfig.heroVisual` (`src/config/site.ts`).
+
+Para **trocar entre os visuais que já existem**, mude uma linha em
+`src/config/site.ts`:
+
+```ts
+heroVisual: "blackhole", // ou "static"
+```
+
+- `"blackhole"` — `HeroVisualBlackhole.tsx`: o buraco negro (WebGL), com
+  `HeroVisualStatic` atrás como fundo de verdade — é o que aparece se o
+  navegador não tiver WebGL ou perder o contexto, sem precisar de nenhum
+  código extra.
+- `"static"` — `HeroVisualStatic.tsx`: só o fundo do tema (gradiente nos tons
+  da marca), sem WebGL.
+
+Para **acrescentar um visual novo**, sem mexer em `HeroContent` nem no resto
+da página:
+
+1. Crie um componente em `src/components/sections/` que implemente
+   `HeroVisualProps` (`src/components/sections/hero-visual.ts`) — ele recebe
+   `narrow` (true abaixo de 768px) e deve preencher sozinho a área do hero
+   (`absolute inset-0 h-full w-full` ou equivalente).
+2. Acrescente uma entrada no mapa `HERO_VISUALS` de
+   `src/components/sections/HeroBackground.tsx` e no tipo `HeroVisual` de
+   `src/config/site.ts`.
+
 ### Limite de taxa
 
 `src/lib/rateLimit.ts` guarda as tentativas em memória, por instância do
