@@ -240,6 +240,38 @@ Quem roda essa consulta e com que frequência ainda não foi decidido com o
 Claudinho; decidir isso antes da publicação (L5) ou assim que houver o
 primeiro lead.
 
+## Backups
+
+Antes de uma mudança grande (ex.: trocar o hero), cria-se um ponto de restauração
+fora do git normal: uma tag anotada no repositório e um bundle completo fora da
+pasta do projeto.
+
+Backup de 2026-10-01 (antes do hero novo — DS Encaixe + buraco negro):
+
+- Tag: `backup/2026-10-01-ds1-encaixe` (aponta para `f0eeaef`, ponta do `main`
+  na época).
+- Bundle: `C:\dev\_backup\negocio\negocio_20261001_ds1.bundle` (histórico
+  completo, todas as refs).
+- Capturas: `C:\dev\_backup\negocio\capturas-ds1\` (cópia de
+  `docs/capturas-ds1/`).
+
+### Como voltar a um estado salvo
+
+Pela tag (se o repositório local ainda existir):
+
+```bash
+git checkout backup/2026-10-01-ds1-encaixe
+# ou, para voltar o main a esse ponto:
+git checkout main
+git reset --hard backup/2026-10-01-ds1-encaixe
+```
+
+Pelo bundle (se o repositório for perdido ou para restaurar em outra máquina):
+
+```bash
+git clone C:\dev\_backup\negocio\negocio_20261001_ds1.bundle negocio-restaurado
+```
+
 ## Pendências que bloqueiam a publicação (L5)
 
 Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas como
