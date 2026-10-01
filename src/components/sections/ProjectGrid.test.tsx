@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import type { Project } from "@/content/landing";
@@ -93,6 +93,23 @@ describe("<ProjectGrid />", () => {
     const results = await axe.run(container);
     expect(results.violations).toEqual([]);
   });
+
+  it("colunas da parede pelo tanto de cartões, sem sobrar coluna vazia", () => {
+    const { container: withOne } = render(
+      <ProjectGrid projects={makeProjects(1)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
+    );
+    expect(withOne.querySelector("ul")?.className).toBe("wall");
+
+    const { container: withTwo } = render(
+      <ProjectGrid projects={makeProjects(2)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
+    );
+    expect(withTwo.querySelector("ul")?.className).toBe("wall wall--2");
+
+    const { container: withThree } = render(
+      <ProjectGrid projects={makeProjects(3)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
+    );
+    expect(withThree.querySelector("ul")?.className).toBe("wall wall--3");
+  });
 });
 
 describe("<OQueJaFizemos /> com o conteúdo real", () => {
@@ -119,13 +136,40 @@ describe("<OQueJaFizemos /> com o conteúdo real", () => {
     expect(scope.getByText("Celular")).toBeTruthy();
 
     const posterImg = card?.querySelector("img");
-    expect(posterImg?.getAttribute("src")).toBe("/videos/fleet-analytics-bi.jpg");
+    expect(posterImg?.getAttribute("src")).toBe("/video/fleet-analytics-bi.jpg");
 
     fireEvent.click(playButton);
     const fleetVideo = container.querySelector<HTMLVideoElement>(
       'video[aria-label="Vídeo de demonstração do Fleet Analytics BI"]',
     );
     expect(fleetVideo).toBeTruthy();
-    expect(fleetVideo?.getAttribute("poster")).toBe("/videos/fleet-analytics-bi.jpg");
+    expect(fleetVideo?.getAttribute("poster")).toBe("/video/fleet-analytics-bi.jpg");
+  });
+
+  it("só um vídeo toca por vez: tocar o Fleet Analytics BI pausa o Rota de Vendas", () => {
+    // jsdom não implementa reprodução; play/pause viram espiões que
+    // atualizam `paused`, como num navegador (ver HeroVideo.test.tsx, frente A).
+    const pause = vi.fn(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, "paused", { configurable: true, value: true });
+    });
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(pause as never);
+
+    const { container } = render(<OQueJaFizemos />);
+
+    const featuredVideo = container.querySelector<HTMLVideoElement>(
+      'video[aria-label="Vídeo de demonstração do Rota de Vendas"]',
+    )!;
+    Object.defineProperty(featuredVideo, "paused", { configurable: true, value: false });
+
+    fireEvent.click(screen.getByRole("button", { name: "Assistir ao vídeo: Fleet Analytics BI" }));
+    const fleetVideo = container.querySelector<HTMLVideoElement>(
+      'video[aria-label="Vídeo de demonstração do Fleet Analytics BI"]',
+    )!;
+    fireEvent.play(fleetVideo);
+
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(featuredVideo.paused).toBe(true);
+
+    vi.restoreAllMocks();
   });
 });

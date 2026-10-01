@@ -91,8 +91,8 @@ const PROJECTS: readonly Project[] = [
       "O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.",
     videoTitle: "Veja o Fleet Analytics BI",
     video: {
-      src: "/videos/fleet-analytics-bi.mp4",
-      poster: "/videos/fleet-analytics-bi.jpg",
+      src: "/video/fleet-analytics-bi.mp4",
+      poster: "/video/fleet-analytics-bi.jpg",
       accessibleName: "Vídeo de demonstração do Fleet Analytics BI",
       caption: "Vídeo de demonstração, só com música.",
       description:

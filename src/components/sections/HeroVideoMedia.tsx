@@ -1,8 +1,18 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { landingContent } from "@/content/landing";
 import { useCanAnimate } from "@/lib/motion";
+import { isUserVideoPlaying, subscribeToVideoPlayback } from "@/lib/videoCoordination";
 import type { HeroVideoSource } from "@/config/site";
 
 /** O que a pessoa escolheu no controle do vídeo; "auto" segue as regras abaixo. */
@@ -34,15 +44,23 @@ function prefersSavingData() {
  * Decide quando o vídeo de fundo toca (MASTER §9.6). A árvore é a mesma no
  * servidor e no cliente, com ou sem reduced motion (ADR-004): o `<video>`
  * sempre existe, sem `autoplay` e com `preload="none"`, e só o JavaScript
- * chama `play()`, depois de montar. Toca sozinho só com as quatro condições:
- * sem prefers-reduced-motion, sem "economizar dados", hero na tela e aba
- * visível. Com reduced motion, sem JavaScript ou antes de tocar, fica o
+ * chama `play()`, depois de montar. Toca sozinho só com as cinco condições:
+ * sem prefers-reduced-motion, sem "economizar dados", hero na tela, aba
+ * visível e nenhum vídeo com `controls` (Rota de Vendas, Fleet Analytics BI)
+ * tocando — só um vídeo toca por vez (MASTER §8.8), e quem a pessoa está
+ * ouvindo não é interrompido pelo autoplay do hero (videoCoordination.ts).
+ * `useSyncExternalStore` reavalia assim que um vídeo do portfólio começa ou
+ * para (play/pause não borbulham, por isso a captura no documento); o
+ * retrato do servidor é `false` (sem vídeo tocando), sem divergência de
+ * hidratação. Com reduced motion, sem JavaScript ou antes de tocar, fica o
  * pôster. O controle (WCAG 2.2.2) manda acima disso: "Pausar" para de vez;
- * "Tocar" toca mesmo com reduced motion, porque foi a pessoa que pediu.
+ * "Tocar" toca mesmo com reduced motion, porque foi a pessoa que pediu — o
+ * vídeo é mudo, então pode tocar junto com um vídeo do portfólio.
  */
 export function HeroVideoProvider({ children }: { children: ReactNode }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canAnimate = useCanAnimate();
+  const userVideoPlaying = useSyncExternalStore(subscribeToVideoPlayback, isUserVideoPlaying, () => false);
   const [mounted, setMounted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [choice, setChoice] = useState<Choice>("auto");
@@ -82,7 +100,7 @@ export function HeroVideoProvider({ children }: { children: ReactNode }) {
     const video = videoRef.current;
     if (!video) return;
     const wanted =
-      choice === "play" || (choice === "auto" && canAnimate && !prefersSavingData());
+      choice === "play" || (choice === "auto" && canAnimate && !prefersSavingData() && !userVideoPlaying);
     if (wanted && onScreen && pageVisible) {
       video.muted = true;
       video.play().catch(() => {
@@ -91,7 +109,7 @@ export function HeroVideoProvider({ children }: { children: ReactNode }) {
     } else if (!video.paused) {
       video.pause();
     }
-  }, [canAnimate, choice, onScreen, pageVisible]);
+  }, [canAnimate, choice, onScreen, pageVisible, userVideoPlaying]);
 
   return (
     <HeroVideoContext.Provider value={{ videoRef, mounted, playing, setPlaying, setChoice }}>

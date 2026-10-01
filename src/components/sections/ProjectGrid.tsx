@@ -36,6 +36,9 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
 
   const visible = expanded ? projects : projects.slice(0, PROJECT_GRID_STEP);
   const hiddenCount = projects.length - visible.length;
+  // Colunas pelo tanto de cartões visíveis: com menos de 3, "wall--3" deixa
+  // coluna(s) vazia(s) na parede (painel escuro ao lado do cartão).
+  const wallClass = visible.length >= 3 ? "wall wall--3" : visible.length === 2 ? "wall wall--2" : "wall";
 
   useEffect(() => {
     if (expanded && focusRevealed.current) {
@@ -47,7 +50,7 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
   return (
     <div className="portfolio__more">
       <h3 className="block-title portfolio__more-title">{labels.title}</h3>
-      <ul className="wall wall--3">
+      <ul className={wallClass}>
         {visible.map((project, index) => (
           <ProjectCard
             key={project.slug}
