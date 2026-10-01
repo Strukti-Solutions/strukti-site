@@ -96,11 +96,36 @@ describe("<ProjectGrid />", () => {
 });
 
 describe("<OQueJaFizemos /> com o conteúdo real", () => {
-  it("com um projeto só, mostra o destaque e não mostra grade vazia", () => {
+  it("com dois projetos, mostra o Rota de Vendas como destaque e a grade com o Fleet Analytics BI", () => {
     const { container } = render(<OQueJaFizemos />);
 
     expect(screen.getByRole("heading", { name: "Veja o Rota de Vendas" })).toBeTruthy();
-    expect(container.querySelector('video[aria-label="Vídeo de demonstração do Rota de Vendas"]')).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Outros projetos" })).toBeNull();
+    const featuredVideo = container.querySelector<HTMLVideoElement>(
+      'video[aria-label="Vídeo de demonstração do Rota de Vendas"]',
+    );
+    expect(featuredVideo).toBeTruthy();
+    expect(featuredVideo?.getAttribute("preload")).toBe("none");
+    expect(featuredVideo?.getAttribute("poster")).toBe("/video/brag.jpg");
+
+    expect(screen.getByRole("heading", { name: "Outros projetos" })).toBeTruthy();
+    const card = screen.getByRole("heading", { name: "Fleet Analytics BI" }).closest("li");
+    expect(card).toBeTruthy();
+    const scope = within(card as HTMLElement);
+    const playButton = scope.getByRole("button", {
+      name: "Assistir ao vídeo: Fleet Analytics BI",
+    });
+    expect(playButton).toBeTruthy();
+    expect(scope.getByText("Web")).toBeTruthy();
+    expect(scope.getByText("Celular")).toBeTruthy();
+
+    const posterImg = card?.querySelector("img");
+    expect(posterImg?.getAttribute("src")).toBe("/videos/fleet-analytics-bi.jpg");
+
+    fireEvent.click(playButton);
+    const fleetVideo = container.querySelector<HTMLVideoElement>(
+      'video[aria-label="Vídeo de demonstração do Fleet Analytics BI"]',
+    );
+    expect(fleetVideo).toBeTruthy();
+    expect(fleetVideo?.getAttribute("poster")).toBe("/videos/fleet-analytics-bi.jpg");
   });
 });
