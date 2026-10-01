@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check:placeholders": "node scripts/check-placeholders.mjs",
-    "check:quarantine": "node scripts/check-quarantine.mjs"
+    "check:quarantine": "node scripts/check-quarantine.mjs",
+    "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
     "clsx": "2.1.1",

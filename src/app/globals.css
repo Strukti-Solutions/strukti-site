@@ -175,7 +175,10 @@ video:focus-visible {
   gap: 1.5rem;
 }
 
-@media (min-width: 768px) {
+/* Marca + 5 links + botão de WhatsApp só cabem numa linha a partir de
+   ~840px; a 768px o botão era empurrado para fora e criava rolagem
+   horizontal. Abaixo de 1024px o cabeçalho fica como no celular. */
+@media (min-width: 1024px) {
   .header-nav {
     display: flex;
   }

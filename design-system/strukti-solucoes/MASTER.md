@@ -87,8 +87,10 @@ removido por não se aplicar ao projeto.
    transformação (ver ADR-004).
 2. **Micro-interação de botão** — `src/lib/motion.ts` (`useTapHover`):
    `whileHover` (`scale: 1.03`, leve subida) e `whileTap` (`scale: 0.96`),
-   150ms. Usado em `WhatsAppButton`, `FloatingWhatsApp` e nos CTAs
-   principais — o WhatsApp é sempre o que mais chama a atenção.
+   150ms, liberados só depois de montar e sem reduced motion
+   (`useCanAnimate`, mesmo portão do `Reveal`). Usado em `WhatsAppButton`,
+   `FloatingWhatsApp` e nos CTAs principais — o WhatsApp é sempre o que
+   mais chama a atenção.
 
 **Efeito scroll-linked (`src/components/ui/scroll-tilt-card.tsx`, Seção
 4):** única exceção com valores que seguem o progresso do scroll
@@ -134,7 +136,10 @@ ver ADR-004 para o motivo (erro de hidratação).
 - [ ] Foco visível e não cortado por `overflow: hidden` do elemento pai.
 - [ ] `prefers-reduced-motion` respeitado — sem ramificar a árvore React
       (ADR-004).
-- [ ] Funciona a 360px (celular) e sem rolagem horizontal.
+- [ ] Funciona a 360px (celular) e sem rolagem horizontal em nenhuma
+      largura — `npm run check:browser` mede de 360 a 1440px. Elemento
+      transformado (inclinado, escalado) pode projetar além da coluna: corte
+      com `overflow-x: clip` na seção (não cria rolagem nem corta a coluna).
 - [ ] Conteúdo aparece sem JavaScript.
 - [ ] Cor e fonte vêm de `globals.css`/`src/fonts/index.ts`, nunca de um
       valor novo solto.

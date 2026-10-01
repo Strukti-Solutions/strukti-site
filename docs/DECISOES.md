@@ -114,14 +114,14 @@ publicadas dias atrás, mesmo com `motion` fixado em `13.4.1` no
   resolver para uma versão transitiva recente, fixar essa transitiva via
   `overrides` no `package.json` (caso do `framer-motion` e `motion-dom`,
   trazidos pelo `motion`: fixados em `13.4.1`, mesma versão já aprovada).
-- Para regenerar o lock inteiro respeitando a quarentena de uma vez, use
-  `npm install --min-release-age=7` (flag nativa do npm, já documentada no
-  README) — ela mesma calcula "7 dias atrás de agora" a cada execução, sem
-  precisar escrever uma data fixa que fica velha no dia seguinte. (Uma
-  variante com data fixa, `npm install --before=<data>`, existe no npm mas
-  não é a usada aqui, por essa razão.) Mesmo assim, `check:quarantine`
-  continua sendo a checagem que vale: o `--min-release-age`/`--before` só
-  ajuda a regenerar o lock, a checagem é o que garante.
+- Para instalar e regenerar o lock respeitando a quarentena:
+  `npm install --min-release-age=7` (flag nativa do npm; confirmado pelo
+  Claudinho na rodada 2). Ela calcula "7 dias atrás de agora" a cada
+  execução, sem data fixa que fica velha no dia seguinte (por isso não
+  `--before=<data>`). O `.npmrc` do projeto tem `min-release-age=7`, então
+  qualquer `npm install` já aplica isso sem ninguém lembrar da flag.
+  Mesmo assim, `check:quarantine` continua sendo a checagem que vale: o
+  `.npmrc` previne, a checagem garante.
 
 **Consequência:** a quarentena passa a ser garantida pela árvore de
 dependências inteira, não só pelo que o grupo escreve à mão no
@@ -154,11 +154,21 @@ salto de layout visível).
   servidor e no cliente, com ou sem JavaScript. É o que o `ScrollTiltCard`
   (`src/components/ui/scroll-tilt-card.tsx`) usa hoje.
 - **Mínimo aceitável, quando a diferença não dá para fazer só em CSS:** o
-  mesmo portão de montagem do `Reveal`
-  (`src/components/motion/Reveal.tsx`) — a árvore animada só aparece
-  depois de montar no cliente (`useEffect` + `useState`); antes disso (SSR
-  e primeiro render do cliente, iguais) e sem JavaScript, renderiza o
-  conteúdo final direto, sem transformação.
+  portão de montagem `useCanAnimate()` (`src/lib/motion.ts`) — a árvore
+  animada (ou os props de animação) só aparece depois de montar no cliente
+  (`useEffect` + `useState`); antes disso (SSR e primeiro render do
+  cliente, iguais) e sem JavaScript, renderiza o conteúdo final direto, sem
+  transformação. Usado pelo `Reveal` e pelo `useTapHover` (este, na rodada
+  1, ainda lia `useReducedMotion()` direto e gerava `tabindex` divergente
+  nos `motion.a`/`motion.button` — achado da Crivo na rodada 2).
+
+**Garantias (definição de pronto, regra aceita pelo Claudinho na rodada 2):**
+- `src/app/page.hydration.test.tsx`: renderiza a página inteira no
+  "servidor", hidrata no "cliente" com prefers-reduced-motion ligado e
+  desligado, e falha em `onRecoverableError` **ou em qualquer
+  `console.error`** (divergência de atributo só aparece no console).
+- `npm run check:browser`: o mesmo, num Edge/Chrome headless de verdade —
+  falha se o console do navegador registrar erro em qualquer largura.
 
 **Consequência:** nenhum conteúdo pisca, some ou troca de lugar durante a
 hidratação por causa de preferência de movimento.

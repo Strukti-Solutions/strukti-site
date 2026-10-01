@@ -25,7 +25,14 @@ export function OQueJaFizemos() {
   const tapHover = useTapHover();
 
   return (
-    <section id="o-que-construimos" className="section section--alt" aria-labelledby="ojc-title">
+    <section
+      id="o-que-construimos"
+      className="section section--alt"
+      aria-labelledby="ojc-title"
+      // Inclinado em 3D, o cartão projeta a borda de baixo mais larga que a
+      // coluna; `clip` corta isso sem criar rolagem horizontal na página.
+      style={{ overflowX: "clip" }}
+    >
       <div className="container">
         <ScrollTiltCard
           title={

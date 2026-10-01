@@ -2,8 +2,11 @@
 // Quarentena contra ataque de cadeia de suprimentos (ver CLAUDE.md e
 // docs/DECISOES.md): falha (exit 1) se QUALQUER pacote do
 // package-lock.json — direto ou transitivo — tiver sido publicado há
-// menos de 7 dias. Roda como parte da definição de pronto, junto do
-// typecheck, lint, test e build.
+// menos de 7 dias. Roda como parte da definição de pronto (ver README).
+//
+// Prevenção: o .npmrc do projeto tem `min-release-age=7`, então todo
+// `npm install` já ignora versões com menos de 7 dias (equivale a
+// `npm install --min-release-age=7`, ADR-003). Este script é a conferência.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -28,7 +31,9 @@ function nameFromPackagePath(pkgPath) {
 const seen = new Map(); // "name@version" -> name/version
 for (const [pkgPath, entry] of Object.entries(lock.packages)) {
   if (pkgPath === "" || entry.link || !entry.version) continue;
-  const name = nameFromPackagePath(pkgPath);
+  // Alias (`"x": "npm:y@1.0.0"`): a pasta se chama "x", mas o pacote
+  // publicado é "y", e o lock guarda isso em `name`.
+  const name = entry.name ?? nameFromPackagePath(pkgPath);
   if (!name) continue;
   seen.set(`${name}@${entry.version}`, { name, version: entry.version });
 }
@@ -109,7 +114,7 @@ if (tooRecent.length > 0) {
 
 if (tooRecent.length > 0 || unresolved.length > 0) {
   console.error(
-    "\nRegenere o lock com `npm install --min-release-age=7` (fixando em `overrides` o que não resolver sozinho) ou aguarde a janela de quarentena passar.",
+    "\nRegenere o lock com `npm install --min-release-age=7` (o .npmrc já aplica isso; fixe em `overrides` o que não resolver sozinho) ou aguarde a janela de quarentena passar.",
   );
   process.exit(1);
 }

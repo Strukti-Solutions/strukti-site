@@ -1,23 +1,8 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { motion, useReducedMotion, type Variants } from "motion/react";
-
-/**
- * Só começa a animar depois de montar no cliente, para que, sem
- * JavaScript, o conteúdo renderize visível direto (sem depender de JS para
- * "revelar"). Some também com prefers-reduced-motion.
- */
-function useCanAnimate() {
-  const prefersReducedMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  return mounted && !prefersReducedMotion;
-}
+import type { CSSProperties, ReactNode } from "react";
+import { motion, type Variants } from "motion/react";
+import { useCanAnimate } from "@/lib/motion";
 
 interface RevealProps {
   children: ReactNode;
