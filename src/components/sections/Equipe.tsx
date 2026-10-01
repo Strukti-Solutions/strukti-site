@@ -1,5 +1,6 @@
 import { landingContent } from "@/content/landing";
 import { siteConfig } from "@/config/site";
+import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
 
 export function Equipe() {
   const { title, intro } = landingContent.equipe;
@@ -7,12 +8,14 @@ export function Equipe() {
   return (
     <section id="equipe" className="section section--alt" aria-labelledby="equipe-title">
       <div className="container">
-        <h2 id="equipe-title" className="section-title">
-          {title}
-        </h2>
-        <p className="section-subtitle">{intro}</p>
+        <Reveal>
+          <h2 id="equipe-title" className="section-title">
+            {title}
+          </h2>
+          <p className="section-subtitle">{intro}</p>
+        </Reveal>
 
-        <ul
+        <RevealStaggerList
           style={{
             listStyle: "none",
             margin: 0,
@@ -23,7 +26,7 @@ export function Equipe() {
           }}
         >
           {siteConfig.team.map((member) => (
-            <li key={member.name} style={{ textAlign: "center" }}>
+            <RevealStaggerItem key={member.name} style={{ textAlign: "center" }}>
               <span
                 aria-hidden="true"
                 style={{
@@ -45,9 +48,9 @@ export function Equipe() {
               <p style={{ margin: 0, fontWeight: 600, color: "var(--color-petrol-900)" }}>
                 {member.name}
               </p>
-            </li>
+            </RevealStaggerItem>
           ))}
-        </ul>
+        </RevealStaggerList>
       </div>
     </section>
   );

@@ -1,3 +1,10 @@
+/*
+ * Tailwind entra só com theme + utilities, sem o preflight (reset de base).
+ * Motivo e versões: docs/DECISOES.md, ADR-001.
+ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
 :root {
   --color-petrol-900: #0b2e38;
   --color-petrol-800: #0f3c49;
@@ -156,23 +163,5 @@ button {
 @media (min-width: 768px) {
   .header-nav {
     display: flex;
-  }
-}
-
-.screenshot-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 640px) {
-  .screenshot-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .screenshot-grid {
-    grid-template-columns: repeat(3, 1fr);
   }
 }

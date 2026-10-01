@@ -1,5 +1,9 @@
+"use client";
+
 import { siteConfig } from "@/config/site";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { motion } from "motion/react";
+import { useTapHover } from "@/lib/motion";
 
 type WhatsAppButtonProps = {
   message: string;
@@ -14,6 +18,8 @@ export function WhatsAppButton({
   variant = "solid",
   className,
 }: WhatsAppButtonProps) {
+  const tapHover = useTapHover();
+
   const baseStyle: React.CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
@@ -33,15 +39,16 @@ export function WhatsAppButton({
       : { backgroundColor: "transparent", color: "var(--color-whatsapp)" };
 
   return (
-    <a
+    <motion.a
       href={siteConfig.whatsapp.linkWithMessage(message)}
       target="_blank"
       rel="noopener noreferrer"
       style={{ ...baseStyle, ...variantStyle }}
       className={className}
+      {...tapHover}
     >
       <WhatsAppIcon />
       {children}
-    </a>
+    </motion.a>
   );
 }

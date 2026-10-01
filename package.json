@@ -12,15 +12,18 @@
     "check:placeholders": "node scripts/check-placeholders.mjs"
   },
   "dependencies": {
+    "clsx": "2.1.1",
     "motion": "13.4.1",
     "next": "15.5.26",
     "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "tailwind-merge": "3.7.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
+    "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/node": "24.13.6",
@@ -32,6 +35,8 @@
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.26",
     "jsdom": "30.1.1",
+    "shadcn": "4.21.0",
+    "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
   }

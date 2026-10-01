@@ -1,5 +1,6 @@
 import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
 
 export function Problemas() {
   const { title, items, closing, button } = landingContent.problemas;
@@ -7,10 +8,12 @@ export function Problemas() {
   return (
     <section id="problemas" className="section section--alt" aria-labelledby="problemas-title">
       <div className="container">
-        <h2 id="problemas-title" className="section-title">
-          {title}
-        </h2>
-        <ul
+        <Reveal>
+          <h2 id="problemas-title" className="section-title">
+            {title}
+          </h2>
+        </Reveal>
+        <RevealStaggerList
           style={{
             listStyle: "none",
             margin: "0 0 2rem",
@@ -21,7 +24,7 @@ export function Problemas() {
           }}
         >
           {items.map((item) => (
-            <li
+            <RevealStaggerItem
               key={item.title}
               style={{
                 backgroundColor: "var(--color-surface)",
@@ -40,11 +43,13 @@ export function Problemas() {
                 {item.title}
               </h3>
               <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>{item.description}</p>
-            </li>
+            </RevealStaggerItem>
           ))}
-        </ul>
-        <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>{closing}</p>
-        <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
+        </RevealStaggerList>
+        <Reveal>
+          <p style={{ color: "var(--color-ink-muted)", marginBottom: "1.25rem" }}>{closing}</p>
+          <WhatsAppButton message={landingContent.whatsappMessages.general}>{button}</WhatsAppButton>
+        </Reveal>
       </div>
     </section>
   );
