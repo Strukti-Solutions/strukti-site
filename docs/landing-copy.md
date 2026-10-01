@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.3 · 30/09/2026 · Tarefa A1 · Ajuste a pedido do cliente: remoção das capturas da Seção 4 (vídeo ficou bom, capturas ficaram feias)
+Status: **rascunho para aprovação do cliente** · Versão 1.4 · 30/09/2026 · Tarefa A1 · Seção 4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
@@ -133,14 +133,6 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Texto:** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta. Ele não é um sistema de prateleira; mostra como trabalhamos.
 
-**Destaques (lista):**
-- **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
-- **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
-- **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
-- **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
-- **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
-- **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
-
 **Título do vídeo (H3):** Veja o Rota de Vendas
 
 **Nome acessível do vídeo:** Vídeo de demonstração do Rota de Vendas
@@ -151,11 +143,21 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Descrição do vídeo (texto que abre no link):** Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.
 
+**Destaques (lista):**
+- **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
+- **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
+- **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
+- **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
+- **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
+- **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
+
 **Fecho:** O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.
 
 **Botão:** Pedir diagnóstico gratuito
 
 *Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som. Sem capturas (prints) nesta seção — decisão do cliente em 30/09: o vídeo ficou bom, as capturas ficaram feias.*
+
+*Nota: ordem na página (v1.4): título, texto e título do vídeo sobem juntos enquanto o cartão com o vídeo se endireita na rolagem; depois vêm a legenda, a descrição, os destaques, o fecho e o botão. O vídeo é a prova principal, por isso vem antes da lista.*
 
 ---
 
