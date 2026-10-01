@@ -1,7 +1,7 @@
 /**
  * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
- * Texto aprovado pelo cliente em docs/landing-copy.md (v1.6, 01/10/2026),
+ * Texto aprovado pelo cliente em docs/landing-copy.md (v1.7, 01/10/2026),
  * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
  * `[A PREENCHER: ...]`, o valor abaixo usa a mesma marcação — não
  * inventar o dado.

@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.6 · 01/10/2026 · Tarefa P2 · Seção 4: textos do segundo projeto do portfólio, o Fleet Analytics BI (mostrado com autorização do cliente de 01/10; texto final com as respostas do cliente de 01/10). Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 1.7 · 01/10/2026 · Junta num documento só os textos já aprovados da frente A (HR1 — hero "vídeo" e barra do topo) e da frente B (P2 — Fleet Analytics BI no portfólio); sem texto novo (consolidação do Claudinho, o Manchete ficou indisponível). Na v1.6: texto final do Fleet Analytics BI, com as respostas do cliente de 01/10. Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
