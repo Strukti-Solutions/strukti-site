@@ -94,21 +94,29 @@ describe("<ProjectGrid />", () => {
     expect(results.violations).toEqual([]);
   });
 
-  it("colunas da parede pelo tanto de cartões, sem sobrar coluna vazia", () => {
-    const { container: withOne } = render(
+  // Layout para poucos projetos (MASTER §8.8): 1 cartão vira o cartão largo
+  // (pôster ao lado do texto a partir de 1024 px); 2, duas colunas; 3 ou
+  // mais, a grade. Nunca sobra coluna vazia na parede.
+  it("1 cartão: parede de uma coluna com o cartão largo", () => {
+    const { container } = render(
       <ProjectGrid projects={makeProjects(1)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
     );
-    expect(withOne.querySelector("ul")?.className).toBe("wall");
+    expect(container.querySelector("ul")?.className).toBe("wall");
+    expect(container.querySelector("li")?.className).toBe("project-card project-card--wide");
+  });
 
+  it("2 cartões: duas colunas; 3 ou mais: a grade de três, sem cartão largo", () => {
     const { container: withTwo } = render(
       <ProjectGrid projects={makeProjects(2)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
     );
     expect(withTwo.querySelector("ul")?.className).toBe("wall wall--2");
+    expect(withTwo.querySelector(".project-card--wide")).toBeNull();
 
     const { container: withThree } = render(
       <ProjectGrid projects={makeProjects(3)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
     );
     expect(withThree.querySelector("ul")?.className).toBe("wall wall--3");
+    expect(withThree.querySelector(".project-card--wide")).toBeNull();
   });
 });
 

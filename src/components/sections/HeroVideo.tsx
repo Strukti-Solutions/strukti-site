@@ -7,9 +7,11 @@ import { HeroWordmark } from "./HeroWordmark";
  * Hero "video" (MASTER §9.6), implementação própria (ADR-005) no estilo
  * pedido pelo cliente: vídeo de fundo numa moldura com margem de espaço,
  * grão e véu do DS por cima, a palavra "Strukti" gigante e o texto aprovado.
- * Pilha de camadas: base → visual (pôster/vídeo, com grão; no lado a lado,
- * mascarado antes da coluna de texto) → véu → controle do vídeo → conteúdo.
- * A máscara e o véu são do DS e garantem o AA do texto em qualquer quadro.
+ * Pilha de camadas, de baixo para cima: base → visual (pôster/vídeo, com
+ * grão; no lado a lado, mascarado antes da coluna de texto) → véu →
+ * conteúdo → controle do vídeo (por cima de tudo, mas antes do conteúdo no
+ * DOM, para vir logo depois da barra no Tab). A máscara e o véu são do DS e
+ * garantem o AA do texto em qualquer quadro.
  */
 export function HeroVideo() {
   const video = siteConfig.heroVideo;

@@ -1638,6 +1638,33 @@ video:focus-visible {
   font-size: 1rem;
 }
 
+/*
+ * Cartão largo (MASTER §8.8): quando a grade tem um cartão só, a partir de
+ * 1024 px ele ocupa a largura da parede com o pôster (colunas 1–7) ao lado
+ * do texto (8–12), em vez de um pôster 16:9 de 1200 px que competiria com o
+ * destaque. O pôster fica centrado na altura do texto; o player ocupa o
+ * mesmo lugar dele. Abaixo de 1024 px ele empilha como os outros (a 768, lado
+ * a lado, o pôster ficava com 344 px e faixas vazias em cima e embaixo).
+ */
+.project-card--wide .project-card__summary {
+  max-width: 60ch;
+}
+
+@media (min-width: 1024px) {
+  .project-card--wide {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: center;
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  .project-card--wide .project-card__body {
+    max-width: 30rem;
+    padding: var(--space-5) var(--space-7) var(--space-5) var(--space-6);
+  }
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
