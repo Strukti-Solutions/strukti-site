@@ -7,10 +7,11 @@ import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 /**
- * Barra do topo do hero "video" (MASTER §8.3.1): uma aba escura presa no
- * topo da tela, com o canto de baixo cortado no ângulo do hexágono do logo.
- * A partir de 1024 px mostra marca, links e WhatsApp numa linha; abaixo
- * disso, marca e botão "Menu", que abre um painel com os links e o WhatsApp.
+ * Barra do topo do hero "video" (MASTER §8.3.1): uma faixa escura fixa, de
+ * borda a borda da janela, com a junta de 3 px embaixo. O conteúdo fica no
+ * container do site, alinhado com as seções. A partir de 1024 px mostra
+ * marca, links e WhatsApp numa linha; abaixo disso, marca e botão "Menu", que
+ * abre um painel com os links e o WhatsApp, preso embaixo da barra.
  *
  * A árvore é uma só em qualquer largura: o que muda é o CSS (seção "Barra do
  * topo" de globals.css). O botão vem antes do painel no DOM, para o Tab
@@ -67,7 +68,7 @@ export function TopBar() {
       data-open={open ? "true" : "false"}
       onBlur={closeWhenFocusLeaves}
     >
-      <div className="topbar__tab">
+      <div className="container topbar__bar">
         <a href="#inicio" className="topbar__brand">
           <Image
             src="/brand/strukti-assinatura-horizontal-fundo-escuro.svg"

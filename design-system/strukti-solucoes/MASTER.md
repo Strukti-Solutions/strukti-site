@@ -46,7 +46,7 @@ tipográfico.
 | Superfície | Token | Hex | Onde |
 |---|---|---|---|
 | Espaço | `--color-navy-950` | `#08121D` | Cabeçalho, hero, rodapé |
-| Noite | `--color-navy-900` | `#0E1C2B` | O que já construímos (sala de projeção); moldura do hero "video", dentro da margem de espaço |
+| Noite | `--color-navy-900` | `#0E1C2B` | O que já construímos (sala de projeção); moldura do hero "video", dentro da margem de espaço, abaixo da barra |
 | Papel | `--color-navy-50` | `#F1F5F8` | Problemas, Como trabalhamos, Diagnóstico, Equipe, Dúvidas |
 | Branco | `--color-white` | `#FFFFFF` | Peças elevadas sobre o papel: blocos, formulário, acordeão |
 
@@ -186,7 +186,8 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | Contorno do botão Menu navy-400 / espaço | 4,45 | 3 ✅ |
 | Links da barra navy-200 / espaço | 11,73 | 4,5 ✅ |
 
-Decorativos (sem exigência): junta navy-100 sobre branco 1,25; ponto do i
+Decorativos (sem exigência): junta navy-100 sobre branco 1,25; junta da
+barra do topo navy-800 sobre espaço 1,24 (e sobre a noite, 1,13); ponto do i
 electric-500 sobre branco 3,81; verde WhatsApp sobre papel 1,81 (o botão é
 identificado pelo próprio texto, 9,5:1).
 
@@ -436,28 +437,44 @@ Direita: botão WhatsApp compacto (44 px).
 - Este cabeçalho é o do hero "classic". O hero "video" usa a barra da
   §8.3.1.
 
-### 8.3.1 Barra do topo — a aba (hero "video")
+### 8.3.1 Barra do topo — de borda a borda (hero "video")
 
-`src/components/TopBar.tsx`. Uma aba em espaço (navy-950) presa no topo da
-tela, centrada, **fixa a página toda** (substitui o cabeçalho sticky). Os
-dois cantos de baixo são cortados a 30° (21 × 12 px), o ângulo das faces do
-hexágono do logo. Sobre o hero, ela se encaixa na margem de espaço da
-moldura do vídeo; sobre o papel, é uma peça escura pendurada no topo.
+`src/components/TopBar.tsx`. Uma faixa em espaço (navy-950), sólida, **fixa
+a página toda** (substitui o cabeçalho sticky), na **largura inteira da
+janela**, colada no topo (TB1, pedido do cliente; até então era uma aba
+centrada com os cantos cortados). Embaixo, a **junta**: 3 px em navy-800
+(`--topbar-joint`), que separa a barra do que passa por baixo (papel, noite
+do portfólio, rodapé) e, no topo da página, marca onde a barra acaba e
+começa a margem de espaço da moldura do hero.
 
-- Desenho pelo fundo (quatro camadas de gradiente), **sem clip-path**: o
-  clip-path cortaria o contorno de foco e o painel do menu.
+- Altura: `--topbar-height` (56 px < 1024; 60 px ≥ 1024) + a junta, em
+  tokens no `:root`, porque o hero usa a mesma conta (§9.6).
+- **Opaca e sem desfoque**: o contraste não depende do que está atrás.
+  Links navy-200 sobre espaço 11,73:1; foco cyan-400 9,97:1; contorno do
+  Menu 4,45:1 (§3.4). A junta navy-800 sobre espaço é decorativa.
+- **Grade:** o conteúdo da barra fica no `.container` do site. A marca
+  alinha com os títulos das seções e com o texto do hero; o WhatsApp (ou o
+  Menu) alinha com a borda direita do conteúdo, a mesma da palavra
+  "Strukti" gigante. Abaixo de 768 px, o texto do hero fica 8 px para
+  dentro (§9.6).
 - Foco: cyan-400 (é superfície escura).
-- **≥ 1024 px** (60 px de altura): assinatura de 24 px (28 px ≥ 1280), os
-  5 links em navy-200, 600, 15 px, alvo de 44 px, hover branco com
-  sublinhado de 2 px, e o WhatsApp compacto (44 px). Nada quebra linha; a
-  1024 px tudo cabe em ~970 px (respiros de 16 px, que crescem a partir de
-  1280).
+- **≥ 1024 px** (60 px): assinatura de 24 px (28 px ≥ 1280) à esquerda; à
+  direita, um grupo só com os 5 links (navy-200, 600, 15 px, alvo de 44 px,
+  hover branco com sublinhado de 2 px) e o WhatsApp compacto (44 px). Nada
+  quebra linha: a 1024 px, marca (100 px), links (524 px) e botão (199 px)
+  cabem nos 929 px do container com a barra de rolagem (respiros de 16 px
+  entre os links e 20 px antes do botão). A partir de 1280: 32 px entre os
+  links e 48 px antes do WhatsApp, que é a ação e fica separado da
+  navegação.
 - **< 1024 px** (56 px): assinatura e o botão **Menu** (44 px, borda 1,5 px
-  navy-400, ícone de duas barras que vira X). O botão abre um painel solto
-  abaixo da aba, na largura da tela menos 8 px de cada lado: espaço, borda
-  navy-800, `--radius-3`, elevação nível 2; links brancos de 18 px com alvo
-  de 48 px, separados por régua navy-800, e o WhatsApp na largura toda no
-  fim. Foco dentro do painel desenhado para dentro.
+  navy-400, ícone de duas barras que vira X). O botão abre um painel que
+  **continua a barra para baixo**, de borda a borda, logo depois da junta:
+  espaço, fecha com outra junta de 3 px, elevação nível 2, sem raio; links
+  brancos de 18 px com alvo de 48 px, o texto alinhado com a marca (respiro
+  do container) e as réguas navy-800 de borda a borda; o WhatsApp na
+  largura do conteúdo no fim. Foco dentro do painel desenhado para dentro.
+  Em tela baixa (celular deitado), o painel rola por dentro (`max-height`
+  de `100dvh` menos a barra).
 - Comportamento: `aria-expanded` e `aria-controls` no botão; fecha com Esc
   (o foco volta ao botão), ao sair com Tab (o foco deixando a barra: o
   painel é fixo e cobriria o controle focado, WCAG 2.4.11), ao escolher um
@@ -466,6 +483,10 @@ moldura do vídeo; sobre o papel, é uma peça escura pendurada no topo.
   motion.
 - O botão vem antes do painel no DOM: com o painel aberto, o Tab segue do
   botão para os links.
+- **Nada fica escondido sob ela:** `scroll-padding-top` (cabeçalho + 16 px)
+  põe as seções abaixo da barra nas âncoras do menu, e o `check:browser`
+  percorre a página com Tab a 360, 390 e 1024 px e falha se um controle
+  focado parar sob a barra ou coberto (WCAG 2.4.11).
 
 ### 8.4 Parede de blocos (Problemas)
 
@@ -761,12 +782,16 @@ cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
 `HeroWordmark.tsx`; decisões na ADR-007.
 
 **Camadas** (dentro de uma moldura com `--radius-3` e uma margem de
-espaço de 8 px, 12 px ≥ 768, onde a aba da barra se encaixa):
+espaço de 8 px, 12 px ≥ 768). A moldura começa **abaixo da barra fixa**
+(§8.3.1; TB1): o `padding-top` do hero é a barra + a junta + a margem. Assim
+a barra vira o lado de cima da margem de espaço, e os quatro cantos
+arredondados e a margem igual dos quatro lados continuam à mostra. Com a
+barra por cima da moldura, o topo dela sumia e a moldura virava um "U".
 
 ```
-5. Controle do vídeo   44 px, canto de cima à direita, abaixo da aba
-                       (z-index 3; no DOM vem antes do conteúdo, logo
-                       depois da barra no Tab)
+5. Controle do vídeo   44 px, canto de cima à direita da moldura (12 px;
+                       16 px ≥ 1024) (z-index 3; no DOM vem antes do
+                       conteúdo, logo depois da barra no Tab)
 4. Conteúdo            palavra "Strukti" (decorativa) + texto aprovado
                        (z-index 2)
 3. Véu                 do DS: o desbotamento da faixa (< 1024) e o
@@ -784,13 +809,21 @@ espaço de 8 px, 12 px ≥ 768, onde a aba da barra se encaixa):
 | < 1024 px | **Faixa em cima:** o vídeo ocupa uma faixa no alto da moldura (`--hero-band`: `clamp(300px, 52svh, 460px)`; `clamp(340px, 50svh, 520px)` ≥ 768), com o recorte em pé (720 × 1280). A palavra gigante cruza o pé da faixa; o texto vem abaixo, **sobre a noite sólida** (fora do vídeo). | Só desbota a faixa para a noite no fim (0 → 0,72 → 1) |
 | ≥ 1024 px | **Diagonal:** vídeo na moldura inteira (recorte deitado, 1920 × 1080). Texto nas colunas 1–6, no alto (máx. 34rem); palavra gigante nas colunas 7–12, embaixo, alinhada à direita, por cima do pé da estrada. | **Máscara no visual** (`mask-image`): o vídeo é transparente até a borda direita do texto (`--hero-text-edge`) e surge em curva S (smoothstep) ao longo de `--hero-reveal` (`clamp(320px, 75% do resto, 620px)`). Véu: só um escurecimento de baixo (0,82 → 0 em 34%) que assenta a palavra no chão |
 
-- Altura: `min-height: calc(100svh − 2 × margem)`; o conteúdo cresce se
-  precisar (telas baixas). Conteúdo no container do site.
+- Altura: `min-height: calc(100svh − barra − junta − 2 × margem)`: a
+  moldura ocupa o resto da primeira tela, e o conteúdo cresce se precisar
+  (telas baixas).
+- Conteúdo na grade do site: dentro da moldura, o respiro lateral é o do
+  container **menos a margem** (`--hero-gutter`: 40 − 12 = 28 px a partir de
+  768). Assim o texto e a palavra gigante alinham com a marca da barra e com
+  as seções em qualquer largura. A borda do texto da máscara
+  (`--hero-text-edge`) usa o mesmo respiro. Abaixo de 768 fica o respiro
+  inteiro (20 px), para o texto não encostar na moldura: ali ele fica 8 px
+  para dentro da marca.
 - Contraste: o texto nunca fica sobre o vídeo; fica sobre a noite sólida
   (§3.4). Por que máscara, e não véu: um véu de 0,88 deixava ver o céu claro
   e a crista do morro atrás das letras, lidos como um "retângulo" de borda
-  reta (revisão HR1). A moldura em noite, um tom acima da margem e da aba
-  em espaço, mantém visíveis o recorte da moldura e o da aba;
+  reta (revisão HR1). A moldura em noite, um tom acima da margem e da barra
+  em espaço, mantém visível o recorte da moldura;
   abaixo de 1024 o texto nem fica sobre o vídeo.
 
 **Palavra gigante** ("Strukti", `aria-hidden`; o título é o H1):

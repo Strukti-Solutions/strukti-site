@@ -73,6 +73,9 @@
   --content-max: 1200px;
   --section-space: clamp(64px, 9vw, 128px);
   --header-height: 64px;
+  /* Barra do topo do hero "video" (§8b): altura da faixa + a junta embaixo. */
+  --topbar-height: 56px;
+  --topbar-joint: 3px;
   --joint-width: 3px;
 
   --duration-fast: 150ms;
@@ -89,6 +92,12 @@
   :root {
     --gutter: 40px;
     --header-height: 72px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --topbar-height: 60px;
   }
 }
 
@@ -692,45 +701,34 @@ video:focus-visible {
 }
 
 /* ------------------------------------------------------------------ */
-/* 8b. Barra do topo — a aba (MASTER §8.3.1; só no hero "video")       */
+/* 8b. Barra do topo, de borda a borda (MASTER §8.3.1; hero "video")   */
 /* ------------------------------------------------------------------ */
+/*
+ * Faixa sólida em espaço, fixa no topo, na largura inteira da janela (TB1,
+ * pedido do cliente). Embaixo, a junta de 3 px em navy-800: separa a barra
+ * do que passa por baixo (papel, noite, rodapé) e, no topo da página, marca
+ * onde a barra termina e começa a margem de espaço da moldura do hero.
+ * Opaca: o contraste dos links não depende do que está atrás.
+ */
 .topbar {
-  --topbar-height: 56px;
-  /* Canto de baixo cortado a 30°, o ângulo das faces do hexágono do logo. */
-  --topbar-cut-x: 21px;
-  --topbar-cut-y: 12px;
   --focus: var(--color-cyan-400);
   position: fixed;
   top: 0;
   right: 0;
   left: 0;
   z-index: 50;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
+  border-bottom: var(--topbar-joint) solid var(--color-navy-800);
+  background-color: var(--color-navy-950);
 }
 
-/*
- * A aba é desenhada pelo fundo (quatro camadas: corpo, faixa de baixo e os
- * dois cantos cortados), sem clip-path: clip-path cortaria o contorno de
- * foco e o painel do menu, que fica dentro dela.
- */
-.topbar__tab {
+/* O conteúdo segue o container do site: a marca alinha com os títulos das
+   seções e o WhatsApp com a borda direita do conteúdo. */
+.topbar__bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
   height: var(--topbar-height);
-  padding-inline: calc(var(--topbar-cut-x) + 8px);
-  pointer-events: auto;
-  background:
-    linear-gradient(var(--color-navy-950), var(--color-navy-950)) top / 100% calc(100% - var(--topbar-cut-y))
-      no-repeat,
-    linear-gradient(var(--color-navy-950), var(--color-navy-950)) bottom / calc(100% - 2 * var(--topbar-cut-x))
-      var(--topbar-cut-y) no-repeat,
-    linear-gradient(to bottom left, var(--color-navy-950) 50%, transparent calc(50% + 0.6px)) bottom left /
-      var(--topbar-cut-x) var(--topbar-cut-y) no-repeat,
-    linear-gradient(to bottom right, var(--color-navy-950) 50%, transparent calc(50% + 0.6px)) bottom right /
-      var(--topbar-cut-x) var(--topbar-cut-y) no-repeat;
 }
 
 .topbar__brand {
@@ -803,19 +801,25 @@ video:focus-visible {
   transform: rotate(-45deg);
 }
 
-/* Painel do menu (< 1024 px): solto embaixo da aba, na largura da tela. */
+/*
+ * Painel do menu (< 1024 px): continua a barra para baixo, de borda a
+ * borda, logo depois da junta, e fecha com outra junta. Os textos alinham
+ * com a marca (respiro do container); as linhas e o foco vão até a borda.
+ * Em tela baixa (celular deitado), rola dentro dele.
+ */
 .topbar__nav {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 8px;
-  left: 8px;
+  top: calc(100% + var(--topbar-joint));
+  right: 0;
+  left: 0;
   display: none;
-  padding: 8px 0 16px;
-  border: 1px solid var(--color-navy-800);
-  border-radius: var(--radius-3);
+  max-height: calc(100dvh - var(--topbar-height) - var(--topbar-joint));
+  padding: var(--space-2) 0 var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-bottom: var(--topbar-joint) solid var(--color-navy-800);
   background-color: var(--color-navy-950);
   box-shadow: var(--shadow-float);
-  pointer-events: auto;
 }
 
 .topbar[data-open="true"] .topbar__nav {
@@ -832,7 +836,7 @@ video:focus-visible {
   display: flex;
   align-items: center;
   min-height: 48px;
-  padding: 0 20px;
+  padding: 0 var(--gutter);
   color: #ffffff;
   font-size: 1.125rem;
   font-weight: 600;
@@ -857,9 +861,9 @@ video:focus-visible {
 
 .topbar__nav .topbar__whatsapp {
   display: flex;
-  width: calc(100% - 32px);
+  width: calc(100% - 2 * var(--gutter));
   min-height: 48px;
-  margin: 12px 16px 0;
+  margin: var(--space-3) var(--gutter) 0;
   font-size: 1rem;
 }
 
@@ -886,15 +890,11 @@ video:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .topbar {
-    --topbar-height: 60px;
-  }
-
-  /* A 1024 px marca, 5 links e o botão mal cabem numa linha (~980 px):
-     nada quebra linha, e os respiros crescem a partir de 1280. */
-  .topbar__tab {
-    gap: var(--space-4);
-    padding-inline: calc(var(--topbar-cut-x) + 4px);
+  /* A 1024 px a marca (100 px), os 5 links (524 px) e o botão (199 px)
+     cabem numa linha nos 929 px do container (com a barra de rolagem):
+     nada quebra linha. Os respiros crescem a partir de 1280, e o maior
+     separa os links do WhatsApp, que é a ação. */
+  .topbar__bar {
     white-space: nowrap;
   }
 
@@ -902,22 +902,24 @@ video:focus-visible {
     display: none;
   }
 
+  /* Links e WhatsApp num grupo só, encostado na borda direita do conteúdo. */
   .topbar__nav,
   .topbar[data-open="true"] .topbar__nav {
     position: static;
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: 20px;
+    max-height: none;
     padding: 0;
+    overflow: visible;
     border: 0;
-    border-radius: 0;
     background: none;
     box-shadow: none;
   }
 
   .topbar__links {
     display: flex;
-    gap: 16px;
+    gap: var(--space-4);
   }
 
   .topbar__links li + li {
@@ -945,22 +947,17 @@ video:focus-visible {
 }
 
 @media (min-width: 1280px) {
-  .topbar__tab,
-  .topbar__nav,
-  .topbar[data-open="true"] .topbar__nav {
-    gap: var(--space-5);
-  }
-
-  .topbar__tab {
-    padding-inline: calc(var(--topbar-cut-x) + 12px);
-  }
-
   .topbar__brand img {
     height: 28px;
   }
 
+  .topbar__nav,
+  .topbar[data-open="true"] .topbar__nav {
+    gap: var(--space-7);
+  }
+
   .topbar__links {
-    gap: 28px;
+    gap: 32px;
   }
 }
 
@@ -968,28 +965,39 @@ video:focus-visible {
 /* 8c. Hero com vídeo (MASTER §9.6)                                    */
 /* ------------------------------------------------------------------ */
 .hero-video {
-  /* Margem de espaço em volta da moldura: a aba se encaixa nela. */
+  /* Margem de espaço em volta da moldura. Em cima, a moldura começa abaixo
+     da barra fixa (TB1): a barra é o lado de cima da margem, e os quatro
+     cantos arredondados ficam à mostra. */
   --mat: 8px;
+  --topbar-total: calc(var(--topbar-height) + var(--topbar-joint));
   /* Abaixo de 1024 px o vídeo é uma faixa no alto da moldura. */
   --hero-band: clamp(300px, 52svh, 460px);
   --hero-text-max: 34rem;
-  padding: var(--mat);
+  /* Respiro do conteúdo dentro da moldura. */
+  --hero-gutter: var(--gutter);
+  padding: calc(var(--topbar-total) + var(--mat)) var(--mat) var(--mat);
 }
 
 @media (min-width: 768px) {
   .hero-video {
     --mat: 12px;
     --hero-band: clamp(340px, 50svh, 520px);
+    /* O respiro desconta a margem: o texto e a palavra gigante alinham com
+       a marca da barra e com as seções em qualquer largura (TB1). No
+       celular fica o respiro inteiro (texto 8 px para dentro), para o texto
+       não encostar na moldura. */
+    --hero-gutter: calc(var(--gutter) - var(--mat));
   }
 }
 
-/* Moldura em "noite" dentro da margem de "espaço": o recorte da moldura e
-   da aba (espaço) aparece mesmo onde não há vídeo atrás do texto. */
+/* Moldura em "noite" dentro da margem de "espaço": o recorte da moldura
+   aparece mesmo onde não há vídeo atrás do texto. Com a barra, ocupa o
+   resto da primeira tela. */
 .hero-video__frame {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: calc(100svh - 2 * var(--mat));
+  min-height: calc(100svh - var(--topbar-total) - 2 * var(--mat));
   border-radius: var(--radius-3);
   background-color: var(--color-navy-900);
 }
@@ -1053,6 +1061,8 @@ video:focus-visible {
   z-index: 2;
   display: flex;
   flex-direction: column;
+  max-width: calc(var(--content-max) + 2 * var(--hero-gutter));
+  padding-inline: var(--hero-gutter);
   padding-top: var(--hero-band);
   padding-bottom: var(--space-7);
   container-type: inline-size;
@@ -1165,11 +1175,11 @@ video:focus-visible {
   font-size: 0.875rem;
 }
 
-/* Controle do vídeo (WCAG 2.2.2): no canto de cima do vídeo, logo abaixo
-   da altura da aba, longe da palavra gigante e dos botões. */
+/* Controle do vídeo (WCAG 2.2.2): no canto de cima à direita da moldura
+   (que começa abaixo da barra), longe da palavra gigante e dos botões. */
 .hero-video__toggle {
   position: absolute;
-  top: calc(56px + var(--space-3));
+  top: var(--space-3);
   right: var(--space-3);
   z-index: 3;
   display: grid;
@@ -1220,7 +1230,8 @@ video:focus-visible {
   .hero-video {
     /* Borda direita da coluna de texto, medida a partir da esquerda da moldura. */
     --hero-text-edge: calc(
-      max(var(--gutter), (100% - var(--content-max)) / 2) + min(var(--hero-text-max), 100% - 2 * var(--gutter))
+      max(var(--hero-gutter), (100% - var(--content-max)) / 2) +
+        min(var(--hero-text-max), 100% - 2 * var(--hero-gutter))
     );
     /* Largura em que o vídeo surge depois da borda do texto. */
     --hero-reveal: clamp(320px, (100% - var(--hero-text-edge)) * 0.75, 620px);
@@ -1288,7 +1299,7 @@ video:focus-visible {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     grid-template-rows: 1fr auto;
     column-gap: 24px;
-    padding-top: calc(60px + var(--space-8));
+    padding-top: var(--space-8);
     padding-bottom: var(--space-6);
   }
 
@@ -1313,7 +1324,7 @@ video:focus-visible {
   }
 
   .hero-video__toggle {
-    top: calc(60px + var(--space-3));
+    top: var(--space-4);
     right: var(--space-4);
   }
 }
