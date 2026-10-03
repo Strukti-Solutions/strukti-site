@@ -36,9 +36,9 @@
 
 | Superfície | Token | Hex | Onde |
 |---|---|---|---|
-| Espaço | `--color-navy-950` | `#08121D` | Cabeçalho, hero, rodapé |
-| Noite | `--color-navy-900` | `#0E1C2B` | O que já construímos (sala de projeção); moldura do hero "video", dentro da margem de espaço, abaixo da barra |
-| Papel | `--color-navy-50` | `#F1F5F8` | Problemas, Como trabalhamos, Diagnóstico, Equipe, Dúvidas |
+| Espaço | `--color-navy-950` | `#08121D` | Barra do topo, hero, Produtos (`#produtos`, em palcos), rodapé |
+| Noite | `--color-navy-900` | `#0E1C2B` | Aplicativos (`#aplicativos`, em palcos); moldura do hero "video", dentro da margem de espaço, abaixo da barra |
+| Papel | `--color-navy-50` | `#F1F5F8` | Chamada geral (`#sob-medida`), Como trabalhamos, Equipe, Contato (`#contato`), Dúvidas |
 | Branco | `--color-white` | `#FFFFFF` | Peças elevadas sobre o papel: blocos, formulário, acordeão |
 
 **Por quê:**
@@ -60,13 +60,14 @@
 **Mapa da página:**
 
 ```
-Cabeçalho ............ espaço
-Hero (visual trocável)  espaço   ← qualquer visual termina em espaço (§9.1)
-Problemas ............ papel     parede de blocos brancos
-Como trabalhamos ..... papel     régua entre as duas seções
-O que já construímos . noite     sala de projeção
-Diagnóstico .......... papel     formulário em branco
+Barra do topo ........ espaço
+Hero ................. espaço    texto + palco com o produto (§9.7)
+Produtos ............. espaço    palcos de hardware (#produtos)
+Aplicativos .......... noite     palcos com a tela do app (#aplicativos)
+Chamada geral ........ papel     outros problemas (#sob-medida)
+Como trabalhamos ..... papel     régua entre seções seguidas em papel
 Equipe ............... papel
+Contato .............. papel     formulário em branco (#contato)
 Dúvidas .............. papel
 Rodapé ............... espaço
 ```
@@ -107,7 +108,8 @@ Em negrito, as cores amostradas do logo oficial. Funcionais: WhatsApp
 
 - **Marinho**: texto, superfícies escuras, estrutura.
 - **Elétrico 700**: ação da marca. Botão primário (diagnóstico), links e
-  foco no claro. O elétrico 500 só aparece no ponto do i.
+  foco no claro. O elétrico 500 aparece no ponto do i e na luz de estúdio
+  dentro do palco (§8.13).
 - **Ciano**: **só no escuro**. Luz do disco do buraco negro, foco e links
   sobre superfícies escuras. Nunca como texto no claro.
 - **Verde WhatsApp**: **só** no que abre o WhatsApp. É reconhecimento
@@ -674,11 +676,11 @@ faixa do botão.
 
 ### 8.13 Palco
 
-Superfície escura onde fica um produto (hero, cards de hardware, cards de aplicativos). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
+Superfície escura (`.palco`) onde fica um produto (hero, cards de hardware, cards de aplicativos). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
 
 ### 8.14 Selos de status
 
-Todo produto mostra um selo, com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`). O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` no canto inferior do palco. A informação está sempre no texto; a cor só reforça. Contraste AA conferido nos quatro.
+Todo produto mostra um selo (classe base `.selo` mais um modificador), com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`). O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` no canto inferior do palco. A informação está sempre no texto; a cor só reforça. Contraste AA conferido nos quatro.
 
 ### 8.15 Ficha técnica
 
@@ -884,7 +886,7 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
 
 ### 9.7 Hero "estudio" (padrão desde a v3)
 
-Seção `#inicio` com o texto à esquerda (em cima abaixo de 768 px) e um palco com o produto à direita (embaixo). O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
+Seção `#inicio` (`.hero-estudio`) com o texto à esquerda (em cima abaixo de 768 px) e um palco com o produto à direita (embaixo). O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
 
 - Com animação: a seção tem 250svh de altura e o conteúdo fica fixo (`position: sticky`) enquanto a rolagem dentro dela escolhe o quadro desenhado no `<canvas>` (decorativo, `aria-hidden`).
 - O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
@@ -896,7 +898,8 @@ Seção `#inicio` com o texto à esquerda (em cima abaixo de 768 px) e um palco 
 ## 10. Checklist anti-cara-de-IA (em toda entrega)
 
 - [ ] Nada de gradiente roxo-azul, glassmorphism, brilho neon, texto em
-      gradiente ou "orbe" de luz decorativo fora do hero.
+      gradiente ou "orbe" de luz decorativo fora do hero e do palco
+      (§8.13).
 - [ ] Nenhum emoji como ícone; ícones são SVG feitos para a função.
 - [ ] Nenhuma seção resolvida como "três cartões iguais com ícone em cima":
       cada seção usa uma das composições da §5.2.
@@ -909,7 +912,8 @@ Seção `#inicio` com o texto à esquerda (em cima abaixo de 768 px) e um palco 
 - [ ] Sem sombra cinza genérica em todo cartão, sem raio único para tudo,
       sem pílula (exceção: os dois botões do hero "video", ADR-007).
 - [ ] Movimento só onde a §6 permite; nada de fade-e-sobe em cada parágrafo.
-- [ ] Os detalhes vêm da marca (junta, hexágono, ponto do i) e têm função.
+- [ ] Os detalhes vêm da marca (junta, hexágono, ponto do i, luz de
+      estúdio) e têm função.
 - [ ] Texto é o aprovado em `src/content/landing.ts`; nenhum número,
       depoimento, logo de cliente ou selo inventado.
 - [ ] Teste do espelho: tirar um acessório antes de entregar.
