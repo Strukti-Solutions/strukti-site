@@ -112,4 +112,4 @@ Veja `FILA_PESADA.md`. Só um processo pesado roda por vez na máquina (npm ci, 
 
 ## 7. Estado do trabalho
 
-O quadro do momento da mudança está em `QUADRO.md`.
+Onde paramos e os próximos passos estão em `ESTADO.md`.
