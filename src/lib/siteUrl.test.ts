@@ -32,6 +32,38 @@ describe("getSiteUrl", () => {
     expect(getSiteUrl()).toBe("http://localhost:3000");
   });
 
+  it("SITE_URL vazio conta como ausente: fora da Vercel, cai em localhost (antes quebrava o build)", () => {
+    process.env.SITE_URL = "";
+    expect(getSiteUrl()).toBe("http://localhost:3000");
+  });
+
+  it("SITE_URL vazio conta como ausente: em produção na Vercel, cai no domínio fixo do projeto", () => {
+    process.env.SITE_URL = "";
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "strukti.vercel.app";
+    process.env.VERCEL_URL = "strukti-git-main-abc123.vercel.app";
+    expect(getSiteUrl()).toBe("https://strukti.vercel.app");
+  });
+
+  it("SITE_URL só com espaços também conta como ausente", () => {
+    process.env.SITE_URL = "   ";
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "strukti-pr-42.vercel.app";
+    expect(getSiteUrl()).toBe("https://strukti-pr-42.vercel.app");
+  });
+
+  it("SITE_URL com espaços em volta é aparado", () => {
+    process.env.SITE_URL = "  https://strukti.com.br/  ";
+    expect(getSiteUrl()).toBe("https://strukti.com.br");
+  });
+
+  it("VERCEL_PROJECT_PRODUCTION_URL e VERCEL_URL vazios também contam como ausentes", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "";
+    process.env.VERCEL_URL = "";
+    expect(getSiteUrl()).toBe("http://localhost:3000");
+  });
+
   it("um SITE_URL sem protocolo quebra alto (new URL), em vez de virar um caminho relativo silencioso", () => {
     process.env.SITE_URL = "dominio-sem-protocolo.com";
     expect(() => getSiteUrl()).toThrow();
