@@ -1,10 +1,38 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import type { Project } from "@/content/landing";
 import { landingContent } from "@/content/landing";
 import { PROJECT_GRID_STEP, ProjectGrid } from "./ProjectGrid";
 import { OQueJaFizemos } from "./OQueJaFizemos";
+
+/** IntersectionObserver que o teste dispara à mão (o stub padrão nunca dispara; ver HeroVideo.test.tsx). */
+class SpyIntersectionObserver {
+  static instances: SpyIntersectionObserver[] = [];
+  elements = new Set<Element>();
+  constructor(private callback: IntersectionObserverCallback) {
+    SpyIntersectionObserver.instances.push(this);
+  }
+  observe(el: Element) {
+    this.elements.add(el);
+  }
+  unobserve(el: Element) {
+    this.elements.delete(el);
+  }
+  disconnect() {
+    this.elements.clear();
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  static fire(target: Element, isIntersecting: boolean) {
+    for (const instance of SpyIntersectionObserver.instances) {
+      if (instance.elements.has(target)) {
+        instance.callback([{ target, isIntersecting } as IntersectionObserverEntry], instance as unknown as IntersectionObserver);
+      }
+    }
+  }
+}
 
 // Projetos fictícios, só para exercitar a grade (o site real tem um projeto).
 function makeProjects(count: number): Project[] {
@@ -121,6 +149,15 @@ describe("<ProjectGrid />", () => {
 });
 
 describe("<OQueJaFizemos /> com o conteúdo real", () => {
+  beforeEach(() => {
+    SpyIntersectionObserver.instances = [];
+    vi.stubGlobal("IntersectionObserver", SpyIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("com dois projetos, mostra o Rota de Vendas como destaque e a grade com o Fleet Analytics BI", () => {
     const { container } = render(<OQueJaFizemos />);
 
@@ -130,6 +167,11 @@ describe("<OQueJaFizemos /> com o conteúdo real", () => {
     );
     expect(featuredVideo).toBeTruthy();
     expect(featuredVideo?.getAttribute("preload")).toBe("none");
+    // O pôster (158 KB) só carrega perto da seção — o atributo `poster` do
+    // <video> nativo não tem lazy loading, diferente das imagens da grade
+    // (next/image). Antes da seção entrar na tela, não baixa; perto dela, sim.
+    expect(featuredVideo?.hasAttribute("poster")).toBe(false);
+    act(() => SpyIntersectionObserver.fire(featuredVideo!, true));
     expect(featuredVideo?.getAttribute("poster")).toBe("/video/brag.jpg");
 
     expect(screen.getByRole("heading", { name: "Outros projetos" })).toBeTruthy();

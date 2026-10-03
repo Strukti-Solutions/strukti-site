@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
 import { ScrollTiltCard } from "@/components/ui/scroll-tilt-card";
@@ -22,6 +22,14 @@ export function OQueJaFizemos() {
   const others = projects.filter((project) => project !== featured);
 
   const tapHover = useTapHover();
+  const featuredVideoRef = useRef<HTMLVideoElement>(null);
+  // O atributo `poster` do `<video>` nativo não tem lazy loading (diferente
+  // de `<img>`): sem isto, o navegador baixa o pôster do destaque (158 KB)
+  // já no carregamento, mesmo a seção ficando abaixo da dobra (depois do
+  // hero, Problemas e ComoResolvemos). Só define o pôster perto da seção —
+  // `rootMargin` generoso para não aparecer em branco em quem rola a
+  // página inteira (medição perf, item 2 da P3).
+  const [featuredPosterReady, setFeaturedPosterReady] = useState(false);
 
   // Só um vídeo toca por vez na página (MASTER §8.8): o destaque, os
   // cartões da grade e o vídeo de fundo do hero dividem a mesma regra, mas
@@ -34,6 +42,26 @@ export function OQueJaFizemos() {
     };
     document.addEventListener("play", onPlay, true);
     return () => document.removeEventListener("play", onPlay, true);
+  }, []);
+
+  useEffect(() => {
+    const video = featuredVideoRef.current;
+    if (!video) return;
+    if (typeof IntersectionObserver !== "function") {
+      setFeaturedPosterReady(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setFeaturedPosterReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -62,9 +90,10 @@ export function OQueJaFizemos() {
               }
             >
               <video
+                ref={featuredVideoRef}
                 controls
                 preload="none"
-                poster={featured.video.poster}
+                poster={featuredPosterReady ? featured.video.poster : undefined}
                 className="portfolio__video"
                 aria-label={featured.video.accessibleName}
                 // O botão flutuante do WhatsApp some enquanto o vídeo está na

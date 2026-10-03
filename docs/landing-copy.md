@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.7 · 01/10/2026 · Junta num documento só os textos já aprovados da frente A (HR1 — hero "vídeo" e barra do topo) e da frente B (P2 — Fleet Analytics BI no portfólio); sem texto novo (consolidação do Claudinho, o Manchete ficou indisponível). Na v1.6: texto final do Fleet Analytics BI, com as respostas do cliente de 01/10. Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 1.8 · 03/10/2026 · Textos da página 404 (aprovados pelo Claudinho, 03/10 — item 3 da P3). Na v1.7: junta num documento só os textos já aprovados da frente A (HR1 — hero "vídeo" e barra do topo) e da frente B (P2 — Fleet Analytics BI no portfólio); sem texto novo (consolidação do Claudinho, o Manchete ficou indisponível). Na v1.6: texto final do Fleet Analytics BI, com as respostas do cliente de 01/10. Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
 
 ## Como ler este documento
 
@@ -396,6 +396,16 @@ Este site não usa cookies de rastreamento nem ferramentas de análise de visita
 Se este aviso mudar, a data no topo muda junto.
 
 *Nota: a frase sobre cookies só pode ir ao ar se continuar verdadeira. Se um dia entrar analytics ou outro script de terceiros, este aviso precisa mudar antes.*
+
+---
+
+## Página não encontrada (404)
+
+Microcopy de interface (não é claim de marketing nem dado do negócio); aprovação do Claudinho em 03/10/2026.
+
+- **Título:** Página não encontrada
+- **Link de volta:** Voltar para o início
+- O botão de WhatsApp da página usa a mensagem geral já aprovada (ver "Mensagens pré-preenchidas do WhatsApp"). Nada além desses dois textos — sem métrica, sem frase de venda.
 
 ---
 

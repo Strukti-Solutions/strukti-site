@@ -2,14 +2,20 @@ import type { Metadata, Viewport } from "next";
 import { geologica } from "@/fonts";
 import { landingContent } from "@/content/landing";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { getSiteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
 const { title, description, ogSiteName, ogTitle, ogDescription } = landingContent.seo;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title,
   description,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
+    url: "/",
     siteName: ogSiteName,
     title: ogTitle,
     description: ogDescription,
