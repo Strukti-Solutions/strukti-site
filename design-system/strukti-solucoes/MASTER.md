@@ -447,8 +447,13 @@ centrada com os cantos cortados). Embaixo, a **junta**: 3 px em navy-800
 do portfólio, rodapé) e, no topo da página, marca onde a barra acaba e
 começa a margem de espaço da moldura do hero.
 
-- Altura: `--topbar-height` (56 px < 1024; 60 px ≥ 1024) + a junta, em
-  tokens no `:root`, porque o hero usa a mesma conta (§9.6).
+- **Ponto da barra larga: 75em** (1200 px com a fonte padrão; TB2). O
+  ponto é em `em` para acompanhar a fonte do navegador. É o mesmo valor no
+  CSS (seção 8b e regra do FAB) e no `TopBar.tsx` (`TOPBAR_WIDE_QUERY`), e o
+  `TopBar.test.tsx` confere. Não segue o 1024 do hero: a composição do hero
+  (§9.6) e a barra são decisões separadas.
+- Altura: `--topbar-height` (56 px abaixo de 75em; 60 px a partir dele) + a
+  junta, em tokens no `:root`, porque o hero usa a mesma conta (§9.6).
 - **Opaca e sem desfoque**: o contraste não depende do que está atrás.
   Links navy-200 sobre espaço 11,73:1; foco cyan-400 9,97:1; contorno do
   Menu 4,45:1 (§3.4). A junta navy-800 sobre espaço é decorativa.
@@ -458,15 +463,22 @@ começa a margem de espaço da moldura do hero.
   "Strukti" gigante. Abaixo de 768 px, o texto do hero fica 8 px para
   dentro (§9.6).
 - Foco: cyan-400 (é superfície escura).
-- **≥ 1024 px** (60 px): assinatura de 24 px (28 px ≥ 1280) à esquerda; à
+- **≥ 75em** (60 px): assinatura de 24 px (28 px ≥ 80em) à esquerda; à
   direita, um grupo só com os 5 links (navy-200, 600, 15 px, alvo de 44 px,
   hover branco com sublinhado de 2 px) e o WhatsApp compacto (44 px). Nada
-  quebra linha: a 1024 px, marca (100 px), links (524 px) e botão (199 px)
-  cabem nos 929 px do container com a barra de rolagem (respiros de 16 px
-  entre os links e 20 px antes do botão). A partir de 1280: 32 px entre os
-  links e 48 px antes do WhatsApp, que é a ação e fica separado da
-  navegação.
-- **< 1024 px** (56 px): assinatura e o botão **Menu** (44 px, borda 1,5 px
+  quebra linha. Os respiros crescem com a tela, de 1200 a ~1310 px: entre
+  os links, `clamp(16px, 15vw - 164px, 32px)`; antes do WhatsApp, que é a
+  ação e fica separado da navegação, `clamp(20px, 25vw - 280px, 48px)`.
+- **Espaçamento de texto (WCAG 1.4.12, AA):** com letras +0,12em e palavras
+  +0,16em, os links passam de 587 para 710 px e o botão de 199 para 234 px.
+  A 1024 px o grupo saía da tela e o WhatsApp ficava cortado (achado da
+  Crivo na TB1); por isso o ponto subiu de 1024 para 75em. A 1200 px, marca
+  (101) + links (710) + botão (234) + respiros (36) = ~1080 px, dentro dos
+  1105 px do container com a barra de rolagem. A 1280 px, com os respiros
+  maiores e a marca de 28 px, são ~1165 de 1185 px. O `check:browser`
+  aplica o espaçamento de 360 a 1440 px e falha se algo da barra (ou do
+  painel aberto) sair da tela ou do container.
+- **< 75em** (56 px): assinatura e o botão **Menu** (44 px, borda 1,5 px
   navy-400, ícone de duas barras que vira X). O botão abre um painel que
   **continua a barra para baixo**, de borda a borda, logo depois da junta:
   espaço, fecha com outra junta de 3 px, elevação nível 2, sem raio; links
@@ -479,14 +491,14 @@ começa a margem de espaço da moldura do hero.
   (o foco volta ao botão), ao sair com Tab (o foco deixando a barra: o
   painel é fixo e cobriria o controle focado, WCAG 2.4.11), ao escolher um
   link, ao tocar fora e ao passar
-  para ≥ 1024 px. Abre com fade + 8 px (`@starting-style`) só sem reduced
+  para ≥ 75em. Abre com fade + 8 px (`@starting-style`) só sem reduced
   motion.
 - O botão vem antes do painel no DOM: com o painel aberto, o Tab segue do
   botão para os links.
 - **Nada fica escondido sob ela:** `scroll-padding-top` (cabeçalho + 16 px)
   põe as seções abaixo da barra nas âncoras do menu, e o `check:browser`
-  percorre a página com Tab a 360, 390 e 1024 px e falha se um controle
-  focado parar sob a barra ou coberto (WCAG 2.4.11).
+  percorre a página com Tab a 360, 390, 1024 e 1200 px e falha se um
+  controle focado parar sob a barra ou coberto (WCAG 2.4.11).
 
 ### 8.4 Parede de blocos (Problemas)
 
@@ -643,11 +655,12 @@ Crivo): ele some enquanto
   conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
   campo, link ou controle de vídeo.
 
-**Com a barra do hero "video" (§8.3.1), o FAB só existe abaixo de 1024
-px** (decisão do Claudinho no HR1): a partir daí o WhatsApp já está sempre à
-mostra na barra fixa. É CSS (`.topbar ~ .fab-whatsapp { display: none }` em
-≥ 1024 px), então vale só nas páginas com a barra; no /privacidade, sem
-barra, nada muda. Abaixo de 1024 px valem todas as regras acima.
+**Com a barra do hero "video" (§8.3.1), o FAB só existe abaixo de 75em
+(1200 px)** (decisão do Claudinho no HR1; o ponto acompanha o da barra
+larga desde a TB2): a partir daí o WhatsApp já está sempre à mostra na
+barra fixa. É CSS (`.topbar ~ .fab-whatsapp { display: none }` em ≥ 75em),
+então vale só nas páginas com a barra; no /privacidade, sem barra, nada
+muda. Abaixo de 75em valem todas as regras acima.
 
 Esconder é imediato; mostrar só depois de conferir com o quadro assentado
 (dois `requestAnimationFrame`, porque o motion aplica o tilt dentro do

@@ -43,7 +43,7 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 **Botão:** Falar no WhatsApp
 
-*Nota: no celular (360 px), mostrar só a marca e o botão do WhatsApp; o menu pode ficar escondido ou sair.* *(Vale para o hero "classic". No hero "video", abaixo de 1024 px a barra mostra a marca e o botão "Menu", e o WhatsApp fica dentro do menu; ver "Hero e top bar (textos de interface)".)*
+*Nota: no celular (360 px), mostrar só a marca e o botão do WhatsApp; o menu pode ficar escondido ou sair.* *(Vale para o hero "classic". No hero "video", abaixo de 1200 px (75em, TB2) a barra mostra a marca e o botão "Menu", e o WhatsApp fica dentro do menu; ver "Hero e top bar (textos de interface)".)*
 
 ---
 
@@ -67,7 +67,7 @@ A página fala com o dono ou gerente de distribuidora ou indústria pequena. Com
 
 Aprovados pelo Claudinho em 01/10/2026 (tarefa HR1, hero "video").
 
-**Botão que abre o menu (abaixo de 1024 px):** Menu
+**Botão que abre o menu (abaixo de 1200 px, 75em; TB2):** Menu
 
 **Nome acessível do controle do vídeo de fundo, com o vídeo tocando:** Pausar o vídeo de fundo
 
