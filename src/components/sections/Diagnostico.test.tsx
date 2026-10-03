@@ -29,7 +29,7 @@ async function expectFocusOn(getElement: () => Element | null) {
   await waitFor(() => {
     const target = getElement();
     expect(target).not.toBeNull();
-    expect(document.activeElement).toBe(target);
+    expect(document.activeElement, "o foco não chegou ao elemento esperado").toBe(target);
   });
 }
 
