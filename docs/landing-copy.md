@@ -1,475 +1,613 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 1.8 · 03/10/2026 · Textos da página 404 (aprovados pelo Claudinho, 03/10 — item 3 da P3). Na v1.7: junta num documento só os textos já aprovados da frente A (HR1 — hero "vídeo" e barra do topo) e da frente B (P2 — Fleet Analytics BI no portfólio); sem texto novo (consolidação do Claudinho, o Manchete ficou indisponível). Na v1.6: texto final do Fleet Analytics BI, com as respostas do cliente de 01/10. Na v1.5: textos de interface do portfólio de vídeos (aprovados pelo Claudinho, 01/10). Na v1.4: vídeo primeiro, destaques depois (decisão do Claudinho, 30/09). Na v1.3: remoção das capturas da Seção 4 a pedido do cliente
+Status: **rascunho para aprovação do cliente** · Versão 2.0 · 03/10/2026 · Home nova da marca-mãe (hardware + IA), ADR-009.
+
+*Nota: a v2.0 reescreve a home inteira para o novo rumo (spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`). O histórico até a v1.8 está no git (`git log -- docs/landing-copy.md`).*
 
 ## Como ler este documento
 
 - O texto depois de cada rótulo em negrito (**Título (H1):**, **Botão:** etc.) é o **texto final** e vai para o site exatamente assim, com a mesma pontuação e acentuação.
+- Na v2.0, todo rótulo de texto que vai para `landingContent` (`src/content/landing.ts`) começa pelo **nome da chave**, entre crases. Ex.: **`heroEstudio.headline` (título, H1):** é o texto que vai em `landingContent.heroEstudio.headline`. Em listas, o índice entre colchetes diz a posição (`steps[0]` é o primeiro passo).
 - Linhas que começam com *Nota:* orientam o Dev e o cliente. **Não vão para o site.**
 - `[A PREENCHER: ...]` é um dado que ainda falta. **Não publicar enquanto houver algum.** A lista completa está no fim.
 - `{nome}`, `{n}` e `{max}` são valores que o site preenche sozinho.
 
 ## Ângulo
 
-**"Um aplicativo feito do jeito que a sua empresa já trabalha."**
+**"Equipamento e software para problemas que um aplicativo sozinho não resolve."**
 
-A página fala com o dono ou gerente de distribuidora ou indústria pequena. Começa pelos problemas do dia a dia (pedido, entrega, relatório) e mostra que a Strukti constrói sob medida, ligado ao que a empresa já usa, com gente por perto e manutenção mensal. Todo caminho da página termina no mesmo passo: **uma conversa**, pelo WhatsApp ou pelo diagnóstico gratuito. O Rota de Vendas e o Fleet Analytics BI aparecem como prova do que sabemos construir, nunca como produtos à venda.
+A página é a vitrine da Strukti Soluções, agora focada em produtos que juntam hardware e IA. Ela fala com quem pode usar um produto da Strukti: o dono de quadra ou arena (replay), o gerente de supermercado (estacionamento inteligente, ainda em estudo) e a empresa que precisa de um aplicativo sob medida. Fala também com quem tem um problema que pede equipamento e não achou no catálogo.
+
+O replay vem na frente; os aplicativos continuam, em segundo plano. Todo caminho termina numa conversa: WhatsApp com mensagem pronta ou formulário com o assunto já marcado.
+
+O texto é honesto sobre a fase de cada coisa: o selo de status diz em que pé está cada produto; inteligência artificial aparece só como "em breve"; o 3D é sempre "ilustração do conceito"; o replay usa o Wi-Fi da arena; nenhum cliente, número de uso, preço ou prazo é inventado; a região de instalação do replay ainda não está definida e o texto não promete nenhuma.
 
 ## Mapa da página
 
-| # | Seção | Âncora sugerida | Chamada para ação |
-|---|---|---|---|
-| 0 | Cabeçalho | — | WhatsApp |
-| 1 | Abertura (hero) | `#inicio` | WhatsApp e diagnóstico |
-| 2 | Problemas | `#problemas` | WhatsApp |
-| 3 | Como a Strukti resolve | `#como-trabalhamos` | — |
-| 4 | O que já construímos | `#o-que-construimos` | Diagnóstico |
-| 5 | Diagnóstico gratuito e formulário | `#diagnostico` | Formulário |
-| 6 | Equipe | `#equipe` | — |
-| 7 | Dúvidas frequentes | `#duvidas` | WhatsApp |
-| 8 | Rodapé | — | WhatsApp, e-mail, privacidade |
-| — | Aviso de privacidade | `/privacidade` | — |
-| — | Botão flutuante do WhatsApp | em todas as telas | WhatsApp |
+Ordem e fundos conforme a spec §4.
+
+| # | Seção | Âncora | Fundo | Chamada para ação |
+|---|---|---|---|---|
+| 1 | Barra do topo | — | escuro | WhatsApp (mensagem geral) |
+| 2 | Abertura (hero) | `#inicio` | escuro | "Conhecer o replay" (âncora `#produtos`) e "Falar no WhatsApp" |
+| 3 | Produtos de hardware | `#produtos` | escuro, palcos | Replay: WhatsApp (mensagem do replay). Estacionamento: WhatsApp (mensagem do estacionamento) |
+| 4 | Aplicativos | `#aplicativos` | escuro, palcos | "Diagnóstico gratuito" → formulário com o assunto "Aplicativo" |
+| 5 | Tem um problema que pede hardware? | `#sob-medida` | claro | Formulário com o assunto "Outro" |
+| 6 | Como trabalhamos | `#como-trabalhamos` | claro | — |
+| 7 | Equipe | `#equipe` | claro | — |
+| 8 | Contato | `#contato` | claro | Formulário único |
+| 9 | Dúvidas frequentes | `#duvidas` | claro | WhatsApp (mensagem geral) |
+| 10 | Rodapé | — | escuro | WhatsApp, e-mail, aviso de privacidade |
+| — | Aviso de privacidade | `/privacidade` | claro | — |
+| — | Botão flutuante do WhatsApp | em todas as telas | — | WhatsApp (mensagem geral) |
+
+*Nota: saem da home as seções "Problemas" (dores das distribuidoras) e "Diagnóstico gratuito" como seção própria. O diagnóstico vira a chamada dos aplicativos e uma opção do campo de assunto do formulário.*
 
 ---
 
-## 0. Cabeçalho
+## Selos de status
 
-**Link de acessibilidade (primeiro item da página):** Pular para o conteúdo
+Os quatro rótulos são fixos (spec §3.4). O texto do selo sempre aparece escrito; a cor só reforça.
+
+- **`statusLabels.piloto`:** Piloto gratuito
+- **`statusLabels.desenvolvimento`:** Em desenvolvimento
+- **`statusLabels.emUso`:** Em uso
+- **`statusLabels.emBreve`:** Em breve
+
+Quem leva cada selo nesta home:
+
+| Produto | Chave do status | Selo |
+|---|---|---|
+| Replay para quadras | `piloto` | Piloto gratuito |
+| Estacionamento inteligente | `desenvolvimento` | Em desenvolvimento |
+| Rota de Vendas (`aplicativos`, projeto `rota-de-vendas`) | `piloto` | Piloto gratuito |
+| Fleet Analytics BI (`aplicativos`, projeto `fleet-analytics-bi`) | `emUso` | Em uso |
+| Recursos de IA (cortes automáticos, destaque por jogador) | `emBreve` | Em breve |
+
+*Nota: nesta home, os recursos de IA aparecem só no texto, sempre com "em breve" escrito (hero e dúvidas). Nenhum card mostra o selo "Em breve" por enquanto.*
+
+---
+
+## Mensagens prontas do WhatsApp
+
+Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithMessage(mensagem)`.
+
+**`whatsappMessages.general`:** Olá! Vim pelo site da Strukti Soluções e quero conversar com vocês.
+
+*Nota: usada na barra do topo, no botão "Falar no WhatsApp" do hero, nas dúvidas, no rodapé, no botão flutuante, na tela de sucesso do formulário e na página 404. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20com%20voc%C3%AAs.`*
+
+**`whatsappMessages.replay`:** Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra.
+
+*Nota: usada no botão "Agendar demonstração" do card do replay. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20agendar%20uma%20demonstra%C3%A7%C3%A3o%20do%20replay%20para%20a%20minha%20quadra.`*
+
+**`whatsappMessages.estacionamento`:** Olá! Vim pelo site da Strukti Soluções e quero conversar sobre o estacionamento inteligente.
+
+*Nota: usada no botão "Quero conversar sobre isso" do card do estacionamento. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20sobre%20o%20estacionamento%20inteligente.`*
+
+**`whatsappMessages.aplicativo`:** Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito de um aplicativo para a minha empresa.
+
+*Nota: link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20pedir%20o%20diagn%C3%B3stico%20gratuito%20de%20um%20aplicativo%20para%20a%20minha%20empresa.`*
+
+*Nota (para o Dev e o Thiago): o plano da Tarefa 8 usa a mensagem de aplicativo no link "Chame no WhatsApp" ao lado do formulário e na mensagem de falha no envio. Como o formulário agora serve a todos os assuntos (replay, estacionamento, aplicativo, outro), recomendo usar ali a mensagem geral: quem veio pelo replay e falha no envio não deveria abrir o WhatsApp pedindo diagnóstico de aplicativo.*
+
+*Nota: cada mensagem mostra de onde veio a conversa sem precisar de analytics.*
+
+---
+
+## 1. Barra do topo
+
+**`header.skipLink` (link de acessibilidade, primeiro item da página):** Pular para o conteúdo
 
 **Marca:** Strukti Soluções
 
-**Menu:** Problemas · Como trabalhamos · O que já construímos · Diagnóstico · Dúvidas
+**Menu:**
 
-**Botão:** Falar no WhatsApp
+- **`header.nav[0].label` (`href: "#produtos"`):** Produtos
+- **`header.nav[1].label` (`href: "#aplicativos"`):** Apps
+- **`header.nav[2].label` (`href: "#equipe"`):** Equipe
+- **`header.nav[3].label` (`href: "#contato"`):** Contato
 
-*Nota: no celular (360 px), mostrar só a marca e o botão do WhatsApp; o menu pode ficar escondido ou sair.* *(Vale para o hero "classic". No hero "video", abaixo de 1200 px (75em, TB2) a barra mostra a marca e o botão "Menu", e o WhatsApp fica dentro do menu; ver "Hero e top bar (textos de interface)".)*
+**`header.whatsappButton` (botão):** Falar no WhatsApp
 
----
+**`header.menuButton` (botão que abre o menu abaixo de 1200 px, 75em):** Menu
 
-## 1. Abertura (hero)
-
-**Sobretítulo:** Aplicativos sob medida para distribuidoras e indústrias pequenas
-
-**Título (H1):** Um aplicativo feito do jeito que a sua empresa já trabalha.
-
-**Texto:** Pedido que chega em papel, no WhatsApp e na planilha. Rota de entrega montada na mão. Relatório que alguém monta no Excel todo fim de mês. A Strukti Soluções constrói o aplicativo que resolve isso na sua empresa, ligado ao que você já usa e com gente por perto para cuidar dele depois.
-
-**Botão principal:** Chamar no WhatsApp
-
-**Botão secundário:** Pedir diagnóstico gratuito
-
-**Linha de apoio (abaixo dos botões):** Primeiro entendemos o problema. Depois falamos de aplicativo.
-
-*Nota: sem captura do Rota de Vendas no hero. O app aparece na seção 4; no topo ele daria a impressão de produto à venda.*
-
-### Hero e top bar (textos de interface)
-
-Aprovados pelo Claudinho em 01/10/2026 (tarefa HR1, hero "video").
-
-**Botão que abre o menu (abaixo de 1200 px, 75em; TB2):** Menu
-
-**Nome acessível do controle do vídeo de fundo, com o vídeo tocando:** Pausar o vídeo de fundo
-
-**Nome acessível do controle do vídeo de fundo, com o vídeo parado:** Tocar o vídeo de fundo
-
-*Nota: o controle é um botão só com ícone (pausa ou triângulo); o texto acima é o nome que o leitor de tela anuncia e aparece como dica ao passar o mouse. A palavra "Strukti" gigante do hero é decorativa (o leitor de tela não a lê): o título continua sendo o H1 acima.*
+*Nota: `skipLink`, `whatsappButton` e `menuButton` não mudam (v1.8). Só o menu muda: saem Problemas, Como trabalhamos, O que já construímos, Diagnóstico e Dúvidas; entram os quatro itens acima, conforme a spec §4.*
 
 ---
 
-## 2. Problemas
+## 2. Abertura (hero "estudio")
 
-**Título (H2):** Isso acontece na sua empresa?
+**`heroEstudio.eyebrow` (sobretítulo):** Replay para quadras · Aplicativos sob medida
 
-**Cartão 1**
-- **Título:** Pedido espalhado em papel, WhatsApp e planilha
-- **Texto:** O vendedor anota no talão, manda foto no WhatsApp, e alguém no escritório digita tudo de novo. Quando some um pedido, ninguém sabe onde ele ficou.
+**`heroEstudio.headline` (título, H1):** Equipamento e software para problemas que um aplicativo sozinho não resolve.
 
-**Cartão 2**
-- **Título:** Erro de digitação que só aparece na entrega
-- **Texto:** Um número trocado, um item a mais, um preço errado. Quem descobre é o cliente, na hora de receber.
+**`heroEstudio.body` (texto):** A Strukti Soluções monta o equipamento, escreve o software e cuida da instalação e do suporte. O primeiro produto é o replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Recursos de inteligência artificial, como o destaque por jogador, vêm em breve.
 
-**Cartão 3**
-- **Título:** Rota de entrega montada na mão
-- **Texto:** Todo dia alguém separa os pedidos por cidade e escreve o roteiro do entregador. Entrou pedido novo, refaz a lista.
+**`heroEstudio.primaryCta` (botão principal, âncora `#produtos`):** Conhecer o replay
 
-**Cartão 4**
-- **Título:** Vendedor sem internet na rua
-- **Texto:** Na estrada e no interior o sinal cai. O vendedor fica sem o cadastro do cliente e deixa o pedido para passar depois.
+**`heroEstudio.whatsappCta` (botão secundário, WhatsApp com a mensagem geral):** Falar no WhatsApp
 
-**Cartão 5**
-- **Título:** Relatório feito à mão no Excel
-- **Texto:** Para saber quanto vendeu no mês, por vendedor ou por cidade, alguém junta planilha por planilha. Quando termina, o número já mudou.
+**`heroEstudio.illustrationBadge` (selo discreto sobre o 3D):** Ilustração do conceito
 
-**Cartão 6**
-- **Título:** Sistema pronto que não se adapta
-- **Texto:** Você testou um sistema pronto, mas ele exige outro jeito de trabalhar. Sobram funções que ninguém usa e falta justo o que a sua equipe precisa.
+*Nota: o botão de replay em 3D é um modelo estilizado, feito por nós; não existe caixa definitiva do produto. O selo "Ilustração do conceito" é texto visível e acompanha o 3D sempre, inclusive quando só o pôster aparece (movimento reduzido, economia de dados, falha ao carregar).*
 
-**Fecho:** Se alguma dessas é a rotina da sua empresa, vale uma conversa.
+*Nota: o título não fala de IA de propósito: hoje nenhum produto tem IA pronta. A IA aparece no texto, com "em breve" escrito.*
 
-**Botão:** Chamar no WhatsApp
+*Nota: os textos do hero "video" e "classic" (`hero.*`, inclusive os nomes do controle do vídeo de fundo, "Pausar o vídeo de fundo" e "Tocar o vídeo de fundo") continuam como na v1.8 enquanto essas variantes estiverem no código. Eles não aparecem com o hero "estudio".*
 
 ---
 
-## 3. Como a Strukti resolve
+## 3. Produtos de hardware
 
-**Título (H2):** Como a Strukti resolve
+**`produtos.title` (título, H2):** Produtos de hardware
 
-**Texto:** Não vendemos sistema pronto. Construímos o aplicativo que a sua empresa precisa, e só o que ela precisa.
+**`produtos.intro` (texto):** Equipamento que fica no seu espaço, com software e suporte da própria Strukti. O selo de cada produto diz em que fase ele está.
 
-**Item 1**
-- **Título:** Feito do jeito da sua empresa
-- **Texto:** Começamos pela rotina: como o pedido nasce, quem digita, como a entrega sai. O aplicativo segue esse caminho, com os nomes, os campos e os documentos que a sua equipe já conhece.
+### Replay (card grande)
 
-**Item 2**
-- **Título:** Ligado ao que você já usa
-- **Texto:** Não precisa jogar fora o sistema, a planilha ou o modelo de documento que já funciona. Quando o seu sistema permite, ligamos um ao outro. Quando não permite, o aplicativo gera os arquivos no formato que a empresa já usa: Excel, PDF ou Word.
+Selo: **Piloto gratuito** (`piloto`).
 
-**Item 3**
-- **Título:** Perto de você
-- **Texto:** Você fala direto com quem constrói, pelo WhatsApp, sem central de atendimento. Em João Pessoa e região, vamos até a sua empresa. No resto do Brasil, atendemos por videochamada.
+**`produtos.replay.name` (título do card, H3):** Replay para quadras
 
-**Item 4**
-- **Título:** Preço pensado para empresa pequena
-- **Texto:** Você paga pelo que a sua empresa vai usar, não por um pacote cheio de funções. O preço vem na proposta, junto com o que será feito e o prazo, antes de qualquer compromisso.
+**`produtos.replay.oneLiner` (o que é):** Para quadras de aluguel de society, futsal, vôlei e beach tennis: o jogador sai do jogo com o lance no celular, e o time ganha um motivo a mais para voltar à sua quadra.
 
-**Item 5**
-- **Título:** Manutenção todo mês
-- **Texto:** Aplicativo pronto não fica largado. Com o plano mensal de manutenção, suporte e hospedagem, fazemos os ajustes, resolvemos os problemas e mantemos tudo funcionando.
+**`produtos.replay.stepsTitle` (subtítulo dos passos):** Como funciona
 
----
+**Passos (`produtos.replay.steps`, nesta ordem; o `lead` vai em negrito, seguido do `rest`):**
 
-## 4. O que já construímos
+- **`produtos.replay.steps[0].lead`:** Aperta o botão.
+- **`produtos.replay.steps[0].rest`:** Saiu um lance bonito? O jogador aperta o botão na beira da quadra.
+- **`produtos.replay.steps[1].lead`:** O clipe é cortado.
+- **`produtos.replay.steps[1].rest`:** O equipamento da quadra separa os 30 segundos antes do aperto e mais alguns depois.
+- **`produtos.replay.steps[2].lead`:** Chega no celular.
+- **`produtos.replay.steps[2].rest`:** O clipe sobe pelo Wi-Fi da arena, e o jogador vê e compartilha pelo celular.
 
-**Título (H2):** O que já construímos
+**Ficha técnica (`produtos.replay.specs`, nesta ordem; `value` grande em cima, `label` curto embaixo):**
 
-**Texto:** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta. Ele não é um sistema de prateleira; mostra como trabalhamos.
+- **`produtos.replay.specs[0].value`:** 30 s
+- **`produtos.replay.specs[0].label`:** Antes do aperto
+- **`produtos.replay.specs[1].value`:** Wi-Fi
+- **`produtos.replay.specs[1].label`:** Da própria arena
+- **`produtos.replay.specs[2].value`:** PoE
+- **`produtos.replay.specs[2].label`:** Energia e imagem num cabo só
 
-**Título do vídeo (H3):** Veja o Rota de Vendas
+*Nota: no HTML da ficha (`<dl>`), o rótulo vem antes do valor, e o leitor de tela lê "Antes do aperto: 30 s", "Da própria arena: Wi-Fi", "Energia e imagem num cabo só: PoE". Os rótulos foram escritos para fazer sentido nas duas ordens.*
 
-**Nome acessível do vídeo:** Vídeo de demonstração do Rota de Vendas
+**`produtos.replay.cta` (botão, WhatsApp com a mensagem do replay):** Agendar demonstração
 
-**Legenda abaixo do vídeo:** Vídeo de demonstração, só com música. Os clientes, pedidos e endereços que aparecem são fictícios.
+**`produtos.replay.siteLinkLabel` (link para o site próprio do replay):** Ver o site do replay
 
-**Link para abrir a descrição:** Ler a descrição do vídeo
+*Nota: o link do site do replay fica escondido enquanto o endereço não existir (`produtos.replay.siteUrl: null`). Endereço: [A PREENCHER: endereço do site do replay].*
 
-**Descrição do vídeo (texto que abre no link):** Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.
+*Nota: a imagem do card é o pôster do 3D, num palco, com o mesmo selo "Ilustração do conceito" do hero.*
 
-**Destaques (lista):**
-- **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
-- **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
-- **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
-- **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
-- **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
-- **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
+*Nota: vinheta de patrocinadores e replay na TV do bar ficaram de fora de propósito: ainda não existem e não são recursos de IA (não cabem no "em breve" dos selos). Entram quando estiverem prontos ou se o Thiago decidir mostrá-los como "em breve".*
 
-**Fecho:** O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.
+### Estacionamento inteligente (card menor)
 
-**Botão:** Pedir diagnóstico gratuito
+Selo: **Em desenvolvimento** (`desenvolvimento`).
 
-*Nota: vídeo `C:\dev\_video\brag-output\brag.mp4`, capa `brag.jpg`. Sem reprodução automática com som. Sem capturas (prints) nesta seção — decisão do cliente em 30/09: o vídeo ficou bom, as capturas ficaram feias.*
+**`produtos.estacionamento.name` (título do card, H3):** Estacionamento inteligente
 
-*Nota: ordem na página (v1.4): título, texto e título do vídeo sobem juntos enquanto o cartão com o vídeo se endireita na rolagem; depois vêm a legenda, a descrição, os destaques, o fecho e o botão. O vídeo é a prova principal, por isso vem antes da lista.*
+**`produtos.estacionamento.oneLiner` (o que é):** A ideia: sensores ou câmeras que indicam as vagas livres no estacionamento do supermercado. Antes de construir, queremos ouvir gerentes de supermercado.
 
-### Portfólio (textos de interface)
+**`produtos.estacionamento.cta` (botão, WhatsApp com a mensagem do estacionamento):** Quero conversar sobre isso
 
-*Nota (v1.5): a seção vira um portfólio de vídeos. Os projetos ficam numa lista de dados (`src/content/landing.ts`); o primeiro é o destaque, com o vídeo e o cartão 3D acima, e os demais formam uma grade que só aparece quando houver dois projetos ou mais. Hoje há um projeto só, então nada desta subseção aparece no site ainda.*
-
-*Nota (v1.6): com o Fleet Analytics BI, a lista passa a ter dois projetos e a grade "Outros projetos" aparece. O Rota de Vendas continua como destaque.*
-
-**Título da grade (H3):** Outros projetos
-
-**Botão (quando a grade tiver mais de 6 projetos):** Mostrar mais projetos
-
-**Nome acessível do botão de reproduzir no cartão:** Assistir ao vídeo: {nome}
-
-*Nota: `{nome}` é o nome do projeto. A forma "Assistir ao vídeo: {nome}" funciona com qualquer nome (não depende de "do" ou "da").*
-
-**Rota de Vendas no cartão da grade:**
-- **Resumo:** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.
-- **Etiquetas de plataforma:** Android · Windows
-
-*Nota: o resumo é a primeira frase do texto da seção, já aprovada. As etiquetas são fatos do aplicativo (Android do vendedor, Windows do escritório).*
-
-**Fleet Analytics BI no cartão da grade:**
-- **Nome:** Fleet Analytics BI
-- **Resumo:** O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.
-- **Etiquetas de plataforma:** Web · Celular
-- **Nome acessível do vídeo:** Vídeo de demonstração do Fleet Analytics BI
-- **Nome acessível do botão de reproduzir:** Assistir ao vídeo: Fleet Analytics BI
-- **Legenda abaixo do vídeo:** Vídeo de demonstração, só com música.
-- **Descrição do vídeo (texto que abre no link "Ler a descrição do vídeo"):** Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.
-- **Título do vídeo (H3), só se o projeto virar destaque:** Veja o Fleet Analytics BI
-
-*Nota (autorização do cliente, 01/10/2026): em 01/10/2026 o cliente decidiu, e o Claudinho registrou na tarefa P2, que o Fleet Analytics BI foi feito pelo grupo e pode ser mostrado como está, com o nome e o domínio ifanalitico.com.br, e que os números do vídeo são reais e autorizados. Por isso este projeto não leva o aviso de dados fictícios do Rota de Vendas. A autorização fica só nesta nota; o site não fala dela.*
-
-*Nota (respostas do cliente, 01/10/2026): o Fleet Analytics BI roda na web e no celular (etiquetas "Web" e "Celular"); o vídeo é só com música; a legenda não diz que os números são reais nem que há partes borradas. A nota do condutor fica fora da descrição (ver abaixo). A última frase da descrição ("Placas, nomes e endereços aparecem borrados.") continua porque descreve o que se vê na tela, para quem não enxerga o vídeo.*
-
-*Nota: vídeo `WhatsApp Video 2026-10-01 at 00.37.30.mp4` (52 s, 1080p, com áudio), recebido pelo Claudinho; o Dev define onde ele fica no site. Sem reprodução automática com som. A descrição traz só o que aparece na tela, conferido em quadros extraídos a cada segundo; os números são os valores finais dos contadores animados (por exemplo, o de quilômetros passa por 403 e para em 450). A frase "Transforme dados brutos do rastreador em inteligência operacional" é do próprio vídeo e vai entre aspas só na descrição; não usar no resto do site.*
-
-*Nota: a descrição não cita a nota do condutor porque, no mesmo trecho, o número sobreposto no vídeo (65) e o da tela do sistema (63) aparecem diferentes.*
+*Nota: o estacionamento está em espera de validação. O texto diz que é uma ideia e que queremos ouvir quem usaria; não fala de protótipo, teste ou prazo. São duas frases curtas (a spec pedia uma) porque a segunda é a que deixa a fase clara.*
 
 ---
 
-## 5. Diagnóstico gratuito
+## 4. Aplicativos
 
-**Título (H2):** Diagnóstico gratuito
+**`aplicativos.title` (título, H2):** Aplicativos sob medida
 
-**Texto:** Uma conversa de cerca de uma hora, por videochamada ou na sua empresa, para entender como os pedidos, as entregas e os relatórios funcionam hoje e onde se perde tempo. No fim, você recebe um resumo por escrito com os problemas que encontramos e o que sugerimos fazer, inclusive o que não vale a pena. Sem compromisso de contratar.
+**`aplicativos.intro` (texto):** Também construímos aplicativos para empresas, do jeito que cada uma já trabalha e ligados ao que ela já usa. O primeiro passo é o diagnóstico gratuito: uma conversa sobre a rotina da empresa, com um resumo por escrito do que vale a pena fazer. Sem compromisso de contratar.
 
-**Destaque:** Estamos começando com poucas empresas, para acompanhar cada projeto de perto.
+**`aplicativos.cta` (botão, leva ao formulário com o assunto "Aplicativo sob medida" marcado):** Diagnóstico gratuito
 
-**Subtítulo (H3):** Como funciona
+### Textos de interface da grade
 
-1. **Você conta o problema.** Pelo WhatsApp ou pelo formulário abaixo.
-2. **Diagnóstico gratuito.** Conversamos sobre a rotina da empresa e você recebe o resumo por escrito.
-3. **Proposta.** Você recebe o que será feito, o prazo e o preço antes de decidir.
-4. **Aplicativo funcionando.** Construímos, colocamos para funcionar com a sua equipe e seguimos cuidando dele com o plano mensal.
+**`aplicativos.grid.playLabel` (nome acessível do botão de reproduzir no cartão):** Assistir ao vídeo: {nome}
 
-### Formulário
+**`aplicativos.grid.showMore` (botão, quando a grade tiver mais de 6 projetos):** Mostrar mais projetos
 
-**Título (H3):** Peça o seu diagnóstico
+**`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo):** Ler a descrição do vídeo
 
-**Texto:** São quatro campos. Respondemos pelo WhatsApp.
+*Nota: os três textos acima não mudam (v1.5). `{nome}` é o nome do projeto. A grade não leva título próprio (o antigo "Outros projetos" sai): o título da seção já é o H2 acima.*
 
-**Aviso de campos:** Todos os campos são obrigatórios.
+### Projetos (`aplicativos.projects`)
 
-| Campo | Rótulo | Texto de ajuda | Erro: vazio | Erro: inválido |
-|---|---|---|---|---|
-| Nome | Seu nome | — | Escreva o seu nome. | — |
-| Empresa | Nome da empresa | — | Escreva o nome da empresa. | — |
-| WhatsApp | WhatsApp com DDD | É por esse número que vamos responder. | Informe o seu WhatsApp. | Confira o número: ele precisa ter o DDD e o telefone completo. |
-| Problema | Qual problema você quer resolver? | Conte com as suas palavras. Por exemplo: os pedidos chegam pelo WhatsApp e alguém digita tudo de novo no sistema. Não precisa colocar dados dos seus clientes. | Conte em poucas palavras qual é o problema. | Use no máximo {max} caracteres. |
+Os textos dos dois projetos são os mesmos da v1.6 (aprovados), copiados abaixo para este documento continuar sendo a fonte única. Só o status é novo.
 
-**Caixa de consentimento (desmarcada):** Li o [aviso de privacidade](/privacidade) e concordo que a Strukti Soluções use estes dados para responder ao meu pedido de diagnóstico.
+**Rota de Vendas** (`slug: "rota-de-vendas"`)
 
-**Erro do consentimento:** Para enviar, marque que você concorda com o uso dos dados.
+- **`status`:** `piloto` (selo "Piloto gratuito")
+- **`name`:** Rota de Vendas
+- **`summary` (resumo no cartão):** O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.
+- **`platforms` (etiquetas):** Android · Windows
+- **`video.accessibleName`:** Vídeo de demonstração do Rota de Vendas
+- **`video.caption` (legenda):** Vídeo de demonstração, só com música. Os clientes, pedidos e endereços que aparecem são fictícios.
+- **`video.description` (texto que abre no link "Ler a descrição do vídeo"):** Uma linha de roteiro sai de João Pessoa/PB e passa por sete cidades: 12 paradas, 7 cidades, 1 roteiro. Aparece o Rota de Vendas, "para vendedores externos, no lugar da planilha", com clientes, pedidos e rotas. No computador, o número de pedido 0500 é digitado como veio do sistema do vendedor; um número repetido é recusado com o aviso "Já existe o pedido nº 0001". No roteiro de entrega, os mesmos números aparecem nas paradas, agrupadas por cidade, e o roteiro sai em Word, PDF e Excel. No fim, três telas de celular mostram o app sem internet, com letra grande e em alto contraste. Todos os dados são fictícios.
+- **`videoTitle` (só se o projeto for destaque):** Veja o Rota de Vendas
+- **`highlights` (só se o projeto for destaque; o trecho em negrito é o `lead`, o resto é o `rest`):**
+  - **`highlights[0]`:** **Clientes na mão do vendedor.** Busca por nome, cidade ou CNPJ, com botões para ligar, chamar no WhatsApp e abrir no mapa. O mesmo CNPJ não entra duas vezes.
+  - **`highlights[1]`:** **Pedido com o número do sistema que você já usa.** O vendedor digita o número como veio impresso no outro sistema, e número repetido não passa.
+  - **`highlights[2]`:** **Rota de entrega por cidade.** As paradas saem agrupadas por cidade, com o caminho até a porta, a lista de carga e os brindes de cada parada. O roteiro sai em Word, PDF e Excel, com os mesmos números de pedido.
+  - **`highlights[3]`:** **Funciona sem internet.** Tudo fica guardado no aparelho. Sem sinal, o vendedor continua trabalhando.
+  - **`highlights[4]`:** **Fácil de ler na rua.** Letra até duas vezes maior e modo de alto contraste para usar sob o sol.
+  - **`highlights[5]`:** **No celular e no computador.** O mesmo aplicativo no Android do vendedor e no Windows do escritório.
 
-**Linha abaixo da caixa:** Usamos seus dados só para responder a este pedido.
+*Nota: o Rota de Vendas usa dados fictícios e não tem cliente usando; por isso o selo é "Piloto gratuito", não "Em uso". Os "funciona sem internet" acima falam do aplicativo Rota de Vendas (que guarda tudo no aparelho), não do replay. Na grade nova, `videoTitle` e `highlights` não aparecem (só o projeto em destaque os mostra); ficam nos dados.*
 
-**Botão de envio:** Pedir diagnóstico gratuito
+**Fleet Analytics BI** (`slug: "fleet-analytics-bi"`)
 
-**Botão durante o envio:** Enviando…
+- **`status`:** `emUso` (selo "Em uso")
+- **`name`:** Fleet Analytics BI
+- **`summary` (resumo no cartão):** O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.
+- **`platforms` (etiquetas):** Web · Celular
+- **`video.accessibleName`:** Vídeo de demonstração do Fleet Analytics BI
+- **`video.caption` (legenda):** Vídeo de demonstração, só com música.
+- **`video.description` (texto que abre no link "Ler a descrição do vídeo"):** Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.
+- **`videoTitle` (só se o projeto for destaque):** Veja o Fleet Analytics BI
 
-**Alternativa abaixo do botão:** Prefere falar agora? [Chame no WhatsApp: +55 83 99968-3670](https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20pedir%20o%20diagn%C3%B3stico%20gratuito.)
+*Nota (autorização do cliente, 01/10/2026, mantida da v1.6): o Fleet Analytics BI foi feito pelo grupo e pode ser mostrado como está, com o nome e o domínio ifanalitico.com.br; os números do vídeo são reais e autorizados. Por isso ele não leva o aviso de dados fictícios do Rota de Vendas. A autorização fica só nesta nota; o site não fala dela. A frase "Transforme dados brutos do rastreador em inteligência operacional" é do próprio vídeo e vai entre aspas só na descrição; não usar no resto do site. A descrição não cita a nota do condutor (no mesmo trecho, o número do vídeo, 65, e o da tela, 63, aparecem diferentes).*
+
+---
+
+## 5. Tem um problema que pede hardware?
+
+**`chamadaHardware.title` (título, H2):** Tem um problema que pede hardware?
+
+**`chamadaHardware.body` (texto):** Nem todo problema cabe no nosso catálogo. Se o seu precisa de câmera, sensor, botão ou outro equipamento ligado a um software, conte para a gente. Juntamos eletrônica e programação, e dizemos com franqueza se dá para resolver.
+
+**`chamadaHardware.cta` (botão, leva ao formulário com o assunto "Outro assunto" marcado):** Contar o meu problema
+
+---
+
+## 6. Como trabalhamos
+
+**`comoTrabalhamos.title` (título, H2):** Como trabalhamos
+
+**`comoTrabalhamos.intro` (texto):** Do primeiro contato ao suporte, você fala com a mesma equipe, sem intermediário.
+
+**Itens (`comoTrabalhamos.items`, nesta ordem):**
+
+- **`comoTrabalhamos.items[0].title`:** Diagnóstico
+- **`comoTrabalhamos.items[0].description`:** Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso.
+- **`comoTrabalhamos.items[1].title`:** Protótipo
+- **`comoTrabalhamos.items[1].description`:** Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa.
+- **`comoTrabalhamos.items[2].title`:** Instalação
+- **`comoTrabalhamos.items[2].description`:** Instalamos o equipamento ou colocamos o aplicativo para funcionar, e acompanhamos a sua equipe até tudo rodar no dia a dia.
+- **`comoTrabalhamos.items[3].title`:** Suporte direto
+- **`comoTrabalhamos.items[3].description`:** Quem instala é quem cuida depois. Você fala com a equipe pelo WhatsApp, sem central de atendimento, e a manutenção não depende de técnico de fora. Os aplicativos seguem com plano mensal de manutenção, suporte e hospedagem.
+
+*Nota: o quarto item se chama "Suporte direto", e não "Suporte local", porque a região de atuação do replay ainda não foi definida; "local" prometeria alguém perto de qualquer cidade. Quando a região estiver definida, dá para trocar.*
+
+*Nota para o Dev: os itens agora são etapas, em ordem. O componente atual (`ComoResolvemos`) usa lista sem números ("qualidades, não etapas"); vale avaliar uma lista numerada na Tarefa 10.*
+
+---
+
+## 7. Equipe
+
+**`equipe.title` (título, H2):** Quem faz
+
+**`equipe.intro` (texto):** Somos quatro estudantes de engenharia da computação. Você fala direto com quem monta o equipamento e escreve o código.
+
+**Cartões (iniciais + nome + curso, nesta ordem; `siteConfig.team`):**
+
+- KB · Kauã Bruno · [A PREENCHER: curso]
+- GF · Gustavo Fernandes · [A PREENCHER: curso]
+- AM · Antonio Meira · [A PREENCHER: curso]
+- TG · Thiago Guedes · [A PREENCHER: curso]
+
+*Nota: o curso (e, se o grupo quiser, o período) de cada pessoa vai em `siteConfig.team[].course`, logo abaixo do nome. Fotos: [A PREENCHER: fotos da equipe]; até chegarem, ficam as iniciais. Sem cargos. "Antonio" vai sem acento, como está nos dados oficiais. As iniciais são decorativas (o nome já está escrito ao lado).*
+
+---
+
+## 8. Contato
+
+**`contato.title` (título, H2):** Fale com a gente
+
+**`contato.intro` (texto):** Quer agendar uma demonstração do replay, pedir o diagnóstico de um aplicativo ou contar outro problema? Escolha o assunto e escreva em poucas palavras.
+
+### Formulário (`contato.form`)
+
+**`contato.form.title` (título do cartão, H3):** Conte o que você precisa
+
+**`contato.form.intro` (texto):** São cinco campos. Respondemos pelo WhatsApp.
+
+**`contato.form.requiredNotice` (aviso de campos):** Todos os campos são obrigatórios.
+
+**Campos, nesta ordem (nome, empresa, WhatsApp, assunto, mensagem):**
+
+Nome (`contato.form.fields.name`)
+- **`label`:** Seu nome
+- **`errorEmpty`:** Escreva o seu nome.
+
+Empresa (`contato.form.fields.company`)
+- **`label`:** Nome da empresa ou da arena
+- **`errorEmpty`:** Escreva o nome da empresa ou da arena.
+
+WhatsApp (`contato.form.fields.whatsapp`)
+- **`label`:** WhatsApp com DDD
+- **`help`:** É por esse número que vamos responder.
+- **`errorEmpty`:** Informe o seu WhatsApp.
+- **`errorInvalid`:** Confira o número: ele precisa ter o DDD e o telefone completo.
+
+Assunto (`contato.form.fields.interest`, campo novo, lista de opções)
+- **`label`:** Sobre o que você quer falar?
+- **`placeholder` (primeira linha da lista, sem valor):** Escolha um assunto
+- **`errorEmpty`:** Escolha um assunto.
+- **`options.replay`:** Replay para quadras
+- **`options.estacionamento`:** Estacionamento inteligente
+- **`options.aplicativo`:** Aplicativo sob medida
+- **`options.outro`:** Outro assunto
+
+Mensagem (`contato.form.fields.problem`; a chave continua `problem`, o texto passa a falar de "mensagem")
+- **`label`:** Sua mensagem
+- **`help`:** Conte com as suas palavras. Se for o replay, ajuda saber a cidade e quantas quadras você tem. Não precisa colocar dados dos seus clientes.
+- **`errorEmpty`:** Conte em poucas palavras o que você precisa.
+- **`errorTooLong`:** Use no máximo {max} caracteres.
+
+*Nota: o assunto vem já marcado quando a pessoa chega pelo botão "Diagnóstico gratuito" (Aplicativo sob medida) ou "Contar o meu problema" (Outro assunto). O texto de ajuda da mensagem pede cidade e número de quadras no lugar de dois campos a mais.*
+
+**Caixa de consentimento (desmarcada):**
+
+- **`contato.form.consentLabelPrefix`:** Li o
+- **`contato.form.consentLinkLabel` (link para `/privacidade`):** aviso de privacidade
+- **`contato.form.consentLabelSuffix`:** e concordo que a Strukti Soluções use estes dados para responder à minha mensagem.
+
+*Nota: como na v1.8, o prefixo termina com um espaço ("Li o ") e o sufixo começa com um espaço. A frase inteira fica: "Li o aviso de privacidade e concordo que a Strukti Soluções use estes dados para responder à minha mensagem."*
+
+**`contato.form.consentError` (erro do consentimento):** Para enviar, marque que você concorda com o uso dos dados.
+
+**`contato.form.consentHelperLine` (linha abaixo da caixa):** Usamos seus dados só para responder a esta mensagem.
+
+**`contato.form.submitLabel` (botão de envio):** Enviar mensagem
+
+**`contato.form.submittingLabel` (botão durante o envio):** Enviando…
+
+**Alternativa abaixo do botão:**
+
+- **`contato.form.whatsappAlternativePrefix`:** Prefere falar agora?
+- **`contato.form.whatsappAlternativeLinkLabel`:** Chame no WhatsApp: +55 83 99968-3670
+
+*Nota: o prefixo termina com um espaço ("Prefere falar agora? "), como na v1.8. Mensagem do link: ver a nota em "Mensagens prontas do WhatsApp" (recomendo a geral).*
 
 **Resumo de erros (topo do formulário, ao tentar enviar):**
-- Com 1 erro: Confira 1 campo antes de enviar.
-- Com mais de 1: Confira {n} campos antes de enviar.
 
-**Sucesso**
-- **Título:** Pedido recebido!
-- **Texto:** Obrigado, {nome}. Respondemos no mesmo dia pelo WhatsApp informado. Se o pedido chegou fora do horário comercial, respondemos no próximo dia útil.
-- **Texto 2:** Se quiser adiantar a conversa, chame a gente agora.
-- **Botão:** Chamar no WhatsApp
+- **`contato.form.errorSummarySingle`:** Confira 1 campo antes de enviar.
+- **`contato.form.errorSummaryMultiple`:** Confira {n} campos antes de enviar.
 
-**Falha no envio:** Não foi possível enviar agora. Tente de novo em alguns minutos ou fale com a gente pelo WhatsApp.
+**Sucesso:**
 
-**Muitas tentativas seguidas:** Foram muitas tentativas seguidas. Espere alguns minutos e tente de novo, ou fale com a gente pelo WhatsApp.
+- **`contato.form.success.title`:** Mensagem recebida!
+- **`contato.form.success.text`:** Obrigado, {nome}. Respondemos no mesmo dia pelo WhatsApp informado. Se a mensagem chegou fora do horário comercial, respondemos no próximo dia útil.
+- **`contato.form.success.text2`:** Se quiser adiantar a conversa, chame a gente agora.
+- **`contato.form.success.button` (WhatsApp com a mensagem geral):** Chamar no WhatsApp
 
-**Campo antispam escondido (se houver):** Não preencha este campo
+**`contato.form.submitError` (falha no envio):** Não foi possível enviar agora. Tente de novo em alguns minutos ou fale com a gente pelo WhatsApp.
 
----
+**`contato.form.rateLimitError` (muitas tentativas seguidas):** Foram muitas tentativas seguidas. Espere alguns minutos e tente de novo, ou fale com a gente pelo WhatsApp.
 
-## 6. Equipe
+**`contato.form.honeypotLabel` (campo antispam escondido):** Não preencha este campo
 
-**Título (H2):** Quem faz
-
-**Texto:** Somos quatro amigos da faculdade que constroem aplicativos para empresas. Você fala direto com a equipe que constrói, sem intermediário.
-
-**Cartões (iniciais + nome, nesta ordem):**
-- KB · Kauã Bruno
-- GF · Gustavo Fernandes
-- AM · Antonio Meira
-- TG · Thiago Guedes
-
-*Nota: sem fotos e sem cargos por enquanto. "Antonio" vai sem acento, como está nos dados oficiais. As iniciais são decorativas (o nome já está escrito ao lado).*
+*Nota: mudaram em relação ao formulário da v1.8: o título e o texto do cartão, o rótulo e o erro da empresa, todo o campo de mensagem (antes "problema"), o fim da frase de consentimento, a linha abaixo da caixa, o botão de envio e o título e o texto do sucesso. O campo de assunto é novo. O resto é igual à v1.8.*
 
 ---
 
-## 7. Dúvidas frequentes
+## 9. Dúvidas frequentes
 
-**Título (H2):** Dúvidas frequentes
+**`faq.title` (título, H2):** Dúvidas frequentes
 
-**E quando vocês se formarem, quem mantém o aplicativo?**
-Quem mantém é a Strukti, pelo plano mensal de manutenção, suporte e hospedagem. É esse plano que garante que alguém cuida do aplicativo hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de uma pessoa só.
+**Perguntas (`faq.items`, nesta ordem):**
 
-**Quanto custa?**
-Depende do que a sua empresa precisa, por isso não temos tabela. Depois do diagnóstico gratuito, você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso. Com o aplicativo pronto, entra o plano mensal de manutenção, suporte e hospedagem.
+**`faq.items[0].question`:** O replay precisa de internet?
 
-**Por que não usar um sistema pronto?**
-Às vezes o pronto resolve e, se for o seu caso, falamos isso no diagnóstico. O sob medida vale quando a empresa tem um jeito próprio de trabalhar: um número de pedido que vem de outro sistema, um roteiro no formato que o entregador já conhece, um relatório que o sistema pronto não tira. Aí o aplicativo se encaixa na rotina, em vez de mudar a rotina.
+**`faq.items[0].answer`:** Precisa. O replay usa o Wi-Fi da própria arena para mandar os clipes para o celular dos jogadores. Se a internet da sua arena for uma dúvida, falamos disso na demonstração.
 
-**Preciso trocar o sistema que já uso?**
-Não. O aplicativo trabalha junto com o que você já tem. Quando o seu sistema permite, ligamos um ao outro. Quando não permite, o aplicativo gera os arquivos no formato que a empresa já usa, como Excel, PDF ou Word.
+**`faq.items[1].question`:** O replay já usa inteligência artificial?
 
-**Em quanto tempo fica pronto?**
-Depende do tamanho do problema. O prazo vem escrito na proposta, junto com o preço, antes de você decidir.
+**`faq.items[1].answer`:** Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.
 
-**O aplicativo funciona sem internet?**
-Pode funcionar. O Rota de Vendas, por exemplo, guarda tudo no aparelho e funciona sem sinal. No seu aplicativo, isso é combinado no diagnóstico, conforme a rotina da equipe.
+**`faq.items[2].question`:** E a privacidade de quem aparece no vídeo?
 
-**Vocês atendem a minha cidade?**
-Em João Pessoa e região, atendemos presencialmente. No resto do Brasil, atendemos por videochamada e pelo WhatsApp.
+**`faq.items[2].answer`:** Os clipes ficam disponíveis para os jogadores por 7 dias e depois são apagados. A quadra exibe um aviso de que há gravação.
 
-**O que acontece com os dados que eu mando pelo formulário?**
-Usamos só para responder ao seu pedido. Os detalhes estão no [aviso de privacidade](/privacidade).
+**`faq.items[3].question`:** Quanto custa?
 
-**Fecho:** Ficou alguma dúvida? Pergunte direto para a gente.
+**`faq.items[3].answer`:** Depende do produto. O preço do replay ainda está sendo definido, e nesta fase oferecemos um piloto gratuito. Nos aplicativos, depois do diagnóstico gratuito você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso.
 
-**Botão:** Chamar no WhatsApp
+**`faq.items[4].question`:** Vocês atendem a minha cidade?
+
+**`faq.items[4].answer`:** Nos aplicativos, sim: em João Pessoa e região, atendemos presencialmente; no resto do Brasil, por videochamada e pelo WhatsApp. O replay precisa de instalação na quadra, e a região onde vamos começar ainda está sendo definida. Conte a sua cidade na conversa.
+
+**`faq.items[5].question`:** E quando vocês se formarem, quem mantém tudo funcionando?
+
+**`faq.items[5].answer`:** A Strukti, como empresa, e não uma pessoa. No replay, quem instala, dá suporte e faz a manutenção somos nós. Os aplicativos têm plano mensal de manutenção, suporte e hospedagem. E cada projeto tem documentação, para não depender da memória de ninguém.
+
+**`faq.items[6].question`:** Vocês também fazem aplicativos?
+
+**`faq.items[6].answer`:** Fazemos. O aplicativo segue o jeito que a sua empresa já trabalha e se liga ao sistema que você já usa. Quando o sistema não permite, o aplicativo gera os arquivos no formato da empresa, como Excel, PDF ou Word. Tudo começa com o diagnóstico gratuito.
+
+**`faq.items[7].question`:** O que acontece com os dados que eu mando pelo formulário?
+
+**`faq.items[7].answer`:** Usamos só para responder à sua mensagem. Os detalhes estão no aviso de privacidade.
+
+**`faq.items[7].answerLinkLabel` (trecho da resposta que vira link para `/privacidade`):** aviso de privacidade
+
+**`faq.closing` (fecho):** Ficou alguma dúvida? Pergunte direto para a gente.
+
+**`faq.button` (botão, WhatsApp com a mensagem geral):** Chamar no WhatsApp
+
+*Nota: os 7 dias e o aviso de gravação na quadra vêm do `contexto-replay.md` (regras de LGPD do replay). Os detalhes sobre os clipes ficam para o site próprio do replay; aqui só a resposta curta, porque o dono de quadra pergunta.*
+
+*Nota: saíram as dúvidas "Por que não usar um sistema pronto?", "Preciso trocar o sistema que já uso?", "Em quanto tempo fica pronto?" e "O aplicativo funciona sem internet?". A resposta sobre sistema já usado foi para "Vocês também fazem aplicativos?".*
 
 ---
 
-## 8. Rodapé
+## 10. Rodapé
 
 **Marca:** Strukti Soluções
 
-**Linha:** Aplicativos sob medida para distribuidoras e indústrias pequenas.
+**`rodape.tagline` (linha):** Produtos de hardware e aplicativos sob medida.
 
 **Contato:**
-- WhatsApp: [+55 83 99968-3670](https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20sobre%20um%20aplicativo%20para%20a%20minha%20empresa.)
-- E-mail: [struktisolutions@gmail.com](mailto:struktisolutions@gmail.com)
-- João Pessoa/PB · Atendimento presencial na região e a distância para todo o Brasil
+- **`rodape.whatsappLabel`:** WhatsApp:
+- **`rodape.emailLabel`:** E-mail:
+- **`rodape.location`:** João Pessoa/PB
 
-**Link:** Aviso de privacidade
+*Nota: depois de "WhatsApp:" vem o link [+55 83 99968-3670](https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20com%20voc%C3%AAs.) (mensagem geral); depois de "E-mail:", o link [struktisolutions@gmail.com](mailto:struktisolutions@gmail.com).*
+
+**`rodape.privacyLinkLabel` (link):** Aviso de privacidade
 
 **Direitos:** © 2026 Strukti Soluções
 
-*Nota: o ano do © acompanha o ano atual.*
+*Nota: `whatsappLabel`, `emailLabel` e `privacyLinkLabel` não mudam (v1.8). A linha de local perdeu "Atendimento presencial na região e a distância para todo o Brasil": isso vale para os aplicativos, não para o replay, cuja região ainda não está definida. A resposta completa fica na dúvida "Vocês atendem a minha cidade?". O ano do © acompanha o ano atual.*
 
 ---
 
 ## Botão flutuante do WhatsApp
 
-**Texto visível (desktop):** WhatsApp
+**`floatingWhatsapp.desktopLabel` (texto visível, desktop):** WhatsApp
 
-**Nome acessível:** Falar com a Strukti Soluções no WhatsApp
+**`floatingWhatsapp.accessibleName` (nome acessível):** Falar com a Strukti Soluções no WhatsApp
 
-*Nota: no celular pode ser só o ícone, desde que mantenha o nome acessível acima.*
+*Nota: não muda (v1.8). No celular pode ser só o ícone, desde que mantenha o nome acessível acima. Usa a mensagem geral.*
 
 ---
 
 ## Aviso de privacidade (página `/privacidade`)
 
-**Título (H1):** Aviso de privacidade
+**`privacidade.title` (título, H1):** Aviso de privacidade
 
-**Data:** Última atualização: {data de publicação}
+**`privacidade.lastUpdatedLabel` (data):** Última atualização:
 
-**Texto:** Este aviso explica, em linguagem simples, o que a Strukti Soluções faz com os dados que você envia pelo formulário do site.
+**`privacidade.intro` (texto):** Este aviso explica, em linguagem simples, o que a Strukti Soluções faz com os dados que você envia pelo formulário do site.
 
-**Quem cuida dos seus dados (H2)**
-O responsável pelos dados enviados pelo formulário é Thiago Guedes, da Strukti Soluções. Contato para assuntos de privacidade: struktisolutions@gmail.com.
+**Seções (`privacidade.sections`, nesta ordem):**
+
+**`sections[0].heading` (H2):** Quem cuida dos seus dados
+
+**`sections[0].paragraphs[0]`:** O responsável pelos dados enviados pelo formulário é Thiago Guedes, da Strukti Soluções. Contato para assuntos de privacidade: struktisolutions@gmail.com.
 
 *Nota: quando a Strukti tiver CNPJ, trocar este parágrafo pela razão social e pelo CNPJ.*
 
-**Quais dados coletamos (H2)**
-Pelo formulário: seu nome, o nome da empresa, o número de WhatsApp e a descrição do problema que você escrever. Só isso. Pedimos que você não coloque na descrição dados dos seus clientes nem documentos pessoais.
+**`sections[1].heading` (H2):** Quais dados coletamos
 
-*Nota: se a proteção contra spam guardar o endereço IP de quem envia, acrescentar este parágrafo: "Para bloquear envios automáticos, o site registra por pouco tempo o endereço de internet (IP) de quem envia o formulário." Se não guardar, não acrescentar.*
+**`sections[1].paragraphs[0]`:** Pelo formulário: seu nome, o nome da empresa ou da arena, o número de WhatsApp, o assunto que você escolher e a mensagem que você escrever. Só isso. Pedimos que você não coloque na mensagem dados dos seus clientes nem documentos pessoais.
 
-**Para que usamos (H2)**
-Para responder ao seu pedido e conversar sobre o diagnóstico gratuito. Não vendemos, não alugamos e não usamos esses dados para outra finalidade.
+**`sections[1].paragraphs[1]`:** Para bloquear envios automáticos, o site registra por pouco tempo o endereço de internet (IP) de quem envia o formulário.
 
-**Base legal (H2)**
-O seu consentimento, dado ao marcar a caixa do formulário (Lei Geral de Proteção de Dados, art. 7º, inciso I).
+*Nota: o segundo parágrafo já está no site (a proteção contra spam guarda o IP por pouco tempo). Se isso deixar de ser verdade, ele sai.*
 
-**Com quem compartilhamos (H2)**
-Com ninguém, a não ser os serviços que usamos para manter o site no ar e guardar os dados: [A PREENCHER: nomes dos provedores de hospedagem e de banco de dados, e se guardam os dados fora do Brasil]. Eles só guardam os dados para nós.
+**`sections[2].heading` (H2):** Para que usamos
 
-**Por quanto tempo guardamos (H2)**
-Por até 12 meses depois do nosso último contato com você. Depois disso, apagamos os dados. Se você pedir, apagamos antes.
+**`sections[2].paragraphs[0]`:** Para responder à sua mensagem e conversar sobre o assunto que você escolheu. Não vendemos, não alugamos e não usamos esses dados para outra finalidade.
 
-**Seus direitos (H2)**
-Você pode, a qualquer momento:
-- saber quais dados temos sobre você;
-- corrigir dados errados;
-- pedir que apaguemos os seus dados;
-- retirar o seu consentimento.
+**`sections[3].heading` (H2):** Base legal
 
-Basta mandar um e-mail para struktisolutions@gmail.com. Se o seu pedido não for atendido, você também pode reclamar na Autoridade Nacional de Proteção de Dados (ANPD).
+**`sections[3].paragraphs[0]`:** O seu consentimento, dado ao marcar a caixa do formulário (Lei Geral de Proteção de Dados, art. 7º, inciso I).
 
-**Cookies e WhatsApp (H2)**
-Este site não usa cookies de rastreamento nem ferramentas de análise de visitas. Se você falar com a gente pelo WhatsApp, a conversa também segue as regras de privacidade do próprio WhatsApp.
+**`sections[4].heading` (H2):** Com quem compartilhamos
 
-**Mudanças neste aviso (H2)**
-Se este aviso mudar, a data no topo muda junto.
+**`sections[4].paragraphs[0]`:** Com ninguém, a não ser os serviços que usamos para manter o site no ar e guardar os dados: [A PREENCHER: nomes dos provedores de hospedagem e de banco de dados, e se guardam os dados fora do Brasil]. Eles só guardam os dados para nós.
 
-*Nota: a frase sobre cookies só pode ir ao ar se continuar verdadeira. Se um dia entrar analytics ou outro script de terceiros, este aviso precisa mudar antes.*
+**`sections[5].heading` (H2):** Por quanto tempo guardamos
+
+**`sections[5].paragraphs[0]`:** Por até 12 meses depois do nosso último contato com você. Depois disso, apagamos os dados. Se você pedir, apagamos antes.
+
+**`sections[6].heading` (H2):** Seus direitos
+
+**`sections[6].paragraphs[0]`:** Você pode, a qualquer momento:
+
+**`sections[6].list`:**
+- **`list[0]`:** saber quais dados temos sobre você;
+- **`list[1]`:** corrigir dados errados;
+- **`list[2]`:** pedir que apaguemos os seus dados;
+- **`list[3]`:** retirar o seu consentimento.
+
+**`sections[6].paragraphsAfterList[0]`:** Basta mandar um e-mail para struktisolutions@gmail.com. Se o seu pedido não for atendido, você também pode reclamar na Autoridade Nacional de Proteção de Dados (ANPD).
+
+**`sections[7].heading` (H2):** Cookies e WhatsApp
+
+**`sections[7].paragraphs[0]`:** Este site não usa cookies de rastreamento nem ferramentas de análise de visitas. Se você falar com a gente pelo WhatsApp, a conversa também segue as regras de privacidade do próprio WhatsApp.
+
+**`sections[8].heading` (H2):** Mudanças neste aviso
+
+**`sections[8].paragraphs[0]`:** Se este aviso mudar, a data no topo muda junto.
+
+**`privacidade.contactEmailLabel`:** struktisolutions@gmail.com
+
+*Nota: mudaram só "Quais dados coletamos" (entram empresa ou arena, o assunto e a mensagem no lugar da descrição do problema) e "Para que usamos" (responder à mensagem sobre o assunto escolhido, e não só ao pedido de diagnóstico). O resto é igual à v1.8.*
+
+*Nota: a frase sobre cookies só pode ir ao ar se continuar verdadeira. Os quadros do 3D são servidos pelo próprio site e não mudam isso. Se um dia entrar analytics ou outro script de terceiros, este aviso precisa mudar antes.*
+
+*Nota: este aviso cobre só o formulário do site da Strukti. As imagens dos jogadores gravadas pelo replay (clipes, 7 dias, aviso na quadra) ficam para a política do site próprio do replay.*
+
+**Versão do aviso (`siteConfig.privacyPolicyVersion`):** 2026-10-03
+
+*Nota: a versão sobe de 2026-09-30 para 2026-10-03 porque mudam os dados coletados (entra o assunto). A data exibida no topo do aviso vem desse mesmo valor.*
 
 ---
 
 ## Página não encontrada (404)
 
-Microcopy de interface (não é claim de marketing nem dado do negócio); aprovação do Claudinho em 03/10/2026.
+- **`notFound.title`:** Página não encontrada
+- **`notFound.homeLink`:** Voltar para o início
 
-- **Título:** Página não encontrada
-- **Link de volta:** Voltar para o início
-- O botão de WhatsApp da página usa a mensagem geral já aprovada (ver "Mensagens pré-preenchidas do WhatsApp"). Nada além desses dois textos — sem métrica, sem frase de venda.
+*Nota: não muda (v1.8, aprovação do Claudinho em 03/10/2026). Microcopy de interface, não é texto de venda. O botão de WhatsApp da página usa a mensagem geral nova. Nada além desses dois textos.*
 
 ---
 
 ## SEO e compartilhamento
 
-**Título da página (`<title>`, 60 caracteres):** Aplicativo sob medida para distribuidoras | Strukti Soluções
+**`seo.title` (`<title>`, 56 caracteres):** Replay para quadras e apps sob medida | Strukti Soluções
 
-**Descrição (`meta description`, 147 caracteres):** Pedido em papel ou planilha? Rota de entrega montada na mão? Aplicativo sob medida para distribuidoras e indústrias pequenas. Diagnóstico gratuito.
+**`seo.description` (`meta description`, 139 caracteres):** Replay para quadras de aluguel: o jogador aperta um botão e recebe o lance no celular. Também fazemos aplicativos sob medida para empresas.
 
 **Link de compartilhamento (Open Graph):**
-- **Nome do site (`og:site_name`):** Strukti Soluções
-- **Título (`og:title`, 64 caracteres):** Aplicativos sob medida para distribuidoras e indústrias pequenas
-- **Descrição (`og:description`, 146 caracteres):** Chega de pedido em papel e rota de entrega montada na mão. Fazemos o aplicativo do jeito que a sua empresa trabalha. Peça um diagnóstico gratuito.
-- **Endereço (`og:url`):** [A PREENCHER: endereço do site]
-- **Texto alternativo da imagem (`og:image:alt`):** Strukti Soluções: aplicativos sob medida para distribuidoras e indústrias pequenas
+- **`seo.ogSiteName` (`og:site_name`):** Strukti Soluções
+- **`seo.ogTitle` (`og:title`, 62 caracteres):** Strukti Soluções: replay para quadras e aplicativos sob medida
+- **`seo.ogDescription` (`og:description`, 144 caracteres):** O jogador aperta o botão e o lance chega no celular. Replay para quadras de aluguel, em piloto gratuito, e aplicativos sob medida para empresas.
+- **`seo.ogUrl` (`og:url`):** [A PREENCHER: endereço do site]
+- **`seo.ogImageAlt` (`og:image:alt`):** Strukti Soluções: replay para quadras e aplicativos sob medida
 
-*Nota: não usar `brag.jpg` como imagem de compartilhamento. Ela destaca "Rota de Vendas" em letras grandes e passa a ideia de produto à venda. Melhor uma imagem simples com a marca Strukti Soluções e a linha "Aplicativos sob medida para distribuidoras e indústrias pequenas".*
+*Nota: `ogSiteName` não muda. A imagem de compartilhamento ainda é a da v1.8 (marca Strukti Soluções). Se ela for trocada pelo pôster do 3D, o texto alternativo precisa dizer que é ilustração, por exemplo: "Ilustração do conceito do botão de replay da Strukti Soluções". Não usar `brag.jpg`.*
 
 **Mensagem para a equipe enviar o site pelo WhatsApp:**
-Oi! Somos a Strukti Soluções, um grupo de amigos da faculdade que faz aplicativos sob medida para distribuidoras e indústrias pequenas: pedidos, rotas de entrega e relatórios, do jeito que a empresa já trabalha. Se fizer sentido para vocês, o diagnóstico é gratuito: [A PREENCHER: endereço do site]
+Oi! Somos a Strukti Soluções, quatro estudantes de engenharia da computação. Estamos começando com um replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Procuramos quadras para um piloto gratuito. Também fazemos aplicativos sob medida para empresas. Dá uma olhada: [A PREENCHER: endereço do site]
 
----
-
-## Mensagens pré-preenchidas do WhatsApp
-
-Número: +55 83 99968-3670.
-
-**Mensagem geral** (cabeçalho, abertura, problemas, dúvidas, rodapé, botão flutuante, tela de sucesso):
-Olá! Vim pelo site da Strukti Soluções e quero conversar sobre um aplicativo para a minha empresa.
-
-`https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20sobre%20um%20aplicativo%20para%20a%20minha%20empresa.`
-
-**Mensagem do diagnóstico** (link ao lado do formulário e mensagem de falha no envio):
-Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito.
-
-`https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20pedir%20o%20diagn%C3%B3stico%20gratuito.`
-
-*Nota: as duas mensagens mostram de onde veio a conversa sem precisar de analytics.*
+*Nota: esta mensagem não vai para o site; é para a equipe colar no WhatsApp.*
 
 ---
 
 ## Textos alternativos das imagens
 
-Todas as capturas usam dados fictícios. Arquivos em `C:\dev\_qa\q4` e `C:\dev\_qa\q5\video`.
-
-| Imagem | Uso sugerido | Texto alternativo |
+| Imagem | Onde | Texto alternativo |
 |---|---|---|
-| `q4/fonte200_cliente_detail_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no celular: cadastro de um cliente, com botões para ligar, chamar no WhatsApp e abrir no mapa. |
-| `q5/video/duplicado.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no computador: ao digitar um número de pedido que já existe, o aplicativo avisa "Já existe o pedido nº 0001" e oferece abrir o pedido. |
-| `q5/video/roteiro_com_numeros.pdf`, página 1 (convertida em imagem) | não usada (decisão do cliente, 30/09) | Primeira página de um roteiro de entrega do Rota de Vendas: resumo com 12 paradas em 7 cidades, lista de carga, brindes a levar e as paradas da primeira cidade, cada uma com os números dos pedidos e o caminho até a porta. |
-| `q4/viacep_offline_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas sem internet: o cadastro de cliente avisa "Sem internet agora. Preencha o endereço manualmente." e continua funcionando. |
-| `q4/fonte200_pedido_form_ok.png` | não usada (decisão do cliente, 30/09) | Rota de Vendas no celular com a letra ampliada: o formulário de novo pedido continua legível, sem texto cortado. |
-| `q5/video/formulario_numero.png` | Não recomendada | Rota de Vendas no computador: formulário de novo pedido com o número 0500 digitado como veio impresso no outro sistema. |
-| `q4/logo_config_ok.png` | Não recomendada | Configurações do Rota de Vendas: tema claro, escuro ou do sistema, e modo de alto contraste para uso sob sol forte. |
-| Iniciais da equipe | Seção 6 | Decorativas: texto alternativo vazio. |
-| Ícones dos cartões | Seções 2 e 3 | Decorativos: texto alternativo vazio. |
+| Pôster e quadros do 3D (`public/hero/sequencia/`) | Hero | Vazio (decorativo). O selo "Ilustração do conceito" é texto visível ao lado. |
+| Pôster do 3D | Card do replay | Vazio (decorativo). O mesmo selo "Ilustração do conceito" aparece no palco. |
+| Capas dos vídeos (`brag.jpg`, `fleet-analytics-bi.jpg`) | Aplicativos | Vazio. O botão em volta já tem o nome "Assistir ao vídeo: {nome}". |
+| Fotos da equipe | Equipe | [A PREENCHER: fotos da equipe]. Quando chegarem: vazio, porque o nome já está escrito ao lado. |
+| Iniciais da equipe | Equipe | Decorativas: texto alternativo vazio. |
 
-*Nota: `formulario_numero.png` mostra o campo Cliente em vermelho com "Escolha o cliente" mesmo com o cliente preenchido, o que parece um erro. `logo_config_ok.png` mostra o logo do Flutter no lugar do logo da empresa, o que parece inacabado. `fonte200_cliente_detail_ok.png` e `fonte200_pedido_form_ok.png` trazem "Joao Pessoa" sem acento dentro da imagem (dado fictício do app).*
+*Nota: as capturas do Rota de Vendas listadas na v1.8 (pastas `q4` e `q5`) continuam fora do site (decisão do cliente, 30/09) e saíram desta tabela.*
 
 ---
 
 ## Pendências [A PREENCHER]
 
-Ficam para a publicação (L5):
+Bloqueiam a publicação:
 
 1. Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.
-2. Endereço do site (compartilhamento e mensagem da equipe).
+2. Endereço do site (`seo.ogUrl` e mensagem da equipe).
+3. Curso de cada pessoa da equipe (`siteConfig.team[].course`, 4 vezes `[A PREENCHER: curso]`).
+
+O grupo decide se bloqueiam:
+
+4. Fotos da equipe. A página funciona com as iniciais; o grupo decide se publica sem fotos.
+
+Não bloqueiam a publicação:
+
+5. Endereço do site próprio do replay (`produtos.replay.siteUrl`). Enquanto não existir, o link "Ver o site do replay" fica escondido.
