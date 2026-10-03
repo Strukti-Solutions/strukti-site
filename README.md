@@ -68,10 +68,17 @@ Sem `DATABASE_URL`, o site sobe e funciona normalmente, mas a rota
 publicação — ver `docs/landing-copy.md`, "Pendências"). É usado em
 `metadataBase` (link de compartilhamento, canonical), `sitemap.xml` e
 `robots.txt`. **Antes do lançamento, defina `SITE_URL` nas variáveis de
-ambiente da Vercel** (produção e preview); sem ele, o site cai sozinho no
-`VERCEL_URL` de cada deploy e, fora da Vercel, em `http://localhost:3000` —
-nunca quebra o build, mas o link de compartilhamento fica com o domínio
-errado até alguém definir `SITE_URL`.
+ambiente da Vercel** (produção e preview). Sem ele — vazio ou só com espaços
+conta como ausente —, `getSiteUrl()` (`src/lib/siteUrl.ts`) usa:
+
+- produção na Vercel: o domínio fixo do projeto
+  (`VERCEL_PROJECT_PRODUCTION_URL`);
+- preview na Vercel: o `VERCEL_URL` do próprio deploy;
+- fora da Vercel: `http://localhost:3000`.
+
+Nada disso quebra o build, mas o link de compartilhamento fica com o domínio
+errado até alguém definir `SITE_URL`. Já um `SITE_URL` sem protocolo
+(`https://`) quebra o build de propósito, para o erro não passar calado.
 
 A tabela esperada no Postgres:
 
@@ -317,7 +324,8 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
 1. **Aviso de privacidade** — nomes dos provedores de hospedagem e de banco de
    dados, e se guardam dados fora do Brasil.
 2. **Endereço do site** — `metadataBase`, `sitemap.xml` e `robots.txt` já
-   funcionam sozinhos via `SITE_URL`/`VERCEL_URL` (ver "Configuração");
+   funcionam sozinhos via `SITE_URL` ou, sem ele, pelas variáveis da Vercel
+   (ver "Configuração");
    `landingContent.seo.ogUrl` não alimenta tag nenhuma, é só o lembrete do
    `check:placeholders`. Falta só o texto que um humano lê: a mensagem de
    compartilhamento da equipe (`docs/landing-copy.md`). Definir `SITE_URL`
