@@ -95,7 +95,8 @@
   }
 }
 
-@media (min-width: 1024px) {
+/* Barra larga (links à mostra): mesmo ponto de corte da seção 8b. */
+@media (min-width: 75em) {
   :root {
     --topbar-height: 60px;
   }
@@ -802,7 +803,7 @@ video:focus-visible {
 }
 
 /*
- * Painel do menu (< 1024 px): continua a barra para baixo, de borda a
+ * Painel do menu (abaixo de 75em): continua a barra para baixo, de borda a
  * borda, logo depois da junta, e fecha com outra junta. Os textos alinham
  * com a marca (respiro do container); as linhas e o foco vão até a borda.
  * Em tela baixa (celular deitado), rola dentro dele.
@@ -889,11 +890,16 @@ video:focus-visible {
   }
 }
 
-@media (min-width: 1024px) {
-  /* A 1024 px a marca (100 px), os 5 links (524 px) e o botão (199 px)
-     cabem numa linha nos 929 px do container (com a barra de rolagem):
-     nada quebra linha. Os respiros crescem a partir de 1280, e o maior
-     separa os links do WhatsApp, que é a ação. */
+/*
+ * Barra larga a partir de 75em (1200 px com a fonte padrão; TB2). Com o
+ * espaçamento de texto do usuário (WCAG 1.4.12: letras +0,12em, palavras
+ * +0,16em), a marca (101 px), os links (710 px) e o botão (234 px) somam
+ * ~1080 px e cabem nos 1105 px do container a 1200 com a barra de rolagem.
+ * A 1024 px passavam da tela e o WhatsApp ficava cortado. Em `em`, o ponto
+ * também acompanha a fonte do navegador. O mesmo valor está no TopBar.tsx
+ * (TOPBAR_WIDE_QUERY) e na regra do FAB; o TopBar.test.tsx confere.
+ */
+@media (min-width: 75em) {
   .topbar__bar {
     white-space: nowrap;
   }
@@ -908,7 +914,10 @@ video:focus-visible {
     position: static;
     display: flex;
     align-items: center;
-    gap: 20px;
+    /* O respiro maior separa os links do WhatsApp, que é a ação. Os dois
+       crescem com a tela (20 → 48 e 16 → 32 px, entre 1200 e ~1310 px), e
+       o grupo cabe no container com o espaçamento do 1.4.12 em toda a faixa. */
+    gap: clamp(20px, 25vw - 280px, 48px);
     max-height: none;
     padding: 0;
     overflow: visible;
@@ -919,7 +928,7 @@ video:focus-visible {
 
   .topbar__links {
     display: flex;
-    gap: var(--space-4);
+    gap: clamp(16px, 15vw - 164px, 32px);
   }
 
   .topbar__links li + li {
@@ -946,18 +955,9 @@ video:focus-visible {
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 80em) {
   .topbar__brand img {
     height: 28px;
-  }
-
-  .topbar__nav,
-  .topbar[data-open="true"] .topbar__nav {
-    gap: var(--space-7);
-  }
-
-  .topbar__links {
-    gap: 32px;
   }
 }
 
@@ -2153,10 +2153,11 @@ textarea.field__input {
   outline-color: var(--color-electric-700);
 }
 
-/* Com a barra do hero "video", a partir de 1024 px o WhatsApp já está
-   sempre à mostra na barra fixa: o FAB só existe abaixo disso (decisão do
-   Claudinho no HR1). Sem a barra (ex.: /privacidade), nada muda. */
-@media (min-width: 1024px) {
+/* Com a barra do hero "video", a partir de 75em (o ponto da barra larga,
+   TB2) o WhatsApp já está sempre à mostra na barra fixa: o FAB só existe
+   abaixo disso (decisão do Claudinho no HR1). Sem a barra (ex.:
+   /privacidade), nada muda. */
+@media (min-width: 75em) {
   .topbar ~ .fab-whatsapp {
     display: none;
   }
