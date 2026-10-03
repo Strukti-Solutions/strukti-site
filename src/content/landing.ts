@@ -372,6 +372,13 @@ export const landingContent = {
     ogUrl: "[A PREENCHER: endereço do site]",
   },
 
+  // Microcopy de interface (não é claim de marketing nem dado do negócio):
+  // aprovada pelo Andaime em 01/10/2026, sem descer pro Claudinho.
+  notFound: {
+    title: "Página não encontrada",
+    homeLink: "Voltar para o início",
+  },
+
   pendencias: [
     "Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.",
     "Endereço do site (compartilhamento e mensagem da equipe).",

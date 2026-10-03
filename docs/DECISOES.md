@@ -356,3 +356,65 @@ margem (`--hero-gutter`), e o texto alinha com a marca da barra e com as
 seções. O `check:browser` ganhou um percurso com Tab pela página a 360, 390
 e 1024 px, que falha se um controle focado parar sob a barra. Capturas em
 `docs/capturas-tb1/`.
+
+---
+
+## ADR-008 — SEO técnico e cabeçalhos de segurança: SITE_URL, CSP com nonce, página 404
+
+**Data:** 03/10/2026
+**Decisão de:** Andaime (líder da frente, item 3 da P3), a pedido do
+Claudinho; implementação do Ferrolho
+**Status:** aceita
+
+**Contexto:** o build avisava `metadataBase` ausente; faltavam
+`sitemap.xml`, `robots.txt`, `manifest` completo e uma página 404 no visual
+do site; a `Content-Security-Policy` em `next.config.ts` era mínima
+(só `frame-ancestors`, `base-uri`, `form-action`, `object-src`). O domínio
+de produção ainda não foi definido (`docs/landing-copy.md`, "Pendências");
+inventar um valor não era opção.
+
+**Decisão:**
+- **`SITE_URL` sem hardcode** (`src/lib/siteUrl.ts`): usa `SITE_URL` do
+  ambiente; sem ele, cai no `VERCEL_URL` automático da Vercel (preview ou
+  produção) e, fora da Vercel, em `http://localhost:3000`. Usado em
+  `metadataBase` (`layout.tsx`, com `alternates.canonical` e
+  `openGraph.url` novos), `sitemap.ts` e `robots.ts`. Decisão de
+  arquitetura, aprovada pelo Andaime — não depende do domínio final para
+  funcionar; falta só setar `SITE_URL` na Vercel antes do lançamento
+  (README, "Configuração").
+- **`manifest.ts`** reaproveita `icon.svg` (vetorial, `sizes: "any"`, sem
+  gerar PNG novo) e a cor `--color-navy-950` (`#08121d`) já usada no
+  `viewport.themeColor` e no `opengraph-image`.
+- **`robots.ts`** bloqueia `/api/` (inclui `/api/diagnostico`, que é rota,
+  não página) e aponta pro `sitemap.xml`.
+- **Página 404** (`not-found.tsx`): microcopy de interface aprovada pelo
+  Andaime sem descer pro Claudinho (não é claim de marketing nem dado do
+  negócio) — título "Página não encontrada", link de volta à raiz
+  (`next/link`, 1º uso no projeto, que até aqui era página única) e o botão
+  de WhatsApp já existente com a mensagem geral. Nada além disso (sem
+  métrica, sem frase de venda). Texto em `landingContent.notFound`
+  (`src/content/landing.ts`); testado em `not-found.test.tsx` (conteúdo +
+  axe).
+- **CSP com nonce por requisição** (`src/middleware.ts`, substituindo a CSP
+  estática do `next.config.ts`, que não gera nonce): `script-src
+  'nonce-…' 'strict-dynamic'`, sem `unsafe-inline` em script — segue o guia
+  oficial do Next.js para CSP em App Router (o nonce no cabeçalho da
+  resposta é detectado pelo próprio Next e aplicado aos scripts que ele
+  injeta, sem precisar tocar em cada página). `style-src 'self'
+  'unsafe-inline'`: `style={{...}}` do React (`privacidade/page.tsx`,
+  `ComoResolvemos.tsx` e outras seções) vira atributo `style=""` literal no
+  HTML do servidor, e CSP não tem nonce para atributo de estilo — isso
+  também é o que o próprio exemplo oficial do Next.js recomenda. `media-src`
+  e `font-src` ficam em `'self'` (vídeo e fonte Geologica self-hosted,
+  nunca CDN externa); `img-src 'self' data:` cobre o ruído de fundo em SVG
+  inline do `globals.css`. O middleware exclui `/api`, `_next/static`,
+  `_next/image`, `favicon.ico` e requisições de prefetch (nonce diferente a
+  cada uma quebraria o cache de prefetch do App Router).
+
+**Consequência:** nenhum domínio foi inventado em código nem em conteúdo;
+a pendência de publicação (`docs/landing-copy.md`) passa a cobrir só o
+texto que um humano lê (mensagem de compartilhamento da equipe, `og:url`
+de `landingContent.seo`), não mais o funcionamento técnico. A CSP mais
+restritiva depende de verificação com `npm run check:browser` (vídeo do
+hero, vídeo do portfólio e menu) antes de ir para revisão — ver
+`FILA_PESADA.md` para a vez do pesado na máquina.

@@ -9,6 +9,9 @@ function formatPrivacyPolicyDate(isoDate: string): string {
 
 export const metadata: Metadata = {
   title: `${landingContent.privacidade.title} | ${landingContent.seo.ogSiteName}`,
+  alternates: {
+    canonical: "/privacidade",
+  },
 };
 
 export default function PrivacidadePage() {

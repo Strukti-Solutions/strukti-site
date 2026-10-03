@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+// Content-Security-Policy fica no middleware (src/middleware.ts): precisa de
+// um nonce por requisição, que um valor estático aqui não pode gerar.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -7,10 +9,6 @@ const securityHeaders = [
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
-  },
-  {
-    key: "Content-Security-Policy",
-    value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
   },
 ];
 

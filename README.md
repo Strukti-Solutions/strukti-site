@@ -58,10 +58,20 @@ Crie um arquivo `.env.local` (nunca commitado) com:
 
 ```
 DATABASE_URL=postgres://usuario:senha@host:porta/banco
+SITE_URL=https://dominio-de-producao
 ```
 
 Sem `DATABASE_URL`, o site sobe e funciona normalmente, mas a rota
 `POST /api/diagnostico` responde `503` com uma mensagem clara em vez de quebrar.
+
+`SITE_URL` ainda não tem valor final (domínio de produção é pendência de
+publicação — ver `docs/landing-copy.md`, "Pendências"). É usado em
+`metadataBase` (link de compartilhamento, canonical), `sitemap.xml` e
+`robots.txt`. **Antes do lançamento, defina `SITE_URL` nas variáveis de
+ambiente da Vercel** (produção e preview); sem ele, o site cai sozinho no
+`VERCEL_URL` de cada deploy e, fora da Vercel, em `http://localhost:3000` —
+nunca quebra o build, mas o link de compartilhamento fica com o domínio
+errado até alguém definir `SITE_URL`.
 
 A tabela esperada no Postgres:
 
@@ -215,8 +225,17 @@ defesa distribuída contra spam coordenado.
 ## Segurança
 
 - Cabeçalhos de segurança em `next.config.ts` (`X-Content-Type-Options`,
-  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy`).
-  `X-Powered-By` desligado.
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`). `X-Powered-By`
+  desligado.
+- `Content-Security-Policy` fica em `src/middleware.ts`, com um nonce novo a
+  cada requisição (`script-src 'nonce-…' 'strict-dynamic'`, sem
+  `unsafe-inline` em script); um valor estático em `next.config.ts` não
+  consegue gerar nonce por requisição. `style-src` mantém `unsafe-inline`
+  porque `style={{...}}` do React vira atributo `style=""` literal no HTML
+  do servidor (CSP não tem nonce para atributo). Ao mexer em domínios
+  externos (fonte, vídeo, script de terceiro), ajuste a CSP ali e rode
+  `npm run check:browser` de novo — ela já cobre o vídeo do hero e do
+  portfólio.
 - A rota `POST /api/diagnostico` exige `Content-Type: application/json`, confere
   que a origem bate com o host (quando o cabeçalho `Origin` vem preenchido),
   valida no servidor com Zod, tem honeypot e limite de taxa.
@@ -291,8 +310,11 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
 
 1. **Aviso de privacidade** — nomes dos provedores de hospedagem e de banco de
    dados, e se guardam dados fora do Brasil.
-2. **Endereço do site** — usado no `og:url`, na mensagem de compartilhamento da
-   equipe e, depois, em `metadataBase`.
+2. **Endereço do site** — `metadataBase`, `sitemap.xml` e `robots.txt` já
+   funcionam sozinhos via `SITE_URL`/`VERCEL_URL` (ver "Configuração"); falta
+   só o texto que um humano lê: o `og:url` de `landingContent.seo` e a
+   mensagem de compartilhamento da equipe (`docs/landing-copy.md`). Definir
+   `SITE_URL` na Vercel antes do lançamento continua pendente.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
 Rode `npm run check:placeholders` antes do deploy para confirmar.
