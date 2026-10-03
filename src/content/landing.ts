@@ -1,7 +1,7 @@
 /**
  * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
- * Texto aprovado pelo cliente em docs/landing-copy.md (v1.7, 01/10/2026),
+ * Texto aprovado pelo cliente em docs/landing-copy.md (v1.8, 03/10/2026),
  * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
  * `[A PREENCHER: ...]`, o valor abaixo usa a mesma marcação — não
  * inventar o dado.
@@ -118,7 +118,7 @@ export const landingContent = {
       { label: "Dúvidas", href: "#duvidas" },
     ],
     whatsappButton: "Falar no WhatsApp",
-    /** Botão que abre o menu abaixo de 1024 px (barra do hero "video"). */
+    /** Botão que abre o menu abaixo de 75em, 1200 px (barra do hero "video"). */
     menuButton: "Menu",
   },
 
@@ -375,8 +375,9 @@ export const landingContent = {
     ogUrl: "[A PREENCHER: endereço do site]",
   },
 
-  // Microcopy de interface (não é claim de marketing nem dado do negócio):
-  // aprovada pelo Andaime em 01/10/2026, sem descer pro Claudinho.
+  // Microcopy de interface (não é claim de marketing nem dado do negócio),
+  // aprovada pelo Claudinho em 03/10/2026 e registrada em
+  // docs/landing-copy.md v1.8 ("Página não encontrada (404)").
   notFound: {
     title: "Página não encontrada",
     homeLink: "Voltar para o início",

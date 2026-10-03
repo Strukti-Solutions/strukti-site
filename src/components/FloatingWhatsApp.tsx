@@ -40,7 +40,7 @@ function overlaps(a: DOMRect, b: DOMRect) {
  * Começa oculto no servidor e no 1º render do cliente (o hero está na tela
  * ao carregar), então não há divergência de hidratação nem pisca. Sem
  * JavaScript, fica oculto. No hero "classic", o botão do cabeçalho continua
- * lá; no hero "video", abaixo de 1024 px o menu da barra não abre sem
+ * lá; no hero "video", abaixo de 75em (1200 px) o menu da barra não abre sem
  * JavaScript, e o WhatsApp fica no botão principal do hero.
  *
  * Fica num layout persistente (nunca desmonta na troca de rota), então o

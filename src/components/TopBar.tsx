@@ -7,9 +7,18 @@ import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 /**
+ * A partir daqui a barra mostra os links e o WhatsApp numa linha (TB2). Em
+ * `em`, para acompanhar a fonte do navegador: 75em = 1200 px com a fonte
+ * padrão, a largura em que o grupo ainda cabe no container com o espaçamento
+ * de texto do usuário (WCAG 1.4.12). O globals.css (seção "Barra do topo" e
+ * a regra do FAB) usa o mesmo valor; o TopBar.test.tsx confere.
+ */
+export const TOPBAR_WIDE_QUERY = "(min-width: 75em)";
+
+/**
  * Barra do topo do hero "video" (MASTER §8.3.1): uma faixa escura fixa, de
  * borda a borda da janela, com a junta de 3 px embaixo. O conteúdo fica no
- * container do site, alinhado com as seções. A partir de 1024 px mostra
+ * container do site, alinhado com as seções. A partir de 75em (1200 px) mostra
  * marca, links e WhatsApp numa linha; abaixo disso, marca e botão "Menu", que
  * abre um painel com os links e o WhatsApp, preso embaixo da barra.
  *
@@ -37,7 +46,7 @@ export function TopBar() {
     const onPointerDown = (event: PointerEvent) => {
       if (!headerRef.current?.contains(event.target as Node)) setOpen(false);
     };
-    const wide = typeof window.matchMedia === "function" ? window.matchMedia("(min-width: 1024px)") : null;
+    const wide = typeof window.matchMedia === "function" ? window.matchMedia(TOPBAR_WIDE_QUERY) : null;
     const onWide = () => {
       if (wide?.matches) setOpen(false);
     };

@@ -357,13 +357,30 @@ seções. O `check:browser` ganhou um percurso com Tab pela página a 360, 390
 e 1024 px, que falha se um controle focado parar sob a barra. Capturas em
 `docs/capturas-tb1/`.
 
+**Nota TB2 (03/10/2026, espaçamento de texto, WCAG 1.4.12, nível AA):** com
+o espaçamento do usuário (letras +0,12em, palavras +0,16em), o grupo de
+links e WhatsApp crescia de ~860 para ~1080 px. Entre 1024 e ~1137 px ele
+saía da tela, e o WhatsApp da barra fixa ficava cortado (achado da Crivo na
+TB1). Decisão do Nanquim, entre as duas saídas que o Claudinho aceitou:
+**subir o ponto da barra larga**, junto com o do FAB, de 1024 px para
+**75em** (1200 px com a fonte padrão). Descartada a barra que cresce: uma
+barra fixa de duas linhas exige medir a altura por JavaScript para a
+moldura do hero não ficar coberta, e come a tela de quem já precisa de
+espaço. Em `em`, o ponto também acompanha a fonte do navegador. Abaixo de
+75em vale o Menu e o FAB; a composição do hero continua mudando em 1024 px.
+Os respiros da barra larga passam a ser fluidos (16 → 32 e 20 → 48 px).
+O valor fica numa constante (`TOPBAR_WIDE_QUERY`), que o `TopBar.test.tsx`
+confere contra o CSS. O `check:browser` aplica o espaçamento do 1.4.12 de
+360 a 1440 px, inclusive 1024–1110.
+
 ---
 
-## ADR-008 — SEO técnico e cabeçalhos de segurança: SITE_URL, CSP com nonce, página 404
+## ADR-008 — SEO técnico e cabeçalhos de segurança: SITE_URL, CSP estática, página 404
 
-**Data:** 03/10/2026
-**Decisão de:** Andaime (líder da frente, item 3 da P3), a pedido do
-Claudinho; implementação do Ferrolho
+**Data:** 03/10/2026 (revisão em 03/10/2026, revisão R1 da Crivo)
+**Decisão de:** Andaime (líder da frente, item 3 da P3) e Claudinho (CSP:
+estática x nonce, revisão R1 da Crivo), a pedido do Claudinho;
+implementação do Ferrolho e do Andaime
 **Status:** aceita
 
 **Contexto:** o build avisava `metadataBase` ausente; faltavam
@@ -375,46 +392,62 @@ inventar um valor não era opção.
 
 **Decisão:**
 - **`SITE_URL` sem hardcode** (`src/lib/siteUrl.ts`): usa `SITE_URL` do
-  ambiente; sem ele, cai no `VERCEL_URL` automático da Vercel (preview ou
-  produção) e, fora da Vercel, em `http://localhost:3000`. Usado em
-  `metadataBase` (`layout.tsx`, com `alternates.canonical` e
-  `openGraph.url` novos), `sitemap.ts` e `robots.ts`. Decisão de
-  arquitetura, aprovada pelo Andaime — não depende do domínio final para
-  funcionar; falta só setar `SITE_URL` na Vercel antes do lançamento
-  (README, "Configuração").
+  ambiente; sem ele, em produção prefere `VERCEL_PROJECT_PRODUCTION_URL`
+  (domínio fixo do projeto — `VERCEL_URL` é a URL única daquele deploy) e,
+  fora da Vercel, cai em `http://localhost:3000`. Normalizado com
+  `new URL(...).origin` (sem isso, um `SITE_URL` com barra no fim duplicava
+  barra no sitemap/robots). Usado em `metadataBase` (`layout.tsx`, com
+  `alternates.canonical` e `openGraph.url` novos), `sitemap.ts` e
+  `robots.ts`; falta só setar `SITE_URL` na Vercel antes do lançamento
+  (README, "Configuração"). `landingContent.seo.ogUrl` não alimenta
+  nenhuma tag — é só o lembrete do `check:placeholders`.
 - **`manifest.ts`** reaproveita `icon.svg` (vetorial, `sizes: "any"`, sem
   gerar PNG novo) e a cor `--color-navy-950` (`#08121d`) já usada no
   `viewport.themeColor` e no `opengraph-image`.
 - **`robots.ts`** bloqueia `/api/` (inclui `/api/diagnostico`, que é rota,
   não página) e aponta pro `sitemap.xml`.
 - **Página 404** (`not-found.tsx`): microcopy de interface aprovada pelo
-  Andaime sem descer pro Claudinho (não é claim de marketing nem dado do
-  negócio) — título "Página não encontrada", link de volta à raiz
-  (`next/link`, 1º uso no projeto, que até aqui era página única) e o botão
-  de WhatsApp já existente com a mensagem geral. Nada além disso (sem
-  métrica, sem frase de venda). Texto em `landingContent.notFound`
-  (`src/content/landing.ts`); testado em `not-found.test.tsx` (conteúdo +
-  axe).
-- **CSP com nonce por requisição** (`src/middleware.ts`, substituindo a CSP
-  estática do `next.config.ts`, que não gera nonce): `script-src
-  'nonce-…' 'strict-dynamic'`, sem `unsafe-inline` em script — segue o guia
-  oficial do Next.js para CSP em App Router (o nonce no cabeçalho da
-  resposta é detectado pelo próprio Next e aplicado aos scripts que ele
-  injeta, sem precisar tocar em cada página). `style-src 'self'
-  'unsafe-inline'`: `style={{...}}` do React (`privacidade/page.tsx`,
-  `ComoResolvemos.tsx` e outras seções) vira atributo `style=""` literal no
-  HTML do servidor, e CSP não tem nonce para atributo de estilo — isso
-  também é o que o próprio exemplo oficial do Next.js recomenda. `media-src`
-  e `font-src` ficam em `'self'` (vídeo e fonte Geologica self-hosted,
-  nunca CDN externa); `img-src 'self' data:` cobre o ruído de fundo em SVG
-  inline do `globals.css`. O middleware exclui `/api`, `_next/static`,
-  `_next/image`, `favicon.ico` e requisições de prefetch (nonce diferente a
-  cada uma quebraria o cache de prefetch do App Router).
+  Claudinho em 03/10/2026 (título "Página não encontrada", link de volta à
+  raiz — `next/link`, 1º uso no projeto, que até aqui era página única — e
+  o botão de WhatsApp já existente com a mensagem geral) e registrada em
+  `docs/landing-copy.md` v1.8, seção de textos de interface — não é claim
+  de marketing nem dado do negócio, mas o critério do Claudinho vale pra
+  qualquer texto novo: só entra se estiver no documento. Texto em
+  `landingContent.notFound` (`src/content/landing.ts`); testado em
+  `not-found.test.tsx` (conteúdo + axe).
+- **CSP estática** (`next.config.ts`, revisão R1 da Crivo — reverte a 1ª
+  versão desta ADR, que usava um nonce por requisição via
+  `src/middleware.ts`): `script-src 'self' 'unsafe-inline'` (mais
+  `'unsafe-eval'` só em desenvolvimento — o devtool do webpack do Next roda
+  cada módulo por `eval()` nesse modo; sem isso a página não hidrata em
+  `npm run dev`, bloqueante da R1), `style-src 'self' 'unsafe-inline'`
+  (`style={{...}}` do React vira atributo `style=""` literal no HTML do
+  servidor; CSP não tem nonce para atributo), `img-src 'self' data:`
+  (ruído de fundo em SVG inline do `globals.css`), `font-src`/`media-src`/
+  `connect-src 'self'` (fonte Geologica e vídeo self-hosted, nunca CDN
+  externa), `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`,
+  `frame-ancestors 'none'`, `upgrade-insecure-requests`.
+  **Por que não o nonce:** a página não renderiza conteúdo de usuário nem
+  carrega script de terceiro (sem `dangerouslySetInnerHTML`, sem
+  `next/script`, sem domínio externo) — o nonce só protegeria contra script
+  inline injetado, e não há por onde injetar. Em troca, ele custava (a)
+  desempenho: `/`, `/privacidade` e a 404 viravam dinâmicas (função a cada
+  visita na Vercel, sem cache de CDN), contra a meta de desempenho do P3, e
+  o middleware passava a rodar em cada arquivo de `public/` (vídeos,
+  pôsteres, marca); (b) manutenção: o Next só carimbava o nonce porque o
+  layout lia `headers()` sem usar o valor — um sinal nada óbvio, que já
+  quebrou uma vez em produção sem erro de build (`ad367c4`, corrigido em
+  `503dd2a`). **Reavaliar se um dia entrar script de terceiro** (analytics,
+  widget de chat, etc.) ou conteúdo de usuário renderizado sem escapar.
+- **`check:browser`** passa a falhar em qualquer violação de CSP
+  (`scripts/check-browser.mjs`, evento `Log.entryAdded` do CDP, fonte
+  `security`) — antes só ouvia `Runtime.consoleAPICalled`/`exceptionThrown`
+  e uma violação (fonte, imagem, mídia bloqueada) passava em silêncio,
+  tornando falsa a promessa do README de que ele cobre a CSP.
 
 **Consequência:** nenhum domínio foi inventado em código nem em conteúdo;
 a pendência de publicação (`docs/landing-copy.md`) passa a cobrir só o
-texto que um humano lê (mensagem de compartilhamento da equipe, `og:url`
-de `landingContent.seo`), não mais o funcionamento técnico. A CSP mais
-restritiva depende de verificação com `npm run check:browser` (vídeo do
-hero, vídeo do portfólio e menu) antes de ir para revisão — ver
-`FILA_PESADA.md` para a vez do pesado na máquina.
+texto que um humano lê (mensagem de compartilhamento da equipe), não mais
+o funcionamento técnico. Com a CSP estática, `/`, `/_not-found` e
+`/privacidade` voltam a ser estáticas (confirmado no `npm run build`: ○,
+não ƒ) — sem middleware, sem função por visita, com cache de CDN normal.
