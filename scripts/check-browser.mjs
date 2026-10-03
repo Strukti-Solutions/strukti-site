@@ -7,7 +7,7 @@
 //   - o console do navegador registrar erro (ex.: hidratação divergente) ou
 //     uma violação de Content-Security-Policy (fonte/imagem/mídia/script
 //     bloqueado — revisão R1 do P3, achado da Crivo), ou
-//   - a 360, 390, 1100 ou 1199px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
+//   - a 360, 390, 1024, 1100 ou 1199px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
 //     caixa de um botão, campo ou qualquer controle focável visível, em
 //     qualquer ponto da rolagem (regra aceita pelo Claudinho, proposta da
 //     Crivo na revisão DS1 — 2ª vez que o FAB cobria conteúdo).
@@ -46,9 +46,10 @@ import { join } from "node:path";
 const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
 // 1199/1200: os dois lados do ponto da barra larga (75em, TB2).
 const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1199, 1200, 1280, 1440];
-// 1100/1199: desde a TB2 o FAB também existe entre 1024 e 1199px (abaixo do
-// ponto da barra larga), ao lado das seções em duas colunas.
-const FAB_CHECK_WIDTHS = new Set([360, 390, 1100, 1199]);
+// 1024/1100/1199: desde a TB2 o FAB também existe entre 1024 e 1199px (abaixo
+// do ponto da barra larga), ao lado das seções em duas e três colunas; 1024 é
+// a primeira largura da composição lado a lado (hero, Problemas, portfólio).
+const FAB_CHECK_WIDTHS = new Set([360, 390, 1024, 1100, 1199]);
 const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
 const INTERACTION_WIDTH = 360;
@@ -450,7 +451,7 @@ try {
 
   console.log(`Navegador: ${browserPath}\nPágina: ${URL_TO_CHECK}\n`);
   console.log(
-    "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390/1100/1199)",
+    "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390/1024/1100/1199)",
   );
 
   for (const reduce of [false, true]) {
@@ -673,7 +674,7 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1100/1199px) em nenhuma largura. " +
+  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura. " +
     "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",
