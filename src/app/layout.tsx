@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import { geologica } from "@/fonts";
 import { landingContent } from "@/content/landing";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
@@ -36,18 +35,11 @@ export const viewport: Viewport = {
   themeColor: "#08121d",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Só ler o nonce (sem usá-lo em lugar nenhum) já basta: é o sinal que o
-  // Next.js App Router procura para aplicar, ele mesmo, o nonce do
-  // Content-Security-Policy aos <script> que gera (guia oficial do Next.js
-  // para CSP). Sem isto, o CSP com 'strict-dynamic' do middleware bloqueia
-  // todo o JS da página — só o <video controls> nativo continua funcionando.
-  await headers();
-
   return (
     <html lang="pt-BR" className={geologica.variable}>
       <body>

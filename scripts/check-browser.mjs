@@ -4,7 +4,9 @@
 // desligado. Em cada caso rola a página do topo ao fim e falha (exit 1) se:
 //   - em algum ponto da rolagem houver rolagem horizontal
 //     (scrollWidth > clientWidth), ou
-//   - o console do navegador registrar erro (ex.: hidratação divergente), ou
+//   - o console do navegador registrar erro (ex.: hidratação divergente) ou
+//     uma violação de Content-Security-Policy (fonte/imagem/mídia/script
+//     bloqueado — revisão R1 do P3, achado da Crivo), ou
 //   - a 360 ou 390px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
 //     caixa de um botão, campo ou qualquer controle focável visível, em
 //     qualquer ponto da rolagem (regra aceita pelo Claudinho, proposta da
@@ -358,6 +360,7 @@ try {
   await cdp.opened;
   await cdp.send("Page.enable");
   await cdp.send("Runtime.enable");
+  await cdp.send("Log.enable");
 
   let consoleErrors = [];
   cdp.on("Runtime.consoleAPICalled", (params) => {
@@ -367,6 +370,15 @@ try {
   });
   cdp.on("Runtime.exceptionThrown", (params) => {
     consoleErrors.push(params.exceptionDetails.exception?.description ?? params.exceptionDetails.text);
+  });
+  // Violação de CSP (fonte, imagem, mídia ou script bloqueado) chega pelo
+  // domínio Log como entrada "security", não por Runtime.consoleAPICalled
+  // nem exceptionThrown — sem isto, o bloqueio passava em silêncio (achado
+  // da Crivo, revisão R1 do P3).
+  cdp.on("Log.entryAdded", (params) => {
+    if (params.entry.source === "security" && params.entry.level === "error") {
+      consoleErrors.push(params.entry.text);
+    }
   });
 
   console.log(`Navegador: ${browserPath}\nPágina: ${URL_TO_CHECK}\n`);

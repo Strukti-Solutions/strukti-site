@@ -1,0 +1,39 @@
+import { afterEach, describe, expect, it } from "vitest";
+import { getSiteUrl } from "./siteUrl";
+
+const ENV_KEYS = ["SITE_URL", "VERCEL_ENV", "VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_URL"] as const;
+
+function clearEnv() {
+  for (const key of ENV_KEYS) delete process.env[key];
+}
+
+describe("getSiteUrl", () => {
+  afterEach(clearEnv);
+
+  it("usa SITE_URL quando definido, normalizado (sem barra final)", () => {
+    process.env.SITE_URL = "https://strukti.com.br/";
+    expect(getSiteUrl()).toBe("https://strukti.com.br");
+  });
+
+  it("em produção na Vercel, sem SITE_URL, usa o domínio fixo do projeto (não o VERCEL_URL do deploy)", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "strukti.vercel.app";
+    process.env.VERCEL_URL = "strukti-git-main-abc123.vercel.app";
+    expect(getSiteUrl()).toBe("https://strukti.vercel.app");
+  });
+
+  it("em preview na Vercel, sem SITE_URL, usa o VERCEL_URL do próprio deploy", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "strukti-pr-42.vercel.app";
+    expect(getSiteUrl()).toBe("https://strukti-pr-42.vercel.app");
+  });
+
+  it("fora da Vercel e sem SITE_URL, cai em localhost", () => {
+    expect(getSiteUrl()).toBe("http://localhost:3000");
+  });
+
+  it("um SITE_URL sem protocolo quebra alto (new URL), em vez de virar um caminho relativo silencioso", () => {
+    process.env.SITE_URL = "dominio-sem-protocolo.com";
+    expect(() => getSiteUrl()).toThrow();
+  });
+});

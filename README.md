@@ -227,15 +227,21 @@ defesa distribuída contra spam coordenado.
 - Cabeçalhos de segurança em `next.config.ts` (`X-Content-Type-Options`,
   `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`). `X-Powered-By`
   desligado.
-- `Content-Security-Policy` fica em `src/middleware.ts`, com um nonce novo a
-  cada requisição (`script-src 'nonce-…' 'strict-dynamic'`, sem
-  `unsafe-inline` em script); um valor estático em `next.config.ts` não
-  consegue gerar nonce por requisição. `style-src` mantém `unsafe-inline`
-  porque `style={{...}}` do React vira atributo `style=""` literal no HTML
-  do servidor (CSP não tem nonce para atributo). Ao mexer em domínios
-  externos (fonte, vídeo, script de terceiro), ajuste a CSP ali e rode
-  `npm run check:browser` de novo — ela já cobre o vídeo do hero e do
-  portfólio.
+- `Content-Security-Policy` estática em `next.config.ts` (ADR-008):
+  `default-src 'self'`, `script-src 'self' 'unsafe-inline'` (mais
+  `'unsafe-eval'` só em desenvolvimento — o devtool do webpack do Next
+  roda cada módulo por `eval()` nesse modo), `style-src 'self'
+  'unsafe-inline'` (o `style={{...}}` do React vira atributo `style=""`
+  literal no HTML do servidor; CSP não tem nonce para atributo), `img-src`/
+  `font-src`/`media-src`/`connect-src 'self'`, `object-src 'none'`,
+  `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`,
+  `upgrade-insecure-requests`. Sem nonce por requisição porque a página não
+  renderiza conteúdo de usuário nem carrega script de terceiro — se isso
+  mudar um dia, reavalie (ver ADR-008). Ao mexer em domínios externos
+  (fonte, vídeo, script de terceiro), ajuste a CSP ali e rode
+  `npm run check:browser` de novo — ela cobre o vídeo do hero, do
+  portfólio **e falha em qualquer violação de CSP** (fonte/imagem/mídia/
+  script bloqueado), não só erro de console.
 - A rota `POST /api/diagnostico` exige `Content-Type: application/json`, confere
   que a origem bate com o host (quando o cabeçalho `Origin` vem preenchido),
   valida no servidor com Zod, tem honeypot e limite de taxa.
@@ -311,10 +317,11 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
 1. **Aviso de privacidade** — nomes dos provedores de hospedagem e de banco de
    dados, e se guardam dados fora do Brasil.
 2. **Endereço do site** — `metadataBase`, `sitemap.xml` e `robots.txt` já
-   funcionam sozinhos via `SITE_URL`/`VERCEL_URL` (ver "Configuração"); falta
-   só o texto que um humano lê: o `og:url` de `landingContent.seo` e a
-   mensagem de compartilhamento da equipe (`docs/landing-copy.md`). Definir
-   `SITE_URL` na Vercel antes do lançamento continua pendente.
+   funcionam sozinhos via `SITE_URL`/`VERCEL_URL` (ver "Configuração");
+   `landingContent.seo.ogUrl` não alimenta tag nenhuma, é só o lembrete do
+   `check:placeholders`. Falta só o texto que um humano lê: a mensagem de
+   compartilhamento da equipe (`docs/landing-copy.md`). Definir `SITE_URL`
+   na Vercel antes do lançamento continua pendente.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
 Rode `npm run check:placeholders` antes do deploy para confirmar.
