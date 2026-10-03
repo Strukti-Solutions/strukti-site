@@ -1,6 +1,14 @@
-# Onde paramos — 03/10/2026
+# Onde paramos — 03/10/2026 (novo rumo: hardware + IA)
 
 Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é privado: `github.com/Thiago432544/strukti-site`.
+
+## Novo rumo (03/10/2026)
+
+A Strukti passou a focar em produtos de hardware + IA (replay para quadras; estacionamento inteligente em espera); aplicativos continuam em segundo plano. O site vira a vitrine da marca-mãe, com a identidade "Estúdio" (ADR-009, `MASTER.md` v3).
+
+- Spec: `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`.
+- Plano: `docs/superpowers/plans/2026-10-03-identidade-estudio.md` (10 tarefas; a Tarefa 2, texto v2.0, é portão do Thiago).
+- Nesta máquina o time roda como subagentes do Claude Code (o Maestri está com outro projeto).
 
 ## O que está no `main` (depois desta rodada)
 

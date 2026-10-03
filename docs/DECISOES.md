@@ -451,3 +451,21 @@ texto que um humano lê (mensagem de compartilhamento da equipe), não mais
 o funcionamento técnico. Com a CSP estática, `/`, `/_not-found` e
 `/privacidade` voltam a ser estáticas (confirmado no `npm run build`: ○,
 não ƒ) — sem middleware, sem função por visita, com cache de CDN normal.
+
+---
+
+## ADR-009 — Novo rumo (hardware + IA) e identidade "Estúdio"; hero em sequência de quadros
+
+**Data:** 03/10/2026
+**Decisão de:** Thiago (cliente), com o Claude
+**Status:** aceita
+
+**Contexto:** a Strukti mudou o foco para produtos que juntam hardware e IA (replay para quadras; estacionamento inteligente em espera), mantendo os aplicativos em segundo plano. O site vendia "aplicativo sob medida para distribuidoras" e o design system v2 ("Encaixe") foi pensado para isso.
+
+**Decisão:**
+1. O site vira a vitrine da marca-mãe: catálogo de hardware em destaque e de aplicativos. Cada produto pode ter site próprio depois (o do replay vem antes, fora deste trabalho).
+2. Design system v3, "Estúdio": produto como peça de vitrine sob luz controlada, escuro como base, claro só onde se lê e se age. Fica tudo o que é marca (símbolo, Geologica, escalas de cor, as três assinaturas). Entram a luz de estúdio, o palco, os selos de status e a ficha técnica (`MASTER.md` v3).
+3. Hero em **sequência de quadros pré-renderizada no Blender**, desenhada num `<canvas>` pela rolagem. O Three.js em tempo real foi a recomendação técnica (mais leve de trocar, nítido em qualquer tela); o cliente escolheu a sequência pelo visual mais fotográfico e por não ter biblioteca de 3D no site. Custo aceito: 3 MB (desktop) / 1,2 MB (celular) de quadros, carregados depois da página, e re-render a cada ajuste.
+4. O modelo 3D é estilizado (não existe caixa definitiva do produto) e o site o identifica sempre como "Ilustração do conceito". Quando houver CAD/STL, o script passa a importá-lo; câmera, luz e saídas continuam.
+
+**Consequências:** o texto da home é reescrito (`docs/landing-copy.md` v2.0); o formulário ganha o campo "interesse" e a tabela `leads`, a coluna `interest`; os heros "video" e "classic" ficam no código até a v3 estar aprovada no ar e saem numa limpeza separada, com ADR própria.

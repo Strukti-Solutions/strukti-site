@@ -1,4 +1,4 @@
-# Design System — Strukti Soluções · v2 ("Encaixe")
+# Design System — Strukti Soluções · v3 ("Estúdio")
 
 > **Natureza deste arquivo:** fonte da verdade visual do site (tarefa DS1,
 > ADR-006). Cor, tipografia, espaçamento, raios, elevação, motion e
@@ -6,29 +6,19 @@
 > `src/fonts/index.ts` (fonte) **implementam** este arquivo. Se o código
 > divergir, é defeito do código: corrija o código, ou mude primeiro este
 > arquivo (com ADR, se a decisão for relevante). Dono: Nanquim (Designer).
-> Substitui a v1 (paleta azul-petróleo + Inter), que deixa de valer.
+> Substitui a v2 ("Encaixe") no conceito, na luz e nos componentes novos (ADR-009); tudo da v2 que este arquivo não muda continua valendo.
 
 ---
 
 ## 1. Conceito
 
-**Encaixe.** O logo da Strukti são quatro blocos que se encaixam num
-hexágono, separados por juntas finas e cortados no ângulo do hexágono. O
-site usa a mesma ideia: peças de conteúdo que se encaixam com precisão, em
-vez de cartões soltos com sombra. É também a promessa do negócio: um
-aplicativo feito para encaixar no jeito que a empresa já trabalha.
+**Estúdio.** A Strukti mostra os produtos como peças de vitrine, sob luz controlada: o objeto (ou a tela do aplicativo) é o herói, num palco escuro. É a promessa da marca-mãe de hardware + IA: engenharia que se pode ver de perto.
 
-**Escuro para mostrar, claro para ler.** O site é ancorado no marinho do
-logo. O que é para *ver* (o topo, os vídeos do portfólio, o rodapé) fica no
-escuro; o que é para *ler e agir* (problemas, como trabalhamos, formulário,
-equipe, dúvidas) fica no claro.
+**Escuro para mostrar, claro para ler.** O escuro é a base da página: topo, produtos, aplicativos e rodapé. O claro fica só onde se lê e se age: a chamada para outros problemas, como trabalhamos, equipe, contato, dúvidas e o aviso de privacidade.
 
-**Uma ousadia só.** O momento memorável é o topo (hoje, o hero "video":
-a estrada ao entardecer e a palavra "Strukti" gigante, §9.6; o buraco negro
-segue disponível no hero "classic"). Todo o resto é quieto, preciso e
-tipográfico.
+**Uma ousadia só.** O momento memorável é o hero "estudio" (§9.7): o produto girando sob a luz conforme a rolagem. Todo o resto é quieto, preciso e tipográfico.
 
-### Três assinaturas da marca (as únicas "decorações" permitidas)
+### Quatro assinaturas da marca (as únicas "decorações" permitidas)
 
 1. **A junta**: fresta fina e constante (3 px) entre blocos do mesmo
    grupo. Comunica "estas peças formam um conjunto".
@@ -38,6 +28,7 @@ tipográfico.
 3. **O ponto do i**: o círculo azul do logo (`--color-electric-500`), usado
    como marcador da lista de destaques do portfólio e como o pingo do "i" da
    palavra "Strukti" gigante do hero "video" (§9.6), e só ali.
+4. **A luz de estúdio**: luz principal azul elétrico (`--color-electric-500`) atrás do produto e contorno ciano (`--color-cyan-400`). Só existe dentro de um palco (§8.13), nunca como fundo solto.
 
 ---
 
@@ -363,6 +354,8 @@ desfoque.
   No hero, o visual congela num quadro (buraco negro com `paused`) ou fica
   o estático.
 
+Animação guiada pela rolagem só existe no hero "estudio" (§9.7). No resto da página continuam as entradas suaves (Reveal).
+
 ---
 
 ## 7. Marca (arquivos em `public/brand/`)
@@ -679,6 +672,18 @@ dele. No celular, `html` tem
 `scroll-padding-bottom: 88px`: a rolagem por foco para o controle acima da
 faixa do botão.
 
+### 8.13 Palco
+
+Superfície escura onde fica um produto (hero, cards de hardware, cards de aplicativos). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
+
+### 8.14 Selos de status
+
+Todo produto mostra um selo, com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`). O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` no canto inferior do palco. A informação está sempre no texto; a cor só reforça. Contraste AA conferido nos quatro.
+
+### 8.15 Ficha técnica
+
+Lista de definições (`<dl class="ficha">`) com 2 a 4 itens: valor grande (Geologica 700, SHRP 100, `font-variant-numeric: tabular-nums`) em cima, rótulo curto `text-subtle` embaixo. No DOM, `<dt>` (rótulo) vem antes de `<dd>` (valor); a ordem visual inverte por CSS.
+
 ---
 
 ## 9. Hero
@@ -876,6 +881,15 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
   vídeo de fundo". "Pausar" para de vez; "Tocar" toca mesmo com reduced
   motion (foi a pessoa que pediu). Só aparece depois de montar.
 - O hero tem `data-hides-fab` (§8.12).
+
+### 9.7 Hero "estudio" (padrão desde a v3)
+
+Seção `#inicio` com o texto à esquerda (em cima abaixo de 768 px) e um palco com o produto à direita (embaixo). O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
+
+- Com animação: a seção tem 250svh de altura e o conteúdo fica fixo (`position: sticky`) enquanto a rolagem dentro dela escolhe o quadro desenhado no `<canvas>` (decorativo, `aria-hidden`).
+- O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
+- Sem animação (prefers-reduced-motion, "economizar dados", sem JavaScript, falha ao carregar os quadros): só o pôster, e a seção perde a altura extra.
+- O selo "Ilustração do conceito" fica sempre visível no palco.
 
 ---
 
