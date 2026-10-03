@@ -489,7 +489,8 @@ try {
   if (!cspCaught) {
     failures.push(
       `controle de CSP: o detector de CSP não acusou a violação provocada (imagem de ${CSP_CONTROL_HOST}) — ` +
-        "bloqueios reais de CSP passariam em silêncio; checagem interrompida",
+        "bloqueios reais de CSP passariam em silêncio; checagem interrompida. " +
+        "Confira também se o servidor está enviando o cabeçalho Content-Security-Policy do next.config.ts",
     );
     throw new CheckAborted();
   }
