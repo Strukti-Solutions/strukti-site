@@ -12,6 +12,10 @@
 //     qualquer ponto da rolagem (regra aceita pelo Claudinho, proposta da
 //     Crivo na revisão DS1 — 2ª vez que o FAB cobria conteúdo).
 //
+// Antes das larguras, um controle positivo (Q4) provoca de propósito uma
+// violação de CSP e interrompe a checagem se o detector não a acusar — um
+// detector cego também "passaria".
+//
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
 // e sai com Tab, conferindo que o foco não fica coberto pelo painel; e toca
@@ -415,6 +419,14 @@ async function isPaused(cdp, selector) {
   return evalValue(cdp, `document.querySelector(${JSON.stringify(selector)})?.paused !== false`);
 }
 
+// Controle positivo da detecção de CSP: uma imagem de origem externa, que a
+// CSP do next.config.ts (img-src 'self' data:) tem que barrar.
+const CSP_CONTROL_HOST = "csp-controle.invalid";
+const CSP_CONTROL_URL = `https://${CSP_CONTROL_HOST}/controle-positivo.png`;
+
+/** Interrompe a checagem quando já há uma falha registrada que invalida o resto. */
+class CheckAborted extends Error {}
+
 const failures = [];
 
 try {
@@ -449,6 +461,39 @@ try {
   });
 
   console.log(`Navegador: ${browserPath}\nPágina: ${URL_TO_CHECK}\n`);
+
+  // --- Controle positivo do detector de CSP (Q4) ---
+  // Um detector que nunca acusa nada também "passa". Antes das larguras,
+  // provoca de propósito uma violação (imagem de uma origem externa, barrada
+  // pelo img-src 'self' data: da CSP) e exige que ela chegue em consoleErrors
+  // pelo mesmo caminho das violações reais. A origem é .invalid (reservada,
+  // nunca resolve): mesmo sem CSP, nada sai da máquina.
+  const loadedForControl = cdp.once("Page.loadEventFired");
+  await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+  await withTimeout(loadedForControl, "carregar para o controle de CSP");
+  await sleep(1500);
+  consoleErrors = [];
+  await evalValue(cdp, `(() => { new Image().src = ${JSON.stringify(CSP_CONTROL_URL)}; })()`);
+  let cspCaught = false;
+  for (let i = 0; i < 30 && !cspCaught; i++) {
+    await sleep(100);
+    cspCaught = consoleErrors.some((error) => error.includes(CSP_CONTROL_HOST));
+  }
+  // Sai da página antes de zerar, para nenhum evento atrasado do controle
+  // cair na primeira largura.
+  const blank = cdp.once("Page.loadEventFired");
+  await cdp.send("Page.navigate", { url: "about:blank" });
+  await withTimeout(blank, "sair da página do controle de CSP");
+  consoleErrors = [];
+  if (!cspCaught) {
+    failures.push(
+      `controle de CSP: o detector de CSP não acusou a violação provocada (imagem de ${CSP_CONTROL_HOST}) — ` +
+        "bloqueios reais de CSP passariam em silêncio; checagem interrompida",
+    );
+    throw new CheckAborted();
+  }
+  console.log(`Controle de CSP: a violação provocada (imagem de ${CSP_CONTROL_HOST}) foi acusada pelo detector.\n`);
+
   console.log(
     "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390/1100/1199)",
   );
@@ -659,7 +704,7 @@ try {
 
   cdp.close();
 } catch (error) {
-  failures.push(`a checagem não terminou: ${error.message}`);
+  if (!(error instanceof CheckAborted)) failures.push(`a checagem não terminou: ${error.message}`);
 } finally {
   browser.kill();
   await sleep(500);
@@ -673,7 +718,8 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1100/1199px) em nenhuma largura. " +
+  "\nDetector de CSP conferido (acusou a violação provocada). " +
+    "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1100/1199px) em nenhuma largura. " +
     "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",
