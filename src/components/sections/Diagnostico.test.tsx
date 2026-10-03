@@ -17,6 +17,22 @@ function fillValidForm() {
   fireEvent.click(screen.getByLabelText(/aviso de privacidade/, { exact: false }));
 }
 
+// O foco no sucesso e nas falhas de envio é movido por um useEffect do
+// componente. A atualização de estado vem da continuação do fetch (fora de
+// evento do usuário), então o React agenda os efeitos passivos numa tarefa
+// separada do Scheduler, depois do commit. O waitFor que procura o texto
+// resolve assim que o DOM muda (MutationObserver), e com a CPU sem folga o
+// Scheduler cede entre o commit e essa tarefa: o teste chegava a conferir o
+// foco antes de o efeito rodar (Q1). Por isso o foco é aguardado com waitFor,
+// sem afrouxar o que se exige: o foco tem que chegar ao elemento certo.
+async function expectFocusOn(getElement: () => Element | null) {
+  await waitFor(() => {
+    const target = getElement();
+    expect(target).not.toBeNull();
+    expect(document.activeElement).toBe(target);
+  });
+}
+
 async function expectNoAxeViolations(container: HTMLElement) {
   const results = await axe.run(container);
   expect(results.violations).toEqual([]);
@@ -82,7 +98,7 @@ describe("<Diagnostico /> — estados do formulário", () => {
 
     expect(screen.getByText(/Obrigado, Maria Souza\./)).toBeTruthy();
     expect(nameInput.isConnected).toBe(false);
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Pedido recebido!" }));
+    await expectFocusOn(() => screen.getByRole("heading", { name: "Pedido recebido!" }));
 
     await expectNoAxeViolations(container);
   });
@@ -103,7 +119,7 @@ describe("<Diagnostico /> — estados do formulário", () => {
 
     const link = screen.getByRole("link", { name: "fale com a gente pelo WhatsApp" });
     expect(link.getAttribute("href")).toContain("wa.me/5583999683670");
-    expect(document.activeElement?.textContent).toContain("Não foi possível enviar agora");
+    await expectFocusOn(() => screen.getByText(/Não foi possível enviar agora/).closest("p"));
 
     await expectNoAxeViolations(container);
   });
@@ -122,7 +138,7 @@ describe("<Diagnostico /> — estados do formulário", () => {
       expect(screen.getByText(/Foram muitas tentativas seguidas/)).toBeTruthy();
     });
 
-    expect(document.activeElement?.textContent).toContain("Foram muitas tentativas seguidas");
+    await expectFocusOn(() => screen.getByText(/Foram muitas tentativas seguidas/).closest("p"));
     await expectNoAxeViolations(container);
   });
 });
