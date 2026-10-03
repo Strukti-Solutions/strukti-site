@@ -89,7 +89,7 @@ Um `role write` reinicia os agentes que usam o papel. Por isso, só grave papéi
 3. Definição de pronto, tudo passando:
    - typecheck, lint, testes, build e `check:quarantine`;
    - hidratação com e sem reduced motion;
-   - `check:browser` em 9 larguras, sem rolagem lateral, sem elemento fixo cobrindo controle e com as interações (menu com Tab, vídeos);
+   - `check:browser` em 11 larguras (de 360 a 1440, com o espaçamento de texto do WCAG 1.4.12), sem rolagem lateral, sem elemento fixo cobrindo controle e com as interações (menu com Tab, vídeos);
    - WCAG AA.
 4. A Crivo revisa o delta até o APROVADO.
 5. Integração no `main` por merge (nunca rebase), conferindo que a ponta integrada é o SHA aprovado.
