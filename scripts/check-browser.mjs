@@ -5,7 +5,7 @@
 //   - em algum ponto da rolagem houver rolagem horizontal
 //     (scrollWidth > clientWidth), ou
 //   - o console do navegador registrar erro (ex.: hidratação divergente), ou
-//   - a 360 ou 390px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
+//   - a 360, 390, 1100 ou 1199px, o botão flutuante do WhatsApp (a.fab-whatsapp) cruzar a
 //     caixa de um botão, campo ou qualquer controle focável visível, em
 //     qualquer ponto da rolagem (regra aceita pelo Claudinho, proposta da
 //     Crivo na revisão DS1 — 2ª vez que o FAB cobria conteúdo).
@@ -19,12 +19,19 @@
 // (regra aceita pelo Claudinho, 2ª vez que um problema só aparecia depois
 // de uma interação — MASTER §8.8, src/lib/videoCoordination.ts).
 //
-// E percorre a página inteira com Tab a 360, 390 e 1024px: a barra do topo
-// é fixa e ocupa a largura toda (TB1), então nenhum controle focado pode
+// E percorre a página inteira com Tab a 360, 390, 1024 e 1200px: a barra do
+// topo é fixa e ocupa a largura toda (TB1), então nenhum controle focado pode
 // parar embaixo dela, nem pela metade, nem coberto por outro elemento fixo.
 // (No Chrome, a rolagem do foco centraliza o controle; o scroll-padding-top
 // do globals.css cobre as âncoras do menu e os outros navegadores. A
 // detecção foi conferida com um botão forçado para baixo da barra.)
+//
+// Por fim, aplica o espaçamento de texto da WCAG 1.4.12 (entrelinha 1,5,
+// letras +0,12em, palavras +0,16em, parágrafo +2em) de 360 a 1440px —
+// inclusive 1024–1110, onde o WhatsApp da barra ficava cortado (TB2) — e
+// falha se um controle da barra (ou do painel do Menu aberto) sair da tela
+// ou do container, se a barra cobrir a moldura do hero ou se a página
+// ganhar rolagem horizontal.
 //
 // Precisa do site no ar: `npm run dev` (ou `npm run start`) antes.
 // Uso: npm run check:browser [-- http://localhost:3000]
@@ -35,14 +42,23 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
-const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1280, 1440];
-const FAB_CHECK_WIDTHS = new Set([360, 390]);
+// 1199/1200: os dois lados do ponto da barra larga (75em, TB2).
+const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1199, 1200, 1280, 1440];
+// 1100/1199: desde a TB2 o FAB também existe entre 1024 e 1199px (abaixo do
+// ponto da barra larga), ao lado das seções em duas colunas.
+const FAB_CHECK_WIDTHS = new Set([360, 390, 1100, 1199]);
 const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
 const INTERACTION_WIDTH = 360;
-// 360/390: celular (regra do elemento fixo); 1024: a barra larga, com os links.
-const TAB_WALK_WIDTHS = [360, 390, 1024];
+// 360/390: celular (regra do elemento fixo); 1024: hero lado a lado com o
+// Menu; 1200: a barra larga, com os links.
+const TAB_WALK_WIDTHS = [360, 390, 1024, 1200];
 const TAB_WALK_MAX_STEPS = 200;
+// WCAG 1.4.12: de 1024 a 1110px o WhatsApp da barra ficava cortado (TB2).
+const TEXT_SPACING_WIDTHS = [360, 1024, 1060, 1110, 1199, 1200, 1280, 1440];
+const TEXT_SPACING_CSS =
+  "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } " +
+  "p { margin-bottom: 2em !important; }";
 
 // Pela estrutura, não pelo nome do projeto (que muda) — ver ProjectGrid.tsx
 // e OQueJaFizemos.tsx: o destaque vem antes da grade no DOM, então
@@ -274,6 +290,57 @@ const FOCUS_VS_TOPBAR_EXPR = `(async () => {
   return { active: label, centerCovered, underBar, top: Math.round(r.top), barBottom: bar ? Math.round(bar.getBoundingClientRect().bottom) : 0 };
 })()`;
 
+// Com o espaçamento do 1.4.12 já aplicado: cada controle visível da barra
+// (links, WhatsApp, Menu e, com o painel aberto, os itens dele) cabe na
+// tela e no container? A barra cobre a moldura do hero? A página rola de lado?
+const TOPBAR_SPACING_EXPR = `(async () => {
+  await document.fonts.ready;
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const cw = document.documentElement.clientWidth;
+  const bar = document.querySelector(".topbar");
+  const inner = document.querySelector(".topbar__bar");
+  const toggle = document.querySelector(".topbar__toggle");
+  const shown = (el) => {
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
+  };
+  const label = (el) => el.tagName.toLowerCase() + "." + String(el.className).trim().split(/\\s+/)[0] +
+    (el.textContent.trim() ? " (" + el.textContent.trim().slice(0, 24) + ")" : "");
+  const innerRect = inner.getBoundingClientRect();
+  const contentRight = innerRect.right - parseFloat(getComputedStyle(inner).paddingRight);
+  const contentLeft = innerRect.left + parseFloat(getComputedStyle(inner).paddingLeft);
+  const problems = [];
+  const measure = (where) => {
+    for (const el of bar.querySelectorAll("a[href], button")) {
+      if (!shown(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.left < -0.5 || r.right > cw + 0.5) {
+        problems.push(label(el) + " " + where + ": cortado (x " + Math.round(r.left) + "–" + Math.round(r.right) + ", tela " + cw + ")");
+      } else if (where === "na barra" && (r.right > contentRight + 0.5 || r.left < contentLeft - 0.5)) {
+        problems.push(label(el) + " na barra: passa do container (até x=" + Math.round(r.right) + ", conteúdo até " + Math.round(contentRight) + ")");
+      }
+    }
+  };
+  measure("na barra");
+  const frame = document.querySelector(".hero-video__frame");
+  if (frame && bar.getBoundingClientRect().bottom > frame.getBoundingClientRect().top + 0.5) {
+    problems.push("a barra cobre o topo da moldura do hero");
+  }
+  if (document.documentElement.scrollWidth > cw) {
+    problems.push("a página rola de lado (" + (document.documentElement.scrollWidth - cw) + "px)");
+  }
+  const menu = shown(toggle);
+  if (menu) {
+    toggle.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (bar.getAttribute("data-open") !== "true") problems.push("o Menu não abriu");
+    else measure("no painel do Menu");
+    toggle.click();
+  }
+  return { cw, mode: menu ? "Menu" : "barra larga", problems };
+})()`;
+
 async function evalValue(cdp, expression, { awaitPromise = false } = {}) {
   const { result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
     expression,
@@ -371,7 +438,7 @@ try {
 
   console.log(`Navegador: ${browserPath}\nPágina: ${URL_TO_CHECK}\n`);
   console.log(
-    "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390)",
+    "largura | reduced motion | rolagem horizontal (pior ponto) | erros no console | FAB x controle (360/390/1100/1199)",
   );
 
   for (const reduce of [false, true]) {
@@ -424,7 +491,7 @@ try {
     }
   }
 
-  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos do portfólio):`);
+  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos do portfólio; Tab pela página; espaçamento de texto 1.4.12):`);
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
@@ -548,6 +615,32 @@ try {
     }
   }
 
+  // --- WCAG 1.4.12: com o espaçamento de texto do usuário, nada da barra se perde ---
+  for (const width of TEXT_SPACING_WIDTHS) {
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width,
+      height: VIEWPORT_HEIGHT,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    loaded = cdp.once("Page.loadEventFired");
+    await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+    await withTimeout(loaded, `carregar para o espaçamento de texto a ${width}px`);
+    await sleep(800);
+    await evalValue(
+      cdp,
+      `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(TEXT_SPACING_CSS)}; document.head.appendChild(s); })()`,
+    );
+    const spacing = await withTimeout(
+      evalValue(cdp, TOPBAR_SPACING_EXPR, { awaitPromise: true }),
+      `espaçamento de texto a ${width}px`,
+    );
+    console.log(
+      `  1.4.12 a ${width}px (${spacing.mode}): ${spacing.problems.length === 0 ? "nada cortado, barra no container, moldura livre" : spacing.problems.join("; ")}`,
+    );
+    for (const problem of spacing.problems) failures.push(`espaçamento de texto (WCAG 1.4.12) a ${width}px: ${problem}`);
+  }
+
   for (const error of consoleErrors) {
     failures.push(`passo de interação: erro no console: ${error.split("\n")[0]}`);
   }
@@ -568,7 +661,8 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390px) em nenhuma largura. " +
+  "\nSem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1100/1199px) em nenhuma largura. " +
     "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima; " +
-    "no Tab pela página (360/390/1024px), nenhum controle focado fica sob a barra fixa do topo.",
+    "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
+    "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",
 );
