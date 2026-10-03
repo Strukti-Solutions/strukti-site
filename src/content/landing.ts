@@ -118,7 +118,7 @@ export const landingContent = {
       { label: "Dúvidas", href: "#duvidas" },
     ],
     whatsappButton: "Falar no WhatsApp",
-    /** Botão que abre o menu abaixo de 1024 px (barra do hero "video"). */
+    /** Botão que abre o menu abaixo de 75em, 1200 px (barra do hero "video"). */
     menuButton: "Menu",
   },
 

@@ -356,3 +356,19 @@ margem (`--hero-gutter`), e o texto alinha com a marca da barra e com as
 seções. O `check:browser` ganhou um percurso com Tab pela página a 360, 390
 e 1024 px, que falha se um controle focado parar sob a barra. Capturas em
 `docs/capturas-tb1/`.
+
+**Nota TB2 (03/10/2026, espaçamento de texto, WCAG 1.4.12, nível AA):** com
+o espaçamento do usuário (letras +0,12em, palavras +0,16em), o grupo de
+links e WhatsApp crescia de ~860 para ~1080 px. Entre 1024 e ~1137 px ele
+saía da tela, e o WhatsApp da barra fixa ficava cortado (achado da Crivo na
+TB1). Decisão do Nanquim, entre as duas saídas que o Claudinho aceitou:
+**subir o ponto da barra larga**, junto com o do FAB, de 1024 px para
+**75em** (1200 px com a fonte padrão). Descartada a barra que cresce: uma
+barra fixa de duas linhas exige medir a altura por JavaScript para a
+moldura do hero não ficar coberta, e come a tela de quem já precisa de
+espaço. Em `em`, o ponto também acompanha a fonte do navegador. Abaixo de
+75em vale o Menu e o FAB; a composição do hero continua mudando em 1024 px.
+Os respiros da barra larga passam a ser fluidos (16 → 32 e 20 → 48 px).
+O valor fica numa constante (`TOPBAR_WIDE_QUERY`), que o `TopBar.test.tsx`
+confere contra o CSS. O `check:browser` aplica o espaçamento do 1.4.12 de
+360 a 1440 px, inclusive 1024–1110.

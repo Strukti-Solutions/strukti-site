@@ -1,13 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { landingContent } from "@/content/landing";
-import { TopBar } from "./TopBar";
+import { TOPBAR_WIDE_QUERY, TopBar } from "./TopBar";
 
-// O que muda por largura (links na barra ≥ 1024 px, painel abaixo disso) é
-// CSS e fica com o check:browser; aqui vale o comportamento do menu.
+// O que muda por largura (links na barra ≥ 75em, painel abaixo disso) é CSS
+// e fica com o check:browser; aqui vale o comportamento do menu e a conferência
+// de que o CSS e o TopBar usam o mesmo ponto de corte.
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 function getToggle() {
@@ -95,5 +99,54 @@ describe("TopBar", () => {
 
     fireEvent.pointerDown(document.body);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("passar para a largura da barra larga fecha o painel", () => {
+    let onChange: (() => void) | undefined;
+    const wide = {
+      matches: false,
+      addEventListener: (_type: string, listener: () => void) => {
+        onChange = listener;
+      },
+      removeEventListener: () => {},
+    };
+    const matchMedia = vi.fn(() => wide);
+    vi.stubGlobal("matchMedia", matchMedia);
+    render(<TopBar />);
+    const toggle = getToggle();
+
+    fireEvent.click(toggle);
+    expect(matchMedia).toHaveBeenCalledWith(TOPBAR_WIDE_QUERY);
+    wide.matches = true;
+    act(() => onChange?.());
+
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
+// TB2 (WCAG 1.4.12): o ponto da barra larga é um só. Se o CSS e o TopBar
+// divergirem, numa faixa de larguras o painel fica aberto sem botão, ou o
+// FAB some sem o WhatsApp da barra à mostra.
+describe("ponto de corte da barra larga", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
+  const start = css.indexOf("/* 8b. Barra do topo");
+  const end = css.indexOf("/* 8c. Hero com vídeo");
+  const topbarSection = css.slice(start, end);
+
+  it("é 75em, em em, para acompanhar a fonte do navegador", () => {
+    expect(TOPBAR_WIDE_QUERY).toBe("(min-width: 75em)");
+  });
+
+  it("a seção da barra no globals.css troca de layout só nesse ponto", () => {
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const queries = [...topbarSection.matchAll(/@media \((min|max)-width: [^)]+\)/g)].map((m) => m[0]);
+    expect(queries).toContain(`@media ${TOPBAR_WIDE_QUERY}`);
+    expect(queries.filter((q) => q !== `@media ${TOPBAR_WIDE_QUERY}` && q !== "@media (min-width: 80em)")).toEqual([]);
+  });
+
+  it("a altura da barra larga e a regra do FAB usam o mesmo ponto", () => {
+    expect(css).toMatch(/@media \(min-width: 75em\) \{\s*:root \{\s*--topbar-height: 60px;/);
+    expect(css).toMatch(/@media \(min-width: 75em\) \{\s*\.topbar ~ \.fab-whatsapp \{\s*display: none;/);
   });
 });
