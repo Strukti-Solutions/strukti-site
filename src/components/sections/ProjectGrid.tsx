@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type Ref } from "react";
 import type { Project } from "@/content/landing";
+import { Palco } from "@/components/ui/Palco";
+import { SeloStatus } from "@/components/ui/SeloStatus";
+import { pauseOtherVideos } from "@/lib/videoCoordination";
 
 /** Quantos cartões a grade mostra antes do botão "Mostrar mais projetos". */
 export const PROJECT_GRID_STEP = 6;
 
 interface ProjectGridLabels {
-  title: string;
   showMore: string;
   /** Nome acessível do botão de reproduzir; `{nome}` vira o nome do projeto. */
   playLabel: string;
@@ -21,8 +23,9 @@ interface ProjectGridProps {
 }
 
 /**
- * Grade de projetos do portfólio (MASTER §8.8): parede de cartões com pôster
- * 16:9. O vídeo só carrega quando a pessoa clica em reproduzir — o pôster dá
+ * Grade dos aplicativos (MASTER §8.8): parede de cartões, cada um com o
+ * pôster 16:9 do app num palco (MASTER §8.13) e o nome em H3, sob o H2 da
+ * seção. O vídeo só carrega quando a pessoa clica em reproduzir — o pôster dá
  * lugar ao player no mesmo lugar, tocando, com o foco nele — e só um toca
  * por vez. Com mais de 6 projetos, o restante aparece pelo botão "Mostrar
  * mais projetos", sem mudar de página, e o foco vai para o primeiro cartão
@@ -50,9 +53,18 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
     }
   }, [expanded]);
 
+  // Só um vídeo toca por vez na página (MASTER §8.8), inclusive o hero
+  // "video", se estiver em uso. "play" não borbulha: ouvir na captura.
+  useEffect(() => {
+    const onPlay = (event: Event) => {
+      if (event.target instanceof HTMLVideoElement) pauseOtherVideos(event.target);
+    };
+    document.addEventListener("play", onPlay, true);
+    return () => document.removeEventListener("play", onPlay, true);
+  }, []);
+
   return (
     <div className="portfolio__more">
-      <h3 className="block-title portfolio__more-title">{labels.title}</h3>
       <ul className={wallClass}>
         {visible.map((project, index) => (
           <ProjectCard
@@ -95,7 +107,15 @@ interface ProjectCardProps {
   wide: boolean;
 }
 
-function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descriptionLinkLabel, wide }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  playing,
+  onPlay,
+  playLabel,
+  playButtonRef,
+  descriptionLinkLabel,
+  wide,
+}: ProjectCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -104,48 +124,52 @@ function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descr
 
   return (
     <li className={wide ? "project-card project-card--wide" : "project-card"}>
-      <div className="project-card__media">
-        {playing ? (
-          <video
-            ref={videoRef}
-            controls
-            autoPlay
-            preload="metadata"
-            poster={project.video.poster}
-            className="portfolio__video"
-            aria-label={project.video.accessibleName}
-          >
-            <source src={project.video.src} type="video/mp4" />
-          </video>
-        ) : (
-          <button
-            ref={playButtonRef}
-            type="button"
-            className="project-card__play"
-            onClick={onPlay}
-            aria-label={playLabel}
-          >
-            <Image
-              src={project.video.poster}
-              alt=""
-              fill
-              sizes={
-                wide
-                  ? "(min-width: 1024px) 700px, 100vw"
-                  : "(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
-              }
-              unoptimized
-            />
-            <span className="project-card__play-icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 20 20" focusable="false">
-                <path d="M6 3.5v13l10.5-6.5L6 3.5Z" fill="currentColor" />
-              </svg>
-            </span>
-          </button>
-        )}
-      </div>
+      {/* A tela do app no lugar do objeto, no palco (spec §3.3). */}
+      <Palco className="project-card__palco">
+        <div className="project-card__media">
+          {playing ? (
+            <video
+              ref={videoRef}
+              controls
+              autoPlay
+              preload="metadata"
+              poster={project.video.poster}
+              className="portfolio__video"
+              aria-label={project.video.accessibleName}
+            >
+              <source src={project.video.src} type="video/mp4" />
+            </video>
+          ) : (
+            <button
+              ref={playButtonRef}
+              type="button"
+              className="project-card__play"
+              onClick={onPlay}
+              aria-label={playLabel}
+            >
+              <Image
+                src={project.video.poster}
+                alt=""
+                fill
+                sizes={
+                  wide
+                    ? "(min-width: 1024px) 700px, 100vw"
+                    : "(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+                }
+                unoptimized
+              />
+              <span className="project-card__play-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 20 20" focusable="false">
+                  <path d="M6 3.5v13l10.5-6.5L6 3.5Z" fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          )}
+        </div>
+      </Palco>
       <div className="project-card__body">
-        <h4 className="block-title">{project.name}</h4>
+        {project.status && <SeloStatus status={project.status} />}
+        <h3 className="block-title">{project.name}</h3>
         <p className="project-card__summary">{project.summary}</p>
         {project.platforms.length > 0 && (
           <ul className="tags">

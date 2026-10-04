@@ -1478,42 +1478,8 @@ video:focus-visible {
 }
 
 /* ------------------------------------------------------------------ */
-/* 11. Portfólio de vídeos (MASTER §8.8)                               */
+/* 11. Grade de vídeos dos aplicativos (MASTER §8.8)                   */
 /* ------------------------------------------------------------------ */
-.tilt-card__title {
-  max-width: 48rem;
-}
-
-.tilt-card__frame {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  margin-top: var(--space-6);
-  padding: 6px;
-  border: 1px solid var(--color-navy-600);
-  border-radius: var(--radius-3);
-  background-color: var(--color-navy-800);
-  box-shadow: var(--shadow-screen);
-}
-
-@media (min-width: 768px) {
-  .tilt-card__frame {
-    margin-top: var(--space-7);
-    padding: 8px;
-  }
-}
-
-.tilt-card__screen {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: var(--radius-2);
-  background-color: #000000;
-}
-
-.portfolio__video-title {
-  margin-top: var(--space-6);
-}
-
 .portfolio__video {
   width: 100%;
   height: 100%;
@@ -1544,49 +1510,8 @@ video:focus-visible {
   color: var(--text-muted);
 }
 
-.highlights {
-  display: grid;
-  gap: var(--space-5) var(--space-7);
-  margin: var(--space-7) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 768px) {
-  .highlights {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Marcador = o ponto do i do logo (MASTER §1). */
-.highlights > li {
-  position: relative;
-  padding-left: 26px;
-  color: var(--text-muted);
-}
-
-.highlights > li::before {
-  content: "";
-  position: absolute;
-  top: 0.55em;
-  left: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #1c93f2;
-}
-
-.highlights strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
 .portfolio__more {
   margin-top: var(--space-9);
-}
-
-.portfolio__more-title {
-  margin-bottom: var(--space-5);
 }
 
 .project-card {
@@ -1707,46 +1632,6 @@ video:focus-visible {
     column-gap: calc(100% / 12 + var(--space-5));
     align-items: start;
   }
-}
-
-.diag__highlight {
-  margin: var(--space-5) 0 0;
-  color: var(--text);
-  font-weight: 600;
-}
-
-.diag__steps-title {
-  margin-top: var(--space-7);
-  margin-bottom: var(--space-4);
-}
-
-.step {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.step__number {
-  min-width: 1.4ch;
-  color: var(--color-electric-700);
-  font-size: 2rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  font-variation-settings: "SHRP" 100;
-  line-height: 1;
-}
-
-.step__text {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-.step__text strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text);
-  font-weight: 640;
 }
 
 .form-card {
@@ -2208,4 +2093,556 @@ textarea.field__input {
 
 .prose li + li {
   margin-top: var(--space-1);
+}
+
+/* ------------------------------------------------------------------ */
+/* DS v3 — palco, selos, ficha técnica (MASTER §8.13–8.15)              */
+/* ------------------------------------------------------------------ */
+.palco {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+  background: linear-gradient(180deg, var(--color-navy-950) 0%, var(--color-navy-900) 100%);
+}
+
+.palco__luz {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(55% 45% at 50% 42%, rgb(1 133 231 / 0.45), transparent 70%),
+    linear-gradient(90deg, transparent 15%, rgb(0 209 216 / 0.55) 50%, transparent 85%) bottom / 100% 1px no-repeat;
+  filter: blur(0.5px);
+}
+
+.palco__conteudo {
+  position: relative;
+  height: 100%;
+}
+
+/* Etiqueta: raio de 4 px (§5.3, sem pílula) e 14 px, o mínimo absoluto (§4). */
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 10px;
+  border-radius: var(--radius-1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.selo--piloto {
+  background: var(--color-cyan-400);
+  color: var(--color-navy-950);
+}
+
+.selo--desenvolvimento {
+  border-color: var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
+.selo--em-uso {
+  background: var(--color-navy-700);
+  color: #ffffff;
+}
+
+.selo--em-breve {
+  border: 1px dashed var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
+/* Fica no canto do palco, sobre o escuro; mesmo tamanho mínimo do selo (14 px). */
+.selo--ilustracao {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  margin: 0;
+  color: var(--color-navy-200);
+}
+
+/* Selos sobre papel (superfície clara): troca as cores dos contornos. */
+.surface-paper .selo--desenvolvimento,
+.surface-paper .selo--em-breve {
+  border-color: var(--color-navy-500);
+  color: var(--color-navy-800);
+}
+
+.ficha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5) var(--space-6);
+  margin: var(--space-5) 0;
+}
+
+.ficha__item {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.ficha__valor {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  font-variation-settings: "SHRP" 100;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.ficha__rotulo {
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+}
+
+/* ------------------------------------------------------------------ */
+/* Catálogo: produtos, aplicativos, chamada (spec 2026-10-03 §4)        */
+/* ------------------------------------------------------------------ */
+.produtos {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 1024px) {
+  .produtos {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.produto {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-3);
+  background-color: var(--surface-raised);
+}
+
+.produto__palco {
+  aspect-ratio: 8 / 5;
+}
+
+.produto__palco img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produto__corpo > * + * {
+  margin-top: var(--space-3);
+}
+
+.produto__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* Aplicativos: a tela do app no lugar do objeto, no palco (MASTER §8.13). O
+   palco é o topo do cartão (rente às bordas dele, como era o pôster) e deixa
+   uma moldura em volta da tela, onde aparecem a luz de estúdio e o contorno
+   ciano do chão; mais folga embaixo, no chão. A tela continua 16:9, então o
+   pôster e o vídeo ficam inteiros. */
+.project-card__palco {
+  padding: clamp(12px, 5%, var(--space-6)) clamp(12px, 5%, var(--space-6)) clamp(18px, 8%, var(--space-7));
+  border-radius: 0;
+}
+
+.project-card__palco .project-card__media {
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-screen);
+}
+
+/* Sem o título "Outros projetos", a grade vem logo depois do .section-head:
+   o respiro é o dele (48 px), não os 96 px do portfólio antigo. */
+.aplicativos .portfolio__more {
+  margin-top: 0;
+}
+
+/* Selo acima do nome do app, sem encostar no título. */
+.project-card__body .selo {
+  margin-bottom: var(--space-3);
+}
+
+.chamada {
+  max-width: 62ch;
+}
+
+/* Mesmo respiro do .section-head entre o título e o texto. */
+.chamada .lead {
+  margin-top: var(--space-4);
+}
+
+.chamada .btn {
+  margin-top: var(--space-5);
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero "estudio" (MASTER §9.7)                                         */
+/* ------------------------------------------------------------------ */
+/* O quadro (pôster e canvas) ocupa a 1ª tela, e os textos vêm por cima dele:
+   a abertura e, depois, "Como funciona" e os passos. Com animação
+   (data-scrub="true", só depois de montar), o fundo fica preso na tela
+   inteira enquanto os textos rolam por cima, e só o bloco em foco aparece
+   (data-active). Sem animação é a mesma marcação: o fundo é só a 1ª tela, e
+   os passos vêm logo depois, em lista. Em scroll 0 os dois modos são iguais.
+
+   Enquadramento: em qualquer quadro do giro, a peça fica entre 9% e 92% da
+   altura do quadro e entre 30% e 70% da largura (15% e 85% no celular),
+   medido nos PNG do render, com margem. O quadro é dimensionado pela peça:
+   ela fica inteira, abaixo da barra, em qualquer tela. */
+.hero-estudio {
+  --he-barra: calc(var(--topbar-height) + var(--topbar-joint));
+  --he-folga: var(--space-4);
+  --he-peca-topo: 0.09;
+  --he-peca-altura: 0.83;
+  --he-esquerda: max(var(--gutter), (100% - var(--content-max)) / 2);
+  /* Celular e telas em pé: o quadro em cima, na largura toda, com a peça
+     logo abaixo da barra; o texto embaixo dele, depois de uma faixa de 2rem
+     em degradê (onde o texto que sobe some aos poucos, sem corte seco). */
+  --he-qh: min(52svh, 112.5vw);
+  --he-qtopo: calc(var(--he-barra) + var(--he-folga) - var(--he-peca-topo) * var(--he-qh));
+  --he-texto-topo: calc(var(--he-qtopo) + var(--he-qh) + var(--space-6));
+  position: relative;
+  background: var(--color-navy-950);
+}
+
+@media (min-width: 768px) {
+  /* Tela em pé com os quadros do computador (16:10). */
+  .hero-estudio {
+    --he-qh: min(52svh, 62.5vw);
+  }
+}
+
+/* No celular o fundo fica por cima dos textos (que passam por baixo do
+   quadro, como passam por baixo da barra); lado a lado, fica atrás deles. Não
+   recebe clique: os links embaixo continuam clicáveis onde aparecem.
+
+   A sobreposição é dos textos (margem negativa neles, abaixo), não do fundo:
+   o sticky segura a caixa de margem do fundo dentro da seção, então, com ela
+   do tamanho do fundo (100svh, sem margem), ele solta exatamente quando o
+   hero acaba e nunca cobre a seção seguinte (Produtos, destino de "Conhecer
+   o replay"). */
+.hero-estudio__fundo {
+  position: relative;
+  z-index: 2;
+  height: 100svh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Celular: uma faixa opaca do topo da tela até o pé do quadro, atrás dele e
+   por cima dos textos, esconde o texto que passa por baixo das bordas em
+   degradê do quadro (e atrás do selo); abaixo do pé do quadro, um degradê de
+   2rem, até onde os textos começam, faz o texto sumir e surgir aos poucos. */
+.hero-estudio__fundo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--he-texto-topo);
+  background: linear-gradient(to bottom, var(--color-navy-950) calc(100% - var(--space-6)), transparent);
+}
+
+.hero-estudio__quadro {
+  position: absolute;
+  top: var(--he-qtopo);
+  left: 50%;
+  height: var(--he-qh);
+  aspect-ratio: 8 / 9;
+  max-width: 100%;
+  transform: translateX(-50%);
+  /* As bordas do quadro se desfazem no fundo da seção (navy-950), sem costura.
+     Na largura toda (celular), o lado só precisa de 4%. */
+  --he-mascara-lado: 4%;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 var(--he-mascara-lado), #000 calc(100% - var(--he-mascara-lado)), transparent),
+    linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--he-mascara-lado), #000 calc(100% - var(--he-mascara-lado)), transparent),
+    linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+  mask-composite: intersect;
+}
+
+/* Celular: o chão iluminado do quadro se desfaz no fundo abaixo da peça (que
+   vai até 92% da altura), sem emenda clara no pé do quadro. */
+.hero-estudio__quadro::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 92%, var(--color-navy-950));
+}
+
+@media (min-width: 768px) {
+  .hero-estudio__quadro {
+    aspect-ratio: 16 / 10;
+  }
+
+  /* Um celular que montou em pé (quadros 8:9) e girou para deitado ganha um
+     quadro 16:10: o quadro 8:9 aparece inteiro no meio (contain, de 22,2% a
+     77,8% da largura), em vez de perder o topo e o pé da peça no cover. As
+     laterais dele se desfazem no pôster de trás (a peça, entre 30,5% e 69,4%,
+     fica fora do degradê). data-conjunto vem do efeito. */
+  .hero-estudio__canvas[data-conjunto="celular"] {
+    object-fit: contain;
+    -webkit-mask-image: linear-gradient(to right, transparent 22.2%, #000 29.5%, #000 70.5%, transparent 77.8%);
+    mask-image: linear-gradient(to right, transparent 22.2%, #000 29.5%, #000 70.5%, transparent 77.8%);
+  }
+}
+
+.hero-estudio__poster,
+.hero-estudio__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* O canvas só aparece com um quadro desenhado e com a animação ligada. */
+.hero-estudio__canvas {
+  visibility: hidden;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__canvas[data-frame] {
+  visibility: visible;
+}
+
+/* Sempre à vista: logo abaixo da peça, no canto direito do quadro. */
+.hero-estudio__selo {
+  top: calc(var(--he-qtopo) + 0.93 * var(--he-qh));
+  right: var(--he-esquerda);
+  bottom: auto;
+}
+
+/* Régua do bloco em foco: o meio desta área é a linha de leitura. */
+.hero-estudio__area {
+  position: absolute;
+  inset: var(--he-texto-topo) 0 0;
+  pointer-events: none;
+}
+
+/* Os textos sobem 100svh e passam por cima (ou, no celular, por baixo) do fundo. */
+.hero-estudio__textos {
+  position: relative;
+  z-index: 1;
+  margin-top: -100svh;
+  padding: 0 var(--he-esquerda) var(--space-7);
+}
+
+.hero-estudio__abertura {
+  min-height: 100svh;
+  padding: var(--he-texto-topo) 0 var(--space-6);
+}
+
+/* O foco do teclado (Tab para trás) nunca para debaixo do quadro: o botão
+   para em texto-topo + 12 px. O scroll-padding-top do html (barra + 16 px)
+   já se soma a esta margem, então ela o desconta. */
+.hero-estudio__abertura a {
+  scroll-margin-top: calc(var(--he-texto-topo) + var(--space-3) - var(--header-height) - 16px);
+}
+
+.hero-estudio__eyebrow {
+  margin: 0 0 var(--space-3);
+  color: var(--color-cyan-300);
+  font-weight: 600;
+}
+
+.hero-estudio__title {
+  font-size: clamp(2rem, min(4vw, 7svh), 3.5rem);
+  font-weight: 800;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.05;
+  margin-bottom: var(--space-4);
+}
+
+.hero-estudio__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* "Como funciona" no estilo do sobretítulo do hero, sem caixa-alta (MASTER §10). */
+.hero-estudio__como-titulo {
+  margin: 0 0 var(--space-5);
+  color: var(--color-cyan-300);
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.hero-estudio__passos {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-estudio__passo-num {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--color-cyan-300);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.hero-estudio__passo-texto {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.hero-estudio__passo-texto strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--text);
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: 800;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.1;
+}
+
+/* ---------- Com animação ---------- */
+.hero-estudio[data-scrub="true"] .hero-estudio__fundo {
+  position: sticky;
+  top: 0;
+}
+
+/* Cada passo ocupa a área de texto (uma "tela" de leitura) e se centra nela;
+   sem respiro no pé, o último chega ao meio da área quando o fundo solta. */
+.hero-estudio[data-scrub="true"] .hero-estudio__textos {
+  padding-bottom: 0;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__passos {
+  gap: 0;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__passo {
+  display: grid;
+  align-content: center;
+  min-height: calc(100svh - var(--he-texto-topo));
+}
+
+/* Só o bloco em foco aparece; os outros somem com um deslize curto. */
+.hero-estudio[data-scrub="true"] .hero-estudio__bloco-texto,
+.hero-estudio[data-scrub="true"] .hero-estudio__como-titulo {
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__bloco[data-active="false"] > .hero-estudio__bloco-texto,
+.hero-estudio[data-scrub="true"] .hero-estudio__como-titulo[data-active="false"] {
+  opacity: 0;
+  transform: translateY(var(--space-4));
+  pointer-events: none;
+}
+
+/* O bloco com o foco do teclado nunca some (WCAG 2.4.7). */
+.hero-estudio[data-scrub="true"] .hero-estudio__bloco:focus-within > .hero-estudio__bloco-texto {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* ---------- Lado a lado: tela deitada a partir de 768 px ---------- */
+/* A peça fica à direita (centro a 63% da largura), inteira entre a barra e a
+   faixa do selo, sem passar de 40% da largura; o texto fica à esquerda dela,
+   sobre a parte escura do quadro. */
+@media (min-width: 768px) and (min-aspect-ratio: 5/4) {
+  .hero-estudio {
+    --he-folga-pe: 3.5rem;
+    --he-qh: min((100svh - var(--he-barra) - var(--he-folga) - var(--he-folga-pe)) / var(--he-peca-altura), 62.5vw);
+    --he-centro-y: calc((var(--he-barra) + var(--he-folga) + 100svh - var(--he-folga-pe)) / 2);
+  }
+
+  .hero-estudio__quadro {
+    top: calc(var(--he-centro-y) - 0.505 * var(--he-qh));
+    left: calc(63% - 0.8 * var(--he-qh));
+    max-width: none;
+    transform: none;
+    --he-mascara-lado: 12%;
+  }
+
+  .hero-estudio__quadro::after,
+  .hero-estudio__fundo::before {
+    content: none;
+  }
+
+  .hero-estudio__fundo {
+    z-index: 0;
+  }
+
+  .hero-estudio__selo {
+    top: auto;
+    bottom: var(--space-4);
+  }
+
+  .hero-estudio__area {
+    inset: var(--he-barra) auto 0 0;
+    width: 50%;
+  }
+
+  /* A coluna de texto termina antes da peça (borda esquerda: 63% − 0,32 × a altura do quadro). */
+  .hero-estudio__textos {
+    padding-right: calc(37% + 0.32 * var(--he-qh) + var(--space-7));
+  }
+
+  .hero-estudio__bloco-texto,
+  .hero-estudio__como-titulo {
+    max-width: 34rem;
+  }
+
+  .hero-estudio__abertura a {
+    scroll-margin-top: 0;
+  }
+
+  /* Na coluna ao lado da peça, o título acompanha a altura da tela, para a
+     abertura caber inteira (com os botões) na 1ª tela. */
+  .hero-estudio__title {
+    font-size: clamp(2rem, min(3.2vw, 6svh), 3rem);
+  }
+
+  .hero-estudio__abertura .lead {
+    font-size: clamp(1rem, min(2.6svh, 1.6vw), 1.125rem);
+  }
+
+  /* A abertura se centra na 1ª tela, abaixo da barra; mais alta que ela, começa no topo. */
+  .hero-estudio__abertura {
+    display: grid;
+    align-content: safe center;
+    padding: var(--he-barra) 0 0;
+  }
+
+  .hero-estudio__como {
+    padding-top: var(--space-7);
+  }
+
+  /* Cada passo tem a altura útil menos 12rem: em foco, o texto (até 12rem de
+     altura) nunca chega à barra. */
+  .hero-estudio[data-scrub="true"] .hero-estudio__passo {
+    min-height: calc(100svh - var(--he-barra) - 12rem);
+  }
+
+  /* "Como funciona" fica preso no alto da coluna enquanto os passos passam. */
+  .hero-estudio[data-scrub="true"] .hero-estudio__como-titulo {
+    position: sticky;
+    top: calc(var(--he-barra) + var(--space-6));
+    z-index: 1;
+  }
+
+  /* O último passo chega ao meio da área de texto quando o fundo solta:
+     (altura útil − altura do passo) / 2 = 6rem. */
+  .hero-estudio[data-scrub="true"] .hero-estudio__textos {
+    padding-bottom: 6rem;
+  }
 }

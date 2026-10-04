@@ -35,3 +35,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Brainstorm (mockups locais do companion visual)
+.superpowers/
+
+# Render do hero 3D (PNGs intermediários; os AVIF vão para public/)
+.hero-render/

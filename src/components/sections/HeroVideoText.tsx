@@ -26,7 +26,7 @@ export function HeroVideoText() {
         <WhatsAppButton message={landingContent.whatsappMessages.general} className="btn--pill">
           {primaryCta}
         </WhatsAppButton>
-        <motion.a href="#diagnostico" className="btn btn--outline btn--pill btn--arrow" {...tapHover}>
+        <motion.a href="#contato" className="btn btn--outline btn--pill btn--arrow" {...tapHover}>
           {secondaryCta}
           <span className="btn__arrow" aria-hidden="true">
             <svg viewBox="0 0 20 20" width="18" height="18" focusable="false">

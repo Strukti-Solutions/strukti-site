@@ -19,7 +19,7 @@ function getToggle() {
 }
 
 describe("TopBar", () => {
-  it("tem a marca, os 5 links das seções e o WhatsApp com os textos aprovados", () => {
+  it("tem a marca, os links das seções e o WhatsApp com os textos aprovados", () => {
     render(<TopBar />);
 
     expect(screen.getByRole("img", { name: "Strukti Soluções" })).toBeTruthy();

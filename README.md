@@ -1,7 +1,8 @@
 # Site da Strukti Soluções
 
-Landing page da Strukti Soluções, organizada pelos problemas do nicho (distribuidoras e
-indústrias pequenas), com formulário de diagnóstico gratuito.
+Site da Strukti Soluções, vitrine da marca-mãe: produtos de hardware (replay para quadras,
+estacionamento inteligente) e aplicativos sob medida, com um formulário único de contato, em
+que a pessoa escolhe o assunto (replay, estacionamento, aplicativo ou outro).
 
 ## Stack
 
@@ -88,12 +89,37 @@ CREATE TABLE leads (
   name TEXT NOT NULL,
   company TEXT NOT NULL,
   whatsapp TEXT NOT NULL,
+  interest TEXT NOT NULL CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro')),
   problem TEXT NOT NULL,
   consent_at TIMESTAMPTZ NOT NULL,
   privacy_version TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
+
+Banco criado antes do campo "interesse" (ADR-009)? Migre nesta ordem:
+
+1. **Antes do deploy**, crie a coluna com valor padrão `'aplicativo'`. Os leads
+   antigos ficam com esse valor porque vieram do formulário de diagnóstico
+   gratuito de aplicativos, o único que existia.
+
+   ```sql
+   ALTER TABLE leads ADD COLUMN interest TEXT NOT NULL DEFAULT 'aplicativo';
+   ALTER TABLE leads ADD CONSTRAINT leads_interest_check
+     CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro'));
+   ```
+
+2. Faça o deploy do site novo.
+3. **Só depois do deploy**, se quiser, tire o padrão (o código novo sempre
+   manda o `interest`):
+
+   ```sql
+   ALTER TABLE leads ALTER COLUMN interest DROP DEFAULT;
+   ```
+
+Por que nessa ordem: sem a coluna, o código novo dá `500` em todo envio; com a
+coluna sem padrão antes do deploy, quem dá `500` é o código antigo, que não
+manda o `interest`.
 
 `consent_at` e `privacy_version` registram quando a pessoa consentiu e qual versão
 do aviso de privacidade estava em vigor (LGPD, art. 8º — o controlador precisa
@@ -112,7 +138,7 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário, acessibilidade (axe) e hidratação da página inteira com e sem prefers-reduced-motion |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
 | `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
-| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto), toca os vídeos do portfólio (só um por vez) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo. Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero. Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
+| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Lê a variante do hero no HTML (`<main data-hero-variant>`, de `siteConfig.heroVariant`): com "estudio", a 1440×900 (lado a lado) e a 360×740 (celular, quadro em cima), confere que a rolagem troca o quadro do canvas (0 no topo, outro no meio da seção), que, com reduced motion, o hero fica no pôster, sem quadro desenhado e sem altura extra (a mesma altura da página sem JavaScript, com folga de 10% da tela), e que, com a animação, ao rolar até `#produtos` o fundo preso do hero já soltou: falha se ele ainda cobrir o topo da seção (pelo retângulo dele e pelo `elementFromPoint` em 6 pontos). Falha também se a seção `.hero-estudio` não existir; com outra variante, avisa "passo pulado". Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto), toca os vídeos dos aplicativos (só um por vez) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo. Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero. Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
 
 ### Definição de pronto
 
@@ -136,35 +162,65 @@ src/
     privacidade/           aviso de privacidade (LGPD)
     opengraph-image.tsx    imagem de compartilhamento gerada por código (next/og)
   components/
-    sections/               um componente por seção da landing page
+    sections/               um componente por seção da home, na ordem da página:
+      HeroSequence.tsx        hero "estudio" (+ HeroSequenceScroller.tsx: quadros guiados pela rolagem)
+      Produtos.tsx            produtos de hardware (replay e estacionamento inteligente)
+      Aplicativos.tsx         aplicativos sob medida (grade de vídeos de ProjectGrid.tsx)
+      ChamadaHardware.tsx     "Tem um problema que pede hardware?"
+      ComoResolvemos.tsx      "Como trabalhamos" (etapas)
+      Equipe.tsx              nomes e cursos
+      Contato.tsx             formulário único, com o assunto (interesse)
+      Faq.tsx, Rodape.tsx     dúvidas e rodapé
+    ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica) e
+                            blackhole-hero-section (o buraco negro do hero "classic")
+    InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
-  config/site.ts            dados de contato, equipe e versão do aviso de privacidade
+  config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
   content/landing.ts        todo o texto da página, incluindo o aviso de privacidade
   lib/
+    heroSequence.ts         matemática do hero "estudio" (progresso → quadro, conjunto, URLs)
+    interest.ts             assuntos do formulário e o evento que marca o assunto
     validation.ts           schema Zod compartilhado (cliente + servidor)
     rateLimit.ts             limite de taxa simples em memória
     repository/              interface + implementação Postgres para gravar leads
 ```
 
-O texto em `src/content/landing.ts` é o texto aprovado pelo cliente em
-`docs/landing-copy.md` (v1.1). Qualquer mudança de texto deve primeiro ser
+O texto em `src/content/landing.ts` é o texto aprovado pelo Thiago em
+`docs/landing-copy.md` (v2.0). Qualquer mudança de texto deve primeiro ser
 aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-Há duas versões do topo da página (barra + hero), escolhidas numa linha de
+Há três versões do topo da página (barra + hero), escolhidas numa linha de
 `src/config/site.ts`:
 
 ```ts
-heroVariant: "video", // ou "classic"
+heroVariant: "estudio", // ou "video" ou "classic"
 ```
 
-- `"video"` (padrão) — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
+- `"estudio"` (padrão) — `HeroSequence.tsx` + `TopBar.tsx`: o botão de
+  replay em 3D, num quadro em tela inteira, gira conforme a rolagem, e os
+  textos passam por cima dele (a abertura; depois, "Como funciona" e os 3
+  passos do replay).
+- `"video"` — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
   palavra "Strukti" gigante e a barra fixa no topo, de borda a borda, com
   menu recolhível abaixo de 75em, 1200px com a fonte padrão (`MASTER.md`
   §8.3.1 e §9.6, ADR-007 e as notas TB1 e TB2).
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
+
+Com `"video"` ou `"classic"`, "Como funciona" e os 3 passos do replay
+aparecem no cartão do replay em Produtos (no `"estudio"`, eles ficam no hero).
+
+**O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
+de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de
+1600 × 1000 no computador; 45 de 800 × 900 até 767px), escolhida pela
+rolagem dentro da seção (`HeroSequenceScroller.tsx`, com a matemática em
+`src/lib/heroSequence.ts`). O pôster (quadro 0, AVIF com JPG de reserva) vem
+no HTML; com reduced motion, "economizar dados", sem JavaScript ou se os
+quadros falharem, o hero fica parado no pôster e a seção perde a altura
+extra. Os quadros saem do Blender e do encode descritos em
+`scripts/hero-3d/README.md`; os tamanhos ficam em `siteConfig.heroSequence`.
 
 **Trocar o vídeo do hero "video":** os arquivos ficam em
 `public/video/hero/` (servidos pelo site, nunca de CDN) e são apontados em
@@ -246,8 +302,8 @@ defesa distribuída contra spam coordenado.
   renderiza conteúdo de usuário nem carrega script de terceiro — se isso
   mudar um dia, reavalie (ver ADR-008). Ao mexer em domínios externos
   (fonte, vídeo, script de terceiro), ajuste a CSP ali e rode
-  `npm run check:browser` de novo — ela cobre o vídeo do hero, do
-  portfólio **e falha em qualquer violação de CSP** (fonte/imagem/mídia/
+  `npm run check:browser` de novo — ela cobre os quadros do hero, os vídeos
+  dos aplicativos **e falha em qualquer violação de CSP** (fonte/imagem/mídia/
   script bloqueado), não só erro de console.
 - A rota `POST /api/diagnostico` exige `Content-Type: application/json`, confere
   que a origem bate com o host (quando o cabeçalho `Origin` vem preenchido),
@@ -255,8 +311,8 @@ defesa distribuída contra spam coordenado.
 
 ## LGPD
 
-O formulário de diagnóstico coleta nome, empresa, WhatsApp e a descrição do
-problema. A gravação exige consentimento explícito (checkbox não pré-marcado),
+O formulário de contato coleta nome, empresa, WhatsApp, o assunto (interesse)
+e a mensagem. A gravação exige consentimento explícito (checkbox não pré-marcado),
 registra `consent_at` e `privacy_version`, e o aviso de privacidade completo está
 em `/privacidade`. A rota de API nunca loga os dados pessoais enviados; para
 conter spam, registra por pouco tempo o IP de quem envia (declarado no aviso).
@@ -330,6 +386,15 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
    `check:placeholders`. Falta só o texto que um humano lê: a mensagem de
    compartilhamento da equipe (`docs/landing-copy.md`). Definir `SITE_URL`
    na Vercel antes do lançamento continua pendente.
+3. **Curso de cada pessoa da equipe** — `siteConfig.team[].course`
+   (`src/config/site.ts`), hoje 4 vezes `[A PREENCHER: curso]`.
+
+O grupo decide se bloqueia: **fotos da equipe**. A página funciona com as
+iniciais no hexágono.
+
+Não bloqueia: **endereço do site próprio do replay**
+(`landingContent.produtos.replay.siteUrl`). Enquanto for `null`, o link "Ver o
+site do replay" fica escondido.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
 Rode `npm run check:placeholders` antes do deploy para confirmar.

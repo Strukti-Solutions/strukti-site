@@ -4,9 +4,9 @@ import axe from "axe-core";
 import type { HeroVariant } from "@/config/site";
 import Home from "./page";
 
-// Roda com as duas versões do topo (siteConfig.heroVariant): "video", o
-// padrão, e "classic", que segue no código (revisão HR1 da Crivo).
-const heroVariant = vi.hoisted(() => ({ current: "video" as HeroVariant }));
+// Roda com as três versões do topo (siteConfig.heroVariant): "estudio", o
+// padrão, e "video" e "classic", que seguem no código (revisão HR1 da Crivo).
+const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
   return {
@@ -17,7 +17,7 @@ vi.mock("@/config/site", async (importOriginal) => {
   };
 });
 
-describe.each(["video", "classic"] as const)("página inicial (hero %s) — acessibilidade", (variant) => {
+describe.each(["estudio", "video", "classic"] as const)("página inicial (hero %s) — acessibilidade", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });
@@ -26,7 +26,7 @@ describe.each(["video", "classic"] as const)("página inicial (hero %s) — aces
     const { container } = render(<Home />);
 
     // Confere que a versão pedida é a que renderizou.
-    expect(container.querySelector(variant === "video" ? "header.topbar" : "header.site-header")).not.toBeNull();
+    expect(container.querySelector(variant === "classic" ? "header.site-header" : "header.topbar")).not.toBeNull();
 
     const results = await axe.run(container);
 

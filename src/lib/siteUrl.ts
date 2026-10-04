@@ -1,6 +1,6 @@
 /**
  * URL pública do site. O domínio de produção ainda não foi definido
- * (docs/landing-copy.md, "Pendências [A PREENCHER]") — por isso nunca é
+ * (docs/landing-copy.md, seção "Pendências") — por isso nunca é
  * hardcoded aqui. Antes do lançamento, defina `SITE_URL` no ambiente da
  * Vercel (ver README). Sem isso: em produção, cai no domínio fixo do
  * projeto (`VERCEL_PROJECT_PRODUCTION_URL` — o `VERCEL_URL` é a URL única
