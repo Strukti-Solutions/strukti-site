@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type Ref } from "react";
 import type { Project } from "@/content/landing";
+import { SeloStatus } from "@/components/ui/SeloStatus";
+import { pauseOtherVideos } from "@/lib/videoCoordination";
 
 /** Quantos cartões a grade mostra antes do botão "Mostrar mais projetos". */
 export const PROJECT_GRID_STEP = 6;
 
 interface ProjectGridLabels {
-  title: string;
+  /** Título (H3) acima da grade; sem ele, a grade fica sob o H2 da seção. */
+  title?: string;
   showMore: string;
   /** Nome acessível do botão de reproduzir; `{nome}` vira o nome do projeto. */
   playLabel: string;
@@ -42,6 +45,10 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
   // virar um pôster do tamanho do destaque.
   const wallClass = visible.length >= 3 ? "wall wall--3" : visible.length === 2 ? "wall wall--2" : "wall";
   const wide = visible.length === 1;
+  // Hierarquia sem saltos (axe "heading-order"): com o título da grade
+  // (H3), o nome de cada app é H4; sem ele, a grade fica sob o H2 da seção
+  // e o nome sobe para H3.
+  const cardHeading = labels.title ? "h4" : "h3";
 
   useEffect(() => {
     if (expanded && focusRevealed.current) {
@@ -50,9 +57,19 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
     }
   }, [expanded]);
 
+  // Só um vídeo toca por vez na página (MASTER §8.8), inclusive o hero
+  // "video", se estiver em uso. "play" não borbulha: ouvir na captura.
+  useEffect(() => {
+    const onPlay = (event: Event) => {
+      if (event.target instanceof HTMLVideoElement) pauseOtherVideos(event.target);
+    };
+    document.addEventListener("play", onPlay, true);
+    return () => document.removeEventListener("play", onPlay, true);
+  }, []);
+
   return (
     <div className="portfolio__more">
-      <h3 className="block-title portfolio__more-title">{labels.title}</h3>
+      {labels.title && <h3 className="block-title portfolio__more-title">{labels.title}</h3>}
       <ul className={wallClass}>
         {visible.map((project, index) => (
           <ProjectCard
@@ -64,6 +81,7 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
             playButtonRef={index === PROJECT_GRID_STEP ? firstRevealedRef : undefined}
             descriptionLinkLabel={descriptionLinkLabel}
             wide={wide}
+            heading={cardHeading}
           />
         ))}
       </ul>
@@ -93,9 +111,20 @@ interface ProjectCardProps {
   descriptionLinkLabel: string;
   /** Único cartão da grade: pôster ao lado do texto a partir de 1024 px. */
   wide: boolean;
+  /** Nível do nome do projeto: H4 sob o título da grade, H3 sem ele. */
+  heading: "h3" | "h4";
 }
 
-function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descriptionLinkLabel, wide }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  playing,
+  onPlay,
+  playLabel,
+  playButtonRef,
+  descriptionLinkLabel,
+  wide,
+  heading: Heading,
+}: ProjectCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -145,7 +174,8 @@ function ProjectCard({ project, playing, onPlay, playLabel, playButtonRef, descr
         )}
       </div>
       <div className="project-card__body">
-        <h4 className="block-title">{project.name}</h4>
+        {project.status && <SeloStatus status={project.status} />}
+        <Heading className="block-title">{project.name}</Heading>
         <p className="project-card__summary">{project.summary}</p>
         {project.platforms.length > 0 && (
           <ul className="tags">

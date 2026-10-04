@@ -7,7 +7,6 @@ import { ScrollTiltCard } from "@/components/ui/scroll-tilt-card";
 import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
 import { ProjectGrid } from "@/components/sections/ProjectGrid";
 import { useTapHover } from "@/lib/motion";
-import { pauseOtherVideos } from "@/lib/videoCoordination";
 
 /**
  * Portfólio de vídeos (MASTER §8.8), na superfície "noite" (sala de
@@ -31,18 +30,8 @@ export function OQueJaFizemos() {
   // página inteira (medição perf, item 2 da P3).
   const [featuredPosterReady, setFeaturedPosterReady] = useState(false);
 
-  // Só um vídeo toca por vez na página (MASTER §8.8): o destaque, os
-  // cartões da grade e o vídeo de fundo do hero dividem a mesma regra, mas
-  // cada <video> toca sem saber dos outros. "play" não borbulha, então o
-  // listener vai na captura, no documento inteiro (o hero fica em outra
-  // seção).
-  useEffect(() => {
-    const onPlay = (event: Event) => {
-      if (event.target instanceof HTMLVideoElement) pauseOtherVideos(event.target);
-    };
-    document.addEventListener("play", onPlay, true);
-    return () => document.removeEventListener("play", onPlay, true);
-  }, []);
+  // "Só um vídeo toca por vez" (MASTER §8.8) agora mora no ProjectGrid,
+  // que esta seção renderiza junto com o destaque.
 
   useEffect(() => {
     const video = featuredVideoRef.current;
