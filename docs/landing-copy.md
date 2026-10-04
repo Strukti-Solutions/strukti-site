@@ -121,7 +121,7 @@ Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithM
 
 **`heroEstudio.headline` (título, H1):** Equipamento e software para problemas que um aplicativo sozinho não resolve.
 
-**`heroEstudio.body` (texto):** A Strukti Soluções monta o equipamento, escreve o software e cuida da instalação e do suporte. O primeiro produto é o replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Recursos de inteligência artificial, como o destaque por jogador, vêm em breve.
+**`heroEstudio.body` (texto):** A Strukti Soluções monta o equipamento, escreve o software e cuida da instalação e do suporte. O primeiro produto é o replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Estamos procurando as primeiras quadras para um piloto gratuito. Recursos de inteligência artificial, como o destaque por jogador, vêm em breve.
 
 **`heroEstudio.primaryCta` (botão principal, âncora `#produtos`):** Conhecer o replay
 
@@ -160,7 +160,9 @@ Selo: **Piloto gratuito** (`piloto`).
 - **`produtos.replay.steps[1].lead`:** O clipe é cortado.
 - **`produtos.replay.steps[1].rest`:** O equipamento da quadra separa os 30 segundos antes do aperto e mais alguns depois.
 - **`produtos.replay.steps[2].lead`:** Chega no celular.
-- **`produtos.replay.steps[2].rest`:** O clipe sobe pelo Wi-Fi da arena, e o jogador vê e compartilha pelo celular.
+- **`produtos.replay.steps[2].rest`:** O clipe sobe pelo Wi-Fi da arena, e o jogador vê e compartilha pelo celular. Esta etapa ainda está em construção, e é ela que o piloto vai testar.
+
+*Nota: a gravação e o corte (passos 1 e 2) estão prontos e testados em bancada. O envio, a parte na internet e o site do jogador (passo 3) ainda não existem; por isso o passo 3 diz que está em construção. Na demonstração, mostrar o que já funciona e explicar que o resto entra no piloto.*
 
 **Ficha técnica (`produtos.replay.specs`, nesta ordem; `value` grande em cima, `label` curto embaixo):**
 
@@ -404,7 +406,7 @@ Mensagem (`contato.form.fields.problem`; a chave continua `problem`, o texto pas
 
 **`faq.items[0].question`:** O replay precisa de internet?
 
-**`faq.items[0].answer`:** Precisa. O replay usa o Wi-Fi da própria arena para mandar os clipes para o celular dos jogadores. Se a internet da sua arena for uma dúvida, falamos disso na demonstração.
+**`faq.items[0].answer`:** Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes. Os jogadores veem os lances no celular, com a internet deles. Se a internet da sua arena for uma dúvida, falamos disso na demonstração.
 
 **`faq.items[1].question`:** O replay já usa inteligência artificial?
 
@@ -412,7 +414,7 @@ Mensagem (`contato.form.fields.problem`; a chave continua `problem`, o texto pas
 
 **`faq.items[2].question`:** E a privacidade de quem aparece no vídeo?
 
-**`faq.items[2].answer`:** Os clipes ficam disponíveis para os jogadores por 7 dias e depois são apagados. A quadra exibe um aviso de que há gravação.
+**`faq.items[2].answer`:** O replay está sendo construído assim: os clipes vão ficar disponíveis para os jogadores por 7 dias e depois serão apagados, e a quadra vai exibir um aviso de que há gravação.
 
 **`faq.items[3].question`:** Quanto custa?
 
@@ -424,7 +426,7 @@ Mensagem (`contato.form.fields.problem`; a chave continua `problem`, o texto pas
 
 **`faq.items[5].question`:** E quando vocês se formarem, quem mantém tudo funcionando?
 
-**`faq.items[5].answer`:** A Strukti, como empresa, e não uma pessoa. No replay, quem instala, dá suporte e faz a manutenção somos nós. Os aplicativos têm plano mensal de manutenção, suporte e hospedagem. E cada projeto tem documentação, para não depender da memória de ninguém.
+**`faq.items[5].answer`:** Quem mantém é a Strukti: uma equipe, e não uma pessoa só. No replay, quem instala, dá suporte e faz a manutenção somos nós. Os aplicativos têm plano mensal de manutenção, suporte e hospedagem, que garante alguém cuidando deles hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de ninguém.
 
 **`faq.items[6].question`:** Vocês também fazem aplicativos?
 
@@ -564,7 +566,7 @@ Mensagem (`contato.form.fields.problem`; a chave continua `problem`, o texto pas
 
 **`seo.title` (`<title>`, 56 caracteres):** Replay para quadras e apps sob medida | Strukti Soluções
 
-**`seo.description` (`meta description`, 139 caracteres):** Replay para quadras de aluguel: o jogador aperta um botão e recebe o lance no celular. Também fazemos aplicativos sob medida para empresas.
+**`seo.description` (`meta description`, 145 caracteres):** Replay para quadras de aluguel, em piloto gratuito: o jogador aperta um botão e recebe o lance no celular. Também fazemos aplicativos sob medida.
 
 **Link de compartilhamento (Open Graph):**
 - **`seo.ogSiteName` (`og:site_name`):** Strukti Soluções
