@@ -23,7 +23,7 @@ Guia do Claudinho (Maestro) para remontar o time de agentes do site da Strukti n
   npm run check:quarantine
   ```
   - Use sempre `npm ci`, ou `npm install --min-release-age=7` para dependência nova (ADR-003).
-- **Opcional, para os papéis que leem o app de prova:** clone `Thiago432544/rota-de-vendas` em `C:\dev\rota_de_vendas`. Os papéis citam também `C:\dev\_video\brag-output` e `C:\dev\_qa`, materiais locais desta máquina que não estão no git; copie-os se precisar deles.
+- **Opcional, para os papéis que leem o app de prova:** clone `Strukti-Solutions/rota-de-vendas` em `C:\Dev\rota_de_vendas`. Os papéis citam também `C:\dev\_video\brag-output` e `C:\dev\_qa`, materiais locais desta máquina que não estão no git; copie-os se precisar deles.
 
 Se a pasta for outra, ajuste os caminhos em `papeis/comum.txt` antes de criar os papéis.
 
