@@ -4,11 +4,12 @@ Quadros do hero "estudio" (MASTER §9.7; spec 2026-10-03 §5.1).
 Gera o botão do replay ESTILIZADO (não é a caixa definitiva do produto),
 a luz de estúdio e a câmera, e renderiza PNGs numerados f000.png ...
 
-Uso (sem abrir o Blender):
-  blender -b --factory-startup -P scripts/hero-3d/render.py -- --set desktop --out C:/Dev/negocio/.hero-render/desktop
+Uso (sem abrir o Blender; <repo> é a raiz do repositório, e a pasta de saída
+deve estar vazia):
+  blender -b --factory-startup --python-exit-code 1 -P scripts/hero-3d/render.py -- --set desktop --out <repo>/.hero-render/desktop
 
-Prévia de alguns quadros, com poucas amostras:
-  blender -b --factory-startup -P scripts/hero-3d/render.py -- --set desktop --out C:/Dev/negocio/.hero-render/teste --samples 16 --frames 0,45,72,89
+Prévia de alguns quadros (0..N-1), com poucas amostras:
+  blender -b --factory-startup --python-exit-code 1 -P scripts/hero-3d/render.py -- --set desktop --out <repo>/.hero-render/teste --samples 16 --frames 0,45,72,89
 
 Testado no Blender 5.2 LTS (EEVEE). Quando houver o CAD/STL da caixa
 definitiva, troque build_product() por um import do arquivo; luz, câmera,
@@ -66,13 +67,25 @@ def linear(hex_color):
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="render.py")
     parser.add_argument("--set", choices=SETS.keys(), required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--samples", type=int, default=64)
     # Prévia: só estes quadros (ex.: "0,45,89"), para acertar luz e enquadramento.
     parser.add_argument("--frames", default="")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    # Um quadro fora de 0..N-1 renderizaria a pose do primeiro ou do último sem
+    # avisar; aborta antes de montar a cena (parser.error sai com código 2).
+    last = SETS[args.set][2] - 1
+    if args.frames:
+        try:
+            args.frames = [int(value) for value in args.frames.split(",")]
+        except ValueError:
+            parser.error(f"--frames: use números inteiros separados por vírgula (ex.: 0,45,{last})")
+        wrong = [frame for frame in args.frames if not 0 <= frame <= last]
+        if wrong:
+            parser.error(f"--frames fora do intervalo 0..{last} do conjunto {args.set}: {wrong}")
+    return args
 
 
 # --- Nós de material -------------------------------------------------------
@@ -447,7 +460,12 @@ def build_screws(root):
 
 
 def build_product():
-    """Botão de replay estilizado: caixa, botão, LED e o hexágono da marca."""
+    """
+    Botão de replay estilizado: caixa, aro do botão, quatro parafusos, botão,
+    LED, o hexágono da marca e as duas luzes pontuais que acendem no aperto
+    (LED e clarão do botão). Devolve (root, button, button_mat, led_mat,
+    led_light, button_light), na ordem que o animate() usa.
+    """
     bpy.ops.object.empty_add(location=(0, 0, 0))
     root = bpy.context.object
     root.name = "produto"
@@ -676,7 +694,9 @@ def configure_render(scene, width, height, frames, out, samples):
     # "Standard" (e não o AgX padrão): o navy-950 sai igual ao fundo da página.
     scene.view_settings.view_transform = "Standard"
     scene.view_settings.look = "None"
-    # Sem ruído de dither: bordas exatas e AVIF menor.
+    # Sem dither. No PNG de 16 bits ele quase não age (< 0,1 nível de 8 bits),
+    # e no de 8 bits o AV1 apaga o ruído: 0,5 e 1,0 não tiraram os blocos do
+    # piso e do halo (correção R1). Esses blocos vêm da quantização do AV1.
     scene.render.dither_intensity = 0.0
     scene.render.resolution_x = width
     scene.render.resolution_y = height
@@ -685,7 +705,9 @@ def configure_render(scene, width, height, frames, out, samples):
         scene.render.image_settings.media_type = "IMAGE"
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGB"
-    scene.render.image_settings.color_depth = "8"
+    # 16 bits: o encode.mjs converte direto para AVIF de 10 bits, sem passar
+    # por 8 bits no caminho.
+    scene.render.image_settings.color_depth = "16"
     scene.render.filepath = f"{out}/f###"
     scene.frame_start = 0
     scene.frame_end = frames - 1
@@ -702,7 +724,7 @@ def main():
     animate(root, floor_turn, button, button_mat, led_mat, led_light, button_light, camera, frames)
     configure_render(scene, width, height, frames, args.out, args.samples)
     if args.frames:
-        for frame in (int(value) for value in args.frames.split(",")):
+        for frame in args.frames:
             scene.frame_set(frame)
             scene.render.filepath = f"{args.out}/f{frame:03d}"
             bpy.ops.render.render(write_still=True)
