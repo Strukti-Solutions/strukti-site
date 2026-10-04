@@ -1,27 +1,76 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
-import { landingContent } from "@/content/landing";
+import type { HeroVariant } from "@/config/site";
+import { landingContent, type ProductStatus } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 import { Produtos } from "./Produtos";
 import { Aplicativos } from "./Aplicativos";
 import { ChamadaHardware } from "./ChamadaHardware";
 
-const { produtos, aplicativos, chamadaHardware, statusLabels, whatsappMessages } = landingContent;
+const { produtos, aplicativos, chamadaHardware, heroEstudio, statusLabels, whatsappMessages } = landingContent;
+
+// Variante do hero em uso: os passos do replay ficam no hero "estudio" e só
+// voltam ao cartão de Produtos nas outras variantes (mesmo mock do page.test).
+const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
+vi.mock("@/config/site", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/config/site")>();
+  return {
+    ...actual,
+    siteConfig: new Proxy(actual.siteConfig, {
+      get: (target, key) => (key === "heroVariant" ? heroVariant.current : Reflect.get(target, key)),
+    }),
+  };
+});
+
+/**
+ * Selo de cada aplicativo, decisão do Thiago (spec §3.4 e §4): escrito aqui
+ * à mão, e não lido do conteúdo, para o teste pegar uma troca de status.
+ */
+const APP_STATUS: Record<string, ProductStatus> = {
+  "rota-de-vendas": "piloto",
+  "fleet-analytics-bi": "emUso",
+};
 
 describe("<Produtos />", () => {
-  it("mostra o replay com selo, ficha e o WhatsApp com a mensagem pronta (os passos ficam no hero)", async () => {
+  beforeEach(() => {
+    heroVariant.current = "estudio";
+  });
+
+  it("mostra o replay com selo, ilustração do conceito, ficha e o WhatsApp com a mensagem pronta", async () => {
     const { container } = render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
     expect(within(replay).getByText(statusLabels.piloto)).toBeTruthy();
-    // "Como funciona" e os 3 passos saíram do cartão: estão no hero, ao lado do giro.
-    expect(within(replay).queryByText(produtos.replay.stepsTitle)).toBeNull();
-    expect(within(replay).queryAllByRole("listitem")).toHaveLength(0);
+    // O pôster do card é o render 3D: a spec §10 manda identificá-lo como ilustração.
+    expect(within(replay).getByText(heroEstudio.illustrationBadge)).toBeTruthy();
     for (const spec of produtos.replay.specs) expect(within(replay).getByText(spec.value)).toBeTruthy();
     const cta = within(replay).getByRole("link", { name: new RegExp(produtos.replay.cta) });
     expect(cta.getAttribute("href")).toBe(siteConfig.whatsapp.linkWithMessage(whatsappMessages.replay));
     expect((await axe.run(container)).violations).toEqual([]);
   });
+
+  it('com o hero "estudio", "Como funciona" e os passos ficam só no hero, fora do cartão', () => {
+    render(<Produtos />);
+    const replay = screen.getByRole("article", { name: produtos.replay.name });
+    expect(within(replay).queryByText(produtos.replay.stepsTitle)).toBeNull();
+    expect(within(replay).queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it.each(["video", "classic"] as const)(
+    'com o hero "%s", o cartão do replay mostra "Como funciona" e os 3 passos',
+    async (variant) => {
+      heroVariant.current = variant;
+      const { container } = render(<Produtos />);
+      const replay = screen.getByRole("article", { name: produtos.replay.name });
+
+      expect(within(replay).getByRole("heading", { level: 4, name: produtos.replay.stepsTitle })).toBeTruthy();
+      const list = within(replay).getByRole("list", { name: produtos.replay.stepsTitle });
+      expect(within(list).getAllByRole("listitem").map((item) => item.textContent)).toEqual(
+        produtos.replay.steps.map((step) => `${step.lead} ${step.rest}`),
+      );
+      expect((await axe.run(container)).violations).toEqual([]);
+    },
+  );
 
   it("não mostra o link do site do replay enquanto o endereço não existir", () => {
     render(<Produtos />);
@@ -54,6 +103,18 @@ describe("<Aplicativos />", () => {
     expect(screen.getAllByText(/./, { selector: ".selo" })).toHaveLength(aplicativos.projects.length);
     expect(screen.getByRole("link", { name: aplicativos.cta }).getAttribute("href")).toBe("#contato");
     expect((await axe.run(container)).violations).toEqual([]);
+  });
+
+  it("o selo de cada cartão é o da decisão do Thiago: Rota de Vendas em piloto, Fleet em uso", () => {
+    render(<Aplicativos />);
+    expect(aplicativos.projects.map((project) => project.slug).sort()).toEqual(Object.keys(APP_STATUS).sort());
+
+    for (const project of aplicativos.projects) {
+      const card = screen.getByRole("heading", { name: project.name }).closest("li");
+      expect(card).not.toBeNull();
+      const status = APP_STATUS[project.slug]!;
+      expect(within(card!).getByText(statusLabels[status], { selector: ".selo" })).toBeTruthy();
+    }
   });
 
   it("só um vídeo toca por vez na página: tocar um app pausa um vídeo de fora da grade", () => {

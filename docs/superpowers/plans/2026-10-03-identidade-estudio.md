@@ -6,7 +6,7 @@
 
 **Arquitetura:** o site continua em Next.js (App Router), neste repositório. Os quadros do 3D são gerados fora do site, por um script do Blender versionado, comprimidos em AVIF com o ffmpeg e servidos de `public/`. Um componente cliente desenha no `<canvas>` o quadro correspondente à rolagem, com toda a matemática em funções puras testadas. O conteúdo segue no módulo único `src/content/landing.ts`, e as seções novas reaproveitam o formulário, a grade de vídeos e a barra do topo que já existem.
 
-**Stack:** Next.js 15.5, React 19.3, TypeScript estrito, Vitest + Testing Library + axe-core, `motion` 13, Zod 4, PostgreSQL (`pg`). Ferramentas fora do `package.json`: Blender (versão estável atual) e ffmpeg 9 (já instalado em `C:\Users\Thiago\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe`).
+**Stack:** Next.js 15.5, React 19.3, TypeScript estrito, Vitest + Testing Library + axe-core, `motion` 13, Zod 4, PostgreSQL (`pg`). Ferramentas fora do `package.json`: Blender (versão estável atual) e ffmpeg 9 (se não estiver no PATH, aponte com `FFMPEG_PATH=<caminho do ffmpeg>`).
 
 **Spec:** `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md` (commit `cc6a9db`). Leia a spec inteira antes de começar qualquer tarefa.
 
@@ -875,7 +875,7 @@ for (const set of SETS) {
 
 (Fila pesada.)
 
-Run: `FFMPEG_PATH="C:/Users/Thiago/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe" node scripts/hero-3d/encode.mjs`
+Run: `FFMPEG_PATH=<caminho do ffmpeg> node scripts/hero-3d/encode.mjs`
 Expected: duas linhas `desktop: 90 quadros, X MB` e `celular: 45 quadros, Y MB`, com X ≤ 3,00 e Y ≤ 1,20. Se passar, rodar de novo com `--crf 38`, depois `--crf 42`. Se nem assim couber, reduzir a contagem em `SETS` do `render.py` **e** em `siteConfig.heroSequence` (mesmo número), renderizar de novo e voltar ao Passo 7.
 
 - [ ] **Passo 8: Rodar o teste de arquivos**

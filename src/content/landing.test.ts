@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { landingContent } from "./landing";
+import { landingContent, type ProductStatus } from "./landing";
+
+/** Selo de cada aplicativo, decisão do Thiago (spec §3.4 e §4). */
+const APP_STATUS: Record<string, ProductStatus> = {
+  "rota-de-vendas": "piloto",
+  "fleet-analytics-bi": "emUso",
+};
 
 describe("landingContent v2.0", () => {
   it("tem os quatro rótulos de status exatamente como na spec", () => {
@@ -22,10 +28,19 @@ describe("landingContent v2.0", () => {
     expect(landingContent.heroEstudio.illustrationBadge).toBe("Ilustração do conceito");
   });
 
-  it("todo aplicativo tem um status da lista", () => {
-    for (const project of landingContent.aplicativos.projects) {
+  it("todo aplicativo tem um status da lista, e a lista de aplicativos não vem vazia", () => {
+    const { projects } = landingContent.aplicativos;
+    expect(projects.length).toBeGreaterThan(0);
+    for (const project of projects) {
       expect(Object.keys(landingContent.statusLabels)).toContain(project.status);
     }
+  });
+
+  it("o selo de cada aplicativo é o da decisão do Thiago: Rota de Vendas em piloto, Fleet em uso", () => {
+    const statusBySlug = Object.fromEntries(
+      landingContent.aplicativos.projects.map((project) => [project.slug, project.status]),
+    );
+    expect(statusBySlug).toEqual(APP_STATUS);
   });
 
   it("o formulário tem as quatro opções de interesse", () => {

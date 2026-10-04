@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { HeroVariant } from "@/config/site";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
@@ -73,6 +73,29 @@ describe("home v3 (hero estudio) — estrutura", () => {
     expect([...list!.querySelectorAll("li h3")].map((title) => title.textContent)).toEqual(
       landingContent.comoTrabalhamos.items.map((item) => item.title),
     );
+  });
+
+  it("os botões do hero levam a Produtos e ao WhatsApp com a mensagem geral", () => {
+    const { container } = render(<Home />);
+    const hero = within(container.querySelector<HTMLElement>("#inicio")!);
+    const { primaryCta, whatsappCta } = landingContent.heroEstudio;
+
+    expect(hero.getByRole("link", { name: primaryCta }).getAttribute("href")).toBe("#produtos");
+    expect(hero.getByRole("link", { name: whatsappCta }).getAttribute("href")).toBe(
+      siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general),
+    );
+  });
+
+  it('as chamadas marcam o assunto no formulário: "Diagnóstico gratuito" → aplicativo; "Contar o meu problema" → outro', () => {
+    render(<Home />);
+    const select = screen.getByLabelText(landingContent.contato.form.fields.interest.label) as HTMLSelectElement;
+    expect(select.value).toBe("");
+
+    fireEvent.click(screen.getByRole("link", { name: landingContent.aplicativos.cta }));
+    expect(select.value).toBe("aplicativo");
+
+    fireEvent.click(screen.getByRole("link", { name: landingContent.chamadaHardware.cta }));
+    expect(select.value).toBe("outro");
   });
 });
 

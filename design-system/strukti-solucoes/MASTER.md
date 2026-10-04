@@ -26,8 +26,9 @@
    da equipe e no visual estático do topo. Não vira padrão de fundo nem
    ícone genérico.
 3. **O ponto do i**: o círculo azul do logo (`--color-electric-500`), usado
-   como marcador da lista de destaques do portfólio e como o pingo do "i" da
-   palavra "Strukti" gigante do hero "video" (§9.6), e só ali.
+   como o pingo do "i" da palavra "Strukti" gigante do hero "video" (§9.6),
+   e só ali. (Na v2 também marcava a lista de destaques do portfólio, que
+   saiu na v3.)
 4. **A luz de estúdio**: luz principal azul elétrico (`--color-electric-500`) atrás do produto e contorno ciano (`--color-cyan-400`). Só existe dentro de um palco (§8.13), nunca como fundo solto.
 
 ---
@@ -43,16 +44,16 @@
 
 **Por quê:**
 - **Coerente com o topo e com o logo.** O espaço é o marinho do logo
-  (`#15273B`) aprofundado, não um preto neutro. Qualquer visual do hero
-  (buraco negro, estático ou o que vier) termina nessa cor, e o cabeçalho
-  usa a mesma: o topo é uma peça só.
-- **Legível para quem compra.** O público (dono ou gerente de distribuidora)
-  lê textos longos, como problemas, formulário e dúvidas, muitas vezes no
-  celular e na rua. Texto escuro sobre papel claro cansa menos e passa
-  folgado do AA (13,8:1).
-- **O escuro volta com intenção.** O portfólio de vídeos fica no escuro
-  porque vídeo se assiste melhor no escuro, e o rodapé fecha a página com a
-  mesma cor que a abriu.
+  (`#15273B`) aprofundado, não um preto neutro. Qualquer visual do hero (o
+  quadro do 3D, o buraco negro, o estático ou o que vier) termina nessa cor,
+  e a barra do topo usa a mesma: o topo é uma peça só.
+- **Legível para quem compra.** O público (quem cuida de uma arena ou de uma
+  empresa) lê textos longos, como o formulário, como trabalhamos e as
+  dúvidas, muitas vezes no celular e na rua. Texto escuro sobre papel claro
+  cansa menos e passa folgado do AA (13,8:1).
+- **O escuro é para mostrar.** Hero, Produtos e Aplicativos ficam no escuro
+  porque produto e vídeo se veem melhor nele, sob a luz de estúdio (§1), e o
+  rodapé fecha a página com a mesma cor que a abriu.
 - **Papel frio, não creme nem branco puro.** O cinza-azulado puxado do
   marinho mantém a família de cor e deixa o branco livre para as peças
   elevadas, sem precisar de sombra.
@@ -65,17 +66,20 @@ Hero ................. espaço    produto em tela inteira, textos por cima (§9.
 Produtos ............. espaço    palcos de hardware (#produtos)
 Aplicativos .......... noite     palcos com a tela do app (#aplicativos)
 Chamada geral ........ papel     outros problemas (#sob-medida)
-Como trabalhamos ..... papel     régua entre seções seguidas em papel
-Equipe ............... papel
-Contato .............. papel     formulário em branco (#contato)
-Dúvidas .............. papel
+Como trabalhamos ..... papel     régua
+Equipe ............... papel     régua
+Contato .............. papel     régua; formulário em branco (#contato)
+Dúvidas .............. papel     régua
 Rodapé ............... espaço
 ```
 
-Entre duas seções na mesma superfície: espaço generoso e uma **régua** de
+Entre duas seções seguidas no papel: espaço generoso e uma **régua** de
 1 px (`--border`) na largura do container (classe `.section--seam`; a régua
-fica a ¾ do respiro da seção acima do conteúdo). Nunca alternar papel e branco
-seção a seção (é o padrão `section--alt` de template).
+fica a ¾ do respiro da seção acima do conteúdo). Toda seção em papel que vem
+depois de outra em papel leva a régua; a Chamada geral não, porque vem depois
+da noite. No escuro não há régua: o hero termina no espaço e Produtos
+continua nele. Nunca alternar papel e branco seção a seção (é o padrão
+`section--alt` de template).
 
 **O fundo fora do hero não depende do visual do hero.** O contrato da §9.1
 garante que o hero sempre termina na cor do espaço, seja qual for o visual.
@@ -107,8 +111,8 @@ Em negrito, as cores amostradas do logo oficial. Funcionais: WhatsApp
 ### 3.2 Uma cor, um trabalho
 
 - **Marinho**: texto, superfícies escuras, estrutura.
-- **Elétrico 700**: ação da marca. Botão primário (diagnóstico), links e
-  foco no claro. O elétrico 500 aparece no ponto do i e na luz de estúdio
+- **Elétrico 700**: ação da marca. Botão primário (a chamada de cada seção
+  e o envio do formulário, §8.1), links e foco no claro. O elétrico 500 aparece no ponto do i e na luz de estúdio
   dentro do palco (§8.13).
 - **Ciano**: **só no escuro**. Luz do disco do buraco negro, foco e links
   sobre superfícies escuras. Nunca como texto no claro.
@@ -219,7 +223,7 @@ hexágono), leitura com SHRP 0 (macia).
 |---|---|---|---|---|---|
 | Display (H1 do hero) | `clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem)` (40 → 72 px) | 760 | 100 | 1,02 | −0,025em |
 | Título de seção (H2) | `clamp(2rem, 1.4rem + 2.2vw, 3rem)` (32 → 48 px) | 720 | 100 | 1,06 | −0,02em |
-| Título de bloco (H3) | 1.3125rem (21 px); 1.5rem (24 px) no destaque do portfólio | 640 | 60 | 1,25 | −0,01em |
+| Título de bloco (H3) | 1.3125rem (21 px); 1.5rem (24 px) no título do formulário | 640 | 60 | 1,25 | −0,01em |
 | Abertura (texto de entrada) | 1.125rem → 1.3125rem (18 → 21 px) | 400 | 0 | 1,5 | 0 |
 | Corpo | 1rem (16 px) < 768 px; 1.125rem (18 px) ≥ 768 px | 400 | 0 | 1,55 | 0 |
 | Interface (botão, menu, rótulo) | 1rem (16 px) | 600 | 0 | 1 | 0 |
@@ -240,10 +244,11 @@ Elements of Typographic Style*.
   ou cor para destacar uma palavra do título, fonte mono para "dar ar
   técnico".
 - A abertura (`.lead`) é só para textos de entrada curtos (até ~3 linhas).
-  Texto de entrada longo, como o do Diagnóstico, usa o tamanho do corpo.
-- O sobretítulo do hero é texto aprovado ("Aplicativos sob medida para…"):
-  vai em 16–18 px, peso 500, `--text-muted`, sem caixa-alta e sem ponto
-  colorido antes.
+  Texto de entrada longo, como o do Contato, usa o tamanho do corpo.
+- O sobretítulo do hero é texto aprovado, sem caixa-alta e sem ponto
+  colorido antes. No hero "estudio", vai no tamanho do corpo, peso 600,
+  cyan-300 (§9.7); nos heros "video" e "classic" ("Aplicativos sob medida
+  para…"), em 16–18 px, peso 500, `--text-muted`.
 
 ---
 
@@ -272,13 +277,20 @@ Elements of Typographic Style*.
 - 12 colunas com gutter de 24 px a partir de 1024. Abaixo disso, coluna
   única (blocos em 2 colunas a partir de 768, quando couber).
 - Composições com intenção (e não tudo em três cartões iguais):
+  - **Produto em destaque + secundário** (Produtos): a partir de 1024, o
+    cartão do replay e o do estacionamento lado a lado, em 2fr e 1fr,
+    alinhados pelo topo; empilham abaixo disso. Cada cartão é um bloco em
+    `--surface-raised` com `--radius-3`; o do replay tem o palco (§8.13) em
+    cima.
+  - **Parede** (grade dos aplicativos, Equipe): blocos encaixados com a
+    junta.
+  - **Chamada** (Chamada geral): título, texto e botão numa coluna de até
+    62ch, à esquerda.
   - **Título fixo + lista** (Como trabalhamos, Dúvidas): título e texto de
     entrada nas colunas 1–5, com `position: sticky` (topo 96 px) a partir
     de 1024; conteúdo nas colunas 7–12.
-  - **Parede** (Problemas, passos do Diagnóstico, Equipe, grade do
-    portfólio): blocos encaixados com a junta.
-  - **Texto + formulário** (Diagnóstico): texto nas colunas 1–6, formulário
-    nas colunas 7–12; empilha abaixo de 1024.
+  - **Texto + formulário** (Contato): título e texto nas colunas 1–5,
+    formulário nas colunas 7–12; empilha abaixo de 1024.
 
 ### 5.3 Raios (por hierarquia, não um raio para tudo)
 
@@ -287,7 +299,7 @@ Elements of Typographic Style*.
 | `--radius-joint` | 2 | Cantos internos de blocos dentro de uma parede |
 | `--radius-1` | 4 | Campos de formulário, etiquetas (selos de status, §8.14) |
 | `--radius-2` | 6 | Botões, botão flutuante |
-| `--radius-3` | 10 | Cantos externos de uma parede, moldura de vídeo, formulário |
+| `--radius-3` | 10 | Cantos externos de uma parede, palco, cartão de produto, formulário |
 
 Sem pílula (`999px`) em lugar nenhum: os botões da v1 eram pílulas e
 passam a `--radius-2`. Círculo, só o ponto do i. **Exceção única (ADR-007):**
@@ -301,9 +313,9 @@ A profundidade vem da cor da superfície e da junta, **não de sombra**.
 | Nível | Como | Uso |
 |---|---|---|
 | 0 | plano | Quase tudo |
-| 1 | `--surface-raised` (branco no papel, navy-800 no escuro) | Blocos, formulário, cartões do portfólio |
+| 1 | `--surface-raised` (branco no papel, navy-800 no escuro) | Blocos, formulário, cartões de Produtos e dos aplicativos |
 | 2 | `0 12px 32px -12px rgb(8 18 29 / 0.45)` (sombra tingida de marinho) | Só o que flutua: o botão flutuante do WhatsApp |
-| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` | Só a moldura do vídeo em destaque (a tela "ilumina" a sala) |
+| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` | Sem uso desde a v3 (era a moldura do vídeo em destaque do portfólio, que saiu). A luz em volta dos produtos agora é a do palco (§8.13) |
 
 Proibido: sombra cinza genérica (`rgba(0,0,0,.1)`) sob cada cartão;
 glassmorphism (desfoque de fundo) em cartões. O cabeçalho é sólido, sem
@@ -328,18 +340,18 @@ desfoque.
 1. **Revelação ao rolar**: `Reveal`, `RevealStaggerList` e
    `RevealStaggerItem` (`src/components/motion/Reveal.tsx`). Fade + 16 px,
    ~0,4–0,45 s, uma vez, com portão de montagem (ADR-004).
-2. **Cartão 3D na rolagem**: `ScrollTiltCard`
-   (`src/components/ui/scroll-tilt-card.tsx`), no vídeo em destaque do
-   portfólio. Só a moldura muda de aparência (§8.8).
-3. **Micro-interações de botão**: `useTapHover` (`src/lib/motion.ts`).
+2. **Micro-interações de botão**: `useTapHover` (`src/lib/motion.ts`).
    Hover `scale 1.03`, toque `scale 0.96`, 150 ms.
-4. **Movimento do buraco negro** (hero "classic"): o gás do disco gira e a
+3. **Movimento do buraco negro** (hero "classic"): o gás do disco gira e a
    câmera fica parada (`orbitSpeed: 0`).
-5. **Hero "video"** (§9.6): o vídeo de fundo em loop (só por JavaScript,
+4. **Hero "video"** (§9.6): o vídeo de fundo em loop (só por JavaScript,
    nunca com reduced motion) e, no carregamento, a palavra "Strukti" sobe
    de trás de uma linha (word pull-up, 900 ms) e o ponto do i cai no lugar
    (520 ms, depois dela). Só CSS (ADR-004): começa no 1º quadro, sem
    esperar a hidratação, e some com prefers-reduced-motion.
+
+O cartão 3D na rolagem (`ScrollTiltCard`) saiu na v3, junto com o vídeo em
+destaque do portfólio em que era usado.
 
 **Tokens:**
 
@@ -359,7 +371,7 @@ desfoque.
 - `Reveal` vai no **grupo** (cabeçalho de seção, uma parede inteira), não
   em cada parágrafo. Paredes usam o escalonamento existente, com no máximo
   60 ms entre blocos.
-- Fora do hero e do cartão 3D, nada se move sem uma ação de quem visita.
+- Fora do hero, nada se move sem uma ação de quem visita.
   Hover não muda o tamanho de caixa (só `transform`, cor e sublinhado).
 - `prefers-reduced-motion`: as regras da ADR-004 valem para tudo (CSS
   `motion-reduce:` ou portão de montagem; nunca ramificar a árvore React).
@@ -407,8 +419,8 @@ fim do texto.
 | Variante | Fundo | Texto | Hover | Onde |
 |---|---|---|---|---|
 | WhatsApp | `#25D366` | navy-950 | `#1FBF5B` | Todo botão que abre o WhatsApp (sempre o de maior destaque) |
-| Primário | electric-700 | branco | electric-800 | "Pedir diagnóstico gratuito" (seção 4 e envio do formulário) |
-| Contorno (escuro) | transparente, borda 1,5 px navy-300 | branco | fundo `rgb(255 255 255 / .06)` | Botão secundário do hero |
+| Primário | electric-700 | branco | electric-800 | "Conhecer o replay" (hero "estudio"), "Diagnóstico gratuito" (Aplicativos), "Contar o meu problema" (Chamada geral) e o envio do formulário |
+| Contorno (escuro) | transparente, borda 1,5 px navy-300 | branco | fundo `rgb(255 255 255 / .06)` | "Ver o site do replay" (Produtos, escondido até o endereço existir), "Mostrar mais projetos" (Aplicativos, com mais de 6) e o secundário dos heros "video" e "classic" |
 | Contorno (claro) | transparente, borda 1,5 px navy-800 | navy-800 | fundo navy-100 | Secundário no claro, quando houver |
 
 Foco: `outline: 3px solid var(--focus); outline-offset: 3px`. Enviando:
@@ -439,17 +451,17 @@ Direita: botão WhatsApp compacto (44 px).
   aprovado.
 - Até 400 px: botão com `padding: 0 14px` e 15 px, para caber com a
   assinatura a 360 px sem rolagem horizontal.
-- Este cabeçalho é o do hero "classic". O hero "video" usa a barra da
-  §8.3.1.
+- Este cabeçalho é o do hero "classic". Os heros "estudio" e "video" usam a
+  barra da §8.3.1.
 
-### 8.3.1 Barra do topo — de borda a borda (hero "video")
+### 8.3.1 Barra do topo — de borda a borda (heros "estudio" e "video")
 
 `src/components/TopBar.tsx`. Uma faixa em espaço (navy-950), sólida, **fixa
 a página toda** (substitui o cabeçalho sticky), na **largura inteira da
 janela**, colada no topo (TB1, pedido do cliente; até então era uma aba
 centrada com os cantos cortados). Embaixo, a **junta**: 3 px em navy-800
 (`--topbar-joint`), que separa a barra do que passa por baixo (papel, noite
-do portfólio, rodapé) e, no topo da página, marca onde a barra acaba e
+dos aplicativos, rodapé) e, no topo da página, marca onde a barra acaba e
 começa a margem de espaço da moldura do hero.
 
 - **Ponto da barra larga: 75em** (1200 px com a fonte padrão; TB2). O
@@ -505,25 +517,29 @@ começa a margem de espaço da moldura do hero.
   percorre a página com Tab a 360, 390, 1024 e 1200 px e falha se um
   controle focado parar sob a barra ou coberto (WCAG 2.4.11).
 
-### 8.4 Parede de blocos (Problemas)
+### 8.4 Parede de blocos (legado: sem uso desde a v3)
 
-Parede (§5.5) com 1 coluna (< 768), 2 (768–1023) e 3 (≥ 1024). Bloco em
-`--surface-raised`, `padding: 28px 28px 32px` (20 px no celular), H3 e
-texto em `--text-muted`. **Sem ícone no topo e sem número** (os problemas
-não são uma sequência). O fecho e o botão do WhatsApp ficam abaixo da
-parede, à esquerda.
+A seção Problemas, que usava esta composição, saiu na home v3. A parede
+(§5.5) continua na grade dos aplicativos (§8.8) e na Equipe (§8.9). Se uma
+seção nova voltar a usá-la: bloco em `--surface-raised` (`.block`,
+`padding: 28px 28px 32px`; 20 px no celular), H3 e texto em `--text-muted`,
+sem ícone no topo e sem número quando os itens não são uma sequência.
 
 ### 8.5 Lista com régua (Como trabalhamos)
 
-Título fixo + lista (§5.2). Itens separados por régua de 1 px (`--border`),
-`padding-block: 28px`, H3 e texto. **Sem números**: os cinco itens são
-qualidades, não etapas.
+Título fixo + lista (§5.2). Os quatro itens (Diagnóstico, Protótipo,
+Instalação e Suporte direto) são **etapas em ordem**, por isso a lista é
+ordenada (`<ol class="ruled-list" role="list">`; o `role` devolve a
+semântica de lista que o Safari tira de um `<ol>` com `list-style: none`),
+mas **sem número à mostra**: a régua faz a separação. Itens separados por régua de 1 px
+(`--border`), `padding-block: 28px`, H3 e texto em `--text-muted`.
 
-### 8.6 Passos (Diagnóstico, "Como funciona")
+### 8.6 Passos numerados (legado: sem uso desde a v3)
 
-É uma sequência de verdade, então leva número: parede vertical de 4 blocos
-na coluna do texto (composição "texto + formulário", §5.2), número em
-Geologica 700 32 px, electric-700, `tabular-nums`, à esquerda do passo.
+A parede vertical de passos numerados do Diagnóstico saiu com a seção. Os
+3 passos do replay ("Como funciona") ficam no hero "estudio" (§9.7), com o
+número "01" a "03" decorativo; com os heros "video" e "classic", voltam ao
+cartão do replay em Produtos, como lista numerada simples.
 
 ### 8.7 Formulário
 
@@ -542,19 +558,20 @@ Geologica 700 32 px, electric-700, `tabular-nums`, à esquerda do passo.
 - Sucesso: bloco com borda esquerda de 4 px `#11793F`, título e texto
   aprovados e o botão do WhatsApp.
 
-### 8.8 Portfólio de vídeos (O que já construímos)
+### 8.8 Aplicativos (grade de vídeos)
 
-Superfície **noite**. Vai de 1 a N projetos sem mudar o layout.
+Superfície **noite** (`#aplicativos`). Vai de 1 a N aplicativos sem mudar o
+layout. Componente `ProjectGrid` (`src/components/sections/ProjectGrid.tsx`).
 
-**Dados** (implementação na Fase B; o texto passa pelo Claudinho): uma
-lista de projetos num arquivo de conteúdo, por exemplo:
+**Dados:** a lista `landingContent.aplicativos.projects`
+(`src/content/landing.ts`), com o texto aprovado:
 
 ```ts
 interface Project {
   slug: string;            // "rota-de-vendas"
   name: string;            // "Rota de Vendas"
   summary: string;         // 1 frase, para o cartão da grade
-  videoTitle: string;      // H3 do destaque: "Veja o Rota de Vendas"
+  videoTitle: string;      // fica nos dados, fora da grade
   video: {
     src: string;           // vídeo de lançamento feito com /brag
     poster: string;
@@ -562,69 +579,65 @@ interface Project {
     caption: string;       // legenda visível abaixo do vídeo
     description: string;   // descrição completa (abre num <details>)
   };
-  highlights?: { lead: string; rest: string }[]; // só o destaque mostra
-  platforms: string[];     // ["Android", "Windows"]
-  featured?: boolean;      // o primeiro com featured (ou o primeiro da lista) é o destaque
+  highlights?: readonly { lead: string; rest: string }[]; // fica nos dados, fora da grade
+  platforms: readonly string[]; // ["Android", "Windows"]
+  status?: ProductStatus;  // selo do cartão (§8.14)
 }
 ```
 
-**Layout:**
+**Layout** (sem destaque e sem título próprio da grade):
 
 ```
-H2 + texto de entrada (colunas 1–7, à esquerda)
-┌ DESTAQUE ───────────────────────────────────────────────┐
-│ moldura 16:9 com o vídeo (ScrollTiltCard, já existente) │
-└─────────────────────────────────────────────────────────┘
-H3 do vídeo, legenda, "Ler a descrição do vídeo"
-destaques em 2 colunas (≥ 768), marcador = ponto do i
-fecho + botão primário (diagnóstico)
-┌ GRADE (só com 2+ projetos): parede, junta navy-950 ─────┐
-│ [pôster 16:9]   [pôster 16:9]   [pôster 16:9]           │
-│ nome (H3)       nome            nome                    │
-│ resumo          resumo          resumo                  │
+H2 + texto de entrada (.section-head)
+┌ GRADE: parede, junta navy-950 ──────────────────────────┐
+│ [palco: pôster 16:9]  [palco: pôster 16:9]  …           │
+│ selo                  selo                              │
+│ nome (H3)             nome                              │
+│ resumo                resumo                            │
 │ [Android] [Windows]  (etiquetas)                        │
+│ legenda, "Ler a descrição do vídeo"                     │
 └─────────────────────────────────────────────────────────┘
+botão primário "Diagnóstico gratuito" (marca o assunto "Aplicativo" no formulário)
 ```
 
-- **1 projeto (hoje):** só o destaque. Nada de grade vazia, "em breve" ou
-  cartão fictício.
-- **2 ou mais:** a grade aparece abaixo do destaque, sob o título (H3)
-  "Outros projetos"; o nome de cada projeto é H4. A parede **nunca deixa
-  coluna vazia**; o layout segue o tanto de cartões na grade:
-  - **1 cartão (2 projetos):** o **cartão largo** (`.project-card--wide`).
-    A partir de 1024 px, pôster nas colunas 1–7 e texto nas 8–12 (máx.
-    30rem), o pôster centrado na altura do texto; o player toca no lugar
-    do pôster. Abaixo de 1024, empilha como os outros cartões. Sem isso, o
-    cartão único virava um pôster de 1200 px, do tamanho do destaque.
-  - **2 cartões:** duas colunas a partir de 768 px (`.wall--2`).
+- A grade vem logo abaixo do H2 da seção, e o nome de cada aplicativo é H3.
+  Nada de grade vazia, "em breve" ou cartão fictício.
+- A parede **nunca deixa coluna vazia**; o layout segue o tanto de cartões:
+  - **1 cartão:** o **cartão largo** (`.project-card--wide`). A partir de
+    1024 px, pôster nas colunas 1–7 e texto nas 8–12 (máx. 30rem), o pôster
+    centrado na altura do texto; o player toca no lugar do pôster. Abaixo de
+    1024, empilha como os outros cartões. Sem isso, o cartão único virava
+    um pôster de 1200 px.
+  - **2 cartões (hoje):** duas colunas a partir de 768 px (`.wall--2`).
   - **3 ou mais:** 1 coluna (< 768), 2 (768–1023) ou 3 (≥ 1024)
     (`.wall--3`).
-- **Mais de 6 na grade:** mostra 6 e um botão de contorno "Mostrar mais
-  projetos", que revela os demais sem mudar de página e leva o foco ao
-  primeiro cartão revelado.
-- Textos de interface aprovados em `docs/landing-copy.md` v1.5, "Portfólio
-  (textos de interface)".
-- **Cartão:** `--surface-raised` (navy-800), pôster 16:9 com
-  `loading="lazy"` e largura e altura declaradas, botão de reproduzir
-  sobre o pôster (56 px, `--radius-2`, electric-700 com triângulo branco,
-  nome acessível "Assistir ao vídeo: {nome}"). Ao clicar, o pôster dá
-  lugar a um `<video controls>` no mesmo lugar, já tocando (há gesto de
-  quem visita), e o foco vai para o vídeo. Só um vídeo toca por vez.
-  Etiquetas de plataforma em 14 px, borda de 1 px navy-600, `--radius-1`
-  (nada de "A · B · C" com pontos).
-- **Moldura do destaque:** fundo preto, borda de 1 px navy-600, "aro" de
-  8 px em navy-800, `--radius-3` e a sombra "Luz" (§5.4). Substitui a
-  moldura verde-petróleo da v1.
-- **Vídeo:** `preload="none"`, pôster sempre, sem reprodução nem som
-  automáticos; legenda e descrição em texto sempre presentes (os vídeos do
-  /brag só têm música). Vídeo novo com narração entra com legenda `.vtt`.
+- **Mais de 6:** mostra 6 e um botão de contorno "Mostrar mais projetos",
+  que revela os demais sem mudar de página e leva o foco ao primeiro cartão
+  revelado.
+- Textos de interface aprovados em `docs/landing-copy.md` v2.0
+  (`landingContent.aplicativos.grid`).
+- **Cartão:** `--surface-raised` (navy-800). Em cima, o **palco** (§8.13),
+  com a tela do app no lugar do objeto: o pôster 16:9 (carregamento
+  preguiçoso) e, sobre ele, o botão de reproduzir (56 px, `--radius-2`,
+  electric-700 com triângulo branco, nome acessível "Assistir ao vídeo:
+  {nome}"). Embaixo, o **selo** de status (§8.14; hoje, "Piloto gratuito"
+  no Rota de Vendas e "Em uso" no Fleet Analytics BI), o nome, o resumo, as
+  etiquetas de plataforma (14 px, borda de 1 px navy-600, `--radius-1`;
+  nada de "A · B · C" com pontos), a legenda e a descrição do vídeo.
+- **Vídeo:** o `<video>` só existe depois do clique: o pôster dá lugar a um
+  `<video controls>` no mesmo lugar, dentro do palco, já tocando (há gesto
+  de quem visita), e o foco vai para o vídeo. Nada toca antes do clique. Só
+  um vídeo toca por vez na página. Legenda e descrição em texto sempre
+  presentes (os vídeos do /brag só têm música). Vídeo novo com narração
+  entra com legenda `.vtt`.
 
 ### 8.9 Equipe
 
 Parede de 4 blocos (2 colunas < 1024, 4 ≥ 1024). Cada bloco: um hexágono
 de pé (a mesma proporção do símbolo) de 72 px, em navy-800, com as
-iniciais em branco (decorativas, `aria-hidden`), e o nome em H3 abaixo.
-Sem foto e sem cargo.
+iniciais em branco (decorativas, `aria-hidden`), o nome em H3 abaixo e,
+logo abaixo do nome, o curso (`siteConfig.team[].course`, em
+`--text-muted`). Sem foto e sem cargo.
 
 ### 8.10 Dúvidas (acordeão)
 
@@ -650,17 +663,16 @@ Crivo): ele some enquanto
 
 - algum elemento com `data-hides-fab` está na tela (IntersectionObserver,
   com 200 px de margem embaixo: ele já está oculto quando o marcador chega
-  à faixa do botão). Hoje: o hero (`section#inicio`, que já tem dois botões
-  de WhatsApp — sem isso, a 360 px eram três chamadas na primeira tela), o
-  vídeo em destaque do portfólio (`video.portfolio__video`, com o tilt da
-  rolagem), o cartão do formulário (`.form-card`, que tem o link do
-  WhatsApp) e o rodapé (idem);
+  à faixa do botão). Hoje: o hero (`section#inicio`, que já mostra o
+  WhatsApp no próprio botão e na barra do topo — sem isso, a 360 px eram
+  três chamadas na primeira tela), o cartão do formulário (`.form-card`,
+  que tem o link do WhatsApp) e o rodapé (idem);
 - a caixa dele cruza a de qualquer controle focável visível (`a[href]`,
   `button`, campos, `summary`, `video[controls]`, `[tabindex] ≥ 0`),
   conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
   campo, link ou controle de vídeo.
 
-**Com a barra do hero "video" (§8.3.1), o FAB só existe abaixo de 75em
+**Com a barra do topo (§8.3.1, heros "estudio" e "video"), o FAB só existe abaixo de 75em
 (1200 px)** (decisão do Claudinho no HR1; o ponto acompanha o da barra
 larga desde a TB2): a partir daí o WhatsApp já está sempre à mostra na
 barra fixa. É CSS (`.topbar ~ .fab-whatsapp { display: none }` em ≥ 75em),
@@ -668,15 +680,17 @@ então vale só nas páginas com a barra; no /privacidade, sem barra, nada
 muda. Abaixo de 75em valem todas as regras acima.
 
 Esconder é imediato; mostrar só depois de conferir com o quadro assentado
-(dois `requestAnimationFrame`, porque o motion aplica o tilt dentro do
-quadro, e de novo 150 ms depois de a rolagem parar).
+(dois `requestAnimationFrame`, para ler as caixas depois de o navegador
+aplicar o layout e as transformações do quadro, como as da revelação ao
+rolar, e de novo 150 ms depois de a rolagem parar).
 
 Oculto de verdade: `data-visible="false"`, atributo `inert` (fora do Tab e
 do leitor de tela) e `visibility: hidden`, não só opacidade. Começa oculto
 no SSR (o hero está na tela ao carregar: sem divergência de hidratação e
 sem piscar); sem JavaScript fica oculto: no hero "classic", o botão do
-cabeçalho continua lá; no hero "video", abaixo de 1024 px o menu da barra
-não abre sem JavaScript, e o WhatsApp fica no botão principal do hero.
+cabeçalho continua lá; nos heros com a barra ("estudio" e "video"), abaixo
+de 75em o menu da barra não abre sem JavaScript, e o WhatsApp fica no botão
+do hero.
 A transição só existe com `prefers-reduced-motion: no-preference` e só na
 entrada (fade de opacidade, `--duration-base`); a saída é instantânea, para
 o botão nunca ficar "sumindo" por cima do que acabou de chegar embaixo
@@ -686,11 +700,11 @@ faixa do botão.
 
 ### 8.13 Palco
 
-Superfície escura (`.palco`) onde fica um produto (cards de hardware, cards de aplicativos; o hero usa o quadro em tela inteira, §9.7). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
+Superfície escura (`.palco`) onde fica um produto (cards de hardware, cards de aplicativos; o hero usa o quadro em tela inteira, §9.7). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio `--radius-3` (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
 
 ### 8.14 Selos de status
 
-Todo produto mostra um selo (classe base `.selo` mais um modificador), com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`, texto `navy-100`; o traço é o que o distingue de "Em desenvolvimento"). No papel (`.surface-paper`), os dois selos de contorno passam a contorno `navy-500` e texto `navy-800`. Forma: etiqueta com `--radius-1` (4 px, §5.3; sem pílula), 14 px (o mínimo da §4), peso 600. O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` (14 px) no canto inferior do palco. A informação está sempre no texto; a cor só reforça.
+Todo produto mostra um selo (classe base `.selo` mais um modificador), com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`, texto `navy-100`; o traço é o que o distingue de "Em desenvolvimento"). No papel (`.surface-paper`), os dois selos de contorno passam a contorno `navy-500` e texto `navy-800`. Forma: etiqueta com `--radius-1` (4 px, §5.3; sem pílula), 14 px (o mínimo da §4), peso 600. O selo de ilustração do 3D (`.selo--ilustracao`, "Ilustração do conceito") é texto pequeno `navy-200` (14 px) no canto inferior do palco; no hero, no canto do quadro (§9.7). Vai em todo lugar que mostra o render 3D: o hero e o cartão do replay em Produtos (spec §10). A informação está sempre no texto; a cor só reforça.
 
 Contraste AA conferido nos quatro (linhas na tabela da §3.4):
 
@@ -814,12 +828,13 @@ Sobretítulo (§4) → H1 display branco → abertura em navy-200 (≤ 56ch) →
 botões WhatsApp e contorno (escuro) → linha de apoio em navy-300, 14 px.
 Sem animação de entrada (§6).
 
-### 9.6 Hero "video" (padrão desde o HR1)
+### 9.6 Hero "video" (padrão do HR1 até a v3)
 
 As §9.1–9.5 descrevem o hero **"classic"**, que continua no código. A
-versão em uso é escolhida em `siteConfig.heroVariant` (`"video"` ou
-`"classic"`, em `src/config/site.ts`); a barra do topo muda junto
-(§8.3 ou §8.3.1). Implementação própria (ADR-005) no estilo pedido pelo
+versão em uso é escolhida em `siteConfig.heroVariant` (`"estudio"`, o
+padrão desde a v3, `"video"` ou `"classic"`, em `src/config/site.ts`); a
+barra do topo muda junto (§8.3 ou §8.3.1). Os heros "video" e "classic"
+saem na limpeza dos heros (spec §5.2). Implementação própria (ADR-005) no estilo pedido pelo
 cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
 `HeroWordmark.tsx`; decisões na ADR-007.
 
@@ -908,34 +923,36 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
 
 ### 9.7 Hero "estudio" (padrão desde a v3)
 
-Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos passam por cima dele. O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
+Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos passam por cima dele. O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900. O conjunto é escolhido uma vez, ao montar, pela largura da tela: girar a tela não baixa tudo de novo.
 
 **Os textos**, em ordem, todos texto aprovado:
-1. a abertura: sobretítulo, H1, corpo e os dois botões;
-2. "Como funciona" (h2);
-3. os 3 passos do replay (`<ol>`).
+1. a abertura: sobretítulo, H1, corpo e os dois botões ("Conhecer o replay", que leva a `#produtos`, e o WhatsApp com a mensagem geral);
+2. "Como funciona" (h2), no estilo do sobretítulo: cyan-300, peso 600, sem caixa-alta (§10);
+3. os 3 passos do replay (`<ol role="list">`), com o número "01" a "03" decorativo (`aria-hidden`; a lista já numera).
 
-Os passos saíram do cartão do replay em Produtos, para não repetir.
+Os passos saíram do cartão do replay em Produtos, para não repetir. Com os heros "video" e "classic", que não os têm, eles voltam ao cartão (§8.6).
 
 **Enquadramento.** Em qualquer quadro do giro, a peça fica entre 9% e 92% da altura do quadro e entre 30% e 70% da largura (15% e 85% no celular). O quadro é dimensionado por ela, e a peça aparece sempre inteira e abaixo da barra:
-- **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 62% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça.
-- **Celular e telas em pé:** o quadro fica em cima, na largura toda, com a peça logo abaixo da barra. Os textos passam embaixo dele, sobre um véu na cor do fundo que garante o contraste se subirem por cima da peça.
+- **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 63% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça. Aqui o fundo fica atrás dos textos.
+- **Celular e telas em pé:** o quadro fica em cima, na largura toda, com a peça logo abaixo da barra, e o pé dele se desfaz num degradê. Os textos começam abaixo do quadro e, ao rolar, passam **por baixo** dele, como passam por baixo da barra: aqui o fundo fica na frente dos textos, com uma faixa opaca na cor do fundo do topo da tela até o pé do quadro. Os textos nunca ficam sobre a peça.
+- **Tela deitada com os quadros do celular** (o celular que montou em pé e depois girou): o canvas mostra o quadro 8:9 inteiro (`object-fit: contain`), e a peça nunca é cortada.
 - As bordas do quadro se desfazem no fundo da seção (navy-950) por máscara, sem costura.
 
 **Com animação** (`data-scrub="true"`, só depois de montar):
-- O fundo (`.hero-estudio__fundo`: pôster, `<canvas>` decorativo com `aria-hidden` e selo) fica preso na tela inteira (`position: sticky; top: 0; height: 100svh`), por trás dos textos.
-- O giro, do quadro 0 ao último, cobre toda a faixa em que o fundo fica preso: da abertura até o último passo, que chega ao meio da área de texto quando o fundo solta.
-- Cada passo ocupa cerca de uma tela de leitura. "Como funciona" fica preso no alto da área de texto enquanto os passos passam.
-- Só o bloco em foco aparece (`data-active`; os outros somem com opacidade e um deslize curto). O bloco em foco é o que tem o texto mais perto do meio da área de texto.
-- O bloco com o foco do teclado nunca some. Com reduced motion não há transição.
+- O fundo (`.hero-estudio__fundo`: pôster, `<canvas>` decorativo com `aria-hidden` e selo) fica preso na tela (`position: sticky; top: 0; height: 100svh`) e solta junto com o fim do hero: nunca cobre a seção seguinte.
+- O giro, do quadro 0 ao último, cobre toda a faixa em que o fundo fica preso: da abertura até o último passo.
+- Cada passo ocupa cerca de uma tela de leitura. Só o bloco em foco aparece (`data-active`; os outros somem com opacidade e um deslize curto). O bloco em foco é o que tem o texto mais perto do meio da área de texto.
+- "Como funciona" fica no alto da área de texto e só aparece enquanto o passo em foco está abaixo dele. Os textos nunca se sobrepõem.
+- O bloco com o foco do teclado nunca some, e o fundo preso não tem nada focável: o foco nunca fica preso nele. Com reduced motion não há transição.
+- Um link direto para uma âncora abaixo do hero (ex.: `/#contato`) chega ao lugar certo: a seção cresce ao montar, e a página volta ao alvo da âncora logo depois da montagem.
 
 **Sem animação** (prefers-reduced-motion, "economizar dados", sem JavaScript, falha ao carregar os quadros):
-- É a mesma marcação: o fundo é só a 1ª tela, com o pôster por trás da abertura, e os passos vêm logo depois, como lista normal, sem alturas extras.
+- É a mesma marcação: o fundo é só a 1ª tela, com o pôster atrás da abertura (lado a lado) ou acima dela (celular), e os passos vêm logo depois, como lista normal, sem alturas extras.
 - Em scroll 0, a composição é a mesma com e sem animação (nada salta ao montar).
 
 **Pôster e selo:**
-- O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
-- O selo "Ilustração do conceito" fica sempre visível num canto do quadro, fora da peça.
+- O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML, com `alt=""` (é decorativo, como o canvas), e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
+- O selo "Ilustração do conceito" fica sempre visível num canto do quadro, fora da peça (§8.14).
 
 ---
 
@@ -947,7 +964,7 @@ Os passos saíram do cartão do replay em Produtos, para não repetir.
 - [ ] Nenhum emoji como ícone; ícones são SVG feitos para a função.
 - [ ] Nenhuma seção resolvida como "três cartões iguais com ícone em cima":
       cada seção usa uma das composições da §5.2.
-- [ ] Números só onde há sequência real (os passos do diagnóstico).
+- [ ] Números só onde há sequência real (os passos do replay, §9.7).
 - [ ] Texto alinhado à esquerda; nada centralizado "por padrão".
 - [ ] Sem sobretítulo em caixa-alta espacejada, sem palavra do título
       destacada em cor ou itálico, sem "A · B · C", sem "→" no fim de botão

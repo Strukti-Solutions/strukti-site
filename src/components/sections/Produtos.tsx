@@ -1,4 +1,5 @@
 import { landingContent } from "@/content/landing";
+import { siteConfig } from "@/config/site";
 import { Palco } from "@/components/ui/Palco";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { FichaTecnica } from "@/components/ui/FichaTecnica";
@@ -9,9 +10,14 @@ import { posterUrl } from "@/lib/heroSequence";
 /**
  * Produtos de hardware (spec 2026-10-03 §4, seção 3): o replay em destaque,
  * num palco com o mesmo render do hero, e o estacionamento em desenvolvimento.
+ *
+ * "Como funciona" e os 3 passos do replay (spec §4, linha 3) ficam no hero
+ * "estudio", ao lado do giro (MASTER §9.7). Com os heros "video" e "classic",
+ * que não têm os passos, eles voltam para o cartão do replay.
  */
 export function Produtos() {
   const { title, intro, replay, estacionamento } = landingContent.produtos;
+  const stepsInCard = siteConfig.heroVariant !== "estudio";
 
   return (
     <section id="produtos" className="section surface-space" aria-labelledby="produtos-title">
@@ -24,7 +30,7 @@ export function Produtos() {
         </Reveal>
 
         <div className="produtos">
-          <article className="produto produto--destaque" aria-labelledby="produto-replay-title">
+          <article className="produto" aria-labelledby="produto-replay-title">
             <Palco className="produto__palco">
               <picture>
                 <source type="image/avif" srcSet={posterUrl("desktop", "avif")} />
@@ -38,7 +44,26 @@ export function Produtos() {
                 {replay.name}
               </h3>
               <p className="body-muted">{replay.oneLiner}</p>
-              {/* "Como funciona" e os passos ficam no hero (HeroSequence), ao lado do giro. */}
+              {stepsInCard && (
+                <>
+                  {/* Só nos heros "video" e "classic", que saem na limpeza dos heros:
+                      o estilo vai em linha para não trazer de volta CSS só deles. */}
+                  <h4 id="produto-replay-passos-title" style={{ marginTop: "var(--space-5)", fontWeight: 600 }}>
+                    {replay.stepsTitle}
+                  </h4>
+                  <ol
+                    className="body-muted"
+                    aria-labelledby="produto-replay-passos-title"
+                    style={{ display: "grid", gap: "var(--space-2)", paddingLeft: "1.25em" }}
+                  >
+                    {replay.steps.map((step) => (
+                      <li key={step.lead}>
+                        <strong>{step.lead}</strong> {step.rest}
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
               <FichaTecnica items={replay.specs} />
               <div className="produto__acoes">
                 <WhatsAppButton message={landingContent.whatsappMessages.replay}>{replay.cta}</WhatsAppButton>

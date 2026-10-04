@@ -1,6 +1,6 @@
 # Identidade "Estúdio" e home nova da Strukti — design
 
-Data: 03/10/2026. Status: aguardando revisão do Thiago.
+Data: 03/10/2026. Status: aprovada pelo Thiago em 03/10/2026.
 
 ## 1. Por que mudar
 

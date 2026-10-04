@@ -38,7 +38,7 @@ Ainda o site da fase de aplicativos. A home v3 está no branch (seção seguinte
 
 ## No branch `feat/identidade-estudio` (ainda sem merge no `main`)
 
-Falta a revisão final do branch inteiro e o merge; push só com o ok do Thiago.
+A revisão final do branch inteiro pediu uma rodada de correção; depois dela, falta o merge. Push só com o ok do Thiago.
 
 - **Home v3 da marca-mãe** (ADR-009, spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md` §4), nesta ordem:
   - hero "estudio": o botão de replay em 3D gira com a rolagem (sequência de quadros AVIF; com reduced motion, "economizar dados" ou sem JavaScript, fica o pôster);
@@ -64,15 +64,22 @@ Falta a revisão final do branch inteiro e o merge; push só com o ok do Thiago.
      - **Q4:** `SITE_URL` (e `VERCEL_*`) vazio ou só com espaços conta como ausente; README com o fallback real; o `check:browser` começa por um controle positivo que provoca uma violação de CSP e interrompe a checagem se o detector não a acusar (provado neutralizando o detector: exit 1).
    - **Armadilha do PC novo:** a pasta é `C:\Dev` (D maiúsculo). Worktree com `node_modules` em junction para `C:\dev\...` faz o `next dev` empacotar o Next duas vezes e a página não hidrata, e o `check:browser` pode passar sem ter testado nada. Use sempre `C:\Dev` em junctions e no diretório de trabalho.
 3. **Depois da home v3:**
-   - **limpeza dos heros "video" e "classic"**, com ADR própria em `docs/DECISOES.md` (spec §5.2): sair `HeroVideo*`, `Hero`, `HeroContent`, `HeroBackground`, os visuais, `Header`, `landingContent.hero` e o CSS deles;
-   - **CSS sem uso das seções que saíram** (Problemas, O que já construímos e Diagnóstico): por exemplo `.diag__highlight`, `.diag__steps-title`, `.highlights` e `.portfolio__video-title` no `globals.css` (conferir cada classe com `grep` antes de apagar: `.diag` e `.portfolio__meta` continuam em uso);
-   - **pendências da v2.0** (`docs/landing-copy.md`, "Pendências"): provedores no aviso de privacidade, endereço do site e curso de cada pessoa da equipe bloqueiam a publicação; fotos da equipe, o grupo decide; o endereço do site do replay não bloqueia (o link fica escondido);
+   - **limpeza dos heros "video" e "classic"**, com ADR própria em `docs/DECISOES.md` (spec §5.2). Saem `HeroVideo*`, `Hero`, `HeroContent`, `HeroBackground`, os visuais, `Header`, `landingContent.hero` e o CSS deles. Saem junto:
+     - o `data-hero-variant` do `<main>` e o passo do `check:browser` que lê esse marcador (mudam juntos);
+     - os passos do replay no cartão de Produtos, que só aparecem fora do hero "estudio";
+     - as seções do MASTER que descrevem esses heros (§8.3, §8.3.1 na parte do "video", §9.1–9.6).
+   - **pendências da v2.0** (`docs/landing-copy.md`, "Pendências"). Bloqueiam a publicação:
+     - **curso de cada pessoa da equipe** (`siteConfig.team[].course`, hoje 4 vezes `[A PREENCHER: curso]`);
+     - **endereço do site** (`landingContent.seo.ogUrl`, lembrete do `check:placeholders`, e o `SITE_URL` na Vercel);
+     - **provedores no aviso de privacidade** (hospedagem e banco, e se guardam dados fora do Brasil).
+
+     Não bloqueia: o **endereço do site do replay** (`produtos.replay.siteUrl`; enquanto for `null`, o link fica escondido). O grupo decide: fotos da equipe.
    - **V2:** mais vídeos de lançamento (`/brag`) de outros projetos na grade de aplicativos.
 4. **L5, publicação** (só com o ok do cliente e as contas dele):
    - deploy na Vercel;
    - banco PostgreSQL para o formulário (`DATABASE_URL` só em `.env.local` e nas variáveis da Vercel);
    - endereço final em `SITE_URL` (o Q4 já está resolvido);
-   - banco criado antes do campo de interesse: rodar a migração do README antes do deploy (sem a coluna `interest`, todo envio dá 500);
+   - banco criado antes do campo de interesse: seguir a migração do README na ordem (coluna com padrão `'aplicativo'` antes do deploy; `DROP DEFAULT`, se quiser, só depois), senão todo envio dá 500;
    - medir o desempenho (Lighthouse) na própria Vercel.
    - O CSP com nonce só volta à mesa se entrar script de terceiro (ADR-008).
 5. **Prioridades seguintes do `CLAUDE.md`:** LGPD do app, base reaproveitável e revisão geral do app.

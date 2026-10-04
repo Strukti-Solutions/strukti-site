@@ -97,16 +97,29 @@ CREATE TABLE leads (
 );
 ```
 
-Banco criado antes do campo "interesse" (ADR-009)? Rode a migração abaixo **antes
-do deploy** do site novo: sem a coluna `interest`, todo envio do formulário falha
-na gravação e a rota responde `500`.
+Banco criado antes do campo "interesse" (ADR-009)? Migre nesta ordem:
 
-```sql
-ALTER TABLE leads ADD COLUMN interest TEXT NOT NULL DEFAULT 'outro';
-ALTER TABLE leads ALTER COLUMN interest DROP DEFAULT;
-ALTER TABLE leads ADD CONSTRAINT leads_interest_check
-  CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro'));
-```
+1. **Antes do deploy**, crie a coluna com valor padrão `'aplicativo'`. Os leads
+   antigos ficam com esse valor porque vieram do formulário de diagnóstico
+   gratuito de aplicativos, o único que existia.
+
+   ```sql
+   ALTER TABLE leads ADD COLUMN interest TEXT NOT NULL DEFAULT 'aplicativo';
+   ALTER TABLE leads ADD CONSTRAINT leads_interest_check
+     CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro'));
+   ```
+
+2. Faça o deploy do site novo.
+3. **Só depois do deploy**, se quiser, tire o padrão (o código novo sempre
+   manda o `interest`):
+
+   ```sql
+   ALTER TABLE leads ALTER COLUMN interest DROP DEFAULT;
+   ```
+
+Por que nessa ordem: sem a coluna, o código novo dá `500` em todo envio; com a
+coluna sem padrão antes do deploy, quem dá `500` é o código antigo, que não
+manda o `interest`.
 
 `consent_at` e `privacy_version` registram quando a pessoa consentiu e qual versão
 do aviso de privacidade estava em vigor (LGPD, art. 8º — o controlador precisa
@@ -158,7 +171,8 @@ src/
       Equipe.tsx              nomes e cursos
       Contato.tsx             formulário único, com o assunto (interesse)
       Faq.tsx, Rodape.tsx     dúvidas e rodapé
-    ui/                     peças do design system v3: Palco, SeloStatus, FichaTecnica
+    ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica) e
+                            blackhole-hero-section (o buraco negro do hero "classic")
     InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
   config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
@@ -184,15 +198,19 @@ Há três versões do topo da página (barra + hero), escolhidas numa linha de
 heroVariant: "estudio", // ou "video" ou "classic"
 ```
 
-- `"estudio"` (padrão) — `HeroSequence.tsx` + `TopBar.tsx`: o texto à
-  esquerda e, num palco à direita, o botão de replay em 3D girando conforme
-  a rolagem.
+- `"estudio"` (padrão) — `HeroSequence.tsx` + `TopBar.tsx`: o botão de
+  replay em 3D, num quadro em tela inteira, gira conforme a rolagem, e os
+  textos passam por cima dele (a abertura; depois, "Como funciona" e os 3
+  passos do replay).
 - `"video"` — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
   palavra "Strukti" gigante e a barra fixa no topo, de borda a borda, com
   menu recolhível abaixo de 75em, 1200px com a fonte padrão (`MASTER.md`
   §8.3.1 e §9.6, ADR-007 e as notas TB1 e TB2).
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
+
+Com `"video"` ou `"classic"`, "Como funciona" e os 3 passos do replay
+aparecem no cartão do replay em Produtos (no `"estudio"`, eles ficam no hero).
 
 **O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
 de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de

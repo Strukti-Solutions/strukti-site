@@ -29,7 +29,7 @@ function overlaps(a: DOMRect, b: DOMRect) {
  * Botão flutuante do WhatsApp (MASTER §8.12). Some — `inert` + visibility
  * hidden, fora do Tab e do leitor de tela — enquanto:
  * - algum elemento marcado com `data-hides-fab` está na tela (hoje: o hero,
- *   que já tem dois botões de WhatsApp, o vídeo do portfólio, o cartão do
+ *   que já mostra o WhatsApp no próprio botão e na barra do topo, o cartão do
  *   formulário e o rodapé, que também têm link de WhatsApp); ou
  * - a caixa dele cruza a de qualquer controle focável (nunca cobre um
  *   botão, campo, link ou controle de vídeo).
@@ -71,9 +71,10 @@ export function FloatingWhatsApp() {
     };
 
     // Esconder é sempre seguro, então acontece na hora. Mostrar só depois de
-    // conferir com o quadro assentado: o motion aplica o tilt do cartão do
-    // vídeo dentro do próprio quadro, por isso a conferência espera dois rAF
-    // e se repete quando a rolagem para.
+    // conferir com o quadro assentado: a conferência espera dois rAF, para
+    // ler as caixas depois de o navegador aplicar o layout e as transformações
+    // do quadro (o motion anima a revelação ao rolar com transform), e se
+    // repete 150 ms depois de a rolagem parar.
     const settledCheck = () => {
       frame = 0;
       setVisible(markersOnScreen.size === 0 && !coversControl());
