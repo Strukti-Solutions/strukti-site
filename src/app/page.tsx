@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { TopBar } from "@/components/TopBar";
 import { Hero } from "@/components/sections/Hero";
 import { HeroVideo } from "@/components/sections/HeroVideo";
+import { HeroSequence } from "@/components/sections/HeroSequence";
 import { Problemas } from "@/components/sections/Problemas";
 import { ComoResolvemos } from "@/components/sections/ComoResolvemos";
 import { OQueJaFizemos } from "@/components/sections/OQueJaFizemos";
@@ -13,13 +14,13 @@ import { Rodape } from "@/components/sections/Rodape";
 
 export default function Home() {
   // A barra do topo e o hero mudam juntos (ver siteConfig.heroVariant).
-  const videoHero = siteConfig.heroVariant === "video";
+  const variant = siteConfig.heroVariant;
 
   return (
     <>
-      {videoHero ? <TopBar /> : <Header />}
+      {variant === "classic" ? <Header /> : <TopBar />}
       <main id="conteudo-principal">
-        {videoHero ? <HeroVideo /> : <Hero />}
+        {variant === "estudio" ? <HeroSequence /> : variant === "video" ? <HeroVideo /> : <Hero />}
         <Problemas />
         <ComoResolvemos />
         <OQueJaFizemos />

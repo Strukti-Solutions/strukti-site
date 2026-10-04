@@ -1,12 +1,14 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
+ * - "estudio" (padrão): hero da v3 (MASTER §9.7): produto 3D em sequência
+ *   de quadros guiada pela rolagem; usa a barra do topo do "video";
  * - "video": barra escura fixa de borda a borda no topo, vídeo de fundo e
  *   a palavra "Strukti" gigante (MASTER §8.3.1 e §9.6);
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
  *   §9.1–9.5), escolhido em `siteConfig.heroVisual`.
  */
-export type HeroVariant = "video" | "classic";
+export type HeroVariant = "estudio" | "video" | "classic";
 
 /**
  * Peça de fundo do hero "classic". Trocar o visual é mudar este valor — ver
@@ -82,7 +84,7 @@ const ROTA_ENTARDECER: HeroVideoSource = {
 
 export const siteConfig = {
   brand: "Strukti Soluções",
-  heroVariant: "video" as HeroVariant,
+  heroVariant: "estudio" as HeroVariant,
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
   heroSequence: {

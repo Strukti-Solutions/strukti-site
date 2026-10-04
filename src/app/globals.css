@@ -2397,3 +2397,100 @@ textarea.field__input {
 .chamada .btn {
   margin-top: var(--space-5);
 }
+
+/* ------------------------------------------------------------------ */
+/* Hero "estudio" (MASTER §9.7)                                         */
+/* ------------------------------------------------------------------ */
+.hero-estudio {
+  position: relative;
+  min-height: 100svh;
+}
+
+.hero-estudio__sticky {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: calc(var(--topbar-height) + var(--topbar-joint) + var(--space-6)) 0 var(--space-7);
+}
+
+/* Com animação: 2,5 telas de rolagem, conteúdo preso enquanto os quadros
+   passam. Preso pelo pé (bottom: 0, com o conteúdo no fim da seção): se
+   couber na tela, prende desde o topo, como um top: 0; se for mais alto que
+   a tela (o palco embaixo do texto no celular, o texto longo a 1024 px), a
+   página rola até o pé dele aparecer e só então prende. Preso pelo topo, o
+   palco e os botões ficavam fora da tela durante a rolagem inteira. */
+.hero-estudio[data-scrub="true"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 250svh;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__sticky {
+  position: sticky;
+  bottom: 0;
+  /* No fim da seção; se o conteúdo passar dos 250svh, a seção cresce e ele
+     começa no topo (nada fica acima da página). */
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.hero-estudio__grid {
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .hero-estudio__grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+.hero-estudio__eyebrow {
+  color: var(--color-cyan-300);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.hero-estudio__title {
+  font-size: clamp(2rem, 4.6vw, 3.5rem);
+  font-weight: 800;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.05;
+  margin-bottom: var(--space-4);
+}
+
+.hero-estudio__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.hero-estudio__palco {
+  aspect-ratio: 8 / 5;
+}
+
+@media (max-width: 767px) {
+  .hero-estudio__palco {
+    aspect-ratio: 8 / 9;
+  }
+}
+
+.hero-estudio__poster,
+.hero-estudio__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* O canvas só aparece com um quadro desenhado e com a animação ligada. */
+.hero-estudio__canvas {
+  visibility: hidden;
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__canvas[data-frame] {
+  visibility: visible;
+}

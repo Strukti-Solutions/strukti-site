@@ -162,19 +162,32 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-Há duas versões do topo da página (barra + hero), escolhidas numa linha de
+Há três versões do topo da página (barra + hero), escolhidas numa linha de
 `src/config/site.ts`:
 
 ```ts
-heroVariant: "video", // ou "classic"
+heroVariant: "estudio", // ou "video" ou "classic"
 ```
 
-- `"video"` (padrão) — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
+- `"estudio"` (padrão) — `HeroSequence.tsx` + `TopBar.tsx`: o texto à
+  esquerda e, num palco à direita, o botão de replay em 3D girando conforme
+  a rolagem.
+- `"video"` — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
   palavra "Strukti" gigante e a barra fixa no topo, de borda a borda, com
   menu recolhível abaixo de 75em, 1200px com a fonte padrão (`MASTER.md`
   §8.3.1 e §9.6, ADR-007 e as notas TB1 e TB2).
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
+
+**O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
+de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de
+1600 × 1000 no computador; 45 de 800 × 900 até 767px), escolhida pela
+rolagem dentro da seção (`HeroSequenceScroller.tsx`, com a matemática em
+`src/lib/heroSequence.ts`). O pôster (quadro 0, AVIF com JPG de reserva) vem
+no HTML; com reduced motion, "economizar dados", sem JavaScript ou se os
+quadros falharem, o hero fica parado no pôster e a seção perde a altura
+extra. Os quadros saem do Blender e do encode descritos em
+`scripts/hero-3d/README.md`; os tamanhos ficam em `siteConfig.heroSequence`.
 
 **Trocar o vídeo do hero "video":** os arquivos ficam em
 `public/video/hero/` (servidos pelo site, nunca de CDN) e são apontados em
