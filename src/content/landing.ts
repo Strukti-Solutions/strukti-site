@@ -415,7 +415,7 @@ export const landingContent = {
     bloqueiam: [
       "Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.",
       "Endereço do site (seo.ogUrl e mensagem da equipe).",
-      "Curso de cada pessoa da equipe (siteConfig.team[].course, 4 vezes [A PREENCHER: curso]).",
+      "Curso de cada pessoa da equipe (siteConfig.team[].course, ainda pendente nas 4 pessoas).",
     ],
     grupoDecide: ["Fotos da equipe. A página funciona com as iniciais; o grupo decide se publica sem fotos."],
     naoBloqueiam: [

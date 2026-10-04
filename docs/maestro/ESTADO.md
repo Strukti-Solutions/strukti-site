@@ -10,7 +10,35 @@ A Strukti passou a focar em produtos de hardware + IA (replay para quadras; esta
 - Plano: `docs/superpowers/plans/2026-10-03-identidade-estudio.md` (10 tarefas; a Tarefa 2, texto v2.0, é portão do Thiago).
 - Nesta máquina o time roda como subagentes do Claude Code (o Maestri está com outro projeto).
 
-## O que está no `main` (depois desta rodada)
+## O que está no `main`
+
+Ainda o site da fase de aplicativos. A home v3 está no branch (seção seguinte).
+
+- **Site completo:**
+  - hero com vídeo;
+  - problemas do nicho;
+  - como resolvemos;
+  - portfólio com 2 projetos em vídeo (Rota de Vendas e Fleet Analytics BI);
+  - diagnóstico gratuito e formulário com consentimento (LGPD);
+  - equipe;
+  - aviso de privacidade.
+- **Design system "Encaixe":** `design-system/strukti-solucoes/MASTER.md`. As decisões estão nos ADRs 001 a 008 de `docs/DECISOES.md`.
+- **TB1, top bar fixa de borda a borda.**
+- **TB2, barra larga a partir de 75em**, para o espaçamento de texto do WCAG 1.4.12. Abaixo disso valem o Menu e o botão flutuante do WhatsApp.
+- **P3, prontidão para publicar:**
+  - o botão flutuante relê os marcadores a cada rota;
+  - o pôster do vídeo de destaque só carrega perto da seção;
+  - `SITE_URL` alimenta o `metadataBase`, o sitemap e o robots;
+  - manifest e página 404 ("Página não encontrada" e "Voltar para o início", textos aprovados pelo Claudinho em 03/10);
+  - **CSP estática** e cabeçalhos de segurança no `next.config` (ADR-008):
+    - sem nonce; `'unsafe-eval'` só em desenvolvimento;
+    - as páginas continuam estáticas, servidas pela CDN;
+    - o `check:browser` falha se houver violação de CSP.
+- O texto aprovado no `main` é o de `docs/landing-copy.md` versão 1.8: a v1.7 do cliente mais os textos da 404.
+
+## No branch `feat/identidade-estudio` (ainda sem merge no `main`)
+
+Falta a revisão final do branch inteiro e o merge; push só com o ok do Thiago.
 
 - **Home v3 da marca-mãe** (ADR-009, spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md` §4), nesta ordem:
   - hero "estudio": o botão de replay em 3D gira com a rolagem (sequência de quadros AVIF; com reduced motion, "economizar dados" ou sem JavaScript, fica o pôster);
@@ -20,18 +48,9 @@ A Strukti passou a focar em produtos de hardware + IA (replay para quadras; esta
   - como trabalhamos (etapas), equipe (nome e curso), dúvidas e rodapé;
   - contato: formulário único com o campo de interesse (assunto) e consentimento (LGPD);
   - aviso de privacidade (versão 2026-10-03).
-- **Design system v3 "Estúdio":** `design-system/strukti-solucoes/MASTER.md`. As decisões estão nos ADRs 001 a 009 de `docs/DECISOES.md`.
-- **TB1, top bar fixa de borda a borda.**
-- **TB2, barra larga a partir de 75em**, para o espaçamento de texto do WCAG 1.4.12. Abaixo disso valem o Menu e o botão flutuante do WhatsApp.
-- **P3, prontidão para publicar:**
-  - o botão flutuante relê os marcadores a cada rota;
-  - `SITE_URL` alimenta o `metadataBase`, o sitemap e o robots;
-  - manifest e página 404 ("Página não encontrada" e "Voltar para o início", textos aprovados pelo Claudinho em 03/10);
-  - **CSP estática** e cabeçalhos de segurança no `next.config` (ADR-008):
-    - sem nonce; `'unsafe-eval'` só em desenvolvimento;
-    - as páginas continuam estáticas, servidas pela CDN;
-    - o `check:browser` falha se houver violação de CSP.
-- O texto aprovado está em `docs/landing-copy.md`, versão 2.0 (aprovada pelo Thiago em 03/10/2026).
+- **Design system v3 "Estúdio":** `design-system/strukti-solucoes/MASTER.md`, com a ADR-009 em `docs/DECISOES.md`.
+- **`check:browser`** com o passo do hero "estudio" (a variante vem de `<main data-hero-variant>`) e os vídeos dos aplicativos.
+- O texto aprovado no branch é o de `docs/landing-copy.md` versão 2.0 (aprovada pelo Thiago em 03/10/2026).
 
 ## Próximos passos
 

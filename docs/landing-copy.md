@@ -84,11 +84,7 @@ Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithM
 
 *Nota: usada no botão "Quero conversar sobre isso" do card do estacionamento. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20conversar%20sobre%20o%20estacionamento%20inteligente.`*
 
-**`whatsappMessages.aplicativo`:** Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito de um aplicativo para a minha empresa.
-
-*Nota: link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20pedir%20o%20diagn%C3%B3stico%20gratuito%20de%20um%20aplicativo%20para%20a%20minha%20empresa.`*
-
-*Nota (para o Dev e o Thiago): o plano da Tarefa 8 usa a mensagem de aplicativo no link "Chame no WhatsApp" ao lado do formulário e na mensagem de falha no envio. Como o formulário agora serve a todos os assuntos (replay, estacionamento, aplicativo, outro), recomendo usar ali a mensagem geral: quem veio pelo replay e falha no envio não deveria abrir o WhatsApp pedindo diagnóstico de aplicativo.*
+*Nota: a mensagem pronta de aplicativo (`whatsappMessages.aplicativo`) foi removida na Tarefa 10, porque ficou sem uso: o formulário único serve a todos os assuntos, e o link "Chame no WhatsApp" ao lado dele e a mensagem de falha no envio usam a mensagem geral. O texto antigo está no histórico do git.*
 
 *Nota: cada mensagem mostra de onde veio a conversa sem precisar de analytics.*
 
@@ -604,7 +600,7 @@ Bloqueiam a publicação:
 
 1. Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.
 2. Endereço do site (`seo.ogUrl` e mensagem da equipe).
-3. Curso de cada pessoa da equipe (`siteConfig.team[].course`, 4 vezes `[A PREENCHER: curso]`).
+3. Curso de cada pessoa da equipe (`siteConfig.team[].course`, ainda pendente nas 4 pessoas).
 
 O grupo decide se bloqueiam:
 

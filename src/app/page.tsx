@@ -20,7 +20,8 @@ export default function Home() {
   return (
     <>
       {variant === "classic" ? <Header /> : <TopBar />}
-      <main id="conteudo-principal">
+      {/* data-hero-variant: o check:browser lê daqui qual hero conferir. */}
+      <main id="conteudo-principal" data-hero-variant={variant}>
         {variant === "estudio" ? <HeroSequence /> : variant === "video" ? <HeroVideo /> : <Hero />}
         <Produtos />
         <Aplicativos />

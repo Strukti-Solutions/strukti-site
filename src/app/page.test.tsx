@@ -76,9 +76,15 @@ describe("home v3 (hero estudio) — estrutura", () => {
   });
 });
 
-describe.each(["estudio", "video", "classic"] as const)("home (hero %s) — âncoras", (variant) => {
+describe.each(["estudio", "video", "classic"] as const)("home (hero %s) — variante e âncoras", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
+  });
+
+  it("o <main> diz qual variante do hero está em uso (o check:browser lê esse marcador)", () => {
+    const { container } = render(<Home />);
+
+    expect(container.querySelector("main")?.getAttribute("data-hero-variant")).toBe(variant);
   });
 
   it("todo link de âncora aponta para um id que existe na página", () => {
