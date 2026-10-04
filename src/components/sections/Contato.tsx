@@ -114,229 +114,231 @@ export function Contato() {
   }
 
   return (
-    <section id="contato" className="section surface-paper" aria-labelledby="contato-title">
-      <div className="container diag">
-        <div>
-          <h2 id="contato-title" className="section-title">
-            {title}
-          </h2>
-          <p className="body-muted" style={{ marginTop: "var(--space-4)", maxWidth: "62ch" }}>
-            {intro}
-          </p>
-        </div>
+    <section id="contato" className="section section--seam surface-paper" aria-labelledby="contato-title">
+      <div className="container">
+        <div className="diag">
+          <div>
+            <h2 id="contato-title" className="section-title">
+              {title}
+            </h2>
+            <p className="body-muted" style={{ marginTop: "var(--space-4)", maxWidth: "62ch" }}>
+              {intro}
+            </p>
+          </div>
 
-        <div className="form-card" data-hides-fab="">
-          {status === "success" ? (
-            <div role="status" className="form-success">
-              <h3 ref={successHeadingRef} tabIndex={-1} className="block-title form-card__title">
-                {form.success.title}
-              </h3>
-              <p>{form.success.text.replace("{nome}", submittedName)}</p>
-              <p>{form.success.text2}</p>
-              <WhatsAppButton message={landingContent.whatsappMessages.general}>
-                {form.success.button}
-              </WhatsAppButton>
-            </div>
-          ) : (
-            <>
-              <h3 className="block-title form-card__title">{form.title}</h3>
-              <p className="body-muted">{form.intro}</p>
-              <p className="form-card__notice">{form.requiredNotice}</p>
+          <div className="form-card" data-hides-fab="">
+            {status === "success" ? (
+              <div role="status" className="form-success">
+                <h3 ref={successHeadingRef} tabIndex={-1} className="block-title form-card__title">
+                  {form.success.title}
+                </h3>
+                <p>{form.success.text.replace("{nome}", submittedName)}</p>
+                <p>{form.success.text2}</p>
+                <WhatsAppButton message={landingContent.whatsappMessages.general}>
+                  {form.success.button}
+                </WhatsAppButton>
+              </div>
+            ) : (
+              <>
+                <h3 className="block-title form-card__title">{form.title}</h3>
+                <p className="body-muted">{form.intro}</p>
+                <p className="form-card__notice">{form.requiredNotice}</p>
 
-              {errorCount > 0 && (
-                <p role="alert" className="form-error-summary">
-                  {errorCount === 1
-                    ? form.errorSummarySingle
-                    : form.errorSummaryMultiple.replace("{n}", String(errorCount))}
-                </p>
-              )}
+                {errorCount > 0 && (
+                  <p role="alert" className="form-error-summary">
+                    {errorCount === 1
+                      ? form.errorSummarySingle
+                      : form.errorSummaryMultiple.replace("{n}", String(errorCount))}
+                  </p>
+                )}
 
-              <form ref={formRef} onSubmit={handleSubmit} noValidate>
-                <div className="field">
-                  <label htmlFor="name" className="field__label">
-                    {form.fields.name.label}
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    maxLength={120}
-                    className="field__input"
-                    required
-                    aria-invalid={Boolean(fieldErrors.name)}
-                    aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                  />
-                  {fieldErrors.name && <FieldError id="name-error" message={fieldErrors.name} />}
-                </div>
+                <form ref={formRef} onSubmit={handleSubmit} noValidate>
+                  <div className="field">
+                    <label htmlFor="name" className="field__label">
+                      {form.fields.name.label}
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      maxLength={120}
+                      className="field__input"
+                      required
+                      aria-invalid={Boolean(fieldErrors.name)}
+                      aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                    />
+                    {fieldErrors.name && <FieldError id="name-error" message={fieldErrors.name} />}
+                  </div>
 
-                <div className="field">
-                  <label htmlFor="company" className="field__label">
-                    {form.fields.company.label}
-                  </label>
-                  <input
-                    id="company"
-                    name="company"
-                    type="text"
-                    autoComplete="organization"
-                    maxLength={150}
-                    className="field__input"
-                    required
-                    aria-invalid={Boolean(fieldErrors.company)}
-                    aria-describedby={fieldErrors.company ? "company-error" : undefined}
-                  />
-                  {fieldErrors.company && <FieldError id="company-error" message={fieldErrors.company} />}
-                </div>
+                  <div className="field">
+                    <label htmlFor="company" className="field__label">
+                      {form.fields.company.label}
+                    </label>
+                    <input
+                      id="company"
+                      name="company"
+                      type="text"
+                      autoComplete="organization"
+                      maxLength={150}
+                      className="field__input"
+                      required
+                      aria-invalid={Boolean(fieldErrors.company)}
+                      aria-describedby={fieldErrors.company ? "company-error" : undefined}
+                    />
+                    {fieldErrors.company && <FieldError id="company-error" message={fieldErrors.company} />}
+                  </div>
 
-                <div className="field">
-                  <label htmlFor="whatsapp" className="field__label">
-                    {form.fields.whatsapp.label}
-                  </label>
-                  <input
-                    id="whatsapp"
-                    name="whatsapp"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    maxLength={20}
-                    className="field__input"
-                    required
-                    aria-invalid={Boolean(fieldErrors.whatsapp)}
-                    aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"}
-                  />
-                  {fieldErrors.whatsapp ? (
-                    <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
-                  ) : (
-                    <p id="whatsapp-help" className="field__help">
-                      {form.fields.whatsapp.help}
-                    </p>
-                  )}
-                </div>
+                  <div className="field">
+                    <label htmlFor="whatsapp" className="field__label">
+                      {form.fields.whatsapp.label}
+                    </label>
+                    <input
+                      id="whatsapp"
+                      name="whatsapp"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      maxLength={20}
+                      className="field__input"
+                      required
+                      aria-invalid={Boolean(fieldErrors.whatsapp)}
+                      aria-describedby={fieldErrors.whatsapp ? "whatsapp-error" : "whatsapp-help"}
+                    />
+                    {fieldErrors.whatsapp ? (
+                      <FieldError id="whatsapp-error" message={fieldErrors.whatsapp} />
+                    ) : (
+                      <p id="whatsapp-help" className="field__help">
+                        {form.fields.whatsapp.help}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="field">
-                  <label htmlFor="interest" className="field__label">
-                    {form.fields.interest.label}
-                  </label>
-                  <select
-                    id="interest"
-                    name="interest"
-                    className="field__input"
-                    required
-                    value={interest}
-                    onChange={(event) => setInterest(event.target.value as Interest | "")}
-                    aria-invalid={Boolean(fieldErrors.interest)}
-                    aria-describedby={fieldErrors.interest ? "interest-error" : undefined}
+                  <div className="field">
+                    <label htmlFor="interest" className="field__label">
+                      {form.fields.interest.label}
+                    </label>
+                    <select
+                      id="interest"
+                      name="interest"
+                      className="field__input"
+                      required
+                      value={interest}
+                      onChange={(event) => setInterest(event.target.value as Interest | "")}
+                      aria-invalid={Boolean(fieldErrors.interest)}
+                      aria-describedby={fieldErrors.interest ? "interest-error" : undefined}
+                    >
+                      <option value="">{form.fields.interest.placeholder}</option>
+                      {INTERESTS.map((value) => (
+                        <option key={value} value={value}>
+                          {form.fields.interest.options[value]}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.interest && <FieldError id="interest-error" message={fieldErrors.interest} />}
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="problem" className="field__label">
+                      {form.fields.problem.label}
+                    </label>
+                    <textarea
+                      id="problem"
+                      name="problem"
+                      rows={4}
+                      maxLength={PROBLEM_MAX_LENGTH}
+                      className="field__input"
+                      required
+                      aria-invalid={Boolean(fieldErrors.problem)}
+                      aria-describedby={fieldErrors.problem ? "problem-error" : "problem-help"}
+                    />
+                    {fieldErrors.problem ? (
+                      <FieldError id="problem-error" message={fieldErrors.problem} />
+                    ) : (
+                      <p id="problem-help" className="field__help">
+                        {form.fields.problem.help}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      left: "-9999px",
+                      width: "1px",
+                      height: "1px",
+                      overflow: "hidden",
+                    }}
                   >
-                    <option value="">{form.fields.interest.placeholder}</option>
-                    {INTERESTS.map((value) => (
-                      <option key={value} value={value}>
-                        {form.fields.interest.options[value]}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors.interest && <FieldError id="interest-error" message={fieldErrors.interest} />}
-                </div>
+                    <label htmlFor="codigoParceiro">{form.honeypotLabel}</label>
+                    <input
+                      id="codigoParceiro"
+                      name="codigoParceiro"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
 
-                <div className="field">
-                  <label htmlFor="problem" className="field__label">
-                    {form.fields.problem.label}
-                  </label>
-                  <textarea
-                    id="problem"
-                    name="problem"
-                    rows={4}
-                    maxLength={PROBLEM_MAX_LENGTH}
-                    className="field__input"
-                    required
-                    aria-invalid={Boolean(fieldErrors.problem)}
-                    aria-describedby={fieldErrors.problem ? "problem-error" : "problem-help"}
-                  />
-                  {fieldErrors.problem ? (
-                    <FieldError id="problem-error" message={fieldErrors.problem} />
-                  ) : (
-                    <p id="problem-help" className="field__help">
-                      {form.fields.problem.help}
-                    </p>
-                  )}
-                </div>
+                  <div className="consent">
+                    <input
+                      id="consent"
+                      name="consent"
+                      type="checkbox"
+                      required
+                      aria-invalid={Boolean(fieldErrors.consent)}
+                      aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
+                    />
+                    <label htmlFor="consent">
+                      {form.consentLabelPrefix}
+                      <a href="/privacidade">{form.consentLinkLabel}</a>
+                      {form.consentLabelSuffix}
+                    </label>
+                  </div>
+                  {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
+                  <p className="field__help" style={{ marginBottom: "var(--space-5)" }}>
+                    {form.consentHelperLine}
+                  </p>
 
-                {/* Honeypot: invisível para pessoas, visível para bots que preenchem todos os campos. */}
-                <div
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    left: "-9999px",
-                    width: "1px",
-                    height: "1px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <label htmlFor="codigoParceiro">{form.honeypotLabel}</label>
-                  <input
-                    id="codigoParceiro"
-                    name="codigoParceiro"
-                    type="text"
-                    tabIndex={-1}
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div className="consent">
-                  <input
-                    id="consent"
-                    name="consent"
-                    type="checkbox"
-                    required
-                    aria-invalid={Boolean(fieldErrors.consent)}
-                    aria-describedby={fieldErrors.consent ? "consent-error" : undefined}
-                  />
-                  <label htmlFor="consent">
-                    {form.consentLabelPrefix}
-                    <a href="/privacidade">{form.consentLinkLabel}</a>
-                    {form.consentLabelSuffix}
-                  </label>
-                </div>
-                {fieldErrors.consent && <FieldError id="consent-error" message={fieldErrors.consent} />}
-                <p className="field__help" style={{ marginBottom: "var(--space-5)" }}>
-                  {form.consentHelperLine}
-                </p>
-
-                <motion.button
-                  type="submit"
-                  className="btn btn--primary"
-                  aria-disabled={status === "submitting"}
-                  aria-busy={status === "submitting"}
-                  {...(status === "submitting" ? {} : tapHover)}
-                >
-                  {status === "submitting" ? form.submittingLabel : form.submitLabel}
-                </motion.button>
-
-                <p className="form-card__alt">
-                  {form.whatsappAlternativePrefix}
-                  <a
-                    href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <motion.button
+                    type="submit"
+                    className="btn btn--primary"
+                    aria-disabled={status === "submitting"}
+                    aria-busy={status === "submitting"}
+                    {...(status === "submitting" ? {} : tapHover)}
                   >
-                    {form.whatsappAlternativeLinkLabel}
-                  </a>
-                </p>
+                    {status === "submitting" ? form.submittingLabel : form.submitLabel}
+                  </motion.button>
 
-                <div aria-live="polite">
-                  {status === "error" && errorCount === 0 && (
-                    <p ref={statusErrorRef} tabIndex={-1} className="form-status-error">
-                      <LinkedText
-                        text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
-                        linkLabel="fale com a gente pelo WhatsApp"
-                        href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
-                        external
-                      />
-                    </p>
-                  )}
-                </div>
-              </form>
-            </>
-          )}
+                  <p className="form-card__alt">
+                    {form.whatsappAlternativePrefix}
+                    <a
+                      href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {form.whatsappAlternativeLinkLabel}
+                    </a>
+                  </p>
+
+                  <div aria-live="polite">
+                    {status === "error" && errorCount === 0 && (
+                      <p ref={statusErrorRef} tabIndex={-1} className="form-status-error">
+                        <LinkedText
+                          text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
+                          linkLabel="fale com a gente pelo WhatsApp"
+                          href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
+                          external
+                        />
+                      </p>
+                    )}
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>

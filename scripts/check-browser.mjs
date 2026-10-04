@@ -17,13 +17,19 @@
 // detector cego também "passaria".
 //
 // Depois, lê a variante do hero no HTML servido (<main data-hero-variant>,
-// de siteConfig.heroVariant). Com "estudio", confere a 1440px que a rolagem
-// troca o quadro do canvas (do 0 para outro) e que, com reduced motion, a
-// animação não liga, nenhum quadro é desenhado e a seção fica com a mesma
-// altura da página sem JavaScript (sem a altura extra de rolagem); falha se
-// a seção .hero-estudio não existir. Com outra variante, avisa que pulou.
-// Usa só os ganchos estáveis do hero (data-scrub, data-frame e o pôster),
-// porque o desenho interno dele pode mudar.
+// de siteConfig.heroVariant). Com "estudio", confere a 1440×900 (lado a
+// lado) e a 360×740 (celular, quadro em cima) que a rolagem troca o quadro
+// do canvas (do 0 para outro) e que, com reduced motion, a animação não
+// liga, nenhum quadro é desenhado e a seção fica com a mesma altura da
+// página sem JavaScript (sem a altura extra de rolagem); falha se a seção
+// .hero-estudio não existir. Com a animação, rola até #produtos (o destino
+// de "Conhecer o replay") e falha se o fundo preso do hero ainda cobrir o
+// topo de Produtos (pelo retângulo dele e pelo elementFromPoint, com o
+// pointer-events do fundo ligado só durante a medida: o elementFromPoint
+// ignora elementos com pointer-events: none). Com outra variante, avisa que
+// pulou. Usa só os ganchos estáveis do hero (data-scrub, data-frame, o
+// pôster e o fundo .hero-estudio__fundo), porque o desenho interno dele
+// pode mudar.
 //
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
@@ -81,6 +87,14 @@ const HERO_VIDEO_SELECTOR = ".hero-video__video";
 const HERO_STUDIO_SELECTOR = ".hero-estudio";
 const HERO_CANVAS_SELECTOR = ".hero-estudio__canvas";
 const HERO_POSTER_SELECTOR = ".hero-estudio__poster";
+const HERO_FUNDO_SELECTOR = ".hero-estudio__fundo";
+// A seção logo depois do hero (destino de "Conhecer o replay").
+const AFTER_HERO_SELECTOR = "#produtos";
+// Hero "estudio": lado a lado (computador) e quadro em cima (celular).
+const HERO_SIZES = [
+  { width: 1440, height: 900 },
+  { width: 360, height: 740 },
+];
 const APPS_PLAY_BUTTON_SELECTOR = "#aplicativos .project-card__play";
 // Cartão N da grade de aplicativos (o vídeo só existe depois do clique em "Assistir").
 const appCard = (n) => `#aplicativos .project-card:nth-child(${n})`;
@@ -398,6 +412,50 @@ const HERO_STUDIO_EXPR = `(async () => {
   return state;
 })()`;
 
+// Hero "estudio", com a animação: rola até a seção seguinte (#produtos) como
+// a âncora faz (scroll-padding-top incluído) e confere que o fundo preso do
+// hero já soltou: o pé dele fica acima do topo da seção, e o elementFromPoint
+// em seis pontos do topo dela (três larguras, 4 e 48 px abaixo) devolve
+// conteúdo da própria seção. O fundo tem pointer-events: none, que o
+// elementFromPoint ignora; por isso ele é ligado só durante a leitura.
+const HERO_EXIT_EXPR = `(async () => {
+  const fundo = document.querySelector(${JSON.stringify(HERO_FUNDO_SELECTOR)});
+  const next = document.querySelector(${JSON.stringify(AFTER_HERO_SELECTOR)});
+  if (!fundo || !next) return { missing: fundo ? ${JSON.stringify(AFTER_HERO_SELECTOR)} : ${JSON.stringify(HERO_FUNDO_SELECTOR)} };
+  const frames = (n) => new Promise((resolve) => {
+    const step = () => (n-- <= 0 ? resolve() : requestAnimationFrame(step));
+    step();
+  });
+  next.scrollIntoView({ block: "start", behavior: "instant" });
+  await frames(6);
+  const top = next.getBoundingClientRect().top;
+  const fundoBottom = fundo.getBoundingClientRect().bottom;
+  const label = (el) => {
+    if (!el) return "nada";
+    const cls = typeof el.className === "string" ? el.className.trim().split(/\\s+/)[0] : "";
+    return el.tagName.toLowerCase() + (cls ? "." + cls : "");
+  };
+  const probe = document.createElement("style");
+  probe.textContent = ${JSON.stringify(`${HERO_FUNDO_SELECTOR}, ${HERO_FUNDO_SELECTOR} * { pointer-events: auto !important; }`)};
+  document.head.append(probe);
+  const covered = [];
+  try {
+    for (const fx of [0.1, 0.5, 0.9]) {
+      for (const dy of [4, 48]) {
+        const x = Math.round(innerWidth * fx);
+        const y = Math.round(top + dy);
+        if (y < 0 || y >= innerHeight) continue;
+        const el = document.elementFromPoint(x, y);
+        if (!el || !next.contains(el)) covered.push(label(el) + " em (" + x + ", " + y + ")");
+      }
+    }
+  } finally {
+    probe.remove();
+  }
+  window.scrollTo({ top: 0, behavior: "instant" });
+  return { top: Math.round(top), fundoBottom: Math.round(fundoBottom), covered };
+})()`;
+
 async function evalValue(cdp, expression, { awaitPromise = false } = {}) {
   const { result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
     expression,
@@ -596,51 +654,63 @@ try {
     }
   }
 
-  // --- Hero "estudio": a rolagem troca o quadro; com reduced motion fica no pôster, sem altura extra ---
+  // --- Hero "estudio": a rolagem troca o quadro; com reduced motion fica no pôster, sem altura extra;
+  // ao rolar até a seção seguinte, o fundo preso já soltou ---
   // A variante vem do HTML servido (<main data-hero-variant>, que sai de
   // siteConfig.heroVariant). Com outra variante, o passo avisa que pulou. Com
   // "estudio" e sem o gancho .hero-estudio (o desenho do hero mudou?), reprova:
   // um passo que some calado também "passaria" (como o detector de CSP, Q4).
-  console.log(`\nHero "estudio" a 1440px:`);
-  consoleErrors = [];
-  try {
-    // Estado explícito, sem herdar o que sobrou do laço de larguras: 1440px e
-    // reduced motion ligado, o mesmo estado da medida com que a referência
-    // de altura é comparada lá embaixo.
-    await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: VIEWPORT_HEIGHT, deviceScaleFactor: 1, mobile: false });
-    await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  // Roda a 1440×900 (lado a lado, quadros do computador) e a 360×740 (quadro
+  // em cima, quadros do celular).
+  for (const { width, height } of HERO_SIZES) {
+    const size = `${width}×${height}`;
+    console.log(`\nHero "estudio" a ${size}:`);
+    consoleErrors = [];
+    try {
+      // Estado explícito, sem herdar o que sobrou do passo anterior: o tamanho
+      // e reduced motion ligado, o mesmo estado da medida com que a referência
+      // de altura é comparada lá embaixo.
+      await cdp.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+      await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
 
-    // Referência da altura sem a trilha de rolagem: a página sem JavaScript,
-    // que é o HTML do servidor e o 1º render do cliente (ADR-004). Com
-    // reduced motion, o hero tem de ficar do mesmo tamanho. A folga de 10% da
-    // tela absorve diferenças pequenas de layout; a trilha tem bem mais que isso.
-    await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
-    let heroLoaded = cdp.once("Page.loadEventFired");
-    await cdp.send("Page.navigate", { url: URL_TO_CHECK });
-    await withTimeout(heroLoaded, "carregar sem JavaScript para o passo do hero");
-    const staticPage = await evalValue(
-      cdp,
-      `(async () => {
-        await document.fonts.ready;
-        const section = document.querySelector(${JSON.stringify(HERO_STUDIO_SELECTOR)});
-        return {
-          variant: document.querySelector("main")?.dataset.heroVariant ?? null,
-          height: section ? section.offsetHeight : null,
-          scrub: section ? (section.dataset.scrub ?? null) : null,
-        };
-      })()`,
-      { awaitPromise: true },
-    );
-    await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
+      // Referência da altura sem a trilha de rolagem: a página sem JavaScript,
+      // que é o HTML do servidor e o 1º render do cliente (ADR-004). Com
+      // reduced motion, o hero tem de ficar do mesmo tamanho. A folga de 10% da
+      // tela absorve diferenças pequenas de layout; a trilha tem bem mais que isso.
+      await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
+      let heroLoaded = cdp.once("Page.loadEventFired");
+      await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+      await withTimeout(heroLoaded, `carregar sem JavaScript para o passo do hero a ${size}`);
+      const staticPage = await evalValue(
+        cdp,
+        `(async () => {
+          await document.fonts.ready;
+          const section = document.querySelector(${JSON.stringify(HERO_STUDIO_SELECTOR)});
+          return {
+            variant: document.querySelector("main")?.dataset.heroVariant ?? null,
+            height: section ? section.offsetHeight : null,
+            scrub: section ? (section.dataset.scrub ?? null) : null,
+          };
+        })()`,
+        { awaitPromise: true },
+      );
+      await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
 
-    if (!staticPage.variant) {
-      failures.push("hero estudio: o <main> não diz a variante do hero (data-hero-variant); o passo não sabe o que conferir");
-    } else if (staticPage.variant !== "estudio") {
-      console.log(`  hero estudio: passo pulado (variante ${staticPage.variant})`);
-    } else if (staticPage.height === null) {
-      failures.push(`hero estudio: a variante é "estudio", mas a página não tem ${HERO_STUDIO_SELECTOR} (o gancho do hero mudou?)`);
-    } else {
-      if (staticPage.scrub !== "false") failures.push(`hero estudio: sem JavaScript o HTML veio com data-scrub=${staticPage.scrub} (esperado false)`);
+      if (!staticPage.variant) {
+        failures.push("hero estudio: o <main> não diz a variante do hero (data-hero-variant); o passo não sabe o que conferir");
+        break;
+      }
+      if (staticPage.variant !== "estudio") {
+        console.log(`  hero estudio: passo pulado (variante ${staticPage.variant})`);
+        break;
+      }
+      if (staticPage.height === null) {
+        failures.push(`hero estudio: a variante é "estudio", mas a página não tem ${HERO_STUDIO_SELECTOR} (o gancho do hero mudou?)`);
+        break;
+      }
+      if (staticPage.scrub !== "false") {
+        failures.push(`hero estudio a ${size}: sem JavaScript o HTML veio com data-scrub=${staticPage.scrub} (esperado false)`);
+      }
 
       for (const reduce of [false, true]) {
         await cdp.send("Emulation.setEmulatedMedia", {
@@ -648,43 +718,68 @@ try {
         });
         heroLoaded = cdp.once("Page.loadEventFired");
         await cdp.send("Page.navigate", { url: URL_TO_CHECK });
-        await withTimeout(heroLoaded, "carregar para o passo do hero");
+        await withTimeout(heroLoaded, `carregar para o passo do hero a ${size}`);
 
-        const state = await withTimeout(evalValue(cdp, HERO_STUDIO_EXPR, { awaitPromise: true }), "rolar o hero estudio");
-        const label = `reduced motion ${reduce ? "ligado" : "desligado"}`;
+        const state = await withTimeout(evalValue(cdp, HERO_STUDIO_EXPR, { awaitPromise: true }), `rolar o hero estudio a ${size}`);
+        const label = `${size}, reduced motion ${reduce ? "ligado" : "desligado"}`;
         if (!state) {
           failures.push(`hero estudio (${label}): depois de hidratar, a página não tem ${HERO_STUDIO_SELECTOR}`);
           continue;
         }
 
         if (reduce) {
-          if (state.scrub !== "false") failures.push("hero estudio: com reduced motion a animação ligou (data-scrub)");
+          if (state.scrub !== "false") failures.push(`hero estudio a ${size}: com reduced motion a animação ligou (data-scrub)`);
           if (Math.abs(state.height - staticPage.height) > state.viewport * 0.1) {
-            failures.push(`hero estudio: com reduced motion a seção ficou com ${state.height}px; sem JavaScript, ${staticPage.height}px (altura extra de rolagem)`);
+            failures.push(
+              `hero estudio a ${size}: com reduced motion a seção ficou com ${state.height}px; sem JavaScript, ${staticPage.height}px (altura extra de rolagem)`,
+            );
           }
           if ([state.before, state.middle, state.end].some((frame) => frame !== null)) {
-            failures.push("hero estudio: com reduced motion o canvas desenhou quadros");
+            failures.push(`hero estudio a ${size}: com reduced motion o canvas desenhou quadros`);
           }
-          if (!state.posterShown) failures.push("hero estudio: com reduced motion o pôster não apareceu");
+          if (!state.posterShown) failures.push(`hero estudio a ${size}: com reduced motion o pôster não apareceu`);
         } else {
-          if (state.scrub !== "true") failures.push("hero estudio: sem reduced motion a animação não ligou (data-scrub)");
-          if (state.before !== "0") failures.push(`hero estudio: no topo o canvas mostrava o quadro ${state.before}, esperado 0`);
+          if (state.scrub !== "true") failures.push(`hero estudio a ${size}: sem reduced motion a animação não ligou (data-scrub)`);
+          if (state.before !== "0") failures.push(`hero estudio a ${size}: no topo o canvas mostrava o quadro ${state.before}, esperado 0`);
           if (!(Number(state.middle) > 0)) {
-            failures.push(`hero estudio: rolar até o meio da seção não trocou o quadro (${state.before} → ${state.middle})`);
+            failures.push(`hero estudio a ${size}: rolar até o meio da seção não trocou o quadro (${state.before} → ${state.middle})`);
           }
         }
         console.log(
           `  hero estudio (${label}): scrub=${state.scrub}, quadro ${state.before} → ${state.middle} (meio) → ${state.end} (perto do fim), altura ${state.height}px (sem JavaScript: ${staticPage.height}px), pôster ${state.posterShown ? "carregado" : "não carregado"}`,
         );
+
+        if (!reduce) {
+          // O fundo preso não pode cobrir a seção seguinte (Crítico 1 da re-revisão do hero).
+          const exit = await withTimeout(
+            evalValue(cdp, HERO_EXIT_EXPR, { awaitPromise: true }),
+            `rolar até ${AFTER_HERO_SELECTOR} a ${size}`,
+          );
+          if (exit.missing) {
+            failures.push(`hero estudio a ${size}: a página não tem ${exit.missing} (o gancho mudou?)`);
+          } else {
+            if (exit.fundoBottom > exit.top + 0.5) {
+              failures.push(
+                `hero estudio a ${size}: com ${AFTER_HERO_SELECTOR} no topo (y=${exit.top}), o fundo preso do hero ainda vai até y=${exit.fundoBottom} e cobre a seção`,
+              );
+            }
+            for (const point of exit.covered) {
+              failures.push(`hero estudio a ${size}: o topo de ${AFTER_HERO_SELECTOR} está coberto por ${point}`);
+            }
+            console.log(
+              `  hero estudio (${size}, saída): ${AFTER_HERO_SELECTOR} com o topo em y=${exit.top}, pé do fundo em y=${exit.fundoBottom}, ${exit.covered.length === 0 ? "topo da seção livre (6 pontos)" : `${exit.covered.length} ponto(s) coberto(s)!`}`,
+            );
+          }
+        }
       }
+    } catch (error) {
+      // Um erro aqui não pode derrubar os passos seguintes (menu, vídeos, Tab, 1.4.12).
+      failures.push(`hero estudio a ${size}: erro no passo (${error.message}); os passos seguintes continuam`);
+    } finally {
+      await cdp.send("Emulation.setScriptExecutionDisabled", { value: false }).catch(() => {});
     }
-  } catch (error) {
-    // Um erro aqui não pode derrubar os passos seguintes (menu, vídeos, Tab, 1.4.12).
-    failures.push(`hero estudio: erro no passo (${error.message}); os passos seguintes continuam`);
-  } finally {
-    await cdp.send("Emulation.setScriptExecutionDisabled", { value: false }).catch(() => {});
+    for (const error of consoleErrors) failures.push(`hero estudio a ${size}: erro no console: ${error.split("\n")[0]}`);
   }
-  for (const error of consoleErrors) failures.push(`hero estudio: erro no console: ${error.split("\n")[0]}`);
 
   console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos dos aplicativos; Tab pela página; espaçamento de texto 1.4.12):`);
   await cdp.send("Emulation.setEmulatedMedia", {
@@ -850,7 +945,7 @@ if (failures.length > 0) {
 console.log(
   "\nDetector de CSP conferido (acusou a violação provocada). " +
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura. " +
-    'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima): a rolagem troca o quadro e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
+    'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo dos aplicativos toca por vez e o hero \"video\", se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",

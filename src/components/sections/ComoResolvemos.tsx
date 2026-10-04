@@ -26,7 +26,8 @@ export function ComoResolvemos() {
             </p>
           </Reveal>
           <Reveal>
-            <ol className="ruled-list">
+            {/* role="list": o Safari tira a semântica de lista de um <ol> com list-style: none. */}
+            <ol className="ruled-list" role="list">
               {items.map((item) => (
                 <li key={item.title}>
                   <h3 className="block-title">{item.title}</h3>

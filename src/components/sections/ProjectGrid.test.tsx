@@ -74,6 +74,24 @@ describe("<ProjectGrid />", () => {
     expect(screen.getByRole("button", { name: "Assistir ao vídeo: Projeto de teste 1" })).toBeTruthy();
   });
 
+  it("a mídia de cada cartão fica num palco (MASTER §8.13), também depois de virar vídeo", () => {
+    const { container } = render(
+      <ProjectGrid projects={makeProjects(2)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />,
+    );
+
+    const cards = [...container.querySelectorAll<HTMLElement>(".project-card")];
+    expect(cards).toHaveLength(2);
+    for (const card of cards) {
+      const palco = card.querySelector(":scope > .palco");
+      expect(palco).not.toBeNull();
+      expect(palco?.querySelector(".palco__luz")?.getAttribute("aria-hidden")).toBe("true");
+      expect(palco?.querySelector(".palco__conteudo > .project-card__media > .project-card__play")).not.toBeNull();
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Assistir ao vídeo: Projeto de teste 1" }));
+    expect(cards[0]?.querySelector(".palco__conteudo > .project-card__media > video")).not.toBeNull();
+  });
+
   it("cada cartão tem nome, resumo, plataformas e a descrição do vídeo em texto", () => {
     render(<ProjectGrid projects={makeProjects(1)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />);
 

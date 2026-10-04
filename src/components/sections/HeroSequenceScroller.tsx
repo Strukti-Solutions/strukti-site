@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { siteConfig } from "@/config/site";
 import { useCanAnimate } from "@/lib/motion";
 import {
@@ -16,10 +16,41 @@ import {
 /** Mais que isto de quadros com erro (ex.: navegador sem AVIF) e o hero fica no pôster. */
 const MAX_FAILED_RATIO = 0.1;
 
+/** Sem evento de rolagem por este tempo (ms), a rolagem parou. */
+const SCROLL_SETTLE_MS = 150;
+
+/** A pessoa começou a rolar (ou a navegar) por conta própria. */
+const USER_SCROLL_EVENTS = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+
 /** `navigator.connection.saveData`: a pessoa pediu para economizar dados. */
 function prefersSavingData() {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   return connection?.saveData === true;
+}
+
+/**
+ * Topo e altura do elemento na tela sem o deslize do CSS (o translateY de
+ * quem está escondido, inclusive no meio da transição). Assim o foco depende
+ * só da rolagem: o bloco que perde o foco não desce de volta para a regra, e
+ * o foco não pisca entre dois blocos.
+ */
+function layoutBox(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  const shift = /matrix\((?:[^,]*,){5}([^)]*)\)/.exec(getComputedStyle(element).transform)?.[1];
+  return { top: rect.top - (shift ? parseFloat(shift) || 0 : 0), height: rect.height };
+}
+
+/** O alvo da âncora da URL (ex.: /#contato), se existir. */
+function hashTarget() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  let id = hash;
+  try {
+    id = decodeURIComponent(hash);
+  } catch {
+    // Âncora mal codificada: procura como veio.
+  }
+  return document.getElementById(id);
 }
 
 export interface HeroStep {
@@ -44,7 +75,9 @@ interface HeroSequenceScrollerProps {
  * os textos rolam por cima dele, só o bloco em foco aparece (data-active) e o
  * giro acompanha a faixa em que o fundo está preso. O servidor e o 1º render
  * do cliente são iguais (data-scrub="false", ADR-004). O conjunto de quadros
- * é escolhido uma vez, ao montar: girar a tela não baixa tudo de novo.
+ * é escolhido uma vez, ao montar: girar a tela não baixa tudo de novo. Ele
+ * fica marcado no canvas (data-conjunto), para o CSS mostrar o quadro 8:9 do
+ * celular inteiro quando a tela gira para um quadro 16:10.
  */
 export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: HeroSequenceScrollerProps) {
   const canAnimate = useCanAnimate();
@@ -52,8 +85,45 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
   const fundoRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const repositioned = useRef(false);
   const [scrub, setScrub] = useState(false);
   const desktop = siteConfig.heroSequence.desktop;
+
+  // Link direto para uma âncora abaixo do hero (ex.: /#contato): o navegador
+  // rola até ela com a seção ainda compacta, e a animação, ao ligar, faz a
+  // seção crescer (+1511 px a 1440 × 900); a pessoa ficaria no lugar errado.
+  // Logo depois do render que liga a animação (antes de pintar), volta ao
+  // alvo, sem animação. Se o navegador ainda estava rolando até a âncora (com
+  // o scroll-behavior: smooth do html, o Chrome anima essa rolagem e soma o
+  // resto dela ao salto), volta ao alvo de novo quando a rolagem para, a não
+  // ser que a pessoa role antes. Só na 1ª vez que a animação liga.
+  useLayoutEffect(() => {
+    if (!scrub || repositioned.current) return;
+    repositioned.current = true;
+    const target = hashTarget();
+    if (!target || sectionRef.current?.contains(target)) return;
+    const place = () => target.scrollIntoView({ behavior: "instant", block: "start" });
+    place();
+    const placedTop = target.getBoundingClientRect().top;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const release = () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", wait);
+      for (const type of USER_SCROLL_EVENTS) window.removeEventListener(type, release);
+    };
+    const settle = () => {
+      release();
+      if (Math.abs(target.getBoundingClientRect().top - placedTop) > 1) place();
+    };
+    function wait() {
+      clearTimeout(timer);
+      timer = setTimeout(settle, SCROLL_SETTLE_MS);
+    }
+    wait();
+    window.addEventListener("scroll", wait, { passive: true });
+    for (const type of USER_SCROLL_EVENTS) window.addEventListener(type, release, { passive: true });
+    return release;
+  }, [scrub]);
 
   useEffect(() => {
     if (!canAnimate || prefersSavingData()) return;
@@ -68,10 +138,12 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
     const { frames: total, width, height } = siteConfig.heroSequence[set];
     canvas.width = width;
     canvas.height = height;
+    canvas.dataset.conjunto = set;
 
     // Blocos que entram em foco: a abertura e cada passo. O título "Como
     // funciona" acompanha os passos.
     const blocks = Array.from(section.querySelectorAll<HTMLElement>(".hero-estudio__bloco"));
+    const texts = blocks.map((block) => block.querySelector<HTMLElement>(".hero-estudio__bloco-texto") ?? block);
     const stepsHeading = section.querySelector<HTMLElement>(".hero-estudio__como-titulo");
 
     const images: HTMLImageElement[] = [];
@@ -80,6 +152,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
     let cancelled = false;
     let drawn: number | null = null;
     let focused: number | null = null;
+    let headingShown: boolean | null = null;
     // Há desenho agendado? Uma flag, e não o id: se o requestAnimationFrame
     // chamar o callback antes de devolver o id (o stub do teste faz isso),
     // `rafId = requestAnimationFrame(draw)` guardaria o id depois de o
@@ -104,24 +177,39 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
      * Bloco em foco: o que tem o texto mais perto da linha de leitura (o meio
      * da área de texto, que o CSS põe ao lado da peça no computador e embaixo
      * dela no celular). Os outros ganham data-active="false" e somem.
+     *
+     * Nenhum texto passa por cima de outro: no computador, "Como funciona"
+     * fica preso no alto da coluna, e o passo em foco não pode subir até ele.
+     * O passo que já chegou ao pé do título (com a margem dele) passa o foco
+     * ao seguinte; o último fica com o foco, e o título some. Assim o título
+     * só aparece enquanto o passo em foco está abaixo dele.
      */
     const focus = () => {
       const zone = area.getBoundingClientRect();
       const line = zone.top + zone.height / 2;
+      const boxes = texts.map(layoutBox);
       let best = 0;
       let bestDistance = Infinity;
-      blocks.forEach((block, index) => {
-        const rect = (block.querySelector(".hero-estudio__bloco-texto") ?? block).getBoundingClientRect();
-        const distance = Math.abs(rect.top + rect.height / 2 - line);
+      boxes.forEach((box, index) => {
+        const distance = Math.abs(box.top + box.height / 2 - line);
         if (distance < bestDistance) {
           bestDistance = distance;
           best = index;
         }
       });
-      if (best === focused) return;
+      let showHeading = false;
+      if (stepsHeading && best > 0) {
+        const heading = layoutBox(stepsHeading);
+        const limit = heading.top + heading.height + (parseFloat(getComputedStyle(stepsHeading).marginBottom) || 0);
+        const topOf = (index: number) => boxes[index]?.top ?? Infinity;
+        while (best < boxes.length - 1 && topOf(best) < limit) best += 1;
+        showHeading = topOf(best) >= limit;
+      }
+      if (best === focused && showHeading === headingShown) return;
       focused = best;
+      headingShown = showHeading;
       blocks.forEach((block, index) => block.setAttribute("data-active", String(index === best)));
-      stepsHeading?.setAttribute("data-active", String(best > 0));
+      stepsHeading?.setAttribute("data-active", String(showHeading));
     };
 
     const draw = () => {
@@ -158,6 +246,14 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
       for (const element of [...blocks, stepsHeading]) element?.removeAttribute("data-active");
     };
 
+    /** Volta ao pôster: para tudo, tira as marcas do canvas e desliga a animação. */
+    const giveUp = () => {
+      stop();
+      delete canvas.dataset.frame;
+      delete canvas.dataset.conjunto;
+      setScrub(false);
+    };
+
     const load = () => {
       for (let index = 0; index < total; index++) {
         const image = new Image();
@@ -170,11 +266,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
         image.onerror = () => {
           if (cancelled) return;
           failed += 1;
-          if (failed > total * MAX_FAILED_RATIO) {
-            stop();
-            delete canvas.dataset.frame;
-            setScrub(false);
-          }
+          if (failed > total * MAX_FAILED_RATIO) giveUp();
         };
         image.src = frameUrl(set, index);
         images[index] = image;
@@ -190,11 +282,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
     if (document.readyState === "complete") load();
     else window.addEventListener("load", load, { once: true });
 
-    return () => {
-      stop();
-      delete canvas.dataset.frame;
-      setScrub(false);
-    };
+    return giveUp;
   }, [canAnimate]);
 
   return (
