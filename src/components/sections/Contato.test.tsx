@@ -18,7 +18,7 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText(form.fields.whatsapp.label), {
     target: { value: "(83) 99999-0000" },
   });
-  fireEvent.change(screen.getByLabelText(landingContent.contato.form.fields.interest.label), {
+  fireEvent.change(screen.getByLabelText(form.fields.interest.label), {
     target: { value: "replay" },
   });
   fireEvent.change(screen.getByLabelText(form.fields.problem.label), {
@@ -165,7 +165,7 @@ describe("<Contato /> — estados do formulário", () => {
 
   it("uma chamada da página marca o interesse, e a seguinte troca a escolha", async () => {
     const { container } = render(<Contato />);
-    const select = screen.getByLabelText(landingContent.contato.form.fields.interest.label) as HTMLSelectElement;
+    const select = screen.getByLabelText(form.fields.interest.label) as HTMLSelectElement;
     act(() => selectInterest("aplicativo"));
     expect(select.value).toBe("aplicativo");
     act(() => selectInterest("outro"));
@@ -177,17 +177,38 @@ describe("<Contato /> — estados do formulário", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 })));
     render(<Contato />);
     fillValidForm();
-    fireEvent.click(screen.getByRole("button", { name: landingContent.contato.form.submitLabel }));
-    await waitFor(() => expect(screen.getByText(landingContent.contato.form.success.title)).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: form.submitLabel }));
+    await waitFor(() => expect(screen.getByText(form.success.title)).toBeTruthy());
     act(() => selectInterest("replay"));
-    expect(screen.getByText(landingContent.contato.form.success.title)).toBeTruthy();
-    expect(screen.queryByLabelText(landingContent.contato.form.fields.interest.label)).toBeNull();
+    expect(screen.getByText(form.success.title)).toBeTruthy();
+    expect(screen.queryByLabelText(form.fields.interest.label)).toBeNull();
   });
 
   it("enviar sem escolher o interesse mostra o erro do campo", async () => {
     const { container } = render(<Contato />);
-    fireEvent.click(screen.getByRole("button", { name: landingContent.contato.form.submitLabel }));
-    await waitFor(() => expect(screen.getByText(landingContent.contato.form.fields.interest.errorEmpty)).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: form.submitLabel }));
+    await waitFor(() => expect(screen.getByText(form.fields.interest.errorEmpty)).toBeTruthy());
+    await expectNoAxeViolations(container);
+  });
+
+  it("com só o interesse faltando, o erro fica ligado ao select e o foco vai para ele", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { container } = render(<Contato />);
+    fillValidForm();
+    const select = screen.getByLabelText(form.fields.interest.label) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: form.submitLabel }));
+
+    const error = await screen.findByText(form.fields.interest.errorEmpty);
+    // Só o interesse é inválido: nenhum outro campo ganha erro.
+    expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(1);
+    expect(select.getAttribute("aria-invalid")).toBe("true");
+    const describedBy = select.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(error.closest(`#${describedBy}`)).not.toBeNull();
+    expect(document.activeElement).toBe(select);
+    expect(fetchMock).not.toHaveBeenCalled();
     await expectNoAxeViolations(container);
   });
 });

@@ -102,6 +102,18 @@ describe("POST /api/diagnostico", () => {
   });
 });
 
+/**
+ * Troca o repositório de leads por um que só chama `save`. Zera o cache de
+ * módulos antes, para o próximo `import("./route")` pegar o mock.
+ */
+function mockLeadRepository(save: ReturnType<typeof vi.fn>) {
+  vi.resetModules();
+  vi.doMock("@/lib/repository/leadRepository", () => ({
+    createLeadRepository: () => ({ save }),
+    RepositoryConfigError: class RepositoryConfigError extends Error {},
+  }));
+}
+
 describe("POST /api/diagnostico — caminho feliz (repositório mockado)", () => {
   afterEach(() => {
     vi.doUnmock("@/lib/repository/leadRepository");
@@ -109,12 +121,8 @@ describe("POST /api/diagnostico — caminho feliz (repositório mockado)", () =>
   });
 
   it("grava o lead com consentimento e responde ok quando o repositório está configurado", async () => {
-    vi.resetModules();
     const save = vi.fn().mockResolvedValue(undefined);
-    vi.doMock("@/lib/repository/leadRepository", () => ({
-      createLeadRepository: () => ({ save }),
-      RepositoryConfigError: class RepositoryConfigError extends Error {},
-    }));
+    mockLeadRepository(save);
 
     const { POST } = await import("./route");
     const response = await POST(buildRequest(validPayload, "203.0.113.20"));
@@ -137,12 +145,8 @@ describe("POST /api/diagnostico — caminho feliz (repositório mockado)", () =>
   });
 
   it("retorna 400 e não grava quando o interesse vem forjado fora da lista", async () => {
-    vi.resetModules();
     const save = vi.fn();
-    vi.doMock("@/lib/repository/leadRepository", () => ({
-      createLeadRepository: () => ({ save }),
-      RepositoryConfigError: class RepositoryConfigError extends Error {},
-    }));
+    mockLeadRepository(save);
 
     const { POST } = await import("./route");
     const response = await POST(buildRequest({ ...validPayload, interest: "admin" }, "203.0.113.40"));
@@ -152,12 +156,8 @@ describe("POST /api/diagnostico — caminho feliz (repositório mockado)", () =>
   });
 
   it("grava o interesse escolhido", async () => {
-    vi.resetModules();
     const save = vi.fn().mockResolvedValue(undefined);
-    vi.doMock("@/lib/repository/leadRepository", () => ({
-      createLeadRepository: () => ({ save }),
-      RepositoryConfigError: class RepositoryConfigError extends Error {},
-    }));
+    mockLeadRepository(save);
 
     const { POST } = await import("./route");
     const response = await POST(buildRequest({ ...validPayload, interest: "estacionamento" }, "203.0.113.41"));

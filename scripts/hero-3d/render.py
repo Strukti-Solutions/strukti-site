@@ -81,7 +81,7 @@ def parse_args():
         try:
             args.frames = [int(value) for value in args.frames.split(",")]
         except ValueError:
-            parser.error(f"--frames: use números inteiros separados por vírgula (ex.: 0,45,{last})")
+            parser.error(f"--frames: use números inteiros separados por vírgula (ex.: 0,{last // 2},{last})")
         wrong = [frame for frame in args.frames if not 0 <= frame <= last]
         if wrong:
             parser.error(f"--frames fora do intervalo 0..{last} do conjunto {args.set}: {wrong}")

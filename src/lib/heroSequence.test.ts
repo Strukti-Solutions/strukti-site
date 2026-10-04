@@ -48,6 +48,12 @@ describe("sectionProgress", () => {
     expect(sectionProgress(-200, 900, 1000)).toBe(0);
     expect(sectionProgress(-200, 1000, 1000)).toBe(0);
   });
+
+  it("NaN em qualquer entrada dá 0, em vez de propagar NaN", () => {
+    expect(sectionProgress(Number.NaN, 2500, 1000)).toBe(0);
+    expect(sectionProgress(-750, Number.NaN, 1000)).toBe(0);
+    expect(sectionProgress(-750, 2500, Number.NaN)).toBe(0);
+  });
 });
 
 describe("pickFrameSet", () => {
@@ -57,12 +63,24 @@ describe("pickFrameSet", () => {
     expect(pickFrameSet(CELULAR_MAX_WIDTH + 1)).toBe("desktop");
     expect(pickFrameSet(1440)).toBe("desktop");
   });
+
+  it("o corte fica em 767 px, o mesmo do CSS: 767 é celular e 768 é desktop", () => {
+    expect(CELULAR_MAX_WIDTH).toBe(767);
+    expect(pickFrameSet(767)).toBe("celular");
+    expect(pickFrameSet(768)).toBe("desktop");
+  });
 });
 
 describe("frameUrl e posterUrl", () => {
   it("monta o caminho com 3 dígitos", () => {
     expect(frameUrl("desktop", 0)).toBe("/hero/sequencia/desktop/f000.avif");
     expect(frameUrl("celular", 44)).toBe("/hero/sequencia/celular/f044.avif");
+  });
+
+  it("recusa índice negativo ou não inteiro", () => {
+    expect(() => frameUrl("desktop", -1)).toThrow(RangeError);
+    expect(() => frameUrl("desktop", 1.5)).toThrow(RangeError);
+    expect(() => frameUrl("celular", Number.NaN)).toThrow(RangeError);
   });
 
   it("monta o pôster nos dois formatos", () => {
@@ -86,6 +104,17 @@ describe("nearestLoadedFrame", () => {
   it("rolagem rápida: pede o 45 e só o 3 chegou", () => {
     const loaded = Array.from({ length: 90 }, (_, i) => i === 3);
     expect(nearestLoadedFrame(loaded, 45)).toBe(3);
+  });
+
+  it("prende o alvo fora da lista na ponta mais próxima", () => {
+    expect(nearestLoadedFrame([true, false, false], 10)).toBe(0);
+    expect(nearestLoadedFrame([false, false, true], -5)).toBe(2);
+  });
+
+  it("arredonda o alvo não inteiro", () => {
+    const loaded = [false, true, false, true];
+    expect(nearestLoadedFrame(loaded, 2.6)).toBe(3);
+    expect(nearestLoadedFrame(loaded, 1.4)).toBe(1);
   });
 
   it("devolve null quando nada chegou", () => {

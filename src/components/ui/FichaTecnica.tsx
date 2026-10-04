@@ -2,8 +2,9 @@
 export function FichaTecnica({ items }: { items: readonly { value: string; label: string }[] }) {
   return (
     <dl className="ficha">
-      {items.map((item) => (
-        <div key={item.label} className="ficha__item">
+      {/* Chave pelo índice: a lista vem fixa do conteúdo, e o rótulo pode se repetir. */}
+      {items.map((item, index) => (
+        <div key={index} className="ficha__item">
           <dt className="ficha__rotulo">{item.label}</dt>
           <dd className="ficha__valor">{item.value}</dd>
         </div>

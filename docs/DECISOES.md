@@ -459,6 +459,7 @@ não ƒ) — sem middleware, sem função por visita, com cache de CDN normal.
 **Data:** 03/10/2026
 **Decisão de:** Thiago (cliente), com o Claude
 **Status:** aceita
+**Altera:** a ADR-006 (o `MASTER.md` v3 substitui a v2 "Encaixe" no conceito, na luz e nos componentes novos; o resto da v2 continua valendo) e a ADR-007 (o hero padrão deixa de ser o "video" e passa a ser o "estudio", em sequência de quadros; o "video", com a sua pílula com seta, e o "classic" ficam no código até a limpeza citada nas Consequências).
 
 **Contexto:** a Strukti mudou o foco para produtos que juntam hardware e IA (replay para quadras; estacionamento inteligente em espera), mantendo os aplicativos em segundo plano. O site vendia "aplicativo sob medida para distribuidoras" e o design system v2 ("Encaixe") foi pensado para isso.
 

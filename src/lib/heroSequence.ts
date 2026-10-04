@@ -9,7 +9,11 @@ export type FrameSetName = "desktop" | "celular";
 /** Até esta largura o hero usa os quadros "celular" (mesmo corte do CSS). */
 export const CELULAR_MAX_WIDTH = 767;
 
-/** Índice do quadro para um progresso de 0 a 1 (fora disso, prende nas pontas). */
+/**
+ * Índice do quadro para um progresso de 0 a 1 (fora disso, prende nas pontas).
+ * Progresso não finito (NaN, +Infinity ou -Infinity) dá o quadro 0, e não o
+ * último: o plano da Tarefa 3 impõe isso, e o teste fixa o +Infinity em 0.
+ */
 export function frameForProgress(progress: number, totalFrames: number): number {
   if (totalFrames <= 1 || !Number.isFinite(progress)) return 0;
   const clamped = Math.min(1, Math.max(0, progress));
@@ -18,19 +22,29 @@ export function frameForProgress(progress: number, totalFrames: number): number 
 
 /**
  * Quanto da seção já rolou, de 0 a 1: 0 com o topo dela no topo da tela, 1
- * quando o fim dela chega ao fim da tela. Seção sem altura extra: 0.
+ * quando o fim dela chega ao fim da tela. Seção sem altura extra: 0. NaN em
+ * qualquer entrada também dá 0 (o Math.min/Math.max deixaria o NaN passar).
  */
 export function sectionProgress(top: number, height: number, viewportHeight: number): number {
   const scrollable = height - viewportHeight;
   if (scrollable <= 0) return 0;
-  return Math.min(1, Math.max(0, -top / scrollable));
+  const progress = -top / scrollable;
+  return Number.isNaN(progress) ? 0 : Math.min(1, Math.max(0, progress));
 }
 
 export function pickFrameSet(viewportWidth: number): FrameSetName {
   return viewportWidth <= CELULAR_MAX_WIDTH ? "celular" : "desktop";
 }
 
+/**
+ * URL do quadro `index`. Índice negativo ou não inteiro lança RangeError (não
+ * há arquivo para ele). Não há teto: o teste de arquivos pede o índice N para
+ * conferir que não sobra quadro na pasta.
+ */
 export function frameUrl(set: FrameSetName, index: number): string {
+  if (!Number.isInteger(index) || index < 0) {
+    throw new RangeError(`Índice de quadro inválido: ${index}`);
+  }
   return `/hero/sequencia/${set}/f${String(index).padStart(3, "0")}.avif`;
 }
 
@@ -40,9 +54,12 @@ export function posterUrl(set: FrameSetName, format: "avif" | "jpg"): string {
 
 /**
  * O quadro já carregado mais perto do pedido (no empate, o anterior), para o
- * canvas nunca ficar em branco numa rolagem mais rápida que o download.
+ * canvas nunca ficar em branco numa rolagem mais rápida que o download. O
+ * alvo é arredondado e preso a [0, loaded.length - 1]: fora disso, ou não
+ * inteiro, a busca não chegaria a nenhum índice da lista.
  */
-export function nearestLoadedFrame(loaded: readonly boolean[], target: number): number | null {
+export function nearestLoadedFrame(loaded: readonly boolean[], requested: number): number | null {
+  const target = Math.min(loaded.length - 1, Math.max(0, Math.round(requested)));
   for (let distance = 0; distance < loaded.length; distance++) {
     const before = target - distance;
     if (before >= 0 && before < loaded.length && loaded[before]) return before;

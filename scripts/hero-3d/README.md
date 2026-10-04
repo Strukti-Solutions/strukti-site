@@ -7,7 +7,8 @@ ficam em `.hero-render/` (fora do git); os AVIF e os pôsteres vão para
 1. Instale o Blender (versão estável) e o ffmpeg, com o encoder `libaom-av1` e o muxer AVIF
    (confira se `libaom-av1` aparece em `ffmpeg -hide_banner -encoders`; aqui foi usado o build "full" da gyan.dev, pelo winget).
    O Blender não entra no PATH; pela Steam ele fica em
-   `C:/Program Files (x86)/Steam/steamapps/common/Blender/blender.exe`.
+   `C:/Program Files (x86)/Steam/steamapps/common/Blender/blender.exe`, e pelo blender.org ou pelo winget, em
+   `C:/Program Files/Blender Foundation/Blender <versão>/blender.exe`.
 2. Esvazie `.hero-render/<set>` (por exemplo `.hero-render/desktop`) e renderize, um de cada vez (é processo pesado):
    `blender -b --factory-startup --python-exit-code 1 -P scripts/hero-3d/render.py -- --set desktop --out <repo>/.hero-render/desktop`
    e o mesmo com `--set celular`. Sem o `--python-exit-code 1`, o Blender sai com código 0 mesmo quando o script falha.
