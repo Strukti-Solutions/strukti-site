@@ -49,7 +49,7 @@ A revisão final do branch inteiro pediu uma rodada de correção; depois dela, 
   - contato: formulário único com o campo de interesse (assunto) e consentimento (LGPD);
   - aviso de privacidade (versão 2026-10-03).
 - **Design system v3 "Estúdio":** `design-system/strukti-solucoes/MASTER.md`, com a ADR-009 em `docs/DECISOES.md`.
-- **`check:browser`** com o passo do hero "estudio" (a variante vem de `<main data-hero-variant>`) e os vídeos dos aplicativos.
+- **`check:browser`** com o passo do hero "estudio" (a variante vem de `<main data-hero-variant>`) e os vídeos dos aplicativos. O hero é conferido a 1440×900 e a 360×740: a rolagem troca o quadro (0 → N), com reduced motion fica no pôster sem altura extra, e o passo reprova se, ao rolar até `#produtos`, o fundo preso do hero ainda cobrir a seção.
 - O texto aprovado no branch é o de `docs/landing-copy.md` versão 2.0 (aprovada pelo Thiago em 03/10/2026).
 
 ## Próximos passos
@@ -66,8 +66,24 @@ A revisão final do branch inteiro pediu uma rodada de correção; depois dela, 
 3. **Depois da home v3:**
    - **limpeza dos heros "video" e "classic"**, com ADR própria em `docs/DECISOES.md` (spec §5.2). Saem `HeroVideo*`, `Hero`, `HeroContent`, `HeroBackground`, os visuais, `Header`, `landingContent.hero` e o CSS deles. Saem junto:
      - o `data-hero-variant` do `<main>` e o passo do `check:browser` que lê esse marcador (mudam juntos);
-     - os passos do replay no cartão de Produtos, que só aparecem fora do hero "estudio";
+     - os passos do replay no cartão de Produtos, que só aparecem fora do hero "estudio" (variantes "video" e "classic") e usam `style` em linha;
      - as seções do MASTER que descrevem esses heros (§8.3, §8.3.1 na parte do "video", §9.1–9.6).
+   - **pendências das revisões do branch** (nenhuma bloqueia o merge; antes só no registro fora do git):
+     - **celular deitado com menos de 768 px** (ex.: 740×360): o hero fica empilhado, e o texto passa por uma fresta de ~83 px. Correção mais barata: desligar a animação nesse caso (cai no modo parado, que já existe); melhor: o lado a lado a partir de ~600 px deitado. Decisão do Thiago;
+     - na troca de passos lado a lado, o passo que recebe o foco pode entrar com o pé 15–60 px abaixo da tela (estimado, não medido);
+     - quando os quadros falham e o hero volta ao pôster, quem entrou por âncora (ex.: `/#contato`) pode mudar de lugar;
+     - o `check:browser` roda contra o `next dev`, não contra o build de produção;
+     - faixas tênues de 1 nível no degradê escuro dos quadros vêm da quantização do AV1 e só aparecem com o contraste ampliado. Saída futura: grão leve no canvas ou o film grain do AV1;
+     - `scripts/hero-3d`:
+       - menores 2, 3 e 5 do `encode.mjs` (comentários e linha em branco);
+       - `build_product`/`animate` (`render.py`) usam tupla e parâmetros posicionais;
+       - o teste de arquivos (`src/config/heroSequence.assets.test.ts`) não confere o conteúdo além de `ftyp`/`ispe`;
+     - design system:
+       - a legibilidade dos selos de contorno depende de uma `.surface-*` ancestral;
+       - o padding lateral de 10 px do selo e o clamp de 28–36 px do valor da ficha estão fora das escalas;
+       - a §10 diz "sem A · B · C", mas o sobretítulo aprovado do hero usa "Replay para quadras · Aplicativos sob medida";
+       - a §4 dá as iniciais da equipe em 1.5rem, mas o CSS usa 1.375rem;
+     - `CLAUDE.md`: o roadmap e as prioridades ainda não têm a fase do novo rumo (hardware + IA). Decisão do grupo.
    - **pendências da v2.0** (`docs/landing-copy.md`, "Pendências"). Bloqueiam a publicação:
      - **curso de cada pessoa da equipe** (`siteConfig.team[].course`, hoje 4 vezes `[A PREENCHER: curso]`);
      - **endereço do site** (`landingContent.seo.ogUrl`, lembrete do `check:placeholders`, e o `SITE_URL` na Vercel);

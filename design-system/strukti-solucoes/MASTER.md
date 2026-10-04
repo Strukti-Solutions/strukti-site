@@ -315,7 +315,7 @@ A profundidade vem da cor da superfície e da junta, **não de sombra**.
 | 0 | plano | Quase tudo |
 | 1 | `--surface-raised` (branco no papel, navy-800 no escuro) | Blocos, formulário, cartões de Produtos e dos aplicativos |
 | 2 | `0 12px 32px -12px rgb(8 18 29 / 0.45)` (sombra tingida de marinho) | Só o que flutua: o botão flutuante do WhatsApp |
-| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` | Sem uso desde a v3 (era a moldura do vídeo em destaque do portfólio, que saiu). A luz em volta dos produtos agora é a do palco (§8.13) |
+| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` (`--shadow-screen`) | A tela dos aplicativos dentro do palco (§8.8, §8.13). A luz em volta dos produtos é a do palco (§8.13) |
 
 Proibido: sombra cinza genérica (`rgba(0,0,0,.1)`) sob cada cartão;
 glassmorphism (desfoque de fundo) em cartões. O cabeçalho é sólido, sem
@@ -617,7 +617,8 @@ botão primário "Diagnóstico gratuito" (marca o assunto "Aplicativo" no formul
 - Textos de interface aprovados em `docs/landing-copy.md` v2.0
   (`landingContent.aplicativos.grid`).
 - **Cartão:** `--surface-raised` (navy-800). Em cima, o **palco** (§8.13),
-  com a tela do app no lugar do objeto: o pôster 16:9 (carregamento
+  com a tela do app no lugar do objeto (`--radius-2` e a sombra Luz, §5.4):
+  o pôster 16:9 (carregamento
   preguiçoso) e, sobre ele, o botão de reproduzir (56 px, `--radius-2`,
   electric-700 com triângulo branco, nome acessível "Assistir ao vídeo:
   {nome}"). Embaixo, o **selo** de status (§8.14; hoje, "Piloto gratuito"
@@ -700,7 +701,7 @@ faixa do botão.
 
 ### 8.13 Palco
 
-Superfície escura (`.palco`) onde fica um produto (cards de hardware, cards de aplicativos; o hero usa o quadro em tela inteira, §9.7). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio `--radius-3` (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
+Superfície escura (`.palco`) onde fica um produto (cards de hardware, cards de aplicativos; o hero usa o quadro em tela inteira, §9.7). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio: no cartão do replay em Produtos (`.produto__palco`, 8:5, dentro do respiro do cartão), `--radius-3` (§5.3); nos cartões dos aplicativos (`.project-card__palco`), o palco é o topo do cartão, rente às bordas dele, com raio 0, e os cantos de fora vêm da parede (§5.5). Ali ele deixa uma moldura em volta da tela do app (mais folga embaixo, no chão), e a tela tem `--radius-2` e a sombra Luz (§5.4). O palco não tem texto dentro, salvo o selo de ilustração.
 
 ### 8.14 Selos de status
 
@@ -935,14 +936,14 @@ Os passos saíram do cartão do replay em Produtos, para não repetir. Com os he
 **Enquadramento.** Em qualquer quadro do giro, a peça fica entre 9% e 92% da altura do quadro e entre 30% e 70% da largura (15% e 85% no celular). O quadro é dimensionado por ela, e a peça aparece sempre inteira e abaixo da barra:
 - **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 63% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça. Aqui o fundo fica atrás dos textos.
 - **Celular e telas em pé:** o quadro fica em cima, na largura toda, com a peça logo abaixo da barra, e o pé dele se desfaz num degradê. Os textos começam abaixo do quadro e, ao rolar, passam **por baixo** dele, como passam por baixo da barra: aqui o fundo fica na frente dos textos, com uma faixa opaca na cor do fundo do topo da tela até o pé do quadro. Os textos nunca ficam sobre a peça.
-- **Tela deitada com os quadros do celular** (o celular que montou em pé e depois girou): o canvas mostra o quadro 8:9 inteiro (`object-fit: contain`), e a peça nunca é cortada.
+- **Tela deitada com os quadros do celular** (o celular que montou em pé e depois girou, a partir de 768 px; o efeito marca o conjunto no canvas com `data-conjunto`): o canvas mostra o quadro 8:9 inteiro no meio (`object-fit: contain`, de 22,2% a 77,8% da largura), e a peça nunca é cortada. As laterais desse quadro se desfazem por máscara no pôster de trás (nessa largura, o do computador); a peça, entre 30,5% e 69,4% da largura, fica fora do degradê.
 - As bordas do quadro se desfazem no fundo da seção (navy-950) por máscara, sem costura.
 
 **Com animação** (`data-scrub="true"`, só depois de montar):
 - O fundo (`.hero-estudio__fundo`: pôster, `<canvas>` decorativo com `aria-hidden` e selo) fica preso na tela (`position: sticky; top: 0; height: 100svh`) e solta junto com o fim do hero: nunca cobre a seção seguinte.
 - O giro, do quadro 0 ao último, cobre toda a faixa em que o fundo fica preso: da abertura até o último passo.
-- Cada passo ocupa cerca de uma tela de leitura. Só o bloco em foco aparece (`data-active`; os outros somem com opacidade e um deslize curto). O bloco em foco é o que tem o texto mais perto do meio da área de texto.
-- "Como funciona" fica no alto da área de texto e só aparece enquanto o passo em foco está abaixo dele. Os textos nunca se sobrepõem.
+- Cada passo ocupa cerca de uma tela de leitura. Só o bloco em foco aparece (`data-active`; os outros somem com opacidade e um deslize curto). O bloco em foco é o que tem o texto mais perto do meio da área de texto (a linha de leitura), mas um passo só fica com o foco enquanto está abaixo de "Como funciona", salvo o último (item seguinte). A posição é medida sem o deslize do CSS, para o foco depender só da rolagem e não piscar entre dois blocos.
+- "Como funciona" fica no alto da área de texto e só aparece enquanto o passo em foco está abaixo dele. Lado a lado, onde o título fica preso no alto da coluna, o passo cujo topo chega ao pé do título (com a margem dele) entrega o foco ao passo seguinte, e o título continua à vista; o último passo fica com o foco, e aí o título some. Os textos nunca se sobrepõem.
 - O bloco com o foco do teclado nunca some, e o fundo preso não tem nada focável: o foco nunca fica preso nele. Com reduced motion não há transição.
 - Um link direto para uma âncora abaixo do hero (ex.: `/#contato`) chega ao lugar certo: a seção cresce ao montar, e a página volta ao alvo da âncora logo depois da montagem.
 

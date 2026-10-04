@@ -153,6 +153,8 @@ salto de layout visível).
   (prefers-reduced-motion: reduce)` direto no CSS), que valem igual no
   servidor e no cliente, com ou sem JavaScript. É o que o `ScrollTiltCard`
   (`src/components/ui/scroll-tilt-card.tsx`) usa hoje.
+  *Nota de 04/10/2026:* o `ScrollTiltCard` foi removido nessa data, na home
+  v3; o exemplo fica como registro.
 - **Mínimo aceitável, quando a diferença não dá para fazer só em CSS:** o
   portão de montagem `useCanAnimate()` (`src/lib/motion.ts`) — a árvore
   animada (ou os props de animação) só aparece depois de montar no cliente
