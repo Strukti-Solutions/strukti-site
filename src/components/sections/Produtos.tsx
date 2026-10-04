@@ -38,14 +38,7 @@ export function Produtos() {
                 {replay.name}
               </h3>
               <p className="body-muted">{replay.oneLiner}</p>
-              <h4 className="produto__subtitulo">{replay.stepsTitle}</h4>
-              <ol className="produto__passos">
-                {replay.steps.map((step) => (
-                  <li key={step.lead}>
-                    <strong>{step.lead}</strong> {step.rest}
-                  </li>
-                ))}
-              </ol>
+              {/* "Como funciona" e os passos ficam no hero (HeroSequence), ao lado do giro. */}
               <FichaTecnica items={replay.specs} />
               <div className="produto__acoes">
                 <WhatsAppButton message={landingContent.whatsappMessages.replay}>{replay.cta}</WhatsAppButton>

@@ -1,6 +1,6 @@
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { landingContent } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 import { frameUrl } from "@/lib/heroSequence";
@@ -61,18 +61,34 @@ afterEach(() => {
 const desktopFrames = siteConfig.heroSequence.desktop.frames;
 const section = () => document.getElementById("inicio") as HTMLElement;
 const canvas = () => document.querySelector(".hero-estudio__canvas") as HTMLCanvasElement;
-const cena = () => document.querySelector(".hero-estudio__cena") as HTMLElement;
-const palco = () => document.querySelector(".hero-estudio__palco") as HTMLElement;
+const fundo = () => document.querySelector(".hero-estudio__fundo") as HTMLElement;
+const area = () => document.querySelector(".hero-estudio__area") as HTMLElement;
+const blocos = () => Array.from(document.querySelectorAll<HTMLElement>(".hero-estudio__bloco"));
+const textoDo = (bloco: HTMLElement) => bloco.querySelector(".hero-estudio__bloco-texto") as HTMLElement;
+const tituloPassos = () => document.querySelector(".hero-estudio__como-titulo") as HTMLElement;
+const ativos = () => blocos().map((bloco) => bloco.dataset.active);
 
-// A célula do palco desce até o fim da seção; o giro corre enquanto o palco
-// (500 px) fica preso dentro dela.
-const CENA_HEIGHT = 2500;
-const PALCO_HEIGHT = 500;
+// Geometria falsa (px, na tela): a seção é o trilho (2500 px) do fundo preso
+// (500 px); a linha de leitura (centro da área de texto) fica em 400. O texto
+// da abertura é alto (600 px, como no celular) e o de cada passo tem 100 px;
+// os centros ficam a 400, 1000, 1600 e 2200 px do topo da seção.
+const SECTION_HEIGHT = 2500;
+const FUNDO_HEIGHT = 500;
+const LINHA = 400;
+const TEXTO_TOPO = [100, 950, 1550, 2150];
+const TEXTO_ALTURA = [600, 100, 100, 100];
 
-/** Rola até a célula do palco ficar com o topo em `top` (px, na tela). */
+/** Rola até a seção ficar com o topo em `top` (px, na tela). */
 function scrollHeroTo(top: number) {
-  vi.spyOn(cena(), "getBoundingClientRect").mockReturnValue({ top, height: CENA_HEIGHT } as DOMRect);
-  vi.spyOn(palco(), "getBoundingClientRect").mockReturnValue({ height: PALCO_HEIGHT } as DOMRect);
+  vi.spyOn(section(), "getBoundingClientRect").mockReturnValue({ top, height: SECTION_HEIGHT } as DOMRect);
+  vi.spyOn(fundo(), "getBoundingClientRect").mockReturnValue({ top: 0, height: FUNDO_HEIGHT } as DOMRect);
+  vi.spyOn(area(), "getBoundingClientRect").mockReturnValue({ top: LINHA - 100, height: 200 } as DOMRect);
+  blocos().forEach((bloco, index) => {
+    vi.spyOn(textoDo(bloco), "getBoundingClientRect").mockReturnValue({
+      top: top + (TEXTO_TOPO[index] ?? 0),
+      height: TEXTO_ALTURA[index] ?? 0,
+    } as DOMRect);
+  });
   window.dispatchEvent(new Event("scroll"));
 }
 
@@ -117,7 +133,7 @@ describe("<HeroSequence />", () => {
     act(() => FakeImage.instances[0]?.onload?.());
     act(() => FakeImage.instances[3]?.onload?.());
     expect(canvas().dataset.frame).toBe("0");
-    act(() => scrollHeroTo(-(CENA_HEIGHT - PALCO_HEIGHT) / 2)); // pede o quadro 45
+    act(() => scrollHeroTo(-(SECTION_HEIGHT - FUNDO_HEIGHT) / 2)); // pede o quadro 45
     expect(canvas().dataset.frame).toBe("3");
     expect(drawImage).toHaveBeenLastCalledWith(FakeImage.instances[3], 0, 0, 1600, 1000);
     expect(drawImage).not.toHaveBeenCalledWith(undefined, expect.anything(), expect.anything(), expect.anything(), expect.anything());
@@ -128,6 +144,7 @@ describe("<HeroSequence />", () => {
     await act(async () => {});
     act(() => FakeImage.instances[0]?.onload?.());
     expect(canvas().dataset.frame).toBe("0");
+    expect(ativos()[0]).toBe("true");
     act(() => {
       for (const image of FakeImage.instances.slice(1, Math.ceil(desktopFrames * 0.1) + 2)) image.onerror?.();
     });
@@ -135,29 +152,69 @@ describe("<HeroSequence />", () => {
     // Depois de desistir: o canvas fica sem quadro, nada mais é desenhado
     // (nem por um quadro que chega, nem pela rolagem) e o que faltava baixar para.
     expect(canvas().dataset.frame).toBeUndefined();
+    expect(document.querySelector("[data-active]")).toBeNull();
     drawImage.mockClear();
     act(() => FakeImage.instances[50]?.onload?.());
-    act(() => scrollHeroTo(-(CENA_HEIGHT - PALCO_HEIGHT) / 2));
+    act(() => scrollHeroTo(-(SECTION_HEIGHT - FUNDO_HEIGHT) / 2));
     expect(drawImage).not.toHaveBeenCalled();
     expect(FakeImage.instances[50]?.src).toBe("");
   });
 
-  it("o giro só começa com o palco preso abaixo da barra e acaba quando ele solta", async () => {
+  it("o giro só começa com o fundo preso e acaba quando ele solta", async () => {
     render(<HeroSequence />);
     await act(async () => {});
-    // O que o CSS daria: margem que centra o palco na 1ª tela e o `top` do sticky.
-    palco().style.marginTop = "100px";
-    palco().style.top = "80px";
+    // Margem de cima e `top` do sticky do fundo (no CSS são 0; aqui não, para
+    // a conta mostrar que usa os dois).
+    fundo().style.marginTop = "100px";
+    fundo().style.top = "80px";
     act(loadAllFrames);
-    // Palco ainda descendo (topo natural a 85 px, abaixo dos 80 do sticky): quadro 0.
+    // Fundo ainda descendo (topo natural a 85 px, abaixo dos 80 do sticky): quadro 0.
     act(() => scrollHeroTo(-15));
     expect(canvas().dataset.frame).toBe("0");
     // Preso, no meio da faixa presa (2500 − 100 − 500 = 1900 px): o quadro do meio.
     act(() => scrollHeroTo(80 - 100 - 1900 / 2));
     expect(canvas().dataset.frame).toBe("45");
-    // No fim da faixa, quando o palco solta: o último quadro.
+    // No fim da faixa, quando o fundo solta: o último quadro.
     act(() => scrollHeroTo(80 - 100 - 1900));
     expect(canvas().dataset.frame).toBe(String(desktopFrames - 1));
+  });
+
+  it.each([
+    ["sem", false],
+    ["com", true],
+  ])("mostra 'Como funciona' e os 3 passos do replay (texto aprovado) %s animação", async (_label, animate) => {
+    motionGate.canAnimate = animate;
+    render(<HeroSequence />);
+    await act(async () => {});
+    expect(section().dataset.scrub).toBe(String(animate));
+    const { stepsTitle, steps } = landingContent.produtos.replay;
+    expect(screen.getByRole("heading", { level: 2, name: stepsTitle })).toBeTruthy();
+    const lista = screen.getByRole("list", { name: stepsTitle });
+    expect(within(lista).getAllByRole("listitem")).toHaveLength(steps.length);
+    for (const step of steps) {
+      expect(within(lista).getByText(step.lead)).toBeTruthy();
+      expect(within(lista).getByText(step.rest, { exact: false })).toBeTruthy();
+    }
+    // Sem animação, nenhum bloco é escondido: o realce só existe com o scrub.
+    if (!animate) expect(document.querySelector("[data-active]")).toBeNull();
+  });
+
+  it("o bloco em foco (data-active) acompanha a rolagem; o título vale para os passos", async () => {
+    render(<HeroSequence />);
+    await act(async () => {});
+    act(() => scrollHeroTo(0));
+    expect(ativos()).toEqual(["true", "false", "false", "false"]);
+    expect(tituloPassos().dataset.active).toBe("false");
+    // A abertura (alta) segue em foco enquanto o MEIO dela está mais perto da
+    // linha que o meio do 1º passo, mesmo com o topo dela já bem acima.
+    act(() => scrollHeroTo(-280));
+    expect(ativos()).toEqual(["true", "false", "false", "false"]);
+    act(() => scrollHeroTo(-600)); // o 1º passo na linha de leitura
+    expect(ativos()).toEqual(["false", "true", "false", "false"]);
+    expect(tituloPassos().dataset.active).toBe("true");
+    act(() => scrollHeroTo(-1850)); // mais perto do 3º que do 2º
+    expect(ativos()).toEqual(["false", "false", "false", "true"]);
+    expect(tituloPassos().dataset.active).toBe("true");
   });
 
   it("girar a tela não baixa os quadros de novo", async () => {

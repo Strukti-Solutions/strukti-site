@@ -61,7 +61,7 @@
 
 ```
 Barra do topo ........ espaço
-Hero ................. espaço    texto + palco com o produto (§9.7)
+Hero ................. espaço    produto em tela inteira, textos por cima (§9.7)
 Produtos ............. espaço    palcos de hardware (#produtos)
 Aplicativos .......... noite     palcos com a tela do app (#aplicativos)
 Chamada geral ........ papel     outros problemas (#sob-medida)
@@ -686,7 +686,7 @@ faixa do botão.
 
 ### 8.13 Palco
 
-Superfície escura (`.palco`) onde fica um produto (hero, cards de hardware, cards de aplicativos). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
+Superfície escura (`.palco`) onde fica um produto (cards de hardware, cards de aplicativos; o hero usa o quadro em tela inteira, §9.7). Camadas: fundo `navy-950` → `navy-900` em degradê vertical; `.palco__luz` (elipse elétrica desfocada atrás do centro, contorno ciano fino embaixo, `aria-hidden`); `.palco__conteudo` (o objeto, a imagem ou a tela do app). Raio igual ao dos blocos (§5.3). O palco não tem texto dentro, salvo o selo de ilustração.
 
 ### 8.14 Selos de status
 
@@ -908,15 +908,34 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
 
 ### 9.7 Hero "estudio" (padrão desde a v3)
 
-Seção `#inicio` (`.hero-estudio`) com o texto à esquerda (em cima abaixo de 768 px) e um palco com o produto à direita (embaixo). O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
+Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos passam por cima dele. O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
 
-- Em scroll 0, a composição é a mesma com e sem animação. No desktop, o texto e o palco ficam centrados na 1ª tela; no celular, o texto vem em cima e o palco embaixo.
-- Com animação, o palco fica preso (`position: sticky`) logo abaixo da barra do topo enquanto o texto rola. A célula do palco (`.hero-estudio__cena`) desce até o fim da seção e ganha 1,5 tela de rolagem depois do palco.
-- O giro inteiro, do quadro 0 ao último, acontece com o palco preso e inteiro na tela: o progresso só conta a parte presa. O quadro vai para o `<canvas>` (decorativo, `aria-hidden`).
-- Em tela baixa, o palco fica mais estreito para caber inteiro quando preso. Nada fica preso sob a barra.
+**Os textos**, em ordem, todos texto aprovado:
+1. a abertura: sobretítulo, H1, corpo e os dois botões;
+2. "Como funciona" (h2);
+3. os 3 passos do replay (`<ol>`).
+
+Os passos saíram do cartão do replay em Produtos, para não repetir.
+
+**Enquadramento.** Em qualquer quadro do giro, a peça fica entre 9% e 92% da altura do quadro e entre 30% e 70% da largura (15% e 85% no celular). O quadro é dimensionado por ela, e a peça aparece sempre inteira e abaixo da barra:
+- **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 62% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça.
+- **Celular e telas em pé:** o quadro fica em cima, na largura toda, com a peça logo abaixo da barra. Os textos passam embaixo dele, sobre um véu na cor do fundo que garante o contraste se subirem por cima da peça.
+- As bordas do quadro se desfazem no fundo da seção (navy-950) por máscara, sem costura.
+
+**Com animação** (`data-scrub="true"`, só depois de montar):
+- O fundo (`.hero-estudio__fundo`: pôster, `<canvas>` decorativo com `aria-hidden` e selo) fica preso na tela inteira (`position: sticky; top: 0; height: 100svh`), por trás dos textos.
+- O giro, do quadro 0 ao último, cobre toda a faixa em que o fundo fica preso: da abertura até o último passo, que chega ao meio da área de texto quando o fundo solta.
+- Cada passo ocupa cerca de uma tela de leitura. "Como funciona" fica preso no alto da área de texto enquanto os passos passam.
+- Só o bloco em foco aparece (`data-active`; os outros somem com opacidade e um deslize curto). O bloco em foco é o que tem o texto mais perto do meio da área de texto.
+- O bloco com o foco do teclado nunca some. Com reduced motion não há transição.
+
+**Sem animação** (prefers-reduced-motion, "economizar dados", sem JavaScript, falha ao carregar os quadros):
+- É a mesma marcação: o fundo é só a 1ª tela, com o pôster por trás da abertura, e os passos vêm logo depois, como lista normal, sem alturas extras.
+- Em scroll 0, a composição é a mesma com e sem animação (nada salta ao montar).
+
+**Pôster e selo:**
 - O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
-- Sem animação (prefers-reduced-motion, "economizar dados", sem JavaScript, falha ao carregar os quadros): só o pôster, e a seção perde a altura extra.
-- O selo "Ilustração do conceito" fica sempre visível no palco.
+- O selo "Ilustração do conceito" fica sempre visível num canto do quadro, fora da peça.
 
 ---
 

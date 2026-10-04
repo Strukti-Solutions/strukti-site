@@ -10,11 +10,13 @@ import { ChamadaHardware } from "./ChamadaHardware";
 const { produtos, aplicativos, chamadaHardware, statusLabels, whatsappMessages } = landingContent;
 
 describe("<Produtos />", () => {
-  it("mostra o replay com selo, 3 passos, ficha e o WhatsApp com a mensagem pronta", async () => {
+  it("mostra o replay com selo, ficha e o WhatsApp com a mensagem pronta (os passos ficam no hero)", async () => {
     const { container } = render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
     expect(within(replay).getByText(statusLabels.piloto)).toBeTruthy();
-    expect(within(replay).getAllByRole("listitem")).toHaveLength(3);
+    // "Como funciona" e os 3 passos saíram do cartão: estão no hero, ao lado do giro.
+    expect(within(replay).queryByText(produtos.replay.stepsTitle)).toBeNull();
+    expect(within(replay).queryAllByRole("listitem")).toHaveLength(0);
     for (const spec of produtos.replay.specs) expect(within(replay).getByText(spec.value)).toBeTruthy();
     const cta = within(replay).getByRole("link", { name: new RegExp(produtos.replay.cta) });
     expect(cta.getAttribute("href")).toBe(siteConfig.whatsapp.linkWithMessage(whatsappMessages.replay));
