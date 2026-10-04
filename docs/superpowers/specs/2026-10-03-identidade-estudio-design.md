@@ -33,9 +33,9 @@ O `design-system/strukti-solucoes/MASTER.md` passa à v3. O que não muda é man
 2. **Quarta assinatura: a luz de estúdio.** Luz principal azul elétrico (`electric-500`) atrás do produto e contorno ciano (`cyan-400`). Só aparece onde há produto (palco), nunca como fundo decorativo solto.
 3. **Componente palco.** Superfície escura (`navy-950` → `navy-900`) com piso em degradê e a luz de estúdio. Usado no hero e nos cards de hardware e de aplicativos. Nos aplicativos, a tela do app (vídeo ou pôster já existentes) ocupa o lugar do objeto.
 4. **Selos de status.** Todo produto mostra um, e o texto é fixo:
-   - "Piloto gratuito": replay;
+   - "Piloto gratuito": replay e o aplicativo Rota de Vendas (decisão do cliente);
    - "Em desenvolvimento": estacionamento inteligente;
-   - "Em uso": aplicativos que já rodam (Rota de Vendas, Fleet Analytics BI);
+   - "Em uso": aplicativos que já rodam (Fleet Analytics BI);
    - "Em breve": qualquer recurso de IA.
    Cor e contraste definidos no MASTER v3; o selo nunca é o único portador da informação (o texto também diz).
 5. **Ficha técnica.** Números grandes com algarismos tabulares (`font-variant-numeric: tabular-nums`) na Geologica, com rótulo curto embaixo. Exemplo do replay: "30 s", "Wi-Fi", "PoE". Sem fonte nova.
@@ -51,7 +51,7 @@ Seções, em ordem:
 | 1 | Barra do topo | escuro | A barra atual (`TopBar`), com o menu: Produtos, Apps, Equipe, Contato e o botão de WhatsApp. |
 | 2 | Hero | escuro | Sequência do botão de replay (seção 5). Título sobre a Strukti (hardware + IA); botões "Conhecer o replay" (âncora para a seção 3) e "Falar no WhatsApp"; selo discreto "Ilustração do conceito". |
 | 3 | Produtos de hardware | escuro, palcos | **Replay**, card grande: o que é (1 frase); como funciona em 3 passos (aperta o botão → o clipe é cortado → chega no celular); ficha técnica; selo "Piloto gratuito"; botão "Agendar demonstração" → WhatsApp com mensagem pronta. Espaço para o link do site do replay, escondido enquanto o endereço não existir. **Estacionamento inteligente**, card menor: selo "Em desenvolvimento", 1 frase, botão "Quero conversar sobre isso" → WhatsApp com mensagem pronta. |
-| 4 | Aplicativos | escuro, palcos | Rota de Vendas e Fleet Analytics BI, reaproveitando `ProjectGrid`, os vídeos e os pôsteres atuais, agora em palcos. Selo "Em uso". Chamada "Diagnóstico gratuito" → formulário com interesse "Aplicativo". |
+| 4 | Aplicativos | escuro, palcos | Rota de Vendas e Fleet Analytics BI, reaproveitando `ProjectGrid`, os vídeos e os pôsteres atuais, agora em palcos. Selos "Piloto gratuito" (Rota de Vendas) e "Em uso" (Fleet Analytics BI). Chamada "Diagnóstico gratuito" → formulário com interesse "Aplicativo". |
 | 5 | Tem um problema que pede hardware? | claro | Chamada geral para empresas fora do catálogo → formulário com interesse "Outro". |
 | 6 | Como trabalhamos | claro | Seção atual (`ComoResolvemos`) adaptada: diagnóstico, protótipo, instalação, suporte local. |
 | 7 | Equipe | claro | Nomes e curso. Fotos ficam como `[A PREENCHER]` até o grupo mandar. |

@@ -1,16 +1,34 @@
 /**
  * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
- * Texto aprovado pelo cliente em docs/landing-copy.md (v1.8, 03/10/2026),
+ * Texto aprovado pelo cliente em docs/landing-copy.md (v2.0, 03/10/2026),
  * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
  * `[A PREENCHER: ...]`, o valor abaixo usa a mesma marcação — não
  * inventar o dado.
+ *
+ * Transição: as chaves da home nova (statusLabels, heroEstudio, produtos,
+ * aplicativos, chamadaHardware, comoTrabalhamos, contato) já seguem a v2.0.
+ * As seções antigas (hero, problemas, comoResolvemos, oQueJaConstruimos,
+ * diagnostico, equipe, faq, rodape, seo, pendencias, privacidade e o menu
+ * do header) mantêm o texto da v1.8 até a troca das seções na página.
  */
 
 const WHATSAPP_GENERAL_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero conversar sobre um aplicativo para a minha empresa.";
+  "Olá! Vim pelo site da Strukti Soluções e quero conversar com vocês.";
 const WHATSAPP_DIAGNOSTICO_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito.";
+const WHATSAPP_REPLAY_MESSAGE =
+  "Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra.";
+const WHATSAPP_ESTACIONAMENTO_MESSAGE =
+  "Olá! Vim pelo site da Strukti Soluções e quero conversar sobre o estacionamento inteligente.";
+const WHATSAPP_APLICATIVO_MESSAGE =
+  "Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito de um aplicativo para a minha empresa.";
+
+/**
+ * Fase de um produto, mostrada no selo (spec §3.4). O texto de cada selo
+ * fica em `landingContent.statusLabels`.
+ */
+export type ProductStatus = "piloto" | "desenvolvimento" | "emUso" | "emBreve";
 
 /**
  * Um projeto do portfólio de vídeos ("O que já construímos"). O primeiro com
@@ -37,6 +55,8 @@ export interface Project {
   highlights?: readonly { lead: string; rest: string }[];
   platforms: readonly string[];
   featured?: boolean;
+  /** Selo de fase do projeto (rótulo em `landingContent.statusLabels`). */
+  status?: ProductStatus;
 }
 
 const PROJECTS: readonly Project[] = [
@@ -83,6 +103,7 @@ const PROJECTS: readonly Project[] = [
     ],
     platforms: ["Android", "Windows"],
     featured: true,
+    status: "piloto",
   },
   {
     slug: "fleet-analytics-bi",
@@ -99,6 +120,7 @@ const PROJECTS: readonly Project[] = [
         'Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.',
     },
     platforms: ["Web", "Celular"],
+    status: "emUso",
   },
 ];
 
@@ -106,6 +128,181 @@ export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
     diagnostico: WHATSAPP_DIAGNOSTICO_MESSAGE,
+    replay: WHATSAPP_REPLAY_MESSAGE,
+    estacionamento: WHATSAPP_ESTACIONAMENTO_MESSAGE,
+    aplicativo: WHATSAPP_APLICATIVO_MESSAGE,
+  },
+
+  statusLabels: {
+    piloto: "Piloto gratuito",
+    desenvolvimento: "Em desenvolvimento",
+    emUso: "Em uso",
+    emBreve: "Em breve",
+  } satisfies Record<ProductStatus, string>,
+
+  heroEstudio: {
+    eyebrow: "Replay para quadras · Aplicativos sob medida",
+    headline: "Equipamento e software para problemas que um aplicativo sozinho não resolve.",
+    body: "A Strukti Soluções monta o equipamento, escreve o software e cuida da instalação e do suporte. O primeiro produto é o replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Estamos procurando as primeiras quadras para um piloto gratuito. Recursos de inteligência artificial, como o destaque por jogador, vêm em breve.",
+    primaryCta: "Conhecer o replay",
+    whatsappCta: "Falar no WhatsApp",
+    illustrationBadge: "Ilustração do conceito",
+  },
+
+  produtos: {
+    title: "Produtos de hardware",
+    intro:
+      "Equipamento que fica no seu espaço, com software e suporte da própria Strukti. O selo de cada produto diz em que fase ele está.",
+    replay: {
+      name: "Replay para quadras",
+      oneLiner:
+        "Para quadras de aluguel de society, futsal, vôlei e beach tennis: o jogador sai do jogo com o lance no celular, e o time ganha um motivo a mais para voltar à sua quadra.",
+      stepsTitle: "Como funciona",
+      steps: [
+        {
+          lead: "Aperta o botão.",
+          rest: "Saiu um lance bonito? O jogador aperta o botão na beira da quadra.",
+        },
+        {
+          lead: "O clipe é cortado.",
+          rest: "O equipamento da quadra separa os 30 segundos antes do aperto e mais alguns depois.",
+        },
+        {
+          lead: "Chega no celular.",
+          rest: "O clipe sobe pelo Wi-Fi da arena, e o jogador vê e compartilha pelo celular. Esta etapa ainda está em construção, e é ela que o piloto vai testar.",
+        },
+      ],
+      specs: [
+        { value: "30 s", label: "Antes do aperto" },
+        { value: "Wi-Fi", label: "Da própria arena" },
+        { value: "PoE", label: "Energia e imagem num cabo só" },
+      ],
+      cta: "Agendar demonstração",
+      // Endereço do site próprio do replay: null até existir (o link some).
+      siteUrl: null as string | null,
+      siteLinkLabel: "Ver o site do replay",
+    },
+    estacionamento: {
+      name: "Estacionamento inteligente",
+      oneLiner:
+        "A ideia: sensores ou câmeras que indicam as vagas livres no estacionamento do supermercado. Antes de construir, queremos ouvir gerentes de supermercado.",
+      cta: "Quero conversar sobre isso",
+    },
+  },
+
+  aplicativos: {
+    title: "Aplicativos sob medida",
+    intro:
+      "Também construímos aplicativos para empresas, do jeito que cada uma já trabalha e ligados ao que ela já usa. O primeiro passo é o diagnóstico gratuito: uma conversa sobre a rotina da empresa, com um resumo por escrito do que vale a pena fazer. Sem compromisso de contratar.",
+    cta: "Diagnóstico gratuito",
+    projects: PROJECTS,
+    grid: {
+      showMore: "Mostrar mais projetos",
+      playLabel: "Assistir ao vídeo: {nome}",
+    },
+    videoDescriptionLinkLabel: "Ler a descrição do vídeo",
+  },
+
+  chamadaHardware: {
+    title: "Tem um problema que pede hardware?",
+    body: "Nem todo problema cabe no nosso catálogo. Se o seu precisa de câmera, sensor, botão ou outro equipamento ligado a um software, conte para a gente. Juntamos eletrônica e programação, e dizemos com franqueza se dá para resolver.",
+    cta: "Contar o meu problema",
+  },
+
+  comoTrabalhamos: {
+    title: "Como trabalhamos",
+    intro: "Do primeiro contato ao suporte, você fala com a mesma equipe, sem intermediário.",
+    items: [
+      {
+        title: "Diagnóstico",
+        description:
+          "Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso.",
+      },
+      {
+        title: "Protótipo",
+        description:
+          "Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa.",
+      },
+      {
+        title: "Instalação",
+        description:
+          "Instalamos o equipamento ou colocamos o aplicativo para funcionar, e acompanhamos a sua equipe até tudo rodar no dia a dia.",
+      },
+      {
+        title: "Suporte direto",
+        description:
+          "Quem instala é quem cuida depois. Você fala com a equipe pelo WhatsApp, sem central de atendimento, e a manutenção não depende de técnico de fora. Os aplicativos seguem com plano mensal de manutenção, suporte e hospedagem.",
+      },
+    ],
+  },
+
+  contato: {
+    title: "Fale com a gente",
+    intro:
+      "Quer agendar uma demonstração do replay, pedir o diagnóstico de um aplicativo ou contar outro problema? Escolha o assunto e escreva em poucas palavras.",
+    // Mesma forma de diagnostico.form, mais o campo de assunto (interest).
+    form: {
+      title: "Conte o que você precisa",
+      intro: "São cinco campos. Respondemos pelo WhatsApp.",
+      requiredNotice: "Todos os campos são obrigatórios.",
+      fields: {
+        name: {
+          label: "Seu nome",
+          errorEmpty: "Escreva o seu nome.",
+        },
+        company: {
+          label: "Nome da empresa ou da arena",
+          errorEmpty: "Escreva o nome da empresa ou da arena.",
+        },
+        whatsapp: {
+          label: "WhatsApp com DDD",
+          help: "É por esse número que vamos responder.",
+          errorEmpty: "Informe o seu WhatsApp.",
+          errorInvalid: "Confira o número: ele precisa ter o DDD e o telefone completo.",
+        },
+        interest: {
+          label: "Sobre o que você quer falar?",
+          placeholder: "Escolha um assunto",
+          errorEmpty: "Escolha um assunto.",
+          options: {
+            replay: "Replay para quadras",
+            estacionamento: "Estacionamento inteligente",
+            aplicativo: "Aplicativo sob medida",
+            outro: "Outro assunto",
+          },
+        },
+        // A chave continua `problem`; o texto passa a falar de "mensagem".
+        problem: {
+          label: "Sua mensagem",
+          help: "Conte com as suas palavras. Se for o replay, ajuda saber a cidade e quantas quadras você tem. Não precisa colocar dados dos seus clientes.",
+          errorEmpty: "Conte em poucas palavras o que você precisa.",
+          errorTooLong: "Use no máximo {max} caracteres.",
+        },
+      },
+      consentLabelPrefix: "Li o ",
+      consentLinkLabel: "aviso de privacidade",
+      consentLabelSuffix:
+        " e concordo que a Strukti Soluções use estes dados para responder à minha mensagem.",
+      consentError: "Para enviar, marque que você concorda com o uso dos dados.",
+      consentHelperLine: "Usamos seus dados só para responder a esta mensagem.",
+      submitLabel: "Enviar mensagem",
+      submittingLabel: "Enviando…",
+      whatsappAlternativePrefix: "Prefere falar agora? ",
+      whatsappAlternativeLinkLabel: "Chame no WhatsApp: +55 83 99968-3670",
+      errorSummarySingle: "Confira 1 campo antes de enviar.",
+      errorSummaryMultiple: "Confira {n} campos antes de enviar.",
+      success: {
+        title: "Mensagem recebida!",
+        text: "Obrigado, {nome}. Respondemos no mesmo dia pelo WhatsApp informado. Se a mensagem chegou fora do horário comercial, respondemos no próximo dia útil.",
+        text2: "Se quiser adiantar a conversa, chame a gente agora.",
+        button: "Chamar no WhatsApp",
+      },
+      submitError:
+        "Não foi possível enviar agora. Tente de novo em alguns minutos ou fale com a gente pelo WhatsApp.",
+      rateLimitError:
+        "Foram muitas tentativas seguidas. Espere alguns minutos e tente de novo, ou fale com a gente pelo WhatsApp.",
+      honeypotLabel: "Não preencha este campo",
+    },
   },
 
   header: {
