@@ -2401,49 +2401,87 @@ textarea.field__input {
 /* ------------------------------------------------------------------ */
 /* Hero "estudio" (MASTER §9.7)                                         */
 /* ------------------------------------------------------------------ */
+/* Texto e palco lado a lado (empilhados abaixo de 768 px). Com animação, só
+   o palco fica preso, logo abaixo da barra, enquanto o texto rola: a célula
+   do palco (__cena) desce até o fim da seção e é o trilho do sticky. Em
+   scroll 0 a composição é a mesma com e sem animação, e a seção só cresce
+   para baixo depois de montar (ADR-004). */
 .hero-estudio {
+  /* Respiros da seção: em cima, a barra fixa mais 32 px. */
+  --hero-estudio-topo: calc(var(--topbar-height) + var(--topbar-joint) + var(--space-6));
+  --hero-estudio-pe: var(--space-7);
+  /* A 1ª tela sem os respiros: o texto e o palco se centram nela. */
+  --hero-estudio-tela: calc(100svh - var(--hero-estudio-topo) - var(--hero-estudio-pe));
+  /* Onde o palco prende: logo abaixo da barra. */
+  --hero-estudio-preso: calc(var(--topbar-height) + var(--topbar-joint) + var(--space-5));
+  /* O maior palco que cabe inteiro na tela quando preso. */
+  --hero-estudio-palco-max: calc(100svh - var(--hero-estudio-preso) - var(--space-5));
   position: relative;
   min-height: 100svh;
-}
-
-.hero-estudio__sticky {
-  min-height: 100svh;
-  display: flex;
-  align-items: center;
-  padding: calc(var(--topbar-height) + var(--topbar-joint) + var(--space-6)) 0 var(--space-7);
-}
-
-/* Com animação: 2,5 telas de rolagem, conteúdo preso enquanto os quadros
-   passam. Preso pelo pé (bottom: 0, com o conteúdo no fim da seção): se
-   couber na tela, prende desde o topo, como um top: 0; se for mais alto que
-   a tela (o palco embaixo do texto no celular, o texto longo a 1024 px), a
-   página rola até o pé dele aparecer e só então prende. Preso pelo topo, o
-   palco e os botões ficavam fora da tela durante a rolagem inteira. */
-.hero-estudio[data-scrub="true"] {
-  display: flex;
-  flex-direction: column;
-  min-height: 250svh;
-}
-
-.hero-estudio[data-scrub="true"] .hero-estudio__sticky {
-  position: sticky;
-  bottom: 0;
-  /* No fim da seção; se o conteúdo passar dos 250svh, a seção cresce e ele
-     começa no topo (nada fica acima da página). */
-  margin-top: auto;
-  flex-shrink: 0;
+  padding: var(--hero-estudio-topo) 0 var(--hero-estudio-pe);
 }
 
 .hero-estudio__grid {
   display: grid;
   gap: var(--space-6);
-  align-items: center;
+}
+
+.hero-estudio__palco {
+  aspect-ratio: 8 / 5;
+  /* Tela baixa: estreita o palco (no meio da célula) para caber inteiro preso. */
+  width: min(100%, var(--hero-estudio-palco-max) * 8 / 5);
+  margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+  .hero-estudio__palco {
+    aspect-ratio: 8 / 9;
+    width: min(100%, var(--hero-estudio-palco-max) * 8 / 9);
+  }
 }
 
 @media (min-width: 768px) {
+  /* Linha 1: a 1ª tela, com o texto centrado nela (mais alto que ela, começa
+     no topo). A célula do palco ocupa as duas linhas; a 2ª só tem altura
+     com a animação ligada. */
   .hero-estudio__grid {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: minmax(var(--hero-estudio-tela), auto) 1fr;
+    row-gap: 0;
   }
+
+  .hero-estudio__text {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .hero-estudio__cena {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  /* Centra o palco na 1ª tela. A altura dele é 5/8 da largura da célula, e
+     margem em % já é medida pela largura da célula: 62.5% = altura do palco.
+     (Sem container-type: a contenção de layout dele deixava, no Chrome, a
+     grade sem refazer a 2ª linha quando a animação ligava.) */
+  .hero-estudio__palco {
+    margin-top: max(0px, (var(--hero-estudio-tela) - min(62.5%, var(--hero-estudio-palco-max))) / 2);
+  }
+}
+
+/* Com animação: o palco prende abaixo da barra, e a célula ganha 1,5 tela
+   de trilho depois dele. O giro inteiro acontece com o palco preso: o
+   progresso só conta essa parte (HeroSequenceScroller). */
+.hero-estudio[data-scrub="true"] .hero-estudio__palco {
+  position: sticky;
+  top: var(--hero-estudio-preso);
+}
+
+.hero-estudio[data-scrub="true"] .hero-estudio__cena::after {
+  content: "";
+  display: block;
+  height: 150svh;
 }
 
 .hero-estudio__eyebrow {
@@ -2465,16 +2503,6 @@ textarea.field__input {
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-5);
-}
-
-.hero-estudio__palco {
-  aspect-ratio: 8 / 5;
-}
-
-@media (max-width: 767px) {
-  .hero-estudio__palco {
-    aspect-ratio: 8 / 9;
-  }
 }
 
 .hero-estudio__poster,

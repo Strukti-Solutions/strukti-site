@@ -910,7 +910,10 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
 
 Seção `#inicio` (`.hero-estudio`) com o texto à esquerda (em cima abaixo de 768 px) e um palco com o produto à direita (embaixo). O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900.
 
-- Com animação: a seção tem 250svh de altura e o conteúdo fica fixo (`position: sticky`) enquanto a rolagem dentro dela escolhe o quadro desenhado no `<canvas>` (decorativo, `aria-hidden`).
+- Em scroll 0, a composição é a mesma com e sem animação. No desktop, o texto e o palco ficam centrados na 1ª tela; no celular, o texto vem em cima e o palco embaixo.
+- Com animação, o palco fica preso (`position: sticky`) logo abaixo da barra do topo enquanto o texto rola. A célula do palco (`.hero-estudio__cena`) desce até o fim da seção e ganha 1,5 tela de rolagem depois do palco.
+- O giro inteiro, do quadro 0 ao último, acontece com o palco preso e inteiro na tela: o progresso só conta a parte presa. O quadro vai para o `<canvas>` (decorativo, `aria-hidden`).
+- Em tela baixa, o palco fica mais estreito para caber inteiro quando preso. Nada fica preso sob a barra.
 - O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
 - Sem animação (prefers-reduced-motion, "economizar dados", sem JavaScript, falha ao carregar os quadros): só o pôster, e a seção perde a altura extra.
 - O selo "Ilustração do conceito" fica sempre visível no palco.

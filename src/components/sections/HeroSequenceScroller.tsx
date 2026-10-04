@@ -24,25 +24,28 @@ function prefersSavingData() {
 
 /**
  * Hero "estudio" (MASTER §9.7): o pôster (quadro 0) vem no HTML; depois de
- * montar, sem reduced motion e sem "economizar dados", a seção ganha a
- * altura de rolagem (data-scrub) e o canvas desenha o quadro que a rolagem
+ * montar, sem reduced motion e sem "economizar dados", a célula do palco
+ * ganha a altura de rolagem (data-scrub), o palco fica preso logo abaixo da
+ * barra enquanto o texto rola, e o canvas desenha o quadro que a rolagem
  * pede. O servidor e o 1º render do cliente são iguais (data-scrub="false",
  * ADR-004). O conjunto de quadros é escolhido uma vez, ao montar: girar a
  * tela não baixa tudo de novo (o canvas usa object-fit: cover).
  */
 export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: string }) {
   const canAnimate = useCanAnimate();
-  const sectionRef = useRef<HTMLElement>(null);
+  const cenaRef = useRef<HTMLDivElement>(null);
+  const palcoRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scrub, setScrub] = useState(false);
   const desktop = siteConfig.heroSequence.desktop;
 
   useEffect(() => {
     if (!canAnimate || prefersSavingData()) return;
-    const section = sectionRef.current;
+    const cena = cenaRef.current;
+    const palco = palcoRef.current;
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
-    if (!section || !canvas || !context) return;
+    if (!cena || !palco || !canvas || !context) return;
 
     const set = pickFrameSet(window.innerWidth);
     const { frames: total, width, height } = siteConfig.heroSequence[set];
@@ -61,13 +64,25 @@ export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: 
     let scheduled = false;
     let rafId = 0;
 
+    /**
+     * O giro corre só enquanto o palco está preso: do momento em que o topo
+     * dele chega ao `top` do sticky (logo abaixo da barra) até o pé dele
+     * chegar ao fim da célula. A margem de cima (que o centra na 1ª tela) e
+     * o `top` vêm do CSS; com eles, a conta é a mesma da seção inteira.
+     */
+    const progress = () => {
+      const style = getComputedStyle(palco);
+      const offset = parseFloat(style.marginTop) || 0;
+      const stickyTop = parseFloat(style.top) || 0;
+      const cell = cena.getBoundingClientRect();
+      return sectionProgress(cell.top + offset - stickyTop, cell.height - offset, palco.getBoundingClientRect().height);
+    };
+
     const draw = () => {
       scheduled = false;
       // Depois de desistir (quadros falharam), o hero fica no pôster.
       if (cancelled) return;
-      const rect = section.getBoundingClientRect();
-      const target = frameForProgress(sectionProgress(rect.top, rect.height, window.innerHeight), total);
-      const index = nearestLoadedFrame(loaded, target);
+      const index = nearestLoadedFrame(loaded, frameForProgress(progress(), total));
       if (index === null || index === drawn) return;
       const image = images[index];
       if (!image) return;
@@ -79,6 +94,20 @@ export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: 
       if (scheduled) return;
       scheduled = true;
       rafId = requestAnimationFrame(draw);
+    };
+
+    /** Para tudo: ouvintes, desenho agendado e os quadros que ainda baixam. */
+    const stop = () => {
+      cancelled = true;
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("load", load);
+      if (scheduled) cancelAnimationFrame(rafId);
+      images.forEach((image, index) => {
+        image.onload = null;
+        image.onerror = null;
+        if (!loaded[index]) image.src = "";
+      });
     };
 
     const load = () => {
@@ -94,7 +123,7 @@ export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: 
           if (cancelled) return;
           failed += 1;
           if (failed > total * MAX_FAILED_RATIO) {
-            cancelled = true;
+            stop();
             delete canvas.dataset.frame;
             setScrub(false);
           }
@@ -112,15 +141,7 @@ export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: 
     else window.addEventListener("load", load, { once: true });
 
     return () => {
-      cancelled = true;
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("load", load);
-      if (scheduled) cancelAnimationFrame(rafId);
-      for (const image of images) {
-        image.onload = null;
-        image.onerror = null;
-      }
+      stop();
       delete canvas.dataset.frame;
       setScrub(false);
     };
@@ -128,17 +149,17 @@ export function HeroSequenceScroller({ text, badge }: { text: ReactNode; badge: 
 
   return (
     <section
-      ref={sectionRef}
       id="inicio"
       className="hero-estudio surface-space"
       aria-labelledby="hero-title"
       data-scrub={scrub ? "true" : "false"}
       data-hides-fab=""
     >
-      <div className="hero-estudio__sticky">
-        <div className="container hero-estudio__grid">
-          {text}
-          <div className="palco hero-estudio__palco">
+      <div className="container hero-estudio__grid">
+        {text}
+        {/* A célula desce até o fim da seção: é o trilho em que o palco fica preso. */}
+        <div ref={cenaRef} className="hero-estudio__cena">
+          <div ref={palcoRef} className="palco hero-estudio__palco">
             <div className="palco__luz" aria-hidden="true" />
             <picture>
               <source media={`(max-width: ${CELULAR_MAX_WIDTH}px)`} type="image/avif" srcSet={posterUrl("celular", "avif")} />

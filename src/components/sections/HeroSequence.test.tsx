@@ -61,10 +61,23 @@ afterEach(() => {
 const desktopFrames = siteConfig.heroSequence.desktop.frames;
 const section = () => document.getElementById("inicio") as HTMLElement;
 const canvas = () => document.querySelector(".hero-estudio__canvas") as HTMLCanvasElement;
+const cena = () => document.querySelector(".hero-estudio__cena") as HTMLElement;
+const palco = () => document.querySelector(".hero-estudio__palco") as HTMLElement;
 
+// A célula do palco desce até o fim da seção; o giro corre enquanto o palco
+// (500 px) fica preso dentro dela.
+const CENA_HEIGHT = 2500;
+const PALCO_HEIGHT = 500;
+
+/** Rola até a célula do palco ficar com o topo em `top` (px, na tela). */
 function scrollHeroTo(top: number) {
-  vi.spyOn(section(), "getBoundingClientRect").mockReturnValue({ top, height: 2500 } as DOMRect);
+  vi.spyOn(cena(), "getBoundingClientRect").mockReturnValue({ top, height: CENA_HEIGHT } as DOMRect);
+  vi.spyOn(palco(), "getBoundingClientRect").mockReturnValue({ height: PALCO_HEIGHT } as DOMRect);
   window.dispatchEvent(new Event("scroll"));
+}
+
+function loadAllFrames() {
+  for (const image of FakeImage.instances) image.onload?.();
 }
 
 describe("<HeroSequence />", () => {
@@ -104,7 +117,7 @@ describe("<HeroSequence />", () => {
     act(() => FakeImage.instances[0]?.onload?.());
     act(() => FakeImage.instances[3]?.onload?.());
     expect(canvas().dataset.frame).toBe("0");
-    act(() => scrollHeroTo(-(2500 - window.innerHeight) / 2)); // pede o quadro 45
+    act(() => scrollHeroTo(-(CENA_HEIGHT - PALCO_HEIGHT) / 2)); // pede o quadro 45
     expect(canvas().dataset.frame).toBe("3");
     expect(drawImage).toHaveBeenLastCalledWith(FakeImage.instances[3], 0, 0, 1600, 1000);
     expect(drawImage).not.toHaveBeenCalledWith(undefined, expect.anything(), expect.anything(), expect.anything(), expect.anything());
@@ -113,10 +126,38 @@ describe("<HeroSequence />", () => {
   it("quadros que falham (ex.: sem AVIF) devolvem o hero ao pôster", async () => {
     render(<HeroSequence />);
     await act(async () => {});
+    act(() => FakeImage.instances[0]?.onload?.());
+    expect(canvas().dataset.frame).toBe("0");
     act(() => {
-      for (const image of FakeImage.instances.slice(0, Math.ceil(desktopFrames * 0.1) + 1)) image.onerror?.();
+      for (const image of FakeImage.instances.slice(1, Math.ceil(desktopFrames * 0.1) + 2)) image.onerror?.();
     });
     expect(section().dataset.scrub).toBe("false");
+    // Depois de desistir: o canvas fica sem quadro, nada mais é desenhado
+    // (nem por um quadro que chega, nem pela rolagem) e o que faltava baixar para.
+    expect(canvas().dataset.frame).toBeUndefined();
+    drawImage.mockClear();
+    act(() => FakeImage.instances[50]?.onload?.());
+    act(() => scrollHeroTo(-(CENA_HEIGHT - PALCO_HEIGHT) / 2));
+    expect(drawImage).not.toHaveBeenCalled();
+    expect(FakeImage.instances[50]?.src).toBe("");
+  });
+
+  it("o giro só começa com o palco preso abaixo da barra e acaba quando ele solta", async () => {
+    render(<HeroSequence />);
+    await act(async () => {});
+    // O que o CSS daria: margem que centra o palco na 1ª tela e o `top` do sticky.
+    palco().style.marginTop = "100px";
+    palco().style.top = "80px";
+    act(loadAllFrames);
+    // Palco ainda descendo (topo natural a 85 px, abaixo dos 80 do sticky): quadro 0.
+    act(() => scrollHeroTo(-15));
+    expect(canvas().dataset.frame).toBe("0");
+    // Preso, no meio da faixa presa (2500 − 100 − 500 = 1900 px): o quadro do meio.
+    act(() => scrollHeroTo(80 - 100 - 1900 / 2));
+    expect(canvas().dataset.frame).toBe("45");
+    // No fim da faixa, quando o palco solta: o último quadro.
+    act(() => scrollHeroTo(80 - 100 - 1900));
+    expect(canvas().dataset.frame).toBe(String(desktopFrames - 1));
   });
 
   it("girar a tela não baixa os quadros de novo", async () => {
