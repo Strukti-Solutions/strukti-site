@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { diagnosticoFormSchema } from "@/lib/validation";
+import { contatoFormSchema } from "@/lib/validation";
 import { isRateLimited } from "@/lib/rateLimit";
 import { createLeadRepository, RepositoryConfigError } from "@/lib/repository/leadRepository";
 import { siteConfig } from "@/config/site";
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Corpo da requisição inválido." }, { status: 400 });
   }
 
-  const parsed = diagnosticoFormSchema.safeParse(body);
+  const parsed = contatoFormSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
@@ -68,20 +68,21 @@ export async function POST(request: NextRequest) {
       name: parsed.data.name,
       company: parsed.data.company,
       whatsapp: parsed.data.whatsapp,
+      interest: parsed.data.interest,
       problem: parsed.data.problem,
       consentAt: new Date(),
       privacyPolicyVersion: siteConfig.privacyPolicyVersion,
     });
   } catch (error) {
     if (error instanceof RepositoryConfigError) {
-      console.error("Diagnóstico: repositório de leads não configurado (DATABASE_URL ausente).");
+      console.error("Contato: repositório de leads não configurado (DATABASE_URL ausente).");
       return NextResponse.json(
         { error: "Formulário indisponível no momento. Tente novamente mais tarde." },
         { status: 503 },
       );
     }
 
-    console.error("Diagnóstico: falha ao gravar lead.");
+    console.error("Contato: falha ao gravar lead.");
     return NextResponse.json(
       {
         error:

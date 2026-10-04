@@ -88,11 +88,21 @@ CREATE TABLE leads (
   name TEXT NOT NULL,
   company TEXT NOT NULL,
   whatsapp TEXT NOT NULL,
+  interest TEXT NOT NULL CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro')),
   problem TEXT NOT NULL,
   consent_at TIMESTAMPTZ NOT NULL,
   privacy_version TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+```
+
+Banco criado antes do campo "interesse" (ADR-009)? Migração:
+
+```sql
+ALTER TABLE leads ADD COLUMN interest TEXT NOT NULL DEFAULT 'outro';
+ALTER TABLE leads ALTER COLUMN interest DROP DEFAULT;
+ALTER TABLE leads ADD CONSTRAINT leads_interest_check
+  CHECK (interest IN ('replay', 'estacionamento', 'aplicativo', 'outro'));
 ```
 
 `consent_at` e `privacy_version` registram quando a pessoa consentiu e qual versão
@@ -255,8 +265,8 @@ defesa distribuída contra spam coordenado.
 
 ## LGPD
 
-O formulário de diagnóstico coleta nome, empresa, WhatsApp e a descrição do
-problema. A gravação exige consentimento explícito (checkbox não pré-marcado),
+O formulário de contato coleta nome, empresa, WhatsApp, o assunto (interesse)
+e a mensagem. A gravação exige consentimento explícito (checkbox não pré-marcado),
 registra `consent_at` e `privacy_version`, e o aviso de privacidade completo está
 em `/privacidade`. A rota de API nunca loga os dados pessoais enviados; para
 conter spam, registra por pouco tempo o IP de quem envia (declarado no aviso).

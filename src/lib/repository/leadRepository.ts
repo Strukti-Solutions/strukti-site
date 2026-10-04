@@ -1,7 +1,10 @@
+import type { Interest } from "@/lib/interest";
+
 export type Lead = {
   name: string;
   company: string;
   whatsapp: string;
+  interest: Interest;
   problem: string;
   consentAt: Date;
   privacyPolicyVersion: string;
@@ -30,12 +33,13 @@ class PostgresLeadRepository implements LeadRepository {
     await client.connect();
     try {
       await client.query(
-        `INSERT INTO leads (name, company, whatsapp, problem, consent_at, privacy_version, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        `INSERT INTO leads (name, company, whatsapp, interest, problem, consent_at, privacy_version, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
         [
           lead.name,
           lead.company,
           lead.whatsapp,
+          lead.interest,
           lead.problem,
           lead.consentAt,
           lead.privacyPolicyVersion,

@@ -128,7 +128,7 @@ export function OQueJaFizemos() {
           <p className="body-muted" style={{ maxWidth: "62ch" }}>
             {closing}
           </p>
-          <motion.a href="#diagnostico" className="btn btn--primary" {...tapHover}>
+          <motion.a href="#contato" className="btn btn--primary" {...tapHover}>
             {button}
           </motion.a>
         </Reveal>

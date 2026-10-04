@@ -3,32 +3,37 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { landingContent } from "@/content/landing";
-import { diagnosticoFormSchema, PROBLEM_MAX_LENGTH } from "@/lib/validation";
+import { contatoFormSchema, PROBLEM_MAX_LENGTH } from "@/lib/validation";
+import { INTERESTS, onInterestSelected, type Interest } from "@/lib/interest";
 import { siteConfig } from "@/config/site";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LinkedText } from "@/components/LinkedText";
-import { Reveal } from "@/components/motion/Reveal";
 import { useTapHover } from "@/lib/motion";
 
 type Status = "idle" | "submitting" | "success" | "error";
 type SubmitErrorKind = "rateLimit" | "generic";
 
-type FieldKey = "name" | "company" | "whatsapp" | "problem" | "consent";
+type FieldKey = "name" | "company" | "whatsapp" | "interest" | "problem" | "consent";
 
-const FIELD_ORDER: FieldKey[] = ["name", "company", "whatsapp", "problem", "consent"];
+const FIELD_ORDER: FieldKey[] = ["name", "company", "whatsapp", "interest", "problem", "consent"];
 
-export function Diagnostico() {
-  const { title, intro, highlight, howItWorksTitle, steps, form } = landingContent.diagnostico;
+export function Contato() {
+  const { title, intro, form } = landingContent.contato;
   const [status, setStatus] = useState<Status>("idle");
   const [submitErrorKind, setSubmitErrorKind] = useState<SubmitErrorKind>("generic");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [submittedName, setSubmittedName] = useState("");
+  const [interest, setInterest] = useState<Interest | "">("");
   const formRef = useRef<HTMLFormElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const statusErrorRef = useRef<HTMLParagraphElement>(null);
   const tapHover = useTapHover();
 
   const errorCount = Object.keys(fieldErrors).length;
+
+  // Chamadas da página (InterestLink) marcam o interesse. O select só existe
+  // com o formulário à mostra: depois do sucesso, o evento não muda nada.
+  useEffect(() => onInterestSelected(setInterest), []);
 
   useEffect(() => {
     if (status === "success") {
@@ -58,12 +63,13 @@ export function Diagnostico() {
       name: String(formData.get("name") ?? ""),
       company: String(formData.get("company") ?? ""),
       whatsapp: String(formData.get("whatsapp") ?? ""),
+      interest: String(formData.get("interest") ?? ""),
       problem: String(formData.get("problem") ?? ""),
       consent: formData.get("consent") === "on",
       codigoParceiro: String(formData.get("codigoParceiro") ?? ""),
     };
 
-    const parsed = diagnosticoFormSchema.safeParse(payload);
+    const parsed = contatoFormSchema.safeParse(payload);
 
     if (!parsed.success) {
       const errors: Partial<Record<FieldKey, string>> = {};
@@ -100,6 +106,7 @@ export function Diagnostico() {
       setSubmittedName(parsed.data.name);
       setStatus("success");
       formEl.reset();
+      setInterest("");
     } catch {
       setSubmitErrorKind("generic");
       setStatus("error");
@@ -107,32 +114,15 @@ export function Diagnostico() {
   }
 
   return (
-    <section id="diagnostico" className="section surface-paper" aria-labelledby="diagnostico-title">
+    <section id="contato" className="section surface-paper" aria-labelledby="contato-title">
       <div className="container diag">
         <div>
-          <h2 id="diagnostico-title" className="section-title">
+          <h2 id="contato-title" className="section-title">
             {title}
           </h2>
           <p className="body-muted" style={{ marginTop: "var(--space-4)", maxWidth: "62ch" }}>
             {intro}
           </p>
-          <p className="diag__highlight">{highlight}</p>
-
-          <Reveal>
-            <h3 className="block-title diag__steps-title">{howItWorksTitle}</h3>
-            <ol className="wall">
-              {steps.map((step, index) => (
-                <li key={step.lead} className="block step">
-                  <span className="step__number" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <p className="step__text">
-                    <strong>{step.lead}</strong> {step.rest}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
         </div>
 
         <div className="form-card" data-hides-fab="">
@@ -224,6 +214,30 @@ export function Diagnostico() {
                 </div>
 
                 <div className="field">
+                  <label htmlFor="interest" className="field__label">
+                    {form.fields.interest.label}
+                  </label>
+                  <select
+                    id="interest"
+                    name="interest"
+                    className="field__input"
+                    required
+                    value={interest}
+                    onChange={(event) => setInterest(event.target.value as Interest | "")}
+                    aria-invalid={Boolean(fieldErrors.interest)}
+                    aria-describedby={fieldErrors.interest ? "interest-error" : undefined}
+                  >
+                    <option value="">{form.fields.interest.placeholder}</option>
+                    {INTERESTS.map((value) => (
+                      <option key={value} value={value}>
+                        {form.fields.interest.options[value]}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.interest && <FieldError id="interest-error" message={fieldErrors.interest} />}
+                </div>
+
+                <div className="field">
                   <label htmlFor="problem" className="field__label">
                     {form.fields.problem.label}
                   </label>
@@ -300,7 +314,7 @@ export function Diagnostico() {
                 <p className="form-card__alt">
                   {form.whatsappAlternativePrefix}
                   <a
-                    href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                    href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -314,7 +328,7 @@ export function Diagnostico() {
                       <LinkedText
                         text={submitErrorKind === "rateLimit" ? form.rateLimitError : form.submitError}
                         linkLabel="fale com a gente pelo WhatsApp"
-                        href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.diagnostico)}
+                        href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
                         external
                       />
                     </p>

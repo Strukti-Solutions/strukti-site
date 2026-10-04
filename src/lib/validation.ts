@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { landingContent } from "@/content/landing";
+import { INTERESTS } from "@/lib/interest";
 
 export const PROBLEM_MAX_LENGTH = 1000;
 
-const { fields, consentError } = landingContent.diagnostico.form;
+const { fields, consentError } = landingContent.contato.form;
 
 const whatsappPattern = /^[\d()+\-\s]{8,20}$/;
 
-export const diagnosticoFormSchema = z.object({
+export const contatoFormSchema = z.object({
   // Limites técnicos (120/150) não vêm do texto aprovado: o input já tem
   // maxLength, então essa mensagem só apareceria num acesso direto à API.
   name: z.string().trim().min(1, fields.name.errorEmpty).max(120, "Nome muito longo."),
@@ -19,6 +20,7 @@ export const diagnosticoFormSchema = z.object({
     .refine((value) => whatsappPattern.test(value), {
       message: fields.whatsapp.errorInvalid,
     }),
+  interest: z.enum(INTERESTS, { error: fields.interest.errorEmpty }),
   problem: z
     .string()
     .trim()
@@ -34,4 +36,4 @@ export const diagnosticoFormSchema = z.object({
   codigoParceiro: z.string().max(200).optional().default(""),
 });
 
-export type DiagnosticoFormInput = z.infer<typeof diagnosticoFormSchema>;
+export type ContatoFormInput = z.infer<typeof contatoFormSchema>;
