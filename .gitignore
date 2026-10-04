@@ -36,6 +36,12 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 
+# Brainstorm (mockups locais do companion visual)
+.superpowers/
+
+# Render do hero 3D (PNGs intermediários; os AVIF vão para public/)
+.hero-render/
+
 # Quality gate (saídas locais; o baseline e o config são versionados)
 metrics-summary.quality-gate.json
 quality-report.md

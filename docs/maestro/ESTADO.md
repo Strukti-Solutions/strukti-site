@@ -1,8 +1,18 @@
-# Onde paramos — 03/10/2026
+# Onde paramos — 03/10/2026 (novo rumo: hardware + IA)
 
 Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é privado: `github.com/Thiago432544/strukti-site`.
 
-## O que está no `main` (depois desta rodada)
+## Novo rumo (03/10/2026)
+
+A Strukti passou a focar em produtos de hardware + IA (replay para quadras; estacionamento inteligente em espera); aplicativos continuam em segundo plano. O site vira a vitrine da marca-mãe, com a identidade "Estúdio" (ADR-009, `MASTER.md` v3).
+
+- Spec: `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`.
+- Plano: `docs/superpowers/plans/2026-10-03-identidade-estudio.md` (10 tarefas; a Tarefa 2, texto v2.0, é portão do Thiago).
+- Nesta máquina o time roda como subagentes do Claude Code (o Maestri está com outro projeto).
+
+## O que está no `main`
+
+Ainda o site da fase de aplicativos. A home v3 está no branch (seção seguinte).
 
 - **Site completo:**
   - hero com vídeo;
@@ -24,7 +34,23 @@ Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é
     - sem nonce; `'unsafe-eval'` só em desenvolvimento;
     - as páginas continuam estáticas, servidas pela CDN;
     - o `check:browser` falha se houver violação de CSP.
-- O texto aprovado está em `docs/landing-copy.md`, versão 1.8: a v1.7 do cliente mais os textos da 404.
+- O texto aprovado no `main` é o de `docs/landing-copy.md` versão 1.8: a v1.7 do cliente mais os textos da 404.
+
+## No branch `feat/identidade-estudio` (ainda sem merge no `main`)
+
+A revisão final do branch inteiro pediu uma rodada de correção; depois dela, falta o merge. Push só com o ok do Thiago.
+
+- **Home v3 da marca-mãe** (ADR-009, spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md` §4), nesta ordem:
+  - hero "estudio": o botão de replay em 3D gira com a rolagem (sequência de quadros AVIF; com reduced motion, "economizar dados" ou sem JavaScript, fica o pôster);
+  - produtos de hardware: replay para quadras ("Piloto gratuito") e estacionamento inteligente ("Em desenvolvimento"), com WhatsApp de mensagem pronta;
+  - aplicativos sob medida: Rota de Vendas e Fleet Analytics BI em vídeo, com selo de status e a chamada do diagnóstico gratuito;
+  - chamada "Tem um problema que pede hardware?";
+  - como trabalhamos (etapas), equipe (nome e curso), dúvidas e rodapé;
+  - contato: formulário único com o campo de interesse (assunto) e consentimento (LGPD);
+  - aviso de privacidade (versão 2026-10-03).
+- **Design system v3 "Estúdio":** `design-system/strukti-solucoes/MASTER.md`, com a ADR-009 em `docs/DECISOES.md`.
+- **`check:browser`** com o passo do hero "estudio" (a variante vem de `<main data-hero-variant>`) e os vídeos dos aplicativos. O hero é conferido a 1440×900 e a 360×740: a rolagem troca o quadro (0 → N), com reduced motion fica no pôster sem altura extra, e o passo reprova se, ao rolar até `#produtos`, o fundo preso do hero ainda cobrir a seção.
+- O texto aprovado no branch é o de `docs/landing-copy.md` versão 2.0 (aprovada pelo Thiago em 03/10/2026).
 
 ## Próximos passos
 
@@ -37,11 +63,39 @@ Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é
      - **Q3:** 1024 em `FAB_CHECK_WIDTHS`; o FAB não cruza nenhum controle nessa largura;
      - **Q4:** `SITE_URL` (e `VERCEL_*`) vazio ou só com espaços conta como ausente; README com o fallback real; o `check:browser` começa por um controle positivo que provoca uma violação de CSP e interrompe a checagem se o detector não a acusar (provado neutralizando o detector: exit 1).
    - **Armadilha do PC novo:** a pasta é `C:\Dev` (D maiúsculo). Worktree com `node_modules` em junction para `C:\dev\...` faz o `next dev` empacotar o Next duas vezes e a página não hidrata, e o `check:browser` pode passar sem ter testado nada. Use sempre `C:\Dev` em junctions e no diretório de trabalho.
-3. **V2:** mais vídeos de lançamento (`/brag`) de outros projetos no portfólio. É o foco futuro do site.
+3. **Depois da home v3:**
+   - **limpeza dos heros "video" e "classic"**, com ADR própria em `docs/DECISOES.md` (spec §5.2). Saem `HeroVideo*`, `Hero`, `HeroContent`, `HeroBackground`, os visuais, `Header`, `landingContent.hero` e o CSS deles. Saem junto:
+     - o `data-hero-variant` do `<main>` e o passo do `check:browser` que lê esse marcador (mudam juntos);
+     - os passos do replay no cartão de Produtos, que só aparecem fora do hero "estudio" (variantes "video" e "classic") e usam `style` em linha;
+     - as seções do MASTER que descrevem esses heros (§8.3, §8.3.1 na parte do "video", §9.1–9.6).
+   - **pendências das revisões do branch** (nenhuma bloqueia o merge; antes só no registro fora do git):
+     - **celular deitado com menos de 768 px** (ex.: 740×360): o hero fica empilhado, e o texto passa por uma fresta de ~83 px. Correção mais barata: desligar a animação nesse caso (cai no modo parado, que já existe); melhor: o lado a lado a partir de ~600 px deitado. Decisão do Thiago;
+     - na troca de passos lado a lado, o passo que recebe o foco pode entrar com o pé 15–60 px abaixo da tela (estimado, não medido);
+     - quando os quadros falham e o hero volta ao pôster, quem entrou por âncora (ex.: `/#contato`) pode mudar de lugar;
+     - o `check:browser` roda contra o `next dev`, não contra o build de produção;
+     - faixas tênues de 1 nível no degradê escuro dos quadros vêm da quantização do AV1 e só aparecem com o contraste ampliado. Saída futura: grão leve no canvas ou o film grain do AV1;
+     - `scripts/hero-3d`:
+       - menores 2, 3 e 5 do `encode.mjs` (comentários e linha em branco);
+       - `build_product`/`animate` (`render.py`) usam tupla e parâmetros posicionais;
+       - o teste de arquivos (`src/config/heroSequence.assets.test.ts`) não confere o conteúdo além de `ftyp`/`ispe`;
+     - design system:
+       - a legibilidade dos selos de contorno depende de uma `.surface-*` ancestral;
+       - o padding lateral de 10 px do selo e o clamp de 28–36 px do valor da ficha estão fora das escalas;
+       - a §10 diz "sem A · B · C", mas o sobretítulo aprovado do hero usa "Replay para quadras · Aplicativos sob medida";
+       - a §4 dá as iniciais da equipe em 1.5rem, mas o CSS usa 1.375rem;
+     - `CLAUDE.md`: o roadmap e as prioridades ainda não têm a fase do novo rumo (hardware + IA). Decisão do grupo.
+   - **pendências da v2.0** (`docs/landing-copy.md`, "Pendências"). Bloqueiam a publicação:
+     - **curso de cada pessoa da equipe** (`siteConfig.team[].course`, hoje 4 vezes `[A PREENCHER: curso]`);
+     - **endereço do site** (`landingContent.seo.ogUrl`, lembrete do `check:placeholders`, e o `SITE_URL` na Vercel);
+     - **provedores no aviso de privacidade** (hospedagem e banco, e se guardam dados fora do Brasil).
+
+     Não bloqueia: o **endereço do site do replay** (`produtos.replay.siteUrl`; enquanto for `null`, o link fica escondido). O grupo decide: fotos da equipe.
+   - **V2:** mais vídeos de lançamento (`/brag`) de outros projetos na grade de aplicativos.
 4. **L5, publicação** (só com o ok do cliente e as contas dele):
    - deploy na Vercel;
    - banco PostgreSQL para o formulário (`DATABASE_URL` só em `.env.local` e nas variáveis da Vercel);
    - endereço final em `SITE_URL` (o Q4 já está resolvido);
+   - banco criado antes do campo de interesse: seguir a migração do README na ordem (coluna com padrão `'aplicativo'` antes do deploy; `DROP DEFAULT`, se quiser, só depois), senão todo envio dá 500;
    - medir o desempenho (Lighthouse) na própria Vercel.
    - O CSP com nonce só volta à mesa se entrar script de terceiro (ADR-008).
 5. **Prioridades seguintes do `CLAUDE.md`:** LGPD do app, base reaproveitável e revisão geral do app.
