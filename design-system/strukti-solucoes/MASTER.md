@@ -178,11 +178,21 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | Foco cyan-400 do controle do vídeo sobre o anel de espaço (7 px) que o separa do céu claro | 9,97 | 3 ✅ |
 | Contorno do botão Menu navy-400 / espaço | 4,45 | 3 ✅ |
 | Links da barra navy-200 / espaço | 11,73 | 4,5 ✅ |
+| Selo "Piloto gratuito": navy-950 / cyan-400 | 9,97 | 4,5 ✅ |
+| Selos "Em desenvolvimento" e "Em breve": navy-100 / espaço · noite · navy-800 | 15,09 / 13,79 / 12,14 | 4,5 ✅ |
+| Selo "Em uso": branco / navy-700 | 12,50 | 4,5 ✅ |
+| Selos de contorno no papel: navy-800 / papel · branco | 13,83 / 15,16 | 4,5 ✅ |
+| Contorno dos selos navy-300 / espaço · noite · navy-800 | 7,49 / 6,84 / 6,03 | 3 ✅ |
+| Contorno dos selos no papel navy-500 / papel · branco | 6,16 / 6,75 | 3 ✅ |
+| Selo de ilustração navy-200 / palco (espaço · noite) | 11,73 / 10,72 | 4,5 ✅ |
+| **Pior caso do palco:** selo de ilustração navy-200 sobre a noite com a luz elétrica inteira atrás (electric-500 a 0,45) | 5,60 | 4,5 ✅ |
 
 Decorativos (sem exigência): junta navy-100 sobre branco 1,25; junta da
 barra do topo navy-800 sobre espaço 1,24 (e sobre a noite, 1,13); ponto do i
 electric-500 sobre branco 3,81; verde WhatsApp sobre papel 1,81 (o botão é
-identificado pelo próprio texto, 9,5:1).
+identificado pelo próprio texto, 9,5:1); fundo navy-700 do selo "Em uso"
+sobre espaço, noite e navy-800 1,51 / 1,38 / 1,21 (o selo não é controle e é
+identificado pelo próprio texto, 12,50:1).
 
 ---
 
@@ -275,7 +285,7 @@ Elements of Typographic Style*.
 | Token | px | Uso |
 |---|---|---|
 | `--radius-joint` | 2 | Cantos internos de blocos dentro de uma parede |
-| `--radius-1` | 4 | Campos de formulário, etiquetas |
+| `--radius-1` | 4 | Campos de formulário, etiquetas (selos de status, §8.14) |
 | `--radius-2` | 6 | Botões, botão flutuante |
 | `--radius-3` | 10 | Cantos externos de uma parede, moldura de vídeo, formulário |
 
@@ -680,7 +690,19 @@ Superfície escura (`.palco`) onde fica um produto (hero, cards de hardware, car
 
 ### 8.14 Selos de status
 
-Todo produto mostra um selo (classe base `.selo` mais um modificador), com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`). O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` no canto inferior do palco. A informação está sempre no texto; a cor só reforça. Contraste AA conferido nos quatro.
+Todo produto mostra um selo (classe base `.selo` mais um modificador), com texto fixo: **"Piloto gratuito"** (`.selo--piloto`, fundo `cyan-400`, texto `navy-950`), **"Em desenvolvimento"** (`.selo--desenvolvimento`, contorno `navy-300`, texto `navy-100`), **"Em uso"** (`.selo--em-uso`, fundo `navy-700`, texto branco), **"Em breve"** (`.selo--em-breve`, contorno tracejado `navy-300`, texto `navy-100`; o traço é o que o distingue de "Em desenvolvimento"). No papel (`.surface-paper`), os dois selos de contorno passam a contorno `navy-500` e texto `navy-800`. Forma: etiqueta com `--radius-1` (4 px, §5.3; sem pílula), 14 px (o mínimo da §4), peso 600. O selo de ilustração do 3D (`.selo--ilustracao`) é texto pequeno `navy-200` (14 px) no canto inferior do palco. A informação está sempre no texto; a cor só reforça.
+
+Contraste AA conferido nos quatro (linhas na tabela da §3.4):
+
+| Selo | Texto / fundo | Razão |
+|---|---|---|
+| Piloto gratuito | navy-950 / cyan-400 | 9,97 |
+| Em desenvolvimento, Em breve (escuro) | navy-100 / espaço · noite · navy-800 | 15,09 / 13,79 / 12,14 |
+| Em desenvolvimento, Em breve (papel) | navy-800 / papel · branco | 13,83 / 15,16 |
+| Em uso | branco / navy-700 | 12,50 |
+| Ilustração do conceito | navy-200 / espaço · noite; pior caso com a luz elétrica inteira atrás | 11,73 / 10,72; 5,60 |
+
+Contornos (exigência de 3:1, embora não carreguem informação): navy-300 no escuro ≥ 6,03; navy-500 no papel ≥ 6,16. O fundo navy-700 do "Em uso" quase some contra o escuro (1,21–1,51), o que é aceito: o selo não é controle e o texto o identifica. O selo de ilustração não tem fundo: a razão vale para o palco vazio; se a imagem do produto passar por baixo dele, o contraste tem de ser conferido de novo sobre a imagem.
 
 ### 8.15 Ficha técnica
 

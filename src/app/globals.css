@@ -2209,3 +2209,104 @@ textarea.field__input {
 .prose li + li {
   margin-top: var(--space-1);
 }
+
+/* ------------------------------------------------------------------ */
+/* DS v3 — palco, selos, ficha técnica (MASTER §8.13–8.15)              */
+/* ------------------------------------------------------------------ */
+.palco {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+  background: linear-gradient(180deg, var(--color-navy-950) 0%, var(--color-navy-900) 100%);
+}
+
+.palco__luz {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(55% 45% at 50% 42%, rgb(1 133 231 / 0.45), transparent 70%),
+    linear-gradient(90deg, transparent 15%, rgb(0 209 216 / 0.55) 50%, transparent 85%) bottom / 100% 1px no-repeat;
+  filter: blur(0.5px);
+}
+
+.palco__conteudo {
+  position: relative;
+  height: 100%;
+}
+
+/* Etiqueta: raio de 4 px (§5.3, sem pílula) e 14 px, o mínimo absoluto (§4). */
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 10px;
+  border-radius: var(--radius-1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.selo--piloto {
+  background: var(--color-cyan-400);
+  color: var(--color-navy-950);
+}
+
+.selo--desenvolvimento {
+  border-color: var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
+.selo--em-uso {
+  background: var(--color-navy-700);
+  color: #ffffff;
+}
+
+.selo--em-breve {
+  border: 1px dashed var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
+/* Fica no canto do palco, sobre o escuro; mesmo tamanho mínimo do selo (14 px). */
+.selo--ilustracao {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  margin: 0;
+  color: var(--color-navy-200);
+}
+
+/* Selos sobre papel (superfície clara): troca as cores dos contornos. */
+.surface-paper .selo--desenvolvimento,
+.surface-paper .selo--em-breve {
+  border-color: var(--color-navy-500);
+  color: var(--color-navy-800);
+}
+
+.ficha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5) var(--space-6);
+  margin: var(--space-5) 0;
+}
+
+.ficha__item {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.ficha__valor {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  font-variation-settings: "SHRP" 100;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.ficha__rotulo {
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+}
