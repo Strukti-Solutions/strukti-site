@@ -35,3 +35,8 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Quality gate (saídas locais; o baseline e o config são versionados)
+metrics-summary.quality-gate.json
+quality-report.md
+.qg-jscpd/
