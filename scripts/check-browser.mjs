@@ -16,14 +16,21 @@
 // violação de CSP e interrompe a checagem se o detector não a acusar — um
 // detector cego também "passaria".
 //
+// Com o hero "estudio" na página (siteConfig.heroVariant), confere a 1440px
+// que a rolagem troca o quadro do canvas (do 0 para outro) e que, com
+// reduced motion, a animação não liga, nenhum quadro é desenhado e a seção
+// fica com a mesma altura da página sem JavaScript (sem a altura extra de
+// rolagem). Usa só os ganchos estáveis do hero (data-scrub, data-frame e o
+// pôster), porque o desenho interno dele pode mudar.
+//
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
 // e sai com Tab, conferindo que o foco não fica coberto pelo painel; e toca
-// cada vídeo do portfólio (Rota de Vendas, depois Fleet Analytics BI),
-// conferindo que tocar um pausa o outro e que o autoplay do vídeo de fundo
-// do hero nunca toca por cima de um vídeo do portfólio que está tocando
-// (regra aceita pelo Claudinho, 2ª vez que um problema só aparecia depois
-// de uma interação — MASTER §8.8, src/lib/videoCoordination.ts).
+// os dois primeiros vídeos dos aplicativos (cartões 1 e 2 da grade),
+// conferindo que só um toca por vez e que o autoplay do vídeo de fundo do
+// hero "video", se existir, nunca toca por cima (regra aceita pelo
+// Claudinho, 2ª vez que um problema só aparecia depois de uma interação —
+// MASTER §8.8, src/lib/videoCoordination.ts).
 //
 // E percorre a página inteira com Tab a 360, 390, 1024 e 1200px: a barra do
 // topo é fixa e ocupa a largura toda (TB1), então nenhum controle focado pode
@@ -52,7 +59,7 @@ const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
 const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1199, 1200, 1280, 1440];
 // 1024/1100/1199: desde a TB2 o FAB também existe entre 1024 e 1199px (abaixo
 // do ponto da barra larga), ao lado das seções em duas e três colunas; 1024 é
-// a primeira largura da composição lado a lado (hero, Problemas, portfólio).
+// a primeira largura da grade de três colunas.
 const FAB_CHECK_WIDTHS = new Set([360, 390, 1024, 1100, 1199]);
 const VIEWPORT_HEIGHT = 900;
 const STEP_TIMEOUT_MS = 90_000;
@@ -67,13 +74,14 @@ const TEXT_SPACING_CSS =
   "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } " +
   "p { margin-bottom: 2em !important; }";
 
-// Pela estrutura, não pelo nome do projeto (que muda) — ver ProjectGrid.tsx
-// e OQueJaFizemos.tsx: o destaque vem antes da grade no DOM, então
-// "video[controls]" dentro da seção sempre acha o do destaque primeiro.
-const FEATURED_VIDEO_SELECTOR = "#o-que-construimos video[controls]";
-const GRID_PLAY_BUTTON_SELECTOR = "#o-que-construimos .project-card__play";
-const GRID_VIDEO_SELECTOR = "#o-que-construimos .project-card video";
+// Pela estrutura, não pelo nome do projeto (que muda) — ver ProjectGrid.tsx.
 const HERO_VIDEO_SELECTOR = ".hero-video__video";
+const HERO_STUDIO_SELECTOR = ".hero-estudio";
+const HERO_CANVAS_SELECTOR = ".hero-estudio__canvas";
+const HERO_POSTER_SELECTOR = ".hero-estudio__poster";
+const APPS_PLAY_BUTTON_SELECTOR = "#aplicativos .project-card__play";
+// Cartão N da grade de aplicativos (o vídeo só existe depois do clique em "Assistir").
+const appCard = (n) => `#aplicativos .project-card:nth-child(${n})`;
 
 const BROWSER_CANDIDATES = [
   process.env.BROWSER_PATH,
@@ -348,6 +356,45 @@ const TOPBAR_SPACING_EXPR = `(async () => {
   return { cw, mode: menu ? "Menu" : "barra larga", problems };
 })()`;
 
+// Hero "estudio", rodando dentro da página a partir do topo. Só usa os
+// ganchos estáveis do hero (data-scrub na seção, data-frame no canvas e o
+// pôster): o desenho interno dele pode mudar. Espera o 1º quadro (até 10 s;
+// com reduced motion, o tempo todo, e nada pode aparecer), lê o quadro no
+// topo e rola até 50% e 95% da rolagem da seção — frações da altura dela,
+// nunca pixels fixos, para valer em qualquer altura de janela.
+const HERO_STUDIO_EXPR = `(async () => {
+  const section = document.querySelector(${JSON.stringify(HERO_STUDIO_SELECTOR)});
+  const canvas = document.querySelector(${JSON.stringify(HERO_CANVAS_SELECTOR)});
+  const poster = document.querySelector(${JSON.stringify(HERO_POSTER_SELECTOR)});
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const frame = () => canvas?.dataset.frame ?? null;
+  await document.fonts.ready;
+  for (let i = 0; i < 50 && frame() === null; i++) await wait(200);
+  const before = frame();
+  const sectionTop = section.getBoundingClientRect().top + scrollY;
+  const frameAt = async (fraction) => {
+    const previous = frame();
+    const scrollable = Math.max(0, section.offsetHeight - innerHeight);
+    window.scrollTo({ top: sectionTop + scrollable * fraction, behavior: "instant" });
+    for (let i = 0; i < 20 && frame() === previous; i++) await wait(100);
+    await wait(300);
+    return frame();
+  };
+  const middle = await frameAt(0.5);
+  const end = await frameAt(0.95);
+  const state = {
+    scrub: section.dataset.scrub ?? null,
+    height: section.offsetHeight,
+    viewport: innerHeight,
+    before,
+    middle,
+    end,
+    posterShown: !!poster && poster.complete && poster.naturalWidth > 0,
+  };
+  window.scrollTo({ top: 0, behavior: "instant" });
+  return state;
+})()`;
+
 async function evalValue(cdp, expression, { awaitPromise = false } = {}) {
   const { result, exceptionDetails } = await cdp.send("Runtime.evaluate", {
     expression,
@@ -394,20 +441,14 @@ async function pressTab(cdp) {
 }
 
 /**
- * Garante que o vídeo está tocando. Com `viaButton` (grade: o vídeo nasce já
- * em autoplay), só clica o botão e espera — clicar no vídeo de novo
- * pausaria o autoplay, já que o clique alterna. Sem `viaButton` (destaque:
- * `controls`, sem autoplay), clica no próprio vídeo para iniciar. Em
- * qualquer caso, reforça com `play()` sob o mesmo gesto se precisar.
+ * Garante que o vídeo de um cartão da grade está tocando: clica o botão
+ * "Assistir" (o vídeo nasce já em autoplay) e espera — clicar no vídeo de
+ * novo pausaria o autoplay, já que o clique alterna. Reforça com `play()`
+ * sob o mesmo gesto se precisar.
  */
-async function playVideo(cdp, videoSelector, { viaButton } = {}) {
-  if (viaButton) {
-    await clickSelector(cdp, viaButton);
-    await sleep(400);
-  } else {
-    await clickSelector(cdp, videoSelector);
-    await sleep(200);
-  }
+async function playVideo(cdp, videoSelector, { viaButton }) {
+  await clickSelector(cdp, viaButton);
+  await sleep(400);
   await evalValue(
     cdp,
     `(() => { const v = document.querySelector(${JSON.stringify(videoSelector)}); if (v && v.paused) v.play().catch(() => {}); })()`,
@@ -550,7 +591,67 @@ try {
     }
   }
 
-  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos do portfólio; Tab pela página; espaçamento de texto 1.4.12):`);
+  // --- Hero "estudio": a rolagem troca o quadro; com reduced motion fica no pôster, sem altura extra ---
+  if (await evalValue(cdp, `!!document.querySelector(${JSON.stringify(HERO_STUDIO_SELECTOR)})`)) {
+    console.log(`\nHero "estudio" a 1440px:`);
+    await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: VIEWPORT_HEIGHT, deviceScaleFactor: 1, mobile: false });
+    consoleErrors = [];
+
+    // Referência da altura sem a trilha de rolagem: a página sem JavaScript,
+    // que é o HTML do servidor e o 1º render do cliente (ADR-004). Com
+    // reduced motion, o hero tem de ficar do mesmo tamanho. A folga de 10% da
+    // tela absorve diferenças pequenas de layout; a trilha tem bem mais que isso.
+    await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
+    let heroLoaded = cdp.once("Page.loadEventFired");
+    await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+    await withTimeout(heroLoaded, "carregar sem JavaScript para o passo do hero");
+    const staticHero = await evalValue(
+      cdp,
+      `(async () => {
+        await document.fonts.ready;
+        const section = document.querySelector(${JSON.stringify(HERO_STUDIO_SELECTOR)});
+        return { height: section.offsetHeight, scrub: section.dataset.scrub ?? null };
+      })()`,
+      { awaitPromise: true },
+    );
+    await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
+    if (staticHero.scrub !== "false") failures.push(`hero estudio: sem JavaScript o HTML veio com data-scrub=${staticHero.scrub} (esperado false)`);
+
+    for (const reduce of [false, true]) {
+      await cdp.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: reduce ? "reduce" : "no-preference" }],
+      });
+      heroLoaded = cdp.once("Page.loadEventFired");
+      await cdp.send("Page.navigate", { url: URL_TO_CHECK });
+      await withTimeout(heroLoaded, "carregar para o passo do hero");
+
+      const state = await withTimeout(evalValue(cdp, HERO_STUDIO_EXPR, { awaitPromise: true }), "rolar o hero estudio");
+
+      if (reduce) {
+        if (state.scrub !== "false") failures.push("hero estudio: com reduced motion a animação ligou (data-scrub)");
+        if (Math.abs(state.height - staticHero.height) > state.viewport * 0.1) {
+          failures.push(`hero estudio: com reduced motion a seção ficou com ${state.height}px; sem JavaScript, ${staticHero.height}px (altura extra de rolagem)`);
+        }
+        if ([state.before, state.middle, state.end].some((frame) => frame !== null)) {
+          failures.push("hero estudio: com reduced motion o canvas desenhou quadros");
+        }
+        if (!state.posterShown) failures.push("hero estudio: com reduced motion o pôster não apareceu");
+      } else {
+        if (state.scrub !== "true") failures.push("hero estudio: sem reduced motion a animação não ligou (data-scrub)");
+        if (state.before !== "0") failures.push(`hero estudio: no topo o canvas mostrava o quadro ${state.before}, esperado 0`);
+        if (!(Number(state.middle) > 0)) {
+          failures.push(`hero estudio: rolar até o meio da seção não trocou o quadro (${state.before} → ${state.middle})`);
+        }
+      }
+      console.log(
+        `  hero estudio (reduced motion ${reduce ? "ligado" : "desligado"}): scrub=${state.scrub}, quadro ${state.before} → ${state.middle} (meio) → ${state.end} (perto do fim), altura ${state.height}px (sem JavaScript: ${staticHero.height}px), pôster ${state.posterShown ? "carregado" : "não carregado"}`,
+      );
+    }
+
+    for (const error of consoleErrors) failures.push(`hero estudio: erro no console: ${error.split("\n")[0]}`);
+  }
+
+  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos dos aplicativos; Tab pela página; espaçamento de texto 1.4.12):`);
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
@@ -596,40 +697,32 @@ try {
     }
   }
 
-  // --- Vídeos: só um toca por vez, e o autoplay do hero não toca por cima ---
+  // --- Vídeos: só um toca por vez (grade de aplicativos) e o hero "video", se existir, não toca por cima ---
   // (sem zerar consoleErrors: os erros do passo do menu também contam)
   loaded = cdp.once("Page.loadEventFired");
   await cdp.send("Page.navigate", { url: URL_TO_CHECK });
   await withTimeout(loaded, "carregar para o passo de interação (vídeos)");
   await sleep(1500);
 
-  const featuredPlaying = await playVideo(cdp, FEATURED_VIDEO_SELECTOR);
-  if (!featuredPlaying) {
-    failures.push("vídeos: o vídeo em destaque não tocou depois do clique");
+  const playButtons = await evalValue(cdp, `document.querySelectorAll(${JSON.stringify(APPS_PLAY_BUTTON_SELECTOR)}).length`);
+  if (playButtons < 2) {
+    failures.push(`vídeos: esperava ao menos 2 aplicativos com vídeo na grade, achei ${playButtons}`);
   } else {
-    await evalValue(cdp, `window.scrollTo({ top: 0, behavior: "instant" })`);
-    await sleep(1500); // IntersectionObserver + efeito do hero
-    const heroPaused = await isPaused(cdp, HERO_VIDEO_SELECTOR);
-    if (!heroPaused) {
-      failures.push("vídeos: o hero tocou sozinho por cima do vídeo em destaque (que a pessoa estava ouvindo)");
-    }
-    if (await isPaused(cdp, FEATURED_VIDEO_SELECTOR)) {
-      failures.push("vídeos: o vídeo em destaque parou de tocar sozinho ao rolar até o hero");
-    }
-
-    const gridPlaying = await playVideo(cdp, GRID_VIDEO_SELECTOR, { viaButton: GRID_PLAY_BUTTON_SELECTOR });
-    let gridPausedFeatured = false;
-    if (!gridPlaying) {
-      failures.push("vídeos: o vídeo da grade não tocou depois do clique em 'Assistir'");
-    } else {
-      gridPausedFeatured = await isPaused(cdp, FEATURED_VIDEO_SELECTOR);
-      if (!gridPausedFeatured) {
-        failures.push("vídeos: tocar o vídeo da grade não pausou o destaque (só um vídeo deveria tocar por vez)");
-      }
-    }
-    console.log(
-      `  vídeos: destaque tocou (hero ${heroPaused ? "ficou parado" : "tocou por cima!"}); grade ${gridPlaying ? `tocou (destaque ${gridPausedFeatured ? "pausou" : "continuou tocando!"})` : "não tocou"}`,
+    const firstPlaying = await playVideo(cdp, `${appCard(1)} video`, { viaButton: `${appCard(1)} .project-card__play` });
+    if (!firstPlaying) failures.push("vídeos: o 1º aplicativo não tocou depois do clique em 'Assistir'");
+    const secondPlaying = await playVideo(cdp, `${appCard(2)} video`, { viaButton: `${appCard(2)} .project-card__play` });
+    if (!secondPlaying) failures.push("vídeos: o 2º aplicativo não tocou depois do clique em 'Assistir'");
+    const playingCount = await evalValue(
+      cdp,
+      `[...document.querySelectorAll("video")].filter((video) => !video.paused).length`,
     );
+    if (playingCount !== 1) failures.push(`vídeos: ${playingCount} vídeos tocando ao mesmo tempo (deveria ser 1)`);
+    if (await evalValue(cdp, `!!document.querySelector(${JSON.stringify(HERO_VIDEO_SELECTOR)})`)) {
+      await evalValue(cdp, `window.scrollTo({ top: 0, behavior: "instant" })`);
+      await sleep(1500);
+      if (!(await isPaused(cdp, HERO_VIDEO_SELECTOR))) failures.push("vídeos: o hero tocou sozinho por cima do aplicativo que a pessoa estava vendo");
+    }
+    console.log(`  vídeos: 1º ${firstPlaying ? "tocou" : "não tocou"}, 2º ${secondPlaying ? "tocou" : "não tocou"}; tocando juntos: ${playingCount}`);
   }
 
   // --- Tab pela página inteira: nenhum controle focado fica sob a barra fixa ---
@@ -722,7 +815,8 @@ if (failures.length > 0) {
 console.log(
   "\nDetector de CSP conferido (acusou a violação provocada). " +
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura. " +
-    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo do portfólio toca por vez e o hero não toca por cima; " +
+    'Hero "estudio" (se estiver na página): a rolagem troca o quadro e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
+    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo dos aplicativos toca por vez e o hero \"video\", se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",
 );

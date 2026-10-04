@@ -2,11 +2,12 @@ import { landingContent } from "@/content/landing";
 import { Reveal } from "@/components/motion/Reveal";
 
 /**
- * Título fixo + lista com régua (MASTER §8.5). Sem números: os itens são
- * qualidades, não etapas.
+ * "Como trabalhamos": título fixo + lista com régua (MASTER §8.5). Os itens
+ * são etapas, em ordem (docs/landing-copy.md v2.0), por isso a lista é
+ * ordenada; a régua continua sem números à mostra.
  */
 export function ComoResolvemos() {
-  const { title, intro, items } = landingContent.comoResolvemos;
+  const { title, intro, items } = landingContent.comoTrabalhamos;
 
   return (
     <section
@@ -25,14 +26,14 @@ export function ComoResolvemos() {
             </p>
           </Reveal>
           <Reveal>
-            <ul className="ruled-list">
+            <ol className="ruled-list">
               {items.map((item) => (
                 <li key={item.title}>
                   <h3 className="block-title">{item.title}</h3>
                   <p className="body-muted">{item.description}</p>
                 </li>
               ))}
-            </ul>
+            </ol>
           </Reveal>
         </div>
       </div>

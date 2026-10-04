@@ -98,15 +98,17 @@ export const siteConfig = {
       `https://wa.me/5583999683670?text=${encodeURIComponent(message)}`,
   },
   email: "struktisolutions@gmail.com",
+  // `course` aparece logo abaixo do nome (docs/landing-copy.md v2.0, "Equipe");
+  // fica com a marcação de pendência até o grupo mandar.
   team: [
-    { name: "Kauã Bruno", initials: "KB" },
-    { name: "Gustavo Fernandes", initials: "GF" },
-    { name: "Antonio Meira", initials: "AM" },
-    { name: "Thiago Guedes", initials: "TG" },
+    { name: "Kauã Bruno", initials: "KB", course: "[A PREENCHER: curso]" },
+    { name: "Gustavo Fernandes", initials: "GF", course: "[A PREENCHER: curso]" },
+    { name: "Antonio Meira", initials: "AM", course: "[A PREENCHER: curso]" },
+    { name: "Thiago Guedes", initials: "TG", course: "[A PREENCHER: curso]" },
   ],
   // Versão do aviso de privacidade em vigor. Muda sempre que o texto do
   // aviso mudar, para registrar qual versão a pessoa aceitou (LGPD, art. 8º).
-  privacyPolicyVersion: "2026-09-30",
+  privacyPolicyVersion: "2026-10-03",
 } as const;
 
 export type TeamMember = (typeof siteConfig.team)[number];

@@ -1,28 +1,22 @@
 /**
  * Todo o texto do site vive aqui, incluindo o aviso de privacidade.
  *
- * Texto aprovado pelo cliente em docs/landing-copy.md (v2.0, 03/10/2026),
- * copiado com a mesma pontuação e acentuação. Onde o documento ainda tem
- * `[A PREENCHER: ...]`, o valor abaixo usa a mesma marcação — não
- * inventar o dado.
+ * Texto aprovado pelo Thiago em docs/landing-copy.md (v2.0, 03/10/2026),
+ * copiado com a mesma pontuação e acentuação. Onde o documento ainda marca
+ * um dado como pendente, o valor abaixo usa a mesma marcação — não
+ * inventar o dado (o `npm run check:placeholders` lista o que falta).
  *
- * Transição: as chaves da home nova (statusLabels, heroEstudio, produtos,
- * aplicativos, chamadaHardware, comoTrabalhamos, contato) já seguem a v2.0.
- * As seções antigas (hero, problemas, comoResolvemos, oQueJaConstruimos,
- * diagnostico, equipe, faq, rodape, seo, pendencias, privacidade e o menu
- * do header) mantêm o texto da v1.8 até a troca das seções na página.
+ * `hero` é o texto dos heros "video" e "classic", que seguem no código até
+ * a limpeza (fica como na v1.8, conforme a nota da v2.0); o hero da home v3
+ * é `heroEstudio`.
  */
 
 const WHATSAPP_GENERAL_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero conversar com vocês.";
-const WHATSAPP_DIAGNOSTICO_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito.";
 const WHATSAPP_REPLAY_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra.";
 const WHATSAPP_ESTACIONAMENTO_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero conversar sobre o estacionamento inteligente.";
-const WHATSAPP_APLICATIVO_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero pedir o diagnóstico gratuito de um aplicativo para a minha empresa.";
 
 /**
  * Fase de um produto, mostrada no selo (spec §3.4). O texto de cada selo
@@ -31,18 +25,16 @@ const WHATSAPP_APLICATIVO_MESSAGE =
 export type ProductStatus = "piloto" | "desenvolvimento" | "emUso" | "emBreve";
 
 /**
- * Um projeto do portfólio de vídeos ("O que já construímos"). O primeiro com
- * `featured` (ou o primeiro da lista) é o destaque, com o cartão 3D; os
- * demais formam a grade, que só aparece com dois projetos ou mais
- * (design-system/strukti-solucoes/MASTER.md, §8.8). Vídeos novos são os de
- * lançamento feitos com /brag.
+ * Um aplicativo da grade de vídeos (`aplicativos.projects`, MASTER §8.8).
+ * Vídeos novos são os de lançamento feitos com /brag. `videoTitle` e
+ * `highlights` não aparecem na grade; ficam nos dados, como manda a v2.0.
  */
 export interface Project {
   slug: string;
   name: string;
   /** Uma frase, para o cartão da grade. */
   summary: string;
-  /** Título (H3) do vídeo quando o projeto é o destaque. */
+  /** Título do vídeo (fora da grade). */
   videoTitle: string;
   video: {
     src: string;
@@ -51,10 +43,9 @@ export interface Project {
     caption: string;
     description: string;
   };
-  /** Lista de destaques; só o projeto em destaque mostra. */
+  /** Lista de destaques (fora da grade). */
   highlights?: readonly { lead: string; rest: string }[];
   platforms: readonly string[];
-  featured?: boolean;
   /** Selo de fase do projeto (rótulo em `landingContent.statusLabels`). */
   status?: ProductStatus;
 }
@@ -102,7 +93,6 @@ const PROJECTS: readonly Project[] = [
       },
     ],
     platforms: ["Android", "Windows"],
-    featured: true,
     status: "piloto",
   },
   {
@@ -127,10 +117,8 @@ const PROJECTS: readonly Project[] = [
 export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
-    diagnostico: WHATSAPP_DIAGNOSTICO_MESSAGE,
     replay: WHATSAPP_REPLAY_MESSAGE,
     estacionamento: WHATSAPP_ESTACIONAMENTO_MESSAGE,
-    aplicativo: WHATSAPP_APLICATIVO_MESSAGE,
   },
 
   statusLabels: {
@@ -240,7 +228,6 @@ export const landingContent = {
     title: "Fale com a gente",
     intro:
       "Quer agendar uma demonstração do replay, pedir o diagnóstico de um aplicativo ou contar outro problema? Escolha o assunto e escreva em poucas palavras.",
-    // Mesma forma de diagnostico.form, mais o campo de assunto (interest).
     form: {
       title: "Conte o que você precisa",
       intro: "São cinco campos. Respondemos pelo WhatsApp.",
@@ -308,11 +295,10 @@ export const landingContent = {
   header: {
     skipLink: "Pular para o conteúdo",
     nav: [
-      { label: "Problemas", href: "#problemas" },
-      { label: "Como trabalhamos", href: "#como-trabalhamos" },
-      { label: "O que já construímos", href: "#o-que-construimos" },
-      { label: "Diagnóstico", href: "#diagnostico" },
-      { label: "Dúvidas", href: "#duvidas" },
+      { label: "Produtos", href: "#produtos" },
+      { label: "Apps", href: "#aplicativos" },
+      { label: "Equipe", href: "#equipe" },
+      { label: "Contato", href: "#contato" },
     ],
     whatsappButton: "Falar no WhatsApp",
     /** Botão que abre o menu abaixo de 75em, 1200 px (barra do hero "video"). */
@@ -331,211 +317,53 @@ export const landingContent = {
     videoPlay: "Tocar o vídeo de fundo",
   },
 
-  problemas: {
-    title: "Isso acontece na sua empresa?",
-    items: [
-      {
-        title: "Pedido espalhado em papel, WhatsApp e planilha",
-        description:
-          "O vendedor anota no talão, manda foto no WhatsApp, e alguém no escritório digita tudo de novo. Quando some um pedido, ninguém sabe onde ele ficou.",
-      },
-      {
-        title: "Erro de digitação que só aparece na entrega",
-        description:
-          "Um número trocado, um item a mais, um preço errado. Quem descobre é o cliente, na hora de receber.",
-      },
-      {
-        title: "Rota de entrega montada na mão",
-        description:
-          "Todo dia alguém separa os pedidos por cidade e escreve o roteiro do entregador. Entrou pedido novo, refaz a lista.",
-      },
-      {
-        title: "Vendedor sem internet na rua",
-        description:
-          "Na estrada e no interior o sinal cai. O vendedor fica sem o cadastro do cliente e deixa o pedido para passar depois.",
-      },
-      {
-        title: "Relatório feito à mão no Excel",
-        description:
-          "Para saber quanto vendeu no mês, por vendedor ou por cidade, alguém junta planilha por planilha. Quando termina, o número já mudou.",
-      },
-      {
-        title: "Sistema pronto que não se adapta",
-        description:
-          "Você testou um sistema pronto, mas ele exige outro jeito de trabalhar. Sobram funções que ninguém usa e falta justo o que a sua equipe precisa.",
-      },
-    ],
-    closing: "Se alguma dessas é a rotina da sua empresa, vale uma conversa.",
-    button: "Chamar no WhatsApp",
-  },
-
-  comoResolvemos: {
-    title: "Como a Strukti resolve",
-    intro:
-      "Não vendemos sistema pronto. Construímos o aplicativo que a sua empresa precisa, e só o que ela precisa.",
-    items: [
-      {
-        title: "Feito do jeito da sua empresa",
-        description:
-          "Começamos pela rotina: como o pedido nasce, quem digita, como a entrega sai. O aplicativo segue esse caminho, com os nomes, os campos e os documentos que a sua equipe já conhece.",
-      },
-      {
-        title: "Ligado ao que você já usa",
-        description:
-          "Não precisa jogar fora o sistema, a planilha ou o modelo de documento que já funciona. Quando o seu sistema permite, ligamos um ao outro. Quando não permite, o aplicativo gera os arquivos no formato que a empresa já usa: Excel, PDF ou Word.",
-      },
-      {
-        title: "Perto de você",
-        description:
-          "Você fala direto com quem constrói, pelo WhatsApp, sem central de atendimento. Em João Pessoa e região, vamos até a sua empresa. No resto do Brasil, atendemos por videochamada.",
-      },
-      {
-        title: "Preço pensado para empresa pequena",
-        description:
-          "Você paga pelo que a sua empresa vai usar, não por um pacote cheio de funções. O preço vem na proposta, junto com o que será feito e o prazo, antes de qualquer compromisso.",
-      },
-      {
-        title: "Manutenção todo mês",
-        description:
-          "Aplicativo pronto não fica largado. Com o plano mensal de manutenção, suporte e hospedagem, fazemos os ajustes, resolvemos os problemas e mantemos tudo funcionando.",
-      },
-    ],
-  },
-
-  oQueJaConstruimos: {
-    title: "O que já construímos",
-    intro:
-      "O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta. Ele não é um sistema de prateleira; mostra como trabalhamos.",
-    projects: PROJECTS,
-    videoDescriptionLinkLabel: "Ler a descrição do vídeo",
-    grid: {
-      title: "Outros projetos",
-      showMore: "Mostrar mais projetos",
-      playLabel: "Assistir ao vídeo: {nome}",
-    },
-    closing: "O Rota de Vendas é um exemplo. O aplicativo da sua empresa começa pelo problema dela.",
-    button: "Pedir diagnóstico gratuito",
-  },
-
-  diagnostico: {
-    title: "Diagnóstico gratuito",
-    intro:
-      "Uma conversa de cerca de uma hora, por videochamada ou na sua empresa, para entender como os pedidos, as entregas e os relatórios funcionam hoje e onde se perde tempo. No fim, você recebe um resumo por escrito com os problemas que encontramos e o que sugerimos fazer, inclusive o que não vale a pena. Sem compromisso de contratar.",
-    highlight: "Estamos começando com poucas empresas, para acompanhar cada projeto de perto.",
-    howItWorksTitle: "Como funciona",
-    steps: [
-      { lead: "Você conta o problema.", rest: "Pelo WhatsApp ou pelo formulário abaixo." },
-      {
-        lead: "Diagnóstico gratuito.",
-        rest: "Conversamos sobre a rotina da empresa e você recebe o resumo por escrito.",
-      },
-      {
-        lead: "Proposta.",
-        rest: "Você recebe o que será feito, o prazo e o preço antes de decidir.",
-      },
-      {
-        lead: "Aplicativo funcionando.",
-        rest: "Construímos, colocamos para funcionar com a sua equipe e seguimos cuidando dele com o plano mensal.",
-      },
-    ],
-    form: {
-      title: "Peça o seu diagnóstico",
-      intro: "São quatro campos. Respondemos pelo WhatsApp.",
-      requiredNotice: "Todos os campos são obrigatórios.",
-      fields: {
-        name: {
-          label: "Seu nome",
-          errorEmpty: "Escreva o seu nome.",
-        },
-        company: {
-          label: "Nome da empresa",
-          errorEmpty: "Escreva o nome da empresa.",
-        },
-        whatsapp: {
-          label: "WhatsApp com DDD",
-          help: "É por esse número que vamos responder.",
-          errorEmpty: "Informe o seu WhatsApp.",
-          errorInvalid: "Confira o número: ele precisa ter o DDD e o telefone completo.",
-        },
-        problem: {
-          label: "Qual problema você quer resolver?",
-          help: "Conte com as suas palavras. Por exemplo: os pedidos chegam pelo WhatsApp e alguém digita tudo de novo no sistema. Não precisa colocar dados dos seus clientes.",
-          errorEmpty: "Conte em poucas palavras qual é o problema.",
-          errorTooLong: "Use no máximo {max} caracteres.",
-        },
-      },
-      consentLabelPrefix: "Li o ",
-      consentLinkLabel: "aviso de privacidade",
-      consentLabelSuffix:
-        " e concordo que a Strukti Soluções use estes dados para responder ao meu pedido de diagnóstico.",
-      consentError: "Para enviar, marque que você concorda com o uso dos dados.",
-      consentHelperLine: "Usamos seus dados só para responder a este pedido.",
-      submitLabel: "Pedir diagnóstico gratuito",
-      submittingLabel: "Enviando…",
-      whatsappAlternativePrefix: "Prefere falar agora? ",
-      whatsappAlternativeLinkLabel: "Chame no WhatsApp: +55 83 99968-3670",
-      errorSummarySingle: "Confira 1 campo antes de enviar.",
-      errorSummaryMultiple: "Confira {n} campos antes de enviar.",
-      success: {
-        title: "Pedido recebido!",
-        text: "Obrigado, {nome}. Respondemos no mesmo dia pelo WhatsApp informado. Se o pedido chegou fora do horário comercial, respondemos no próximo dia útil.",
-        text2: "Se quiser adiantar a conversa, chame a gente agora.",
-        button: "Chamar no WhatsApp",
-      },
-      submitError:
-        "Não foi possível enviar agora. Tente de novo em alguns minutos ou fale com a gente pelo WhatsApp.",
-      rateLimitError:
-        "Foram muitas tentativas seguidas. Espere alguns minutos e tente de novo, ou fale com a gente pelo WhatsApp.",
-      honeypotLabel: "Não preencha este campo",
-    },
-  },
-
   equipe: {
     title: "Quem faz",
     intro:
-      "Somos quatro amigos da faculdade que constroem aplicativos para empresas. Você fala direto com a equipe que constrói, sem intermediário.",
+      "Somos quatro estudantes de engenharia da computação. Você fala direto com quem monta o equipamento e escreve o código.",
   },
 
   faq: {
     title: "Dúvidas frequentes",
     items: [
       {
-        question: "E quando vocês se formarem, quem mantém o aplicativo?",
+        question: "O replay precisa de internet?",
         answer:
-          "Quem mantém é a Strukti, pelo plano mensal de manutenção, suporte e hospedagem. É esse plano que garante que alguém cuida do aplicativo hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de uma pessoa só.",
+          "Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes. Os jogadores veem os lances no celular, com a internet deles. Se a internet da sua arena for uma dúvida, falamos disso na demonstração.",
+      },
+      {
+        question: "O replay já usa inteligência artificial?",
+        answer:
+          "Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.",
+      },
+      {
+        question: "E a privacidade de quem aparece no vídeo?",
+        answer:
+          "O replay está sendo construído assim: os clipes vão ficar disponíveis para os jogadores por 7 dias e depois serão apagados, e a quadra vai exibir um aviso de que há gravação.",
       },
       {
         question: "Quanto custa?",
         answer:
-          "Depende do que a sua empresa precisa, por isso não temos tabela. Depois do diagnóstico gratuito, você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso. Com o aplicativo pronto, entra o plano mensal de manutenção, suporte e hospedagem.",
-      },
-      {
-        question: "Por que não usar um sistema pronto?",
-        answer:
-          "Às vezes o pronto resolve e, se for o seu caso, falamos isso no diagnóstico. O sob medida vale quando a empresa tem um jeito próprio de trabalhar: um número de pedido que vem de outro sistema, um roteiro no formato que o entregador já conhece, um relatório que o sistema pronto não tira. Aí o aplicativo se encaixa na rotina, em vez de mudar a rotina.",
-      },
-      {
-        question: "Preciso trocar o sistema que já uso?",
-        answer:
-          "Não. O aplicativo trabalha junto com o que você já tem. Quando o seu sistema permite, ligamos um ao outro. Quando não permite, o aplicativo gera os arquivos no formato que a empresa já usa, como Excel, PDF ou Word.",
-      },
-      {
-        question: "Em quanto tempo fica pronto?",
-        answer: "Depende do tamanho do problema. O prazo vem escrito na proposta, junto com o preço, antes de você decidir.",
-      },
-      {
-        question: "O aplicativo funciona sem internet?",
-        answer:
-          "Pode funcionar. O Rota de Vendas, por exemplo, guarda tudo no aparelho e funciona sem sinal. No seu aplicativo, isso é combinado no diagnóstico, conforme a rotina da equipe.",
+          "Depende do produto. O preço do replay ainda está sendo definido, e nesta fase oferecemos um piloto gratuito. Nos aplicativos, depois do diagnóstico gratuito você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso.",
       },
       {
         question: "Vocês atendem a minha cidade?",
         answer:
-          "Em João Pessoa e região, atendemos presencialmente. No resto do Brasil, atendemos por videochamada e pelo WhatsApp.",
+          "Nos aplicativos, sim: em João Pessoa e região, atendemos presencialmente; no resto do Brasil, por videochamada e pelo WhatsApp. O replay precisa de instalação na quadra, e a região onde vamos começar ainda está sendo definida. Conte a sua cidade na conversa.",
+      },
+      {
+        question: "E quando vocês se formarem, quem mantém tudo funcionando?",
+        answer:
+          "Quem mantém é a Strukti: uma equipe, e não uma pessoa só. No replay, quem instala, dá suporte e faz a manutenção somos nós. Os aplicativos têm plano mensal de manutenção, suporte e hospedagem, que garante alguém cuidando deles hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de ninguém.",
+      },
+      {
+        question: "Vocês também fazem aplicativos?",
+        answer:
+          "Fazemos. O aplicativo segue o jeito que a sua empresa já trabalha e se liga ao sistema que você já usa. Quando o sistema não permite, o aplicativo gera os arquivos no formato da empresa, como Excel, PDF ou Word. Tudo começa com o diagnóstico gratuito.",
       },
       {
         question: "O que acontece com os dados que eu mando pelo formulário?",
-        answer: "Usamos só para responder ao seu pedido. Os detalhes estão no aviso de privacidade.",
+        answer: "Usamos só para responder à sua mensagem. Os detalhes estão no aviso de privacidade.",
         answerLinkLabel: "aviso de privacidade",
       },
     ],
@@ -544,10 +372,10 @@ export const landingContent = {
   },
 
   rodape: {
-    tagline: "Aplicativos sob medida para distribuidoras e indústrias pequenas.",
+    tagline: "Produtos de hardware e aplicativos sob medida.",
     whatsappLabel: "WhatsApp:",
     emailLabel: "E-mail:",
-    location: "João Pessoa/PB · Atendimento presencial na região e a distância para todo o Brasil",
+    location: "João Pessoa/PB",
     privacyLinkLabel: "Aviso de privacidade",
   },
 
@@ -557,14 +385,14 @@ export const landingContent = {
   },
 
   seo: {
-    title: "Aplicativo sob medida para distribuidoras | Strukti Soluções",
+    title: "Replay para quadras e apps sob medida | Strukti Soluções",
     description:
-      "Pedido em papel ou planilha? Rota de entrega montada na mão? Aplicativo sob medida para distribuidoras e indústrias pequenas. Diagnóstico gratuito.",
+      "Replay para quadras de aluguel, em piloto gratuito: o jogador aperta um botão e recebe o lance no celular. Também fazemos aplicativos sob medida.",
     ogSiteName: "Strukti Soluções",
-    ogTitle: "Aplicativos sob medida para distribuidoras e indústrias pequenas",
+    ogTitle: "Strukti Soluções: replay para quadras e aplicativos sob medida",
     ogDescription:
-      "Chega de pedido em papel e rota de entrega montada na mão. Fazemos o aplicativo do jeito que a sua empresa trabalha. Peça um diagnóstico gratuito.",
-    ogImageAlt: "Strukti Soluções: aplicativos sob medida para distribuidoras e indústrias pequenas",
+      "O jogador aperta o botão e o lance chega no celular. Replay para quadras de aluguel, em piloto gratuito, e aplicativos sob medida para empresas.",
+    ogImageAlt: "Strukti Soluções: replay para quadras e aplicativos sob medida",
     // Não alimenta nenhuma tag OG (isso já funciona sozinho via SITE_URL,
     // ver src/lib/siteUrl.ts e layout.tsx): é só o lembrete do
     // check:placeholders de que falta definir o SITE_URL antes de publicar
@@ -580,10 +408,20 @@ export const landingContent = {
     homeLink: "Voltar para o início",
   },
 
-  pendencias: [
-    "Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.",
-    "Endereço do site (compartilhamento e mensagem da equipe).",
-  ],
+  // Lista de docs/landing-copy.md v2.0, seção "Pendências" (sem a marcação
+  // de código do Markdown). Não vai para o site; o README repete as que
+  // bloqueiam a publicação.
+  pendencias: {
+    bloqueiam: [
+      "Aviso de privacidade: provedores de hospedagem e de banco de dados, e se guardam dados fora do Brasil.",
+      "Endereço do site (seo.ogUrl e mensagem da equipe).",
+      "Curso de cada pessoa da equipe (siteConfig.team[].course, 4 vezes [A PREENCHER: curso]).",
+    ],
+    grupoDecide: ["Fotos da equipe. A página funciona com as iniciais; o grupo decide se publica sem fotos."],
+    naoBloqueiam: [
+      'Endereço do site próprio do replay (produtos.replay.siteUrl). Enquanto não existir, o link "Ver o site do replay" fica escondido.',
+    ],
+  },
 
   privacidade: {
     title: "Aviso de privacidade",
@@ -605,14 +443,14 @@ export const landingContent = {
       {
         heading: "Quais dados coletamos",
         paragraphs: [
-          "Pelo formulário: seu nome, o nome da empresa, o número de WhatsApp e a descrição do problema que você escrever. Só isso. Pedimos que você não coloque na descrição dados dos seus clientes nem documentos pessoais.",
+          "Pelo formulário: seu nome, o nome da empresa ou da arena, o número de WhatsApp, o assunto que você escolher e a mensagem que você escrever. Só isso. Pedimos que você não coloque na mensagem dados dos seus clientes nem documentos pessoais.",
           "Para bloquear envios automáticos, o site registra por pouco tempo o endereço de internet (IP) de quem envia o formulário.",
         ],
       },
       {
         heading: "Para que usamos",
         paragraphs: [
-          "Para responder ao seu pedido e conversar sobre o diagnóstico gratuito. Não vendemos, não alugamos e não usamos esses dados para outra finalidade.",
+          "Para responder à sua mensagem e conversar sobre o assunto que você escolheu. Não vendemos, não alugamos e não usamos esses dados para outra finalidade.",
         ],
       },
       {

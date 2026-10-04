@@ -1,40 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import type { Project } from "@/content/landing";
 import { landingContent } from "@/content/landing";
 import { PROJECT_GRID_STEP, ProjectGrid } from "./ProjectGrid";
-import { OQueJaFizemos } from "./OQueJaFizemos";
 
-/** IntersectionObserver que o teste dispara à mão (o stub padrão nunca dispara; ver HeroVideo.test.tsx). */
-class SpyIntersectionObserver {
-  static instances: SpyIntersectionObserver[] = [];
-  elements = new Set<Element>();
-  constructor(private callback: IntersectionObserverCallback) {
-    SpyIntersectionObserver.instances.push(this);
-  }
-  observe(el: Element) {
-    this.elements.add(el);
-  }
-  unobserve(el: Element) {
-    this.elements.delete(el);
-  }
-  disconnect() {
-    this.elements.clear();
-  }
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-  static fire(target: Element, isIntersecting: boolean) {
-    for (const instance of SpyIntersectionObserver.instances) {
-      if (instance.elements.has(target)) {
-        instance.callback([{ target, isIntersecting } as IntersectionObserverEntry], instance as unknown as IntersectionObserver);
-      }
-    }
-  }
-}
-
-// Projetos fictícios, só para exercitar a grade (o site real tem um projeto).
+// Projetos fictícios, só para exercitar a grade (o site real tem dois).
 function makeProjects(count: number): Project[] {
   return Array.from({ length: count }, (_, index) => {
     const n = index + 1;
@@ -55,8 +26,10 @@ function makeProjects(count: number): Project[] {
   });
 }
 
-const labels = landingContent.oQueJaConstruimos.grid;
-const descriptionLinkLabel = landingContent.oQueJaConstruimos.videoDescriptionLinkLabel;
+// Os textos reais da grade de aplicativos: sem título próprio, a grade fica
+// sob o H2 da seção, e o nome de cada app é H3.
+const labels = landingContent.aplicativos.grid;
+const descriptionLinkLabel = landingContent.aplicativos.videoDescriptionLinkLabel;
 
 afterEach(() => {
   cleanup();
@@ -66,12 +39,11 @@ describe("<ProjectGrid />", () => {
   it(`mostra no máximo ${PROJECT_GRID_STEP} cartões e revela o resto pelo botão, com o foco no primeiro revelado`, () => {
     render(<ProjectGrid projects={makeProjects(8)} labels={labels} descriptionLinkLabel={descriptionLinkLabel} />);
 
-    expect(screen.getByRole("heading", { name: "Outros projetos" })).toBeTruthy();
-    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(PROJECT_GRID_STEP);
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(PROJECT_GRID_STEP);
 
     fireEvent.click(screen.getByRole("button", { name: "Mostrar mais projetos" }));
 
-    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(8);
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(8);
     expect(screen.queryByRole("button", { name: "Mostrar mais projetos" })).toBeNull();
     expect(document.activeElement).toBe(
       screen.getByRole("button", { name: "Assistir ao vídeo: Projeto de teste 7" }),
@@ -145,81 +117,5 @@ describe("<ProjectGrid />", () => {
     );
     expect(withThree.querySelector("ul")?.className).toBe("wall wall--3");
     expect(withThree.querySelector(".project-card--wide")).toBeNull();
-  });
-});
-
-describe("<OQueJaFizemos /> com o conteúdo real", () => {
-  beforeEach(() => {
-    SpyIntersectionObserver.instances = [];
-    vi.stubGlobal("IntersectionObserver", SpyIntersectionObserver);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("com dois projetos, mostra o Rota de Vendas como destaque e a grade com o Fleet Analytics BI", () => {
-    const { container } = render(<OQueJaFizemos />);
-
-    expect(screen.getByRole("heading", { name: "Veja o Rota de Vendas" })).toBeTruthy();
-    const featuredVideo = container.querySelector<HTMLVideoElement>(
-      'video[aria-label="Vídeo de demonstração do Rota de Vendas"]',
-    );
-    expect(featuredVideo).toBeTruthy();
-    expect(featuredVideo?.getAttribute("preload")).toBe("none");
-    // O pôster (158 KB) só carrega perto da seção — o atributo `poster` do
-    // <video> nativo não tem lazy loading, diferente das imagens da grade
-    // (next/image). Antes da seção entrar na tela, não baixa; perto dela, sim.
-    expect(featuredVideo?.hasAttribute("poster")).toBe(false);
-    act(() => SpyIntersectionObserver.fire(featuredVideo!, true));
-    expect(featuredVideo?.getAttribute("poster")).toBe("/video/brag.jpg");
-
-    expect(screen.getByRole("heading", { name: "Outros projetos" })).toBeTruthy();
-    const card = screen.getByRole("heading", { name: "Fleet Analytics BI" }).closest("li");
-    expect(card).toBeTruthy();
-    const scope = within(card as HTMLElement);
-    const playButton = scope.getByRole("button", {
-      name: "Assistir ao vídeo: Fleet Analytics BI",
-    });
-    expect(playButton).toBeTruthy();
-    expect(scope.getByText("Web")).toBeTruthy();
-    expect(scope.getByText("Celular")).toBeTruthy();
-
-    const posterImg = card?.querySelector("img");
-    expect(posterImg?.getAttribute("src")).toBe("/video/fleet-analytics-bi.jpg");
-
-    fireEvent.click(playButton);
-    const fleetVideo = container.querySelector<HTMLVideoElement>(
-      'video[aria-label="Vídeo de demonstração do Fleet Analytics BI"]',
-    );
-    expect(fleetVideo).toBeTruthy();
-    expect(fleetVideo?.getAttribute("poster")).toBe("/video/fleet-analytics-bi.jpg");
-  });
-
-  it("só um vídeo toca por vez: tocar o Fleet Analytics BI pausa o Rota de Vendas", () => {
-    // jsdom não implementa reprodução; play/pause viram espiões que
-    // atualizam `paused`, como num navegador (ver HeroVideo.test.tsx, frente A).
-    const pause = vi.fn(function (this: HTMLMediaElement) {
-      Object.defineProperty(this, "paused", { configurable: true, value: true });
-    });
-    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(pause as never);
-
-    const { container } = render(<OQueJaFizemos />);
-
-    const featuredVideo = container.querySelector<HTMLVideoElement>(
-      'video[aria-label="Vídeo de demonstração do Rota de Vendas"]',
-    )!;
-    Object.defineProperty(featuredVideo, "paused", { configurable: true, value: false });
-
-    fireEvent.click(screen.getByRole("button", { name: "Assistir ao vídeo: Fleet Analytics BI" }));
-    const fleetVideo = container.querySelector<HTMLVideoElement>(
-      'video[aria-label="Vídeo de demonstração do Fleet Analytics BI"]',
-    )!;
-    fireEvent.play(fleetVideo);
-
-    expect(pause).toHaveBeenCalledTimes(1);
-    expect(featuredVideo.paused).toBe(true);
-
-    vi.restoreAllMocks();
   });
 });

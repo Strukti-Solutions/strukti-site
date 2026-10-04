@@ -23,7 +23,7 @@ export function HeroContent() {
       <p className="lead hero__body">{body}</p>
       <div className="hero__actions">
         <WhatsAppButton message={landingContent.whatsappMessages.general}>{primaryCta}</WhatsAppButton>
-        <motion.a href="#diagnostico" className="btn btn--outline" {...tapHover}>
+        <motion.a href="#contato" className="btn btn--outline" {...tapHover}>
           {secondaryCta}
         </motion.a>
       </div>

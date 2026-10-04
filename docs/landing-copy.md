@@ -1,6 +1,6 @@
 # Texto da landing page: Strukti Soluções
 
-Status: **rascunho para aprovação do cliente** · Versão 2.0 · 03/10/2026 · Home nova da marca-mãe (hardware + IA), ADR-009.
+Status: **aprovado pelo Thiago em 03/10/2026** · Versão 2.0 · 03/10/2026 · Home nova da marca-mãe (hardware + IA), ADR-009.
 
 *Nota: a v2.0 reescreve a home inteira para o novo rumo (spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`). O histórico até a v1.8 está no git (`git log -- docs/landing-copy.md`).*
 

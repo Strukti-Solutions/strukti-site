@@ -1,7 +1,8 @@
 # Site da Strukti Soluções
 
-Landing page da Strukti Soluções, organizada pelos problemas do nicho (distribuidoras e
-indústrias pequenas), com formulário de diagnóstico gratuito.
+Site da Strukti Soluções, vitrine da marca-mãe: produtos de hardware (replay para quadras,
+estacionamento inteligente) e aplicativos sob medida, com um formulário único de contato, em
+que a pessoa escolhe o assunto (replay, estacionamento, aplicativo ou outro).
 
 ## Stack
 
@@ -96,7 +97,9 @@ CREATE TABLE leads (
 );
 ```
 
-Banco criado antes do campo "interesse" (ADR-009)? Migração:
+Banco criado antes do campo "interesse" (ADR-009)? Rode a migração abaixo **antes
+do deploy** do site novo: sem a coluna `interest`, todo envio do formulário falha
+na gravação e a rota responde `500`.
 
 ```sql
 ALTER TABLE leads ADD COLUMN interest TEXT NOT NULL DEFAULT 'outro';
@@ -122,7 +125,7 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário, acessibilidade (axe) e hidratação da página inteira com e sem prefers-reduced-motion |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
 | `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
-| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto), toca os vídeos do portfólio (só um por vez) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo. Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero. Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
+| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Com o hero "estudio" na página, confere que a rolagem troca o quadro do hero "estudio" e que, com reduced motion, ele fica parado e sem altura extra (a mesma altura da página sem JavaScript). Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto), toca os vídeos dos aplicativos (só um por vez) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo. Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero. Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
 
 ### Definição de pronto
 
@@ -146,18 +149,30 @@ src/
     privacidade/           aviso de privacidade (LGPD)
     opengraph-image.tsx    imagem de compartilhamento gerada por código (next/og)
   components/
-    sections/               um componente por seção da landing page
+    sections/               um componente por seção da home, na ordem da página:
+      HeroSequence.tsx        hero "estudio" (+ HeroSequenceScroller.tsx: quadros guiados pela rolagem)
+      Produtos.tsx            produtos de hardware (replay e estacionamento inteligente)
+      Aplicativos.tsx         aplicativos sob medida (grade de vídeos de ProjectGrid.tsx)
+      ChamadaHardware.tsx     "Tem um problema que pede hardware?"
+      ComoResolvemos.tsx      "Como trabalhamos" (etapas)
+      Equipe.tsx              nomes e cursos
+      Contato.tsx             formulário único, com o assunto (interesse)
+      Faq.tsx, Rodape.tsx     dúvidas e rodapé
+    ui/                     peças do design system v3: Palco, SeloStatus, FichaTecnica
+    InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
-  config/site.ts            dados de contato, equipe e versão do aviso de privacidade
+  config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
   content/landing.ts        todo o texto da página, incluindo o aviso de privacidade
   lib/
+    heroSequence.ts         matemática do hero "estudio" (progresso → quadro, conjunto, URLs)
+    interest.ts             assuntos do formulário e o evento que marca o assunto
     validation.ts           schema Zod compartilhado (cliente + servidor)
     rateLimit.ts             limite de taxa simples em memória
     repository/              interface + implementação Postgres para gravar leads
 ```
 
-O texto em `src/content/landing.ts` é o texto aprovado pelo cliente em
-`docs/landing-copy.md` (v1.1). Qualquer mudança de texto deve primeiro ser
+O texto em `src/content/landing.ts` é o texto aprovado pelo Thiago em
+`docs/landing-copy.md` (v2.0). Qualquer mudança de texto deve primeiro ser
 aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
@@ -269,8 +284,8 @@ defesa distribuída contra spam coordenado.
   renderiza conteúdo de usuário nem carrega script de terceiro — se isso
   mudar um dia, reavalie (ver ADR-008). Ao mexer em domínios externos
   (fonte, vídeo, script de terceiro), ajuste a CSP ali e rode
-  `npm run check:browser` de novo — ela cobre o vídeo do hero, do
-  portfólio **e falha em qualquer violação de CSP** (fonte/imagem/mídia/
+  `npm run check:browser` de novo — ela cobre os quadros do hero, os vídeos
+  dos aplicativos **e falha em qualquer violação de CSP** (fonte/imagem/mídia/
   script bloqueado), não só erro de console.
 - A rota `POST /api/diagnostico` exige `Content-Type: application/json`, confere
   que a origem bate com o host (quando o cabeçalho `Origin` vem preenchido),
@@ -353,6 +368,15 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
    `check:placeholders`. Falta só o texto que um humano lê: a mensagem de
    compartilhamento da equipe (`docs/landing-copy.md`). Definir `SITE_URL`
    na Vercel antes do lançamento continua pendente.
+3. **Curso de cada pessoa da equipe** — `siteConfig.team[].course`
+   (`src/config/site.ts`), hoje 4 vezes `[A PREENCHER: curso]`.
+
+O grupo decide se bloqueia: **fotos da equipe**. A página funciona com as
+iniciais no hexágono.
+
+Não bloqueia: **endereço do site próprio do replay**
+(`landingContent.produtos.replay.siteUrl`). Enquanto for `null`, o link "Ver o
+site do replay" fica escondido.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
 Rode `npm run check:placeholders` antes do deploy para confirmar.

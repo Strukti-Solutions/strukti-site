@@ -4,11 +4,12 @@ import { TopBar } from "@/components/TopBar";
 import { Hero } from "@/components/sections/Hero";
 import { HeroVideo } from "@/components/sections/HeroVideo";
 import { HeroSequence } from "@/components/sections/HeroSequence";
-import { Problemas } from "@/components/sections/Problemas";
+import { Produtos } from "@/components/sections/Produtos";
+import { Aplicativos } from "@/components/sections/Aplicativos";
+import { ChamadaHardware } from "@/components/sections/ChamadaHardware";
 import { ComoResolvemos } from "@/components/sections/ComoResolvemos";
-import { OQueJaFizemos } from "@/components/sections/OQueJaFizemos";
-import { Contato } from "@/components/sections/Contato";
 import { Equipe } from "@/components/sections/Equipe";
+import { Contato } from "@/components/sections/Contato";
 import { Faq } from "@/components/sections/Faq";
 import { Rodape } from "@/components/sections/Rodape";
 
@@ -21,11 +22,12 @@ export default function Home() {
       {variant === "classic" ? <Header /> : <TopBar />}
       <main id="conteudo-principal">
         {variant === "estudio" ? <HeroSequence /> : variant === "video" ? <HeroVideo /> : <Hero />}
-        <Problemas />
+        <Produtos />
+        <Aplicativos />
+        <ChamadaHardware />
         <ComoResolvemos />
-        <OQueJaFizemos />
-        <Contato />
         <Equipe />
+        <Contato />
         <Faq />
       </main>
       <Rodape />
