@@ -28,7 +28,7 @@ node scripts/quality-gate/compare-baseline.mjs
 ## Métricas (v1: estáticas, sem build nem banco, sobre `src/`)
 | Métrica | Classe | Baseline inicial (04/10/2026) |
 |---|---|---|
-| `duplication_pct` (jscpd 5.3.2) | blocking | 2,45% |
+| `duplication_pct` (jscpd 5.3.2) | blocking | 1,83% |
 | `files_over_400_lines` (.ts/.tsx) | blocking | 2 |
 | `largest_file_lines` (.ts/.tsx) | warning | 1243 (`blackhole-hero-section.tsx`) |
 
