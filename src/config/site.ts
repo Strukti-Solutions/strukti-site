@@ -38,6 +38,24 @@ export interface HeroVideoSource {
   portrait: HeroVideoRendition;
 }
 
+/** Um conjunto de quadros do hero "estudio" (MASTER §9.7). */
+export interface HeroFrameSet {
+  /** Quantidade de quadros: f000.avif … f(N-1).avif. */
+  frames: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Quadros do hero "estudio", gerados por scripts/hero-3d/ e servidos de
+ * public/hero/sequencia/ (nunca de CDN). Os caminhos saem de
+ * src/lib/heroSequence.ts (frameUrl, posterUrl).
+ */
+export interface HeroSequenceSource {
+  desktop: HeroFrameSet;
+  celular: HeroFrameSet;
+}
+
 /*
  * "Rota ao entardecer": "Aerial Footage of Truck on the Road", de K (Pexels),
  * https://www.pexels.com/video/aerial-footage-of-truck-on-the-road-9339061/
@@ -67,6 +85,10 @@ export const siteConfig = {
   heroVariant: "video" as HeroVariant,
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
+  heroSequence: {
+    desktop: { frames: 90, width: 1600, height: 1000 },
+    celular: { frames: 45, width: 800, height: 900 },
+  } as HeroSequenceSource,
   whatsapp: {
     number: "+55 83 99968-3670",
     link: "https://wa.me/5583999683670",
