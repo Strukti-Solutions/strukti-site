@@ -17,8 +17,8 @@ Guia do Claudinho (Maestro) para remontar o time de agentes do site da Strukti n
   - A chave fica só na máquina e **nunca** no repositório.
 - **Clone e dependências:**
   ```
-  git clone https://github.com/Thiago432544/strukti-site.git C:\dev\negocio
-  cd C:\dev\negocio
+  git clone https://github.com/Strukti-Solutions/strukti-site.git C:\Dev\negocio
+  cd C:\Dev\negocio
   npm ci
   npm run check:quarantine
   ```
