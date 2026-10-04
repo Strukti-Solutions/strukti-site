@@ -9,7 +9,13 @@ Ainda não temos nenhum cliente. Estamos na fase de estruturar o negócio.
 - **App de gestão para representantes de vendas e entregadores**: gerencia clientes, pedidos e rotas de entrega. MVP pronto + vídeo de demonstração.
 - **Ideia em avaliação**: um site-catálogo com os apps que já fizemos e uma área de captação de leads.
 
-## Conclusões da análise do negócio
+## Rumo atual (desde 03/10/2026)
+- **Foco maior: produtos que juntam hardware e IA.** Produto principal: sistema de replay para quadras esportivas de aluguel (o jogador aperta um botão na beira da quadra e recebe no celular o lance). Terá site próprio, ainda não começado. Segunda ideia, em espera: estacionamento inteligente para supermercados.
+- **Aplicativos sob medida continuam**, em segundo plano (Rota de Vendas, Fleet Analytics BI).
+- **O site da Strukti é a vitrine da marca-mãe:** catálogo de hardware (em destaque) e de aplicativos, com a chamada de cada produto e um contato geral. Spec: `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`.
+- O replay usa o Wi-Fi da arena (não há roteador 4G). Ainda não há cliente nem quadra instalada: valem as regras de não inventar nada.
+
+## Conclusões da análise do negócio (fase de aplicativos, antes de 03/10/2026)
 - O site-catálogo é útil como prova de credibilidade, mas não gera clientes sozinho. Quem traz conversas é a prospecção ativa. O site deve ser enxuto e feito rápido.
 - Principal risco: construir antes de validar com quem paga. Próximos MVPs só depois de entrevistar empresas.
 - O mercado de apps para representantes comerciais já tem concorrentes prontos e baratos (ex.: Mercos). Nosso diferencial provável: personalização, integração com o que o cliente já usa, proximidade e preço.
@@ -45,5 +51,5 @@ Prioridades, em ordem:
 ## A preencher pelo grupo
 - Stack do app (linguagem, framework, banco, hospedagem):
 - Stack do site: TypeScript, Node.js, React, PostgreSQL, deploy na Vercel
-- Nicho escolhido:
+- Nicho escolhido: quadras esportivas de aluguel (replay); distribuidoras e indústrias pequenas (aplicativos)
 - Quem é responsável por vendas:

@@ -9,10 +9,10 @@ import Home from "./page";
 // divergência entre o HTML do servidor e o 1º render do cliente, com
 // prefers-reduced-motion ligado e desligado. Falha em onRecoverableError ou
 // em qualquer console.error (divergência de atributo só aparece lá).
-// Roda com as duas versões do topo (siteConfig.heroVariant): "video", o
-// padrão, e "classic", que segue no código (revisão HR1 da Crivo).
+// Roda com as três versões do topo (siteConfig.heroVariant): "estudio", o
+// padrão, e "video" e "classic", que seguem no código (revisão HR1 da Crivo).
 
-const heroVariant = vi.hoisted(() => ({ current: "video" as HeroVariant }));
+const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
   return {
@@ -95,7 +95,7 @@ async function hydrateHome(clientPrefersReducedMotion: boolean) {
   return { consoleErrors, recoverableErrors, serverHtml };
 }
 
-describe.each(["video", "classic"] as const)("página inicial (hero %s) — hidratação", (variant) => {
+describe.each(["estudio", "video", "classic"] as const)("página inicial (hero %s) — hidratação", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });
@@ -107,7 +107,7 @@ describe.each(["video", "classic"] as const)("página inicial (hero %s) — hidr
     const { consoleErrors, recoverableErrors, serverHtml } = await hydrateHome(reduce);
 
     // Confere que a versão pedida é a que renderizou.
-    expect(serverHtml).toContain(variant === "video" ? 'class="topbar"' : 'class="site-header');
+    expect(serverHtml).toContain(variant === "classic" ? 'class="site-header' : 'class="topbar"');
     expect(recoverableErrors).toEqual([]);
     expect(consoleErrors.map((args) => args.map(String).join(" "))).toEqual([]);
   });
