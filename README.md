@@ -65,6 +65,10 @@ SITE_URL=https://dominio-de-producao
 Sem `DATABASE_URL`, o site sobe e funciona normalmente, mas a rota
 `POST /api/diagnostico` responde `503` com uma mensagem clara em vez de quebrar.
 
+A aba provisória `/bancada` (testes de envio de clipes do replay ao
+Cloudflare R2) só liga com as variáveis `R2_*` e `BANCADA_*`; sem elas,
+responde 404. Ver [docs/bancada/README.md](docs/bancada/README.md).
+
 `SITE_URL` ainda não tem valor final (domínio de produção é pendência de
 publicação — ver `docs/landing-copy.md`, "Pendências"). É usado em
 `metadataBase` (link de compartilhamento, canonical), `sitemap.xml` e

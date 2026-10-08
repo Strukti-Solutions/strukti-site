@@ -166,6 +166,17 @@ export const landingContent = {
         { value: "PoE", label: "Energia e imagem num cabo só" },
       ],
       cta: "Agendar demonstração",
+      // Animação feita em código (projeto strukti-video), no lugar do pôster 3D.
+      video: {
+        src: "/video/replay.mp4",
+        poster: "/video/replay.jpg",
+        accessibleName: "Vídeo de demonstração do replay para quadras",
+        playLabel: "Assistir ao vídeo: Replay para quadras",
+        caption:
+          "Animação que ilustra o conceito, só com música. A arena, os jogadores e as telas do celular são fictícios.",
+        description:
+          'Numa arena à noite, o Lucas faz um gol no society e aperta o botão no alambrado: o anel de luz pisca duas vezes. O mesmo gol aparece de novo, visto pela câmera fixa atrás do gol, com a marca "Arena Pôr do Sol 20:37" e o texto "O sistema salva os últimos 30 segundos". Na areia, a Bia aperta o botão depois de um ponto, e o lance volta pela câmera atrás da linha de fundo, às 20:52: "Funciona em qualquer quadra: society, areia, futsal". No bar, o celular mostra a busca do lance, a lista de lances de hoje e o lance das 20:37, com os botões Baixar e Compartilhar e o aviso "Disponível por 7 dias". A TV do bar passa o replay. No fim, o logo da Strukti, a frase "O jogador aperta o botão e o lance chega no celular." e o WhatsApp (83) 99968-3670.',
+      },
       // Endereço do site próprio do replay: null até existir (o link some).
       siteUrl: null as string | null,
       siteLinkLabel: "Ver o site do replay",

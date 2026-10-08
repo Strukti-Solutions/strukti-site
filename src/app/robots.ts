@@ -10,7 +10,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/api/",
+      // /bancada: aba provisória de testes do replay (também tem noindex).
+      disallow: ["/api/", "/bancada"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

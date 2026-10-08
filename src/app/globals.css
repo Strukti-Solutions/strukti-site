@@ -868,6 +868,23 @@ video:focus-visible {
   font-size: 1rem;
 }
 
+/* Provisório: botão da aba de testes do replay (/bancada). Contorno claro
+   sobre a barra escura; no painel, ocupa a largura como o WhatsApp. */
+.topbar__nav .topbar__bancada {
+  display: flex;
+  width: calc(100% - 2 * var(--gutter));
+  min-height: 48px;
+  margin: var(--space-3) var(--gutter) 0;
+  border-color: var(--color-navy-300);
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.topbar__nav .topbar__bancada:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: #ffffff;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .topbar__toggle-icon::before,
   .topbar__toggle-icon::after {
@@ -947,6 +964,14 @@ video:focus-visible {
   }
 
   .topbar__nav .topbar__whatsapp {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding-inline: 14px;
+    font-size: 0.9375rem;
+  }
+
+  .topbar__nav .topbar__bancada {
     width: auto;
     min-height: 44px;
     margin: 0;
@@ -2163,6 +2188,12 @@ textarea.field__input {
   color: var(--color-navy-200);
 }
 
+/* Selo "Ilustração do conceito" ao lado do selo de fase, fora do palco. */
+.selo--conceito {
+  border-color: var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
 /* Selos sobre papel (superfície clara): troca as cores dos contornos. */
 .surface-paper .selo--desenvolvimento,
 .surface-paper .selo--em-breve {
@@ -2219,16 +2250,10 @@ textarea.field__input {
   background-color: var(--surface-raised);
 }
 
-.produto__palco {
-  aspect-ratio: 8 / 5;
-}
-
-.produto__palco img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.produto__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .produto__corpo > * + * {
