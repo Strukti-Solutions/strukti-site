@@ -147,19 +147,39 @@ const browser = spawn(
     `--user-data-dir=${userDataDir}`,
     "about:blank",
   ],
-  { stdio: "ignore" },
+  { stdio: ["ignore", "ignore", "pipe"] },
 );
+
+// O stderr do navegador e a saída do processo entram na mensagem de erro:
+// sem eles, "não abriu a porta" não diz se o Chrome demorou ou caiu.
+let browserStderr = "";
+let browserExit = null;
+browser.stderr.on("data", (chunk) => {
+  browserStderr = (browserStderr + chunk).slice(-4000);
+});
+browser.on("exit", (code, signal) => {
+  browserExit = signal ?? code;
+});
+
+// Runner frio do CI: o primeiro Chrome pode passar dos 10 s para subir.
+const DEVTOOLS_PORT_TIMEOUT_MS = 30_000;
 
 async function readDevToolsPort() {
   const portFile = join(userDataDir, "DevToolsActivePort");
-  for (let attempt = 0; attempt < 100; attempt++) {
+  const deadline = Date.now() + DEVTOOLS_PORT_TIMEOUT_MS;
+  while (Date.now() < deadline && browserExit === null) {
     if (existsSync(portFile)) {
       const [port] = readFileSync(portFile, "utf8").split("\n");
       if (port) return Number(port);
     }
     await sleep(100);
   }
-  throw new Error("o navegador não abriu a porta de depuração");
+  const motivo =
+    browserExit !== null ? `o processo saiu (${browserExit})` : `esperou ${DEVTOOLS_PORT_TIMEOUT_MS / 1000} s`;
+  const ultimas = browserStderr.trim().split("\n").slice(-8).join("\n     ");
+  throw new Error(
+    `o navegador não abriu a porta de depuração: ${motivo}${ultimas ? `\n   stderr do navegador:\n     ${ultimas}` : ""}`,
+  );
 }
 
 function connect(wsUrl) {
