@@ -1,0 +1,117 @@
+name: CI
+
+# PR: valida (quarentena/typecheck/lint/test/build + check:browser). Push em
+# `homologacao`/`main`: valida DE NOVO (o merge pode juntar duas mudanças que
+# passavam sozinhas). Sem branch protection no plano Free, o check NÃO trava o
+# merge sozinho; ele reporta no PR (para bloquear de fato, habilitar branch
+# protection exigindo estes checks). paths-ignore pula docs-only.
+#
+# Deploy: ainda não há job de deploy. A publicação (L5 em docs/maestro/ESTADO.md)
+# é na Vercel e só com o ok do cliente e as contas dele; quando entrar, ligar
+# `homologacao` ao ambiente de homologação (preview) e `main` à produção, e o
+# deploy só pode acontecer depois deste CI verde.
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  push:
+    branches: [homologacao, main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # PR: cancela o run superado. Push em homologacao/main: NUNCA cancela.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Quarentena, Typecheck, Lint, Test, Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Regra do projeto: nenhuma dependência publicada há menos de 7 dias.
+      - name: Quarentena de dependências (7 dias)
+        run: npm run check:quarantine
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Os testes não usam banco: o repositório de leads é simulado (vi.doMock).
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  browser:
+    # O check:browser abre o Chrome headless direto pelo CDP (sem Playwright) e
+    # confere a página servida: console sem erro, CSP, rolagem horizontal, menu e
+    # foco, vídeos dos aplicativos, WCAG 1.4.12 e o hero "estudio" (a 1440 e a
+    # 360). Roda contra o build de produção (`next start`), como no ar.
+    name: check:browser (build de produção)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # O runner ubuntu-latest já traz o Google Chrome neste caminho.
+      BROWSER_PATH: /usr/bin/google-chrome
+      PORT: "3000"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Subir o site (next start) e esperar responder
+        run: |
+          set -euo pipefail
+          nohup npx next start -p "$PORT" > next-start.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf -o /dev/null "http://localhost:$PORT/"; then
+              echo "site no ar em http://localhost:$PORT/"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error title=site não subiu::next start não respondeu em 60 s"
+          cat next-start.log
+          exit 1
+
+      - name: check:browser
+        run: node scripts/check-browser.mjs "http://localhost:$PORT/"
+
+      - name: Log do servidor (se falhar)
+        if: failure()
+        run: cat next-start.log || true

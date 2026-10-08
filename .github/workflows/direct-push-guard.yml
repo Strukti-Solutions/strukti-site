@@ -1,0 +1,61 @@
+name: direct-push guard
+
+# Sinaliza pushes DIRETOS nas branches compartilhadas (commits que NAO chegaram
+# via merge de PR). Branch protection e plan-gated neste repo privado (GitHub
+# Free), entao este e um guard SOFT de accountability: FALHA alto (e notifica
+# quem fez o push por e-mail do GitHub) mas NAO previne o push.
+# Politica (CONTRIBUTING.md, "Protocolo de branches e PRs"): toda mudanca nas
+# branches compartilhadas entra por Pull Request; a UNICA excecao e a
+# sincronizacao descendente por fast-forward apos um merge (main ->
+# homologacao), que nao cria commit novo — o head continua sendo o commit da
+# PR, entao passa neste guard.
+#
+# Deteccao: aceita as duas estrategias de merge —
+#   - merge commit  -> mensagem comeca com "Merge pull request #N ..."
+#   - squash merge  -> o GitHub anexa "(#N)" ao fim do subject
+# Se o head_commit nao casar nenhum dos dois, tratamos como push direto.
+#
+# Trade-off consciente: um push direto cujo subject termine em "(#N)" passa
+# despercebido. Aceitavel — o guard e soft; a alternativa (falhar em todo squash
+# legitimo) treina o time a ignorar o vermelho.
+#
+# NB: um workflow so protege a branch ONDE O ARQUIVO EXISTE — este arquivo
+# precisa existir identico em main e homologacao.
+
+on:
+  push:
+    branches: [main, homologacao]
+
+jobs:
+  guard:
+    name: Push veio de PR?
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Flag direct (non-PR) push
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const head = context.payload.head_commit;
+            if (!head) {
+              core.info("Sem head_commit (evento nao-padrao) — skip.");
+              return;
+            }
+            const sha = context.sha.slice(0, 7);
+            const branch = context.ref.replace("refs/heads/", "");
+            const subject = (head.message || "").split("\n")[0];
+            const viaMergeCommit = /^Merge pull request #\d+ /.test(head.message || "");
+            const viaSquash = /\(#\d+\)$/.test(subject.trim());
+            if (viaMergeCommit || viaSquash) {
+              const via = viaMergeCommit ? "merge commit" : "squash";
+              core.info(`ok: ${sha} chegou via PR (${via}) em '${branch}'.`);
+              return;
+            }
+            core.setFailed(
+              `Push direto na '${branch}' por @${context.actor} (${sha}: "${subject}") sem PR. ` +
+              `Politica: toda mudanca nas branches compartilhadas entra por Pull Request ` +
+              `(branch propria -> PR -> CI verde -> merge -> branch apagada). ` +
+              `Ver CONTRIBUTING.md, secao "Protocolo de branches e PRs".`
+            );

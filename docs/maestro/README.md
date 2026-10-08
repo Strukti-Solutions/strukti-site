@@ -17,13 +17,13 @@ Guia do Claudinho (Maestro) para remontar o time de agentes do site da Strukti n
   - A chave fica só na máquina e **nunca** no repositório.
 - **Clone e dependências:**
   ```
-  git clone https://github.com/Thiago432544/strukti-site.git C:\dev\negocio
-  cd C:\dev\negocio
+  git clone https://github.com/Strukti-Solutions/strukti-site.git C:\Dev\negocio
+  cd C:\Dev\negocio
   npm ci
   npm run check:quarantine
   ```
   - Use sempre `npm ci`, ou `npm install --min-release-age=7` para dependência nova (ADR-003).
-- **Opcional, para os papéis que leem o app de prova:** clone `Thiago432544/rota-de-vendas` em `C:\dev\rota_de_vendas`. Os papéis citam também `C:\dev\_video\brag-output` e `C:\dev\_qa`, materiais locais desta máquina que não estão no git; copie-os se precisar deles.
+- **Opcional, para os papéis que leem o app de prova:** clone `Strukti-Solutions/rota-de-vendas` em `C:\Dev\rota_de_vendas`. Os papéis citam também `C:\dev\_video\brag-output` e `C:\dev\_qa`, materiais locais desta máquina que não estão no git; copie-os se precisar deles.
 
 Se a pasta for outra, ajuste os caminhos em `papeis/comum.txt` antes de criar os papéis.
 
