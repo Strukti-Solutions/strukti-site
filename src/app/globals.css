@@ -2163,6 +2163,12 @@ textarea.field__input {
   color: var(--color-navy-200);
 }
 
+/* Selo "Ilustração do conceito" ao lado do selo de fase, fora do palco. */
+.selo--conceito {
+  border-color: var(--color-navy-300);
+  color: var(--color-navy-100);
+}
+
 /* Selos sobre papel (superfície clara): troca as cores dos contornos. */
 .surface-paper .selo--desenvolvimento,
 .surface-paper .selo--em-breve {
@@ -2219,16 +2225,10 @@ textarea.field__input {
   background-color: var(--surface-raised);
 }
 
-.produto__palco {
-  aspect-ratio: 8 / 5;
-}
-
-.produto__palco img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.produto__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .produto__corpo > * + * {

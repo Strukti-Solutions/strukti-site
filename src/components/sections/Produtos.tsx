@@ -5,11 +5,12 @@ import { SeloStatus } from "@/components/ui/SeloStatus";
 import { FichaTecnica } from "@/components/ui/FichaTecnica";
 import { Reveal } from "@/components/motion/Reveal";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { posterUrl } from "@/lib/heroSequence";
+import { ReplayVideo } from "./ReplayVideo";
 
 /**
  * Produtos de hardware (spec 2026-10-03 §4, seção 3): o replay em destaque,
- * num palco com o mesmo render do hero, e o estacionamento em desenvolvimento.
+ * com o vídeo de demonstração no palco (mesmo padrão dos aplicativos), e o
+ * estacionamento em desenvolvimento.
  *
  * "Como funciona" e os 3 passos do replay (spec §4, linha 3) ficam no hero
  * "estudio", ao lado do giro (MASTER §9.7). Com os heros "video" e "classic",
@@ -31,15 +32,24 @@ export function Produtos() {
 
         <div className="produtos">
           <article className="produto" aria-labelledby="produto-replay-title">
-            <Palco className="produto__palco">
-              <picture>
-                <source type="image/avif" srcSet={posterUrl("desktop", "avif")} />
-                <img src={posterUrl("desktop", "jpg")} alt="" width={1600} height={1000} loading="lazy" decoding="async" />
-              </picture>
-              <p className="selo selo--ilustracao">{landingContent.heroEstudio.illustrationBadge}</p>
-            </Palco>
+            <div>
+              <Palco className="project-card__palco">
+                <ReplayVideo video={replay.video} />
+              </Palco>
+              <div className="portfolio__meta">
+                <p className="caption">{replay.video.caption}</p>
+                <details>
+                  <summary>{landingContent.aplicativos.videoDescriptionLinkLabel}</summary>
+                  <p>{replay.video.description}</p>
+                </details>
+              </div>
+            </div>
             <div className="produto__corpo">
-              <SeloStatus status="piloto" />
+              <div className="produto__selos">
+                <SeloStatus status="piloto" />
+                {/* O vídeo é animação do conceito: a spec §10 manda identificá-lo. */}
+                <span className="selo selo--conceito">{landingContent.heroEstudio.illustrationBadge}</span>
+              </div>
               <h3 id="produto-replay-title" className="block-title">
                 {replay.name}
               </h3>
