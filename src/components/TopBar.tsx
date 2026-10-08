@@ -5,6 +5,7 @@ import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import type { LinkBancada } from "@/lib/bancada/link";
 
 /**
  * A partir daqui a barra mostra os links e o WhatsApp numa linha (TB2). Em
@@ -26,7 +27,7 @@ export const TOPBAR_WIDE_QUERY = "(min-width: 75em)";
  * topo" de globals.css). O botão vem antes do painel no DOM, para o Tab
  * seguir do botão para os links quando o painel abre.
  */
-export function TopBar() {
+export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   const { nav, whatsappButton, menuButton } = landingContent.header;
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -111,6 +112,12 @@ export function TopBar() {
               </li>
             ))}
           </ul>
+          {/* Provisório: aba de testes do replay (docs/bancada/README.md). */}
+          {linkBancada && (
+            <a href={linkBancada.href} className="btn btn--compact topbar__bancada" onClick={() => setOpen(false)}>
+              {linkBancada.label}
+            </a>
+          )}
           <WhatsAppButton message={landingContent.whatsappMessages.general} compact className="topbar__whatsapp">
             {whatsappButton}
           </WhatsAppButton>
