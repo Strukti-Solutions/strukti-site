@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { landingContent } from "@/content/landing";
 import { TOPBAR_WIDE_QUERY, TopBar } from "./TopBar";
+import { LINK_BANCADA } from "@/lib/bancada/link";
 
 // O que muda por largura (links na barra ≥ 75em, painel abaixo disso) é CSS
 // e fica com o check:browser; aqui vale o comportamento do menu e a conferência
@@ -30,6 +31,20 @@ describe("TopBar", () => {
       expect(nav.contains(link)).toBe(true);
     }
     expect(screen.getByRole("link", { name: landingContent.header.whatsappButton })).toBeTruthy();
+  });
+
+  it("sem a bancada ligada, não mostra o botão da aba de testes", () => {
+    render(<TopBar />);
+    expect(screen.queryByRole("link", { name: LINK_BANCADA.label })).toBeNull();
+  });
+
+  it("com a bancada ligada, mostra o botão para /bancada dentro da navegação, antes do WhatsApp", () => {
+    render(<TopBar linkBancada={LINK_BANCADA} />);
+    const link = screen.getByRole("link", { name: LINK_BANCADA.label });
+    expect(link.getAttribute("href")).toBe("/bancada");
+    expect(screen.getByRole("navigation", { name: "Principal" }).contains(link)).toBe(true);
+    const whatsapp = screen.getByRole("link", { name: landingContent.header.whatsappButton });
+    expect(link.compareDocumentPosition(whatsapp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("o botão Menu abre e fecha o painel e diz o estado em aria-expanded", () => {

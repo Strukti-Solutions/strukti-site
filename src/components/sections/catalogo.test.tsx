@@ -41,12 +41,25 @@ describe("<Produtos />", () => {
     const { container } = render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
     expect(within(replay).getByText(statusLabels.piloto)).toBeTruthy();
-    // O pôster do card é o render 3D: a spec §10 manda identificá-lo como ilustração.
+    // O vídeo do card é animação do conceito: a spec §10 manda identificá-lo como ilustração.
     expect(within(replay).getByText(heroEstudio.illustrationBadge)).toBeTruthy();
     for (const spec of produtos.replay.specs) expect(within(replay).getByText(spec.value)).toBeTruthy();
     const cta = within(replay).getByRole("link", { name: new RegExp(produtos.replay.cta) });
     expect(cta.getAttribute("href")).toBe(siteConfig.whatsapp.linkWithMessage(whatsappMessages.replay));
     expect((await axe.run(container)).violations).toEqual([]);
+  });
+
+  it("o vídeo do replay só carrega quando a pessoa clica em reproduzir", () => {
+    const { container } = render(<Produtos />);
+    const replay = screen.getByRole("article", { name: produtos.replay.name });
+    expect(container.querySelector("video")).toBeNull();
+
+    fireEvent.click(within(replay).getByRole("button", { name: produtos.replay.video.playLabel }));
+    const video = within(replay).getByLabelText(produtos.replay.video.accessibleName) as HTMLVideoElement;
+    expect(video.tagName).toBe("VIDEO");
+    expect(video.hasAttribute("controls")).toBe(true);
+    expect(video.querySelector("source")?.getAttribute("src")).toBe(produtos.replay.video.src);
+    expect(within(replay).getByText(produtos.replay.video.caption)).toBeTruthy();
   });
 
   it('com o hero "estudio", "Como funciona" e os passos ficam só no hero, fora do cartão', () => {

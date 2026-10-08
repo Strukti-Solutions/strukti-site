@@ -1,0 +1,154 @@
+/* Estilos só da aba provisória /bancada (some junto com a pasta). */
+.bancada {
+  min-height: 100vh;
+}
+
+.voltar {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  font-weight: 600;
+}
+
+.aviso {
+  display: block;
+  width: fit-content;
+  margin: 0 0 var(--space-3);
+  padding: 4px 10px;
+  border: 1px dashed var(--color-navy-500);
+  border-radius: var(--radius-1);
+  font-size: 0.875rem;
+  color: var(--color-navy-800);
+}
+
+.entrar {
+  max-width: 420px;
+  margin-top: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.painel {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.bloco {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.campos {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.soltar {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: var(--space-4);
+  border: 2px dashed var(--color-navy-300);
+  border-radius: var(--radius-2);
+  text-align: center;
+  cursor: pointer;
+}
+
+.soltar:focus-within {
+  outline: 2px solid var(--color-electric-700);
+  outline-offset: 2px;
+}
+
+.soltarAtivo {
+  border-color: var(--color-electric-700);
+  background-color: rgb(1 133 231 / 0.06);
+}
+
+.escondido {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.progresso {
+  width: 100%;
+}
+
+.status {
+  margin: 0;
+  min-height: 1.4em;
+}
+
+.codigo {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border-radius: var(--radius-2);
+  background: var(--color-navy-950);
+  color: #e8f1fa;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lista {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clipe {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-navy-200);
+  border-radius: var(--radius-2);
+}
+
+.video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius-1);
+}
+
+.dados {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.dados div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+}
+
+.dados dt {
+  color: var(--color-navy-600);
+}
+
+.dados dd {
+  margin: 0;
+  font-weight: 600;
+}

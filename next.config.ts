@@ -9,20 +9,30 @@ import type { NextConfig } from "next";
 // produção sem erro de build — ad367c4/503dd2a). 'unsafe-eval' só em
 // desenvolvimento: o devtool do webpack do Next (eval-source-map) roda
 // cada módulo por eval() nesse modo.
-const cspDirectives = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  "media-src 'self'",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
-].join("; ");
+function csp({ extraConnect = "", extraMedia = "" } = {}) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    `media-src 'self'${extraMedia}`,
+    `connect-src 'self'${extraConnect}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+const cspDirectives = csp();
+
+// Bancada do replay (PROVISÓRIA, docs/bancada/README.md): só a página
+// /bancada fala direto com o Cloudflare R2 (upload por URL assinada e
+// player). Regra depois da geral: no Next, a última chave igual vence.
+const R2_ORIGEM = " https://*.r2.cloudflarestorage.com";
+const cspBancada = csp({ extraConnect: R2_ORIGEM, extraMedia: R2_ORIGEM });
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -43,6 +53,10 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      {
+        source: "/bancada",
+        headers: [{ key: "Content-Security-Policy", value: cspBancada }],
       },
     ];
   },
