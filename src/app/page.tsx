@@ -12,6 +12,7 @@ import { Equipe } from "@/components/sections/Equipe";
 import { Contato } from "@/components/sections/Contato";
 import { Faq } from "@/components/sections/Faq";
 import { Rodape } from "@/components/sections/Rodape";
+import { linkBancadaSeAtiva } from "@/lib/bancada/link";
 
 export default function Home() {
   // A barra do topo e o hero mudam juntos (ver siteConfig.heroVariant).
@@ -19,7 +20,7 @@ export default function Home() {
 
   return (
     <>
-      {variant === "classic" ? <Header /> : <TopBar />}
+      {variant === "classic" ? <Header /> : <TopBar linkBancada={linkBancadaSeAtiva()} />}
       {/* data-hero-variant: o check:browser lê daqui qual hero conferir. */}
       <main id="conteudo-principal" data-hero-variant={variant}>
         {variant === "estudio" ? <HeroSequence /> : variant === "video" ? <HeroVideo /> : <Hero />}
