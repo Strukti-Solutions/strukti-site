@@ -323,6 +323,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
         <div className="hero-estudio__bloco hero-estudio__abertura">
           <div className="hero-estudio__bloco-texto">{opening}</div>
         </div>
+        {steps.length > 0 && (
         <div className="hero-estudio__como">
           <h2 id="hero-passos-title" className="hero-estudio__como-titulo">
             {stepsTitle}
@@ -343,6 +344,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
             ))}
           </ol>
         </div>
+        )}
       </div>
     </section>
   );

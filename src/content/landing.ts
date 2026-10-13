@@ -14,9 +14,7 @@
 const WHATSAPP_GENERAL_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero conversar com vocês.";
 const WHATSAPP_REPLAY_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra.";
-const WHATSAPP_ESTACIONAMENTO_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero conversar sobre o estacionamento inteligente.";
+  "Olá! Vim pelo site da Strukti Soluções e quero o piloto gratuito do replay na minha quadra.\nCidade:\nQuantas quadras:";
 
 /**
  * Fase de um produto, mostrada no selo (spec §3.4). O texto de cada selo
@@ -118,7 +116,6 @@ export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
     replay: WHATSAPP_REPLAY_MESSAGE,
-    estacionamento: WHATSAPP_ESTACIONAMENTO_MESSAGE,
   },
 
   statusLabels: {
@@ -129,22 +126,22 @@ export const landingContent = {
   } satisfies Record<ProductStatus, string>,
 
   heroEstudio: {
-    eyebrow: "Replay para quadras · Aplicativos sob medida",
-    headline: "Equipamento e software para problemas que um aplicativo sozinho não resolve.",
-    body: "A Strukti Soluções monta o equipamento, escreve o software e cuida da instalação e do suporte. O primeiro produto é o replay para quadras de aluguel: o jogador aperta um botão na beira da quadra e recebe o lance no celular. Estamos procurando as primeiras quadras para um piloto gratuito. Recursos de inteligência artificial, como o destaque por jogador, vêm em breve.",
-    primaryCta: "Conhecer o replay",
+    eyebrow: "Replay para quadras de aluguel",
+    headline: "O jogador aperta um botão e leva o lance no celular.",
+    body: "Estamos escolhendo as primeiras quadras para um piloto gratuito, com instalação e suporte da Strukti Soluções.",
+    primaryCta: "Quero o piloto na minha quadra",
+    secondaryLink: "Ver como funciona",
     whatsappCta: "Falar no WhatsApp",
     illustrationBadge: "Ilustração do conceito",
   },
 
   produtos: {
-    title: "Produtos de hardware",
-    intro:
-      "Equipamento que fica no seu espaço, com software e suporte da própria Strukti. O selo de cada produto diz em que fase ele está.",
+    title: "Replay para quadras",
+    intro: "",
     replay: {
       name: "Replay para quadras",
       oneLiner:
-        "Para quadras de aluguel de society, futsal, vôlei e beach tennis: o jogador sai do jogo com o lance no celular, e o time ganha um motivo a mais para voltar à sua quadra.",
+        "Para quadras de aluguel de society, futsal, vôlei e beach tennis. O jogador sai do jogo com o lance no celular, pronto para mandar no grupo do time, e o time ganha um motivo a mais para voltar à sua quadra.",
       stepsTitle: "Como funciona",
       steps: [
         {
@@ -163,9 +160,37 @@ export const landingContent = {
       specs: [
         { value: "30 s", label: "Antes do aperto" },
         { value: "Wi-Fi", label: "Da própria arena" },
-        { value: "PoE", label: "Energia e imagem num cabo só" },
+        { value: "1 cabo", label: "Para energia e imagem" },
       ],
-      cta: "Agendar demonstração",
+      cta: "Quero o piloto na minha quadra",
+      emBreve: "Cortes automáticos e destaque por jogador, com inteligência artificial.",
+      // Bloco novo (PROPOSTA §2.4). Sem dado, não publica: as marcações aparecem na prévia.
+      piloto: {
+        title: "Piloto gratuito para as primeiras quadras",
+        intro:
+          "O replay ainda está em teste. Nas primeiras quadras, instalamos o equipamento sem custo durante o piloto, e a quadra nos ajuda a acertar o produto antes do lançamento.",
+        leva: {
+          title: "A Strukti leva",
+          items: [
+            "O equipamento da quadra: [A PREENCHER: confirmar a lista, por exemplo câmera, botão e o aparelho que guarda e corta os lances].",
+            "A instalação e os ajustes.",
+            "O suporte pelo WhatsApp, com quem instalou.",
+          ],
+        },
+        precisa: {
+          title: "A sua quadra precisa ter",
+          items: [
+            'Wi-Fi funcionando [A PREENCHER: confirmar o alcance, por exemplo "perto da quadra"].',
+            "[A PREENCHER: ponto de energia? onde?]",
+            "[A PREENCHER: lugar para a câmera e o botão, por exemplo no alambrado]",
+          ],
+        },
+        status:
+          "Pronto e testado em bancada: a gravação e o corte do lance. O que o piloto vai testar: o envio do clipe para o celular do jogador.",
+        fim: '[A PREENCHER: o que acontece no fim do piloto. Exemplo do formato, a confirmar: "No fim do piloto, você decide se continua. Antes disso, apresentamos o preço e o modelo, sem compromisso."]',
+        cta: "Quero o piloto na minha quadra",
+        ctaNote: "Sem custo durante o piloto. A conversa começa pelo WhatsApp.",
+      },
       // Animação feita em código (projeto strukti-video), no lugar do pôster 3D.
       video: {
         src: "/video/replay.mp4",
@@ -181,19 +206,13 @@ export const landingContent = {
       siteUrl: null as string | null,
       siteLinkLabel: "Ver o site do replay",
     },
-    estacionamento: {
-      name: "Estacionamento inteligente",
-      oneLiner:
-        "A ideia: sensores ou câmeras que indicam as vagas livres no estacionamento do supermercado. Antes de construir, queremos ouvir gerentes de supermercado.",
-      cta: "Quero conversar sobre isso",
-    },
   },
 
   aplicativos: {
     title: "Aplicativos sob medida",
     intro:
-      "Também construímos aplicativos para empresas, do jeito que cada uma já trabalha e ligados ao que ela já usa. O primeiro passo é o diagnóstico gratuito: uma conversa sobre a rotina da empresa, com um resumo por escrito do que vale a pena fazer. Sem compromisso de contratar.",
-    cta: "Diagnóstico gratuito",
+      "Para a empresa que ainda controla pedidos, rotas ou relatórios na planilha, no papel e no WhatsApp: construímos o aplicativo do jeito que ela já trabalha, ligado ao que ela já usa. O primeiro passo é o diagnóstico gratuito: uma conversa sobre a rotina da empresa, com um resumo por escrito do que vale a pena fazer. Sem compromisso de contratar.",
+    cta: "Pedir diagnóstico gratuito",
     projects: PROJECTS,
     grid: {
       showMore: "Mostrar mais projetos",
@@ -215,12 +234,12 @@ export const landingContent = {
       {
         title: "Diagnóstico",
         description:
-          "Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso.",
+          "Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso. Você recebe um resumo por escrito do que vale a pena fazer.",
       },
       {
         title: "Protótipo",
         description:
-          "Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa.",
+          "Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa. No replay, esta etapa é o piloto gratuito.",
       },
       {
         title: "Instalação",
@@ -238,7 +257,7 @@ export const landingContent = {
   contato: {
     title: "Fale com a gente",
     intro:
-      "Quer agendar uma demonstração do replay, pedir o diagnóstico de um aplicativo ou contar outro problema? Escolha o assunto e escreva em poucas palavras.",
+      "Quer o piloto do replay na sua quadra, o diagnóstico de um aplicativo ou contar outro problema? Escolha o assunto e escreva em poucas palavras.",
     form: {
       title: "Conte o que você precisa",
       intro: "São cinco campos. Respondemos pelo WhatsApp.",
@@ -264,7 +283,6 @@ export const landingContent = {
           errorEmpty: "Escolha um assunto.",
           options: {
             replay: "Replay para quadras",
-            estacionamento: "Estacionamento inteligente",
             aplicativo: "Aplicativo sob medida",
             outro: "Outro assunto",
           },
@@ -306,7 +324,7 @@ export const landingContent = {
   header: {
     skipLink: "Pular para o conteúdo",
     nav: [
-      { label: "Produtos", href: "#produtos" },
+      { label: "Replay", href: "#replay" },
       { label: "Apps", href: "#aplicativos" },
       { label: "Equipe", href: "#equipe" },
       { label: "Contato", href: "#contato" },
@@ -331,21 +349,34 @@ export const landingContent = {
   equipe: {
     title: "Quem faz",
     intro:
-      "Somos quatro estudantes de engenharia da computação. Você fala direto com quem monta o equipamento e escreve o código.",
+      "Somos quatro estudantes de engenharia da computação, em João Pessoa. Quem responde no WhatsApp é um de nós: você fala direto com quem monta o equipamento e escreve o código.",
   },
 
   faq: {
     title: "Dúvidas frequentes",
     items: [
       {
-        question: "O replay precisa de internet?",
+        question: "O que a minha quadra precisa ter?",
         answer:
-          "Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes. Os jogadores veem os lances no celular, com a internet deles. Se a internet da sua arena for uma dúvida, falamos disso na demonstração.",
+          "Wi-Fi funcionando [A PREENCHER: alcance], [A PREENCHER: ponto de energia] e [A PREENCHER: lugar para a câmera e o botão]. O resto a Strukti leva e instala. Se tiver dúvida sobre a sua quadra, mande uma foto dela pelo WhatsApp.",
       },
       {
-        question: "O replay já usa inteligência artificial?",
+        question: "O replay precisa de internet?",
         answer:
-          "Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.",
+          "Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes, e os jogadores veem os lances no celular, com a internet deles. Se o Wi-Fi cair, [A PREENCHER: o que acontece de verdade com os lances gravados]. Se a internet da sua arena for uma dúvida, vemos isso juntos antes do piloto.",
+      },
+      {
+        question: "Quanto tempo leva a instalação? A quadra fica parada?",
+        answer: "[A PREENCHER: tempo real de instalação de uma quadra, se ela para e por quanto tempo.]",
+      },
+      {
+        question: "Quanto custa?",
+        answer:
+          "Depende do produto. O preço do replay ainda está sendo definido, e nesta fase oferecemos um piloto gratuito. Nos aplicativos, depois do diagnóstico gratuito você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso.",
+      },
+      {
+        question: "O que acontece no fim do piloto?",
+        answer: "[A PREENCHER: quem fica com o equipamento, se há compromisso, como o preço é apresentado.]",
       },
       {
         question: "E a privacidade de quem aparece no vídeo?",
@@ -353,9 +384,9 @@ export const landingContent = {
           "O replay está sendo construído assim: os clipes vão ficar disponíveis para os jogadores por 7 dias e depois serão apagados, e a quadra vai exibir um aviso de que há gravação.",
       },
       {
-        question: "Quanto custa?",
+        question: "O replay já usa inteligência artificial?",
         answer:
-          "Depende do produto. O preço do replay ainda está sendo definido, e nesta fase oferecemos um piloto gratuito. Nos aplicativos, depois do diagnóstico gratuito você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso.",
+          "Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.",
       },
       {
         question: "Vocês atendem a minha cidade?",

@@ -30,8 +30,8 @@ export default function Home() {
         <ChamadaHardware />
         <ComoResolvemos />
         <Equipe />
-        <Contato />
         <Faq />
+        <Contato />
       </main>
       <Rodape />
       {/* SPIKE [S1-A]: só com ?fio=costura ou ?fio=montagem. */}

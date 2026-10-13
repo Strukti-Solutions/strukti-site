@@ -1,37 +1,34 @@
 import { landingContent } from "@/content/landing";
-import { siteConfig } from "@/config/site";
 import { Palco } from "@/components/ui/Palco";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { FichaTecnica } from "@/components/ui/FichaTecnica";
 import { Reveal } from "@/components/motion/Reveal";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { Rascunho } from "@/components/spike/Rascunho";
 import { ReplayVideo } from "./ReplayVideo";
 
 /**
- * Produtos de hardware (spec 2026-10-03 §4, seção 3): o replay em destaque,
- * com o vídeo de demonstração no palco (mesmo padrão dos aplicativos), e o
- * estacionamento em desenvolvimento.
- *
- * "Como funciona" e os 3 passos do replay (spec §4, linha 3) ficam no hero
- * "estudio", ao lado do giro (MASTER §9.7). Com os heros "video" e "classic",
- * que não têm os passos, eles voltam para o cartão do replay.
+ * PRÉVIA [S1-B] (spike, sem portões): o capítulo do replay da PROPOSTA.md
+ * §2.3–2.4. Só o replay (o estacionamento saiu); vídeo em 7 colunas e, em 5,
+ * os selos, a frase, "Como funciona" (os 3 passos voltam, decisão do
+ * Thiago), a ficha, o "Em breve" e o botão do piloto. Abaixo, o bloco
+ * "Piloto gratuito", com as marcações de rascunho visíveis.
  */
 export function Produtos() {
-  const { title, intro, replay, estacionamento } = landingContent.produtos;
-  const stepsInCard = siteConfig.heroVariant !== "estudio";
+  const { title, replay } = landingContent.produtos;
+  const { piloto } = replay;
 
   return (
-    <section id="produtos" className="section surface-space" aria-labelledby="produtos-title">
+    <section id="replay" className="section surface-space" aria-labelledby="replay-title">
       <div className="container">
         <Reveal className="section-head">
-          <h2 id="produtos-title" className="section-title">
+          <h2 id="replay-title" className="section-title">
             {title}
           </h2>
-          <p className="lead">{intro}</p>
         </Reveal>
 
         <div className="produtos">
-          <article className="produto" aria-labelledby="produto-replay-title">
+          <article className="produto" aria-labelledby="replay-title">
             <div>
               <Palco className="project-card__palco">
                 <ReplayVideo video={replay.video} />
@@ -47,57 +44,58 @@ export function Produtos() {
             <div className="produto__corpo">
               <div className="produto__selos">
                 <SeloStatus status="piloto" />
-                {/* O vídeo é animação do conceito: a spec §10 manda identificá-lo. */}
                 <span className="selo selo--conceito">{landingContent.heroEstudio.illustrationBadge}</span>
               </div>
-              <h3 id="produto-replay-title" className="block-title">
-                {replay.name}
-              </h3>
               <p className="body-muted">{replay.oneLiner}</p>
-              {stepsInCard && (
-                <>
-                  {/* Só nos heros "video" e "classic", que saem na limpeza dos heros:
-                      o estilo vai em linha para não trazer de volta CSS só deles. */}
-                  <h4 id="produto-replay-passos-title" style={{ marginTop: "var(--space-5)", fontWeight: 600 }}>
-                    {replay.stepsTitle}
-                  </h4>
-                  <ol
-                    className="body-muted"
-                    aria-labelledby="produto-replay-passos-title"
-                    style={{ display: "grid", gap: "var(--space-2)", paddingLeft: "1.25em" }}
-                  >
-                    {replay.steps.map((step) => (
-                      <li key={step.lead}>
-                        <strong>{step.lead}</strong> {step.rest}
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
+              <h3 id="replay-passos-title" className="produto__passos-titulo">
+                {replay.stepsTitle}
+              </h3>
+              <ol className="produto__passos" role="list" aria-labelledby="replay-passos-title">
+                {replay.steps.map((step, index) => (
+                  <li key={step.lead}>
+                    <span className="produto__passo-num" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <p>
+                      <strong>{step.lead}</strong> {step.rest}
+                    </p>
+                  </li>
+                ))}
+              </ol>
               <FichaTecnica items={replay.specs} />
-              <div className="produto__acoes">
-                <WhatsAppButton message={landingContent.whatsappMessages.replay}>{replay.cta}</WhatsAppButton>
-                {replay.siteUrl && (
-                  <a href={replay.siteUrl} className="btn btn--outline">
-                    {replay.siteLinkLabel}
-                  </a>
-                )}
-              </div>
+              <p className="produto__embreve">
+                <SeloStatus status="emBreve" /> <span>{replay.emBreve}</span>
+              </p>
+              {/* v2.1 do Verbo: um botão só no capítulo, no fim do bloco do piloto. */}
             </div>
           </article>
 
-          <article className="produto" aria-labelledby="produto-estacionamento-title">
-            <div className="produto__corpo">
-              <SeloStatus status="desenvolvimento" />
-              <h3 id="produto-estacionamento-title" className="block-title">
-                {estacionamento.name}
-              </h3>
-              <p className="body-muted">{estacionamento.oneLiner}</p>
-              <div className="produto__acoes">
-                <WhatsAppButton message={landingContent.whatsappMessages.estacionamento}>
-                  {estacionamento.cta}
-                </WhatsAppButton>
-              </div>
+          <article className="piloto" aria-labelledby="piloto-title">
+            <h3 id="piloto-title" className="block-title">
+              {piloto.title}
+            </h3>
+            <p className="body-muted piloto__intro">{piloto.intro}</p>
+            <div className="piloto__listas">
+              {[piloto.leva, piloto.precisa].map((lista) => (
+                <div key={lista.title}>
+                  <h4 className="piloto__lista-titulo">{lista.title}</h4>
+                  <ul className="ruled-list" role="list">
+                    {lista.items.map((item) => (
+                      <li key={item}>
+                        <Rascunho text={item} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="piloto__status">{piloto.status}</p>
+            <p className="body-muted">
+              <Rascunho text={piloto.fim} />
+            </p>
+            <div className="piloto__acao">
+              <WhatsAppButton message={landingContent.whatsappMessages.replay}>{piloto.cta}</WhatsAppButton>
+              <p className="caption">{piloto.ctaNote}</p>
             </div>
           </article>
         </div>

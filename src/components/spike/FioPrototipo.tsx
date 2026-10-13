@@ -121,7 +121,7 @@ function measure() {
   const desk = vw >= 1024;
   const hero = docBox(document.querySelector("#inicio"))!;
   const quadro = docBox(document.querySelector(".hero-estudio__quadro"))!;
-  const cont = document.querySelector("#produtos .container")!;
+  const cont = document.querySelector("#replay .container")!;
   const cb = docBox(cont)!;
   const cs = getComputedStyle(cont);
   const contentL = cb.x + parseFloat(cs.paddingLeft);
@@ -129,7 +129,8 @@ function measure() {
   const laneR = (contentR + vw) / 2;
   const laneL = contentL / 2;
   const sec = (sel: string) => docBox(document.querySelector(sel))!;
-  const produtos = sec("#produtos");
+  const produtos = sec("#replay");
+  const duvidas = sec("#duvidas");
   const aplic = sec("#aplicativos");
   const sob = sec("#sob-medida");
   const como = docBox(document.querySelector("#sob-medida")?.nextElementSibling)!;
@@ -141,7 +142,7 @@ function measure() {
   const sobCont = sec("#sob-medida > .container");
   const equipeCont = sec("#equipe > .container");
   const walls = Array.from(document.querySelectorAll<HTMLElement>("#aplicativos .wall, #equipe .wall"));
-  return { vw, vh, mobile, desk, hero, quadro, contentL, contentR, laneR, laneL, produtos, aplic, sob, como, equipe, contato, form, contatoText, aplicCont, sobCont, equipeCont, walls };
+  return { vw, vh, mobile, desk, duvidas, hero, quadro, contentL, contentR, laneR, laneL, produtos, aplic, sob, como, equipe, contato, form, contatoText, aplicCont, sobCont, equipeCont, walls };
 }
 
 /** Posição e escala do símbolo do hero (sticky emulado no computador). */
@@ -152,8 +153,8 @@ function heroSymbol(L: Layout, sy: number) {
   const cy0 = L.quadro.y + L.quadro.h * 0.5;
   // Ponta da cauda: no pé do quadro, na pista da direita.
   const tailEnd0 = L.quadro.b - 6;
-  const maxShift = L.mobile ? L.vh * 1.25 : Math.max(0, L.hero.b - 2 - tailEnd0);
-  const end = L.mobile ? maxShift : Math.max(maxShift, L.vh * 0.5);
+  const maxShift = Math.max(0, L.hero.b - 2 - tailEnd0);
+  const end = Math.max(maxShift, L.vh * 0.5);
   const shift = clamp(sy, 0, maxShift);
   const p = clamp(sy / end);
   return { s, cx, cy: cy0 + shift, tailEnd: tailEnd0 + shift, laneStart: tailEnd0 + maxShift, p, end, shift, bandBottom: L.quadro.b + shift };
@@ -1217,13 +1218,15 @@ function renderCosturaV3(L: Layout, sy: number, trat: Trat3) {
   push([[L.laneL, L.como.y], [L.laneR, L.como.y]], L.como.y - H, L.como.y - H + L.vh * 0.18, onPaper, { beats: 1 });
   vertical(L.laneR, L.como.y, L.equipe.y, onPaper);
   push([[L.laneR, L.equipe.y], [L.laneL, L.equipe.y]], L.equipe.y - H, L.equipe.y - H + L.vh * 0.18, onPaper, { beats: 1 });
-  vertical(L.laneL, L.equipe.y, L.contato.y, onPaper);
+  vertical(L.laneL, L.equipe.y, L.duvidas.y, onPaper);
+  push([[L.laneL, L.duvidas.y], [L.laneR, L.duvidas.y]], L.duvidas.y - H, L.duvidas.y - H + L.vh * 0.18, onPaper, { beats: 1 });
+  vertical(L.laneR, L.duvidas.y, L.contato.y, onPaper);
   // contato: a régua leva o fio até a borda do formulário
   const ex = 20 * COS30; // extrusão do cartão (estrutura)
   const ey = 20 * SIN30;
   const fr = L.form;
   const xr = plano ? fr.x - 17 : Math.min(L.vw - 4, fr.r + ex);
-  push([[L.laneL, L.contato.y], [xr, L.contato.y]], L.contato.y - H, L.contato.y - H + L.vh * 0.2, onPaper, { beats: 1 });
+  push([[L.laneR, L.contato.y], [xr, L.contato.y]], L.contato.y - H, L.contato.y - H + L.vh * 0.2, onPaper, { beats: 1 });
   vertical(xr, L.contato.y, fr.y, onPaper);
   const cS0 = fr.y - L.vh * 0.8;
   const cS1 = fr.b - L.vh * 0.3;
@@ -1325,11 +1328,11 @@ function renderCosturaV3(L: Layout, sy: number, trat: Trat3) {
       ["1 · 01: o molde vazio", 0],
       ["2 · 01: a primeira peça bate e o conjunto recua", g.end * 0.2],
       ["3 · 01: as peças chegam de fora da tela", g.end * 0.47],
-      ["4 · 01: o símbolo montado; o fio sai", g.end * 0.9],
+      ["4 · 02: Replay e o bloco do piloto", L.produtos.y + L.produtos.h * 0.55 - H],
       ["5 · 03 → 04: a viga atravessa a tela", t3s0 + (t3s1 - t3s0) * 0.55],
-      ["6 · 03 → 04: assenta e vira fio", t3s0 + (t3s1 - t3s0) * 0.93],
-      ["7 · 07: o formulário ganha espessura", cS0 + (cS1 - cS0) * 0.6],
-      ["8 · 07: o cubo assenta no canto", cS1 + L.vh * 0.1],
+      ["6 · 07: Dúvidas, a régua", L.duvidas.y - H + L.vh * 0.1],
+      ["7 · 08: o formulário ganha espessura", cS0 + (cS1 - cS0) * 0.6],
+      ["8 · 08: o cubo assenta no canto", cS1 + L.vh * 0.1],
     ],
     comparar: [g.end * 0.47, t3s0 + (t3s1 - t3s0) * 0.55, cS0 + (cS1 - cS0) * 0.88],
   };

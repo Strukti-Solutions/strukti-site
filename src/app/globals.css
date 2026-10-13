@@ -2671,3 +2671,176 @@ textarea.field__input {
     padding-bottom: 6rem;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* SPIKE: prévia [S1-B/S1-A] — descartável, sem portões                 */
+/* ------------------------------------------------------------------ */
+/* Hero: sem o 3D (o fio desenha o símbolo, ?fio=costura); no celular, a
+   faixa do símbolo cai para ~34% da tela, para o botão caber na 1ª tela;
+   e mais rolagem para a montagem do símbolo. */
+.hero-estudio__quadro picture,
+.hero-estudio__canvas,
+.hero-estudio__selo {
+  visibility: hidden;
+}
+
+@media (max-width: 767px) {
+  .hero-estudio {
+    --he-qh: min(34svh, 74vw);
+  }
+}
+
+.hero-estudio__textos {
+  padding-bottom: calc(var(--space-7) + 60svh);
+}
+
+@media (min-width: 768px) {
+  .hero-estudio__textos {
+    padding-bottom: calc(var(--space-7) + 45svh);
+  }
+}
+
+.hero-estudio__actions {
+  align-items: center;
+  column-gap: var(--space-5);
+}
+
+.hero-estudio__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.hero-estudio__link:hover {
+  color: var(--link-hover, #ffffff);
+  text-decoration-thickness: 2px;
+}
+
+/* Replay: um produto só, vídeo em 7 colunas e o texto em 5. */
+.produtos {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .produtos > .produto:first-child {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: start;
+    column-gap: var(--space-7);
+    padding: var(--space-6);
+  }
+}
+
+.produto__passos-titulo {
+  margin-top: var(--space-5);
+  color: var(--color-cyan-300);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.produto__passos {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.produto__passos li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.produto__passo-num {
+  color: var(--color-cyan-300);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.produto__passos p {
+  color: var(--text-muted);
+}
+
+.produto__passos strong {
+  color: var(--text);
+}
+
+.produto__embreve {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+}
+
+/* Bloco "Piloto gratuito" (PROPOSTA §2.4). */
+.piloto {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-3);
+  background-color: var(--surface-raised);
+}
+
+@media (min-width: 1024px) {
+  .piloto {
+    padding: var(--space-6);
+  }
+}
+
+.piloto__listas {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .piloto__listas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-7);
+  }
+}
+
+.piloto__lista-titulo {
+  margin-bottom: var(--space-3);
+  color: var(--color-cyan-300);
+  font-weight: 600;
+}
+
+.piloto .ruled-list > li {
+  padding-block: var(--space-3);
+  color: var(--text-muted);
+}
+
+.piloto .ruled-list > li:first-child {
+  padding-top: 0;
+}
+
+.piloto__status {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.piloto__acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+/* Marcação de rascunho: dado que falta. Sem dado, não publica. */
+mark.rascunho {
+  padding: 0 4px;
+  border-radius: 2px;
+  background-color: #ffe14d;
+  box-shadow: inset 0 0 0 1px #08121d;
+  color: #08121d;
+  font-weight: 600;
+}

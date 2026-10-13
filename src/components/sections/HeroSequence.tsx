@@ -8,14 +8,13 @@ import { HeroSequenceScroller } from "./HeroSequenceScroller";
  * cartão do replay em Produtos para não repetir).
  */
 export function HeroSequence() {
-  const { eyebrow, headline, body, primaryCta, whatsappCta, illustrationBadge } = landingContent.heroEstudio;
-  const { stepsTitle, steps } = landingContent.produtos.replay;
+  const { eyebrow, headline, body, primaryCta, secondaryLink, illustrationBadge } = landingContent.heroEstudio;
 
   return (
     <HeroSequenceScroller
       badge={illustrationBadge}
-      stepsTitle={stepsTitle}
-      steps={steps}
+      stepsTitle=""
+      steps={[]}
       opening={
         <>
           <p className="hero-estudio__eyebrow">{eyebrow}</p>
@@ -24,10 +23,10 @@ export function HeroSequence() {
           </h1>
           <p className="lead">{body}</p>
           <div className="hero-estudio__actions">
-            <a href="#produtos" className="btn btn--primary">
-              {primaryCta}
+            <WhatsAppButton message={landingContent.whatsappMessages.replay}>{primaryCta}</WhatsAppButton>
+            <a href="#replay" className="hero-estudio__link">
+              {secondaryLink}
             </a>
-            <WhatsAppButton message={landingContent.whatsappMessages.general}>{whatsappCta}</WhatsAppButton>
           </div>
         </>
       }

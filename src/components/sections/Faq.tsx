@@ -2,6 +2,7 @@ import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LinkedText } from "@/components/LinkedText";
 import { Reveal } from "@/components/motion/Reveal";
+import { Rascunho } from "@/components/spike/Rascunho";
 
 /**
  * Acordeão em parede (MASTER §8.10). No desktop, título e chamada para o
@@ -33,7 +34,7 @@ export function Faq() {
                     {"answerLinkLabel" in item && item.answerLinkLabel ? (
                       <LinkedText text={item.answer} linkLabel={item.answerLinkLabel} href="/privacidade" />
                     ) : (
-                      item.answer
+                      <Rascunho text={item.answer} />
                     )}
                   </p>
                 </details>
