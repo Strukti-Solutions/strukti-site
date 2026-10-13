@@ -10,8 +10,9 @@ const HEXAGON_PATH =
   "M27.4 1.1Q29.5 0 31.6 1.1L56.9 14.5Q59 15.6 59 18V54Q59 56.4 56.9 57.5L31.6 70.9Q29.5 72 27.4 70.9L2.1 57.5Q0 56.4 0 54V18Q0 15.6 2.1 14.5Z";
 
 /** Parede de 4 blocos com as iniciais num hexágono, o nome e o curso (MASTER §8.9). */
-export function Equipe() {
-  const { title, intro } = landingContent.equipe;
+export function Equipe({ heroOpcao = "b" }: { heroOpcao?: "a" | "b" | "c" }) {
+  const { title } = landingContent.equipe;
+  const intro = heroOpcao === "c" ? landingContent.equipe.introComHeroC : landingContent.equipe.intro;
 
   return (
     <section id="equipe" className="section section--seam surface-paper" aria-labelledby="equipe-title">

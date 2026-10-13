@@ -40,7 +40,13 @@ export interface Project {
     accessibleName: string;
     caption: string;
     description: string;
+    /** Duração no nome do botão de reproduzir (v2.2). */
+    durationLabel?: string;
   };
+  /** Selo "Ilustração do conceito" ao lado do selo de fase (só o replay). */
+  illustrationBadge?: string;
+  /** O botão do cartão (v2.2): WhatsApp do replay ou formulário com "Aplicativo sob medida". */
+  cta?: { label: string; kind: "whatsapp-replay" | "interest-aplicativo" };
   /** Lista de destaques (fora da grade). */
   highlights?: readonly { lead: string; rest: string }[];
   platforms: readonly string[];
@@ -52,13 +58,14 @@ const PROJECTS: readonly Project[] = [
   {
     slug: "rota-de-vendas",
     name: "Rota de Vendas",
-    summary:
-      "O Rota de Vendas é um aplicativo que construímos para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.",
+    summary: "Para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.",
+    cta: { label: "Pedir diagnóstico gratuito", kind: "interest-aplicativo" },
     videoTitle: "Veja o Rota de Vendas",
     video: {
       src: "/video/brag.mp4",
       poster: "/video/brag.jpg",
       accessibleName: "Vídeo de demonstração do Rota de Vendas",
+      durationLabel: "22 s",
       caption:
         "Vídeo de demonstração, só com música. Os clientes, pedidos e endereços que aparecem são fictícios.",
       description:
@@ -97,12 +104,14 @@ const PROJECTS: readonly Project[] = [
     slug: "fleet-analytics-bi",
     name: "Fleet Analytics BI",
     summary:
-      "O Fleet Analytics BI é uma plataforma que construímos para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.",
+      "Para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.",
+    cta: { label: "Pedir diagnóstico gratuito", kind: "interest-aplicativo" },
     videoTitle: "Veja o Fleet Analytics BI",
     video: {
       src: "/video/fleet-analytics-bi.mp4",
       poster: "/video/fleet-analytics-bi.jpg",
       accessibleName: "Vídeo de demonstração do Fleet Analytics BI",
+      durationLabel: "53 s",
       caption: "Vídeo de demonstração, só com música.",
       description:
         'Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.',
@@ -125,23 +134,43 @@ export const landingContent = {
     emBreve: "Em breve",
   } satisfies Record<ProductStatus, string>,
 
+  /** PRÉVIA v2.2: as 3 opções do hero de marca (landing-copy-v2.2 §2). */
+  heroOpcoes: {
+    a: {
+      eyebrow: "Strukti Soluções, de João Pessoa",
+      headline: "A mesma equipe monta, programa e dá suporte.",
+      body: "Fazemos o replay para quadras de aluguel e aplicativos sob medida para empresas, e cuidamos da instalação.",
+    },
+    b: {
+      eyebrow: "Strukti Soluções, de João Pessoa",
+      headline: "Replay para quadras e aplicativos sob medida.",
+      body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
+    },
+    c: {
+      eyebrow: "Replay para quadras e aplicativos sob medida",
+      headline: "Você fala direto com quem monta e programa.",
+      body: "A Strukti Soluções, de João Pessoa, faz o equipamento e o software e cuida da instalação e do suporte.",
+    },
+  },
+
   heroEstudio: {
-    eyebrow: "Replay para quadras de aluguel",
-    headline: "O jogador aperta um botão e leva o lance no celular.",
-    body: "Estamos escolhendo as primeiras quadras para um piloto gratuito, com instalação e suporte da Strukti Soluções.",
-    primaryCta: "Quero o piloto na minha quadra",
-    secondaryLink: "Ver como funciona",
+    eyebrow: "Strukti Soluções, de João Pessoa",
+    headline: "Replay para quadras e aplicativos sob medida.",
+    body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
+    primaryCta: "Ver os produtos",
     whatsappCta: "Falar no WhatsApp",
     illustrationBadge: "Ilustração do conceito",
   },
 
   produtos: {
-    title: "Replay para quadras",
-    intro: "",
+    title: "Produtos",
+    intro:
+      "O selo de cada produto diz em que fase ele está. Os aplicativos são feitos sob medida, e o primeiro passo é um diagnóstico gratuito, sem compromisso.",
     replay: {
       name: "Replay para quadras",
       oneLiner:
-        "Para quadras de aluguel de society, futsal, vôlei e beach tennis. O jogador sai do jogo com o lance no celular, pronto para mandar no grupo do time, e o time ganha um motivo a mais para voltar à sua quadra.",
+        "Para quadras de aluguel: o jogador aperta um botão na beira da quadra, leva o lance no celular e ganha mais um motivo para voltar.",
+      illustrationBadge: "Ilustração do conceito",
       stepsTitle: "Como funciona",
       steps: [
         {
@@ -197,6 +226,7 @@ export const landingContent = {
         poster: "/video/replay.jpg",
         accessibleName: "Vídeo de demonstração do replay para quadras",
         playLabel: "Assistir ao vídeo: Replay para quadras",
+        durationLabel: "52 s",
         caption:
           "Animação que ilustra o conceito, só com música. A arena, os jogadores e as telas do celular são fictícios.",
         description:
@@ -216,7 +246,7 @@ export const landingContent = {
     projects: PROJECTS,
     grid: {
       showMore: "Mostrar mais projetos",
-      playLabel: "Assistir ao vídeo: {nome}",
+      playLabel: "Assistir ao vídeo: {nome} ({duração})",
     },
     videoDescriptionLinkLabel: "Ler a descrição do vídeo",
   },
@@ -234,12 +264,12 @@ export const landingContent = {
       {
         title: "Diagnóstico",
         description:
-          "Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso. Você recebe um resumo por escrito do que vale a pena fazer.",
+          "Antes de falar de equipamento ou de aplicativo, entendemos a rotina e onde o problema aparece. Se a solução não compensar, dizemos isso. Nos aplicativos, o diagnóstico é gratuito e termina com um resumo por escrito do que vale a pena fazer.",
       },
       {
         title: "Protótipo",
         description:
-          "Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa. No replay, esta etapa é o piloto gratuito.",
+          "Montamos uma primeira versão e testamos com você, em pequena escala, antes da instalação completa.",
       },
       {
         title: "Instalação",
@@ -249,7 +279,7 @@ export const landingContent = {
       {
         title: "Suporte direto",
         description:
-          "Quem instala é quem cuida depois. Você fala com a equipe pelo WhatsApp, sem central de atendimento, e a manutenção não depende de técnico de fora. Os aplicativos seguem com plano mensal de manutenção, suporte e hospedagem.",
+          "Quem instala é quem cuida depois. Você fala com a equipe pelo WhatsApp, sem central de atendimento, e a manutenção não depende de técnico de fora.",
       },
     ],
   },
@@ -325,7 +355,8 @@ export const landingContent = {
     skipLink: "Pular para o conteúdo",
     nav: [
       { label: "Replay", href: "#replay" },
-      { label: "Apps", href: "#aplicativos" },
+      { label: "Rota de Vendas", href: "#rota-de-vendas" },
+      { label: "Fleet Analytics BI", href: "#fleet-analytics-bi" },
       { label: "Equipe", href: "#equipe" },
       { label: "Contato", href: "#contato" },
     ],
@@ -349,44 +380,17 @@ export const landingContent = {
   equipe: {
     title: "Quem faz",
     intro:
-      "Somos quatro estudantes de engenharia da computação, em João Pessoa. Quem responde no WhatsApp é um de nós: você fala direto com quem monta o equipamento e escreve o código.",
+      "Somos quatro estudantes de engenharia da computação, em João Pessoa. No WhatsApp e na instalação, você fala direto com quem monta o equipamento e escreve o código.",
+    introComHeroC: "Somos quatro estudantes de engenharia da computação.",
   },
 
   faq: {
     title: "Dúvidas frequentes",
     items: [
       {
-        question: "O que a minha quadra precisa ter?",
-        answer:
-          "Wi-Fi funcionando [A PREENCHER: alcance], [A PREENCHER: ponto de energia] e [A PREENCHER: lugar para a câmera e o botão]. O resto a Strukti leva e instala. Se tiver dúvida sobre a sua quadra, mande uma foto dela pelo WhatsApp.",
-      },
-      {
-        question: "O replay precisa de internet?",
-        answer:
-          "Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes, e os jogadores veem os lances no celular, com a internet deles. Se o Wi-Fi cair, [A PREENCHER: o que acontece de verdade com os lances gravados]. Se a internet da sua arena for uma dúvida, vemos isso juntos antes do piloto.",
-      },
-      {
-        question: "Quanto tempo leva a instalação? A quadra fica parada?",
-        answer: "[A PREENCHER: tempo real de instalação de uma quadra, se ela para e por quanto tempo.]",
-      },
-      {
         question: "Quanto custa?",
         answer:
           "Depende do produto. O preço do replay ainda está sendo definido, e nesta fase oferecemos um piloto gratuito. Nos aplicativos, depois do diagnóstico gratuito você recebe uma proposta com o que será feito, o prazo e o preço, antes de qualquer compromisso.",
-      },
-      {
-        question: "O que acontece no fim do piloto?",
-        answer: "[A PREENCHER: quem fica com o equipamento, se há compromisso, como o preço é apresentado.]",
-      },
-      {
-        question: "E a privacidade de quem aparece no vídeo?",
-        answer:
-          "O replay está sendo construído assim: os clipes vão ficar disponíveis para os jogadores por 7 dias e depois serão apagados, e a quadra vai exibir um aviso de que há gravação.",
-      },
-      {
-        question: "O replay já usa inteligência artificial?",
-        answer:
-          "Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.",
       },
       {
         question: "Vocês atendem a minha cidade?",
@@ -396,12 +400,27 @@ export const landingContent = {
       {
         question: "E quando vocês se formarem, quem mantém tudo funcionando?",
         answer:
-          "Quem mantém é a Strukti: uma equipe, e não uma pessoa só. No replay, quem instala, dá suporte e faz a manutenção somos nós. Os aplicativos têm plano mensal de manutenção, suporte e hospedagem, que garante alguém cuidando deles hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de ninguém.",
+          "Quem mantém é a Strukti: uma equipe, e não uma pessoa só. Quem instala o equipamento ou entrega o aplicativo é quem cuida dele depois, hoje e depois da formatura. E cada projeto tem documentação, para não depender da memória de ninguém.",
       },
       {
-        question: "Vocês também fazem aplicativos?",
+        question: "O aplicativo se liga ao sistema que eu já uso?",
         answer:
-          "Fazemos. O aplicativo segue o jeito que a sua empresa já trabalha e se liga ao sistema que você já usa. Quando o sistema não permite, o aplicativo gera os arquivos no formato da empresa, como Excel, PDF ou Word. Tudo começa com o diagnóstico gratuito.",
+          "Sim, quando o sistema permite. Quando não permite, o aplicativo gera os arquivos no formato da empresa, como Excel, PDF ou Word. Nos dois casos, ele segue o jeito que a sua empresa já trabalha, e tudo começa com o diagnóstico gratuito.",
+      },
+      {
+        question: "O replay precisa de internet?",
+        answer:
+          "Precisa. O equipamento da quadra usa o Wi-Fi da própria arena para enviar os clipes. Os jogadores veem os lances no celular, com a internet deles. Se a internet da sua arena for uma dúvida, falamos disso na conversa.",
+      },
+      {
+        question: "O replay já usa inteligência artificial?",
+        answer:
+          "Ainda não. Hoje o clipe é cortado quando o jogador aperta o botão. Cortes automáticos e destaque por jogador, com inteligência artificial, vêm em breve.",
+      },
+      {
+        question: "E a privacidade de quem aparece no vídeo?",
+        answer:
+          "O replay está sendo construído assim: os clipes vão ficar disponíveis para os jogadores por 7 dias e depois serão apagados, e a quadra vai exibir um aviso de que há gravação.",
       },
       {
         question: "O que acontece com os dados que eu mando pelo formulário?",

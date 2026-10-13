@@ -121,7 +121,7 @@ function measure() {
   const desk = vw >= 1024;
   const hero = docBox(document.querySelector("#inicio"))!;
   const quadro = docBox(document.querySelector(".hero-estudio__quadro"))!;
-  const cont = document.querySelector("#replay .container")!;
+  const cont = document.querySelector("#produtos .container")!;
   const cb = docBox(cont)!;
   const cs = getComputedStyle(cont);
   const contentL = cb.x + parseFloat(cs.paddingLeft);
@@ -129,16 +129,16 @@ function measure() {
   const laneR = (contentR + vw) / 2;
   const laneL = contentL / 2;
   const sec = (sel: string) => docBox(document.querySelector(sel))!;
-  const produtos = sec("#replay");
+  const produtos = sec("#produtos");
   const duvidas = sec("#duvidas");
-  const aplic = sec("#aplicativos");
+  const aplic = docBox(document.querySelector("#aplicativos")) ?? produtos;
   const sob = sec("#sob-medida");
   const como = docBox(document.querySelector("#sob-medida")?.nextElementSibling)!;
   const equipe = sec("#equipe");
   const contato = sec("#contato");
   const form = sec("#contato .form-card");
   const contatoText = docBox(document.querySelector("#contato h2")?.parentElement);
-  const aplicCont = sec("#aplicativos > .container");
+  const aplicCont = docBox(document.querySelector("#aplicativos > .container")) ?? sec("#produtos > .container");
   const sobCont = sec("#sob-medida > .container");
   const equipeCont = sec("#equipe > .container");
   const walls = Array.from(document.querySelectorAll<HTMLElement>("#aplicativos .wall, #equipe .wall"));
@@ -1203,12 +1203,8 @@ function renderCosturaV3(L: Layout, sy: number, trat: Trat3) {
   };
   const vertical = (x: number, y0: number, y1: number, color: string) => push([[x, y0], [x, y1]], y0 - H, y1 - H, color, { follow: true });
   const y0 = g.laneStart;
-  const yN = L.aplic.y;
-  vertical(L.laneR, y0, yN, onDark);
-  // T2 (simplificado): um dente a 30° na passagem do espaço para a noite
-  push([[L.laneR, yN], [L.laneR - 16, yN + 9], [L.laneR, yN + 18]], yN - H, yN - H + L.vh * 0.06, onDark);
   const yB = L.sob.y;
-  vertical(L.laneR, yN + 18, yB, onDark);
+  vertical(L.laneR, y0, yB, onDark);
   // T3: janela longa, com compassos
   const t3s0 = yB - L.vh * 0.88;
   const t3s1 = yB - L.vh * 0.22;
@@ -1328,11 +1324,11 @@ function renderCosturaV3(L: Layout, sy: number, trat: Trat3) {
       ["1 · 01: o molde vazio", 0],
       ["2 · 01: a primeira peça bate e o conjunto recua", g.end * 0.2],
       ["3 · 01: as peças chegam de fora da tela", g.end * 0.47],
-      ["4 · 02: Replay e o bloco do piloto", L.produtos.y + L.produtos.h * 0.55 - H],
-      ["5 · 03 → 04: a viga atravessa a tela", t3s0 + (t3s1 - t3s0) * 0.55],
-      ["6 · 07: Dúvidas, a régua", L.duvidas.y - H + L.vh * 0.1],
-      ["7 · 08: o formulário ganha espessura", cS0 + (cS1 - cS0) * 0.6],
-      ["8 · 08: o cubo assenta no canto", cS1 + L.vh * 0.1],
+      ["4 · 02: Produtos, os 3 cartões", L.produtos.y + L.produtos.h * 0.4 - H],
+      ["5 · 02 → 03: a viga atravessa a tela", t3s0 + (t3s1 - t3s0) * 0.55],
+      ["6 · 06: Dúvidas, a régua", L.duvidas.y - H + L.vh * 0.1],
+      ["7 · 07: o formulário ganha espessura", cS0 + (cS1 - cS0) * 0.6],
+      ["8 · 07: o cubo assenta no canto", cS1 + L.vh * 0.1],
     ],
     comparar: [g.end * 0.47, t3s0 + (t3s1 - t3s0) * 0.55, cS0 + (cS1 - cS0) * 0.88],
   };

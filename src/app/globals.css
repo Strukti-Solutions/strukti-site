@@ -2844,3 +2844,38 @@ mark.rascunho {
   color: #08121d;
   font-weight: 600;
 }
+
+/* PRÉVIA v2.2 [S1-B]: Produtos, uma seção com os 3 cartões na parede (MASTER §5.2). */
+.produtos-secao .project-card {
+  scroll-margin-top: calc(var(--topbar-height) + var(--topbar-joint) + 16px);
+}
+
+.project-card__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.project-card__body .project-card__selos .selo {
+  margin-bottom: 0;
+}
+
+.project-card__cta {
+  margin-top: var(--space-4);
+}
+
+/* De 768 a 1023: o replay ocupa a linha de cima (palco ao lado do texto) e os 2 apps vêm embaixo. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .produtos-secao .wall--3 > .project-card:first-child {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    padding-bottom: 0;
+  }
+
+  .produtos-secao .wall--3 > .project-card:first-child .project-card__body {
+    padding: var(--space-5);
+  }
+}
