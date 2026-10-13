@@ -22,6 +22,10 @@ const C = {
   n800: "#15273B",
   n700: "#1E3550",
   n600: "#2A4766",
+  n900: "#0E1C2B",
+  n500: "#3D5E80",
+  n50: "#F1F5F8",
+  e900: "#063F82",
   n300: "#8EA6BE",
   n200: "#BFCEDC",
   n100: "#DFE7EF",
@@ -108,7 +112,7 @@ function docBox(el: Element | null | undefined): Box | null {
 type Layout = ReturnType<typeof measure>;
 
 /** Para a gravação: scroll final e quadros-chave (rótulo, scroll). */
-let marcos: { fim: number; lista: (string | number)[][] } | null = null;
+let marcos: { fim: number; lista: (string | number)[][]; comparar?: number[] } | null = null;
 
 function measure() {
   const vw = document.documentElement.clientWidth;
@@ -148,7 +152,7 @@ function heroSymbol(L: Layout, sy: number) {
   const cy0 = L.quadro.y + L.quadro.h * 0.5;
   // Ponta da cauda: no pé do quadro, na pista da direita.
   const tailEnd0 = L.quadro.b - 6;
-  const maxShift = L.mobile ? L.vh * 0.9 : Math.max(0, L.hero.b - 2 - tailEnd0);
+  const maxShift = L.mobile ? L.vh * 1.25 : Math.max(0, L.hero.b - 2 - tailEnd0);
   const end = L.mobile ? maxShift : Math.max(maxShift, L.vh * 0.5);
   const shift = clamp(sy, 0, maxShift);
   const p = clamp(sy / end);
@@ -592,11 +596,759 @@ function renderMontagem(L: Layout, sy: number) {
   return { svg: out, defs: "" };
 }
 
+/* ------------------------------------------------------------------ */
+/* Costura v2 (rodada 2): tratamentos "pesponto" e "tecnico"            */
+/* Sem brilho, sem degradê na linha, ritmo em compassos.               */
+/* ------------------------------------------------------------------ */
+type Trat = "pesponto" | "tecnico";
+
+/** Avança em compassos: em cada um, move (acelera e assenta) e depois pausa. */
+function beats(t: number, n: number, move = 0.68) {
+  t = clamp(t);
+  if (t >= 1) return 1;
+  const m = Math.floor(t * n);
+  const f = t * n - m;
+  return (m + (f < move ? easeInOut(f / move) : 1)) / n;
+}
+/** Assenta com um passo curto além do ponto e volta (sem mola exagerada). */
+const settleOut = (t: number) => {
+  const c1 = 0.9;
+  const c3 = c1 + 1;
+  return t <= 0 ? 0 : t >= 1 ? 1 : 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+};
+
+/** Ponto e direção a uma distância do início da polilinha. */
+function pointDirAt(p: P[], dist: number): { q: P; u: P } {
+  let left = dist;
+  for (let i = 1; i < p.length; i++) {
+    const dx = p[i][0] - p[i - 1][0];
+    const dy = p[i][1] - p[i - 1][1];
+    const seg = Math.hypot(dx, dy);
+    if (seg === 0) continue;
+    if (left <= seg || i === p.length - 1) {
+      const k = Math.min(1, left / seg);
+      return { q: [p[i - 1][0] + dx * k, p[i - 1][1] + dy * k], u: [dx / seg, dy / seg] };
+    }
+    left -= seg;
+  }
+  return { q: p[p.length - 1], u: [1, 0] };
+}
+/**
+ * Pesponto em ponto de sela (como na costura de couro): pontos curtos,
+ * inclinados 30° em relação ao caminho, que aparecem inteiros, um a um.
+ * Não é um tracejado de CSS (que lembraria "área para soltar arquivo").
+ */
+function stitched(pts: P[], t: number, color: string, o: { w?: number; len?: number; gap?: number; op?: number } = {}) {
+  const w = o.w ?? 2.8;
+  const len = o.len ?? 10;
+  const gap = o.gap ?? 6;
+  const total = polyLen(pts);
+  if (total <= 0 || t <= 0) return { svg: "", head: (pts[0] ?? [0, 0]) as P };
+  const q = len + gap;
+  const want = clamp(t) * total;
+  const n = t >= 1 ? Math.floor(total / q) : Math.floor(want / q) + (want % q >= len * 0.5 ? 1 : 0);
+  const cos = Math.cos(Math.PI / 6);
+  const sin = Math.sin(Math.PI / 6);
+  let d = "";
+  let head: P = pts[0];
+  for (let i = 0; i < n; i++) {
+    const dist = i * q + len / 2;
+    if (dist > total) break;
+    const { q: c, u } = pointDirAt(pts, dist);
+    const vx = u[0] * cos - u[1] * sin;
+    const vy = u[0] * sin + u[1] * cos;
+    const h = len / 2;
+    d += `M${f1(c[0] - vx * h)} ${f1(c[1] - vy * h)}L${f1(c[0] + vx * h)} ${f1(c[1] + vy * h)}`;
+    head = [c[0] + u[0] * (len / 2 + gap / 2), c[1] + u[1] * (len / 2 + gap / 2)];
+  }
+  const svg = d ? `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" opacity="${o.op ?? 1}"/>` : "";
+  return { svg, head };
+}
+/** Linha contínua e fina (desenho técnico). */
+function solid(pts: P[], t: number, color: string, w = 1.5, op = 1) {
+  if (t <= 0 || pts.length < 2) return { svg: "", head: (pts[0] ?? [0, 0]) as P };
+  const part = polyPart(pts, t);
+  return { svg: `<path d="${pathOf(part.pts)}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="square" stroke-linejoin="miter" opacity="${op}"/>`, head: part.head };
+}
+/** Ponto de cruz que prende duas partes: diagonais a 30°, cada uma um ponto separado. */
+function zigzag(x0: number, x1: number, y: number, amp: number): P[][] {
+  const dx = (2 * amp) / Math.tan(Math.PI / 6);
+  const n = Math.max(1, Math.floor(Math.abs(x1 - x0) / dx));
+  const step = (x1 - x0) / n;
+  const out: P[][] = [];
+  for (let i = 0; i < n; i++) {
+    const up = i % 2 === 0;
+    out.push([
+      [x0 + step * i, y + (up ? amp : -amp)],
+      [x0 + step * (i + 1), y + (up ? -amp : amp)],
+    ]);
+  }
+  return out;
+}
+function insetPoly(poly: P[], d: number): P[] {
+  const n = poly.length;
+  const cx = poly.reduce((a, q) => a + q[0], 0) / n;
+  const cy = poly.reduce((a, q) => a + q[1], 0) / n;
+  const lines = poly.map((q0, i) => {
+    const q1 = poly[(i + 1) % n];
+    let nx = -(q1[1] - q0[1]);
+    let ny = q1[0] - q0[0];
+    const l = Math.hypot(nx, ny);
+    nx /= l;
+    ny /= l;
+    if ((cx - (q0[0] + q1[0]) / 2) * nx + (cy - (q0[1] + q1[1]) / 2) * ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    return { p: [q0[0] + nx * d, q0[1] + ny * d] as P, dir: [q1[0] - q0[0], q1[1] - q0[1]] as P };
+  });
+  return lines.map((l1, i) => {
+    const l0 = lines[(i - 1 + n) % n];
+    const den = l0.dir[0] * l1.dir[1] - l0.dir[1] * l1.dir[0];
+    if (Math.abs(den) < 1e-9) return l1.p;
+    const a = ((l1.p[0] - l0.p[0]) * l1.dir[1] - (l1.p[1] - l0.p[1]) * l1.dir[0]) / den;
+    return [l0.p[0] + a * l0.dir[0], l0.p[1] + a * l0.dir[1]] as P;
+  });
+}
+const POLY: Record<"A" | "B" | "Ct" | "Cf" | "D", P[]> = {
+  A: [[424, 365], [627, 258], [752, 324], [424, 476.5]],
+  B: [[774, 335.4], [830, 365], [830, 505], [617.3, 407.7]],
+  Ct: [[563.5, 425.6], [830, 548.4], [699.1, 609], [432.6, 486.2]],
+  Cf: [[699.1, 609], [830, 548.4], [830, 649], [699.1, 718]],
+  D: [[424, 523.8], [677, 636.2], [677, 729.7], [627, 756], [424, 649]],
+};
+// Vista do Encaixe (MASTER §9.4, public/brand/strukti-encaixe.svg), afastada 1,8×.
+const ENC: Record<string, P> = { A: [-47, -32], B: [54, -25], Ct: [0, 0], Cf: [0, 0], D: [-43, 47] };
+const close = (poly: P[]) => [...poly, poly[0]];
+
+/** Marca de registro (círculo e mira) com o número do capítulo. */
+function regMark(x: number, y: number, color: string, label: string, t: number, side: "left" | "right" = "left") {
+  if (t <= 0) return "";
+  const k = settleOut(t);
+  const r = 7 * k;
+  const arm = 13 * k;
+  const tx = side === "left" ? x - 20 : x + 20;
+  return `<g opacity="${clamp(t * 2).toFixed(2)}">
+  <circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="none" stroke="${color}" stroke-width="1.5"/>
+  <path d="M${f1(x - arm)} ${f1(y)}H${f1(x + arm)}M${f1(x)} ${f1(y - arm)}V${f1(y + arm)}" stroke="${color}" stroke-width="1.5"/>
+  <text x="${f1(tx)}" y="${f1(y + 5)}" text-anchor="${side === "left" ? "end" : "start"}" fill="${color}" style="font: 600 14px var(--font-geologica), system-ui, sans-serif; font-variant-numeric: tabular-nums">${label}</text></g>`;
+}
+/** Marca de corte (canto em L), como na prova de impressão. */
+function cropMark(x: number, y: number, sx: number, sy: number, color: string, t: number) {
+  if (t <= 0) return "";
+  const l = 18 * settleOut(t);
+  return `<path d="M${f1(x + sx * l)} ${f1(y)}H${f1(x)}V${f1(y + sy * l)}" fill="none" stroke="${color}" stroke-width="1.5" opacity="${clamp(t * 2).toFixed(2)}"/>`;
+}
+
+function renderCosturaV2(L: Layout, sy: number, trat: Trat) {
+  const tec = trat === "tecnico";
+  const H = L.vh * 0.72;
+  const hl = sy + H;
+  const g = heroSymbol(L, sy);
+  const p = g.p;
+  const onDark = tec ? C.cyan300 : C.cyan;
+  const onPaper = C.e700;
+  const seamColor = C.e500;
+  const draw = (pts: P[], t: number, color: string) => (tec ? solid(pts, t, color) : stitched(pts, t, color));
+  let out = mobileBand(L, g);
+  out += `<circle cx="${f1(g.cx)}" cy="${f1(g.cy)}" r="${f1(498 * g.s * 0.95)}" fill="url(#fio-luz)" opacity="0.5"/>`;
+  const needle = (q: P, color = C.e500) => `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="4.5" fill="${color}"/>`;
+  const headTec = (q: P, color: string) => `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="4" fill="${C.n950}" stroke="${color}" stroke-width="1.5"/>`;
+
+  // ---------------- Capítulo 01: o símbolo ----------------
+  let heroHead: P | null = null;
+  if (!tec) {
+    // Pesponto: as peças começam afastadas (o Encaixe). Cada uma é pespontada e puxada até encaixar.
+    out += `<g transform="translate(${f1(g.cx)} ${f1(g.cy)}) scale(${g.s.toFixed(4)}) translate(${-SYM_C[0]} ${-SYM_C[1]})"><path d="${pathOf(HEX)}" fill="none" stroke="${C.n600}" stroke-width="${f1(1.2 / g.s)}" stroke-dasharray="${f1(6 / g.s)} ${f1(7 / g.s)}" opacity="${(1 - range(p, 0.3, 0.8)).toFixed(2)}"/></g>`;
+    const plan: { k: keyof typeof POLY; a: number; b: number; with?: keyof typeof POLY }[] = [
+      { k: "Ct", a: 0.06, b: 0.24, with: "Cf" },
+      { k: "A", a: 0.24, b: 0.42 },
+      { k: "B", a: 0.42, b: 0.6 },
+      { k: "D", a: 0.6, b: 0.78 },
+    ];
+    let pieces = "";
+    let stitches = "";
+    for (const st of plan) {
+      const m = range(p, st.a, st.b);
+      const sew = range(m, 0, 0.62);
+      const pull = settleOut(range(m, 0.72, 1));
+      const keys = st.with ? [st.k, st.with] : [st.k];
+      for (const k of keys) {
+        const off = ENC[k];
+        const ox = off[0] * (1 - pull);
+        const oy = off[1] * (1 - pull);
+        pieces += `<path d="${PIECES[k]}" fill="${FILL[k]}" transform="translate(${f1(ox)} ${f1(oy)})"/>`;
+        const pts = close(insetPoly(POLY[k], 11)).map((q) => symPt(g, [q[0] + ox, q[1] + oy]));
+        const part = keys.length === 2 ? (k === st.k ? range(sew, 0, 0.6) : range(sew, 0.6, 1)) : sew;
+        const s = stitched(pts, part, C.n950, { w: 2.2, len: 7, gap: 4, op: 0.9 });
+        stitches += s.svg;
+        if (part > 0 && part < 1) heroHead = s.head;
+      }
+    }
+    out += `<g transform="translate(${f1(g.cx)} ${f1(g.cy)}) scale(${g.s.toFixed(4)}) translate(${-SYM_C[0]} ${-SYM_C[1]})">${pieces}</g>` + stitches;
+    if (!heroHead && p < 0.06) heroHead = symPt(g, close(insetPoly(POLY.Ct, 11))[0]);
+    if (heroHead) out += needle(heroHead);
+  } else {
+    // Desenho técnico: linhas de construção, arestas em compassos, cota, e só então as peças.
+    const cons = easeOut(range(p, 0.04, 0.2));
+    let consSvg = "";
+    if (cons > 0)
+      for (const v of HEX.slice(0, 6)) {
+        for (const a of [Math.PI / 2, Math.PI / 6, (5 * Math.PI) / 6]) {
+          const l = 70 * cons;
+          const q0 = symPt(g, [v[0] - Math.cos(a) * l, v[1] - Math.sin(a) * l]);
+          const q1 = symPt(g, [v[0] + Math.cos(a) * l, v[1] + Math.sin(a) * l]);
+          consSvg += `<path d="M${f1(q0[0])} ${f1(q0[1])}L${f1(q1[0])} ${f1(q1[1])}" stroke="${C.n600}" stroke-width="1" stroke-dasharray="3 4" opacity="${(1 - 0.5 * range(p, 0.7, 0.9)).toFixed(2)}"/>`;
+        }
+      }
+    out += consSvg;
+    // peças (por baixo das linhas), entram pelo eixo e assentam
+    let fills = "";
+    (["Ct", "Cf", "A", "B", "D"] as const).forEach((k, i) => {
+      const t = range(p, 0.66 + i * 0.03, 0.8 + i * 0.03);
+      if (t <= 0) return;
+      const d = DIR_DESK[k];
+      const o = 26 * (1 - settleOut(t));
+      fills += `<path d="${PIECES[k]}" fill="${FILL[k]}" opacity="${clamp(t * 1.6).toFixed(2)}" transform="translate(${f1(d[0] * o)} ${f1(d[1] * o)})"/>`;
+    });
+    out += `<g transform="translate(${f1(g.cx)} ${f1(g.cy)}) scale(${g.s.toFixed(4)}) translate(${-SYM_C[0]} ${-SYM_C[1]})">${fills}</g>`;
+    const hexPts = HEX.map((q) => symPt(g, q));
+    const he = solid(hexPts, beats(range(p, 0.16, 0.46), 6), onDark, 1.5);
+    out += he.svg;
+    if (range(p, 0.16, 0.46) > 0 && range(p, 0.16, 0.46) < 1) heroHead = he.head;
+    (["A", "B", "Ct", "Cf", "D"] as const).forEach((k, i) => {
+      const t = beats(range(p, 0.44 + i * 0.03, 0.56 + i * 0.03), 1);
+      out += solid(close(POLY[k]).map((q) => symPt(g, q)), t, onDark, 1.2, 0.85).svg;
+    });
+    // cota da altura, à direita: linhas de chamada a 30°, linha de cota a 90°, traços oblíquos
+    const ct = range(p, 0.56, 0.7);
+    if (ct > 0) {
+      const ext = 54 * easeOut(ct);
+      const a: P = symPt(g, [830, 365]);
+      const b: P = symPt(g, [830, 649]);
+      const ex = Math.cos(Math.PI / 6) * ext;
+      const ey = -Math.sin(Math.PI / 6) * ext;
+      const xa: P = [a[0] + ex * g.s, a[1] + ey * g.s];
+      const xb: P = [b[0] + ex * g.s, b[1] + ey * g.s];
+      out += `<path d="M${f1(a[0] + 6)} ${f1(a[1] - 3)}L${f1(xa[0])} ${f1(xa[1])}M${f1(b[0] + 6)} ${f1(b[1] - 3)}L${f1(xb[0])} ${f1(xb[1])}" stroke="${C.n300}" stroke-width="1"/>`;
+      const dl = beats(range(ct, 0.35, 1), 1);
+      if (dl > 0) {
+        const mx = xa[0] - 8 * g.s;
+        const y0 = xa[1] - 0;
+        const y1 = y0 + (xb[1] - xa[1]) * dl;
+        out += `<path d="M${f1(mx)} ${f1(y0)}V${f1(y1)}" stroke="${C.n300}" stroke-width="1"/>`;
+        out += `<path d="M${f1(mx - 5)} ${f1(y0 + 3)}l10 -6M${f1(mx - 5)} ${f1(y1 + 3)}l10 -6" stroke="${C.n300}" stroke-width="1.5"/>`;
+        if (dl >= 1) out += `<text x="${f1(mx + 10)}" y="${f1((y0 + y1) / 2 + 5)}" fill="${C.n300}" style="font: 600 14px var(--font-geologica), system-ui, sans-serif; font-variant-numeric: tabular-nums">01</text>`;
+      }
+    }
+    if (heroHead) out += headTec(heroHead, onDark);
+    else if (p < 0.16) out += headTec(hexPts[0], onDark);
+  }
+
+  // cauda: do vértice de baixo, a 30°, até a pista da direita; desce em dois compassos
+  const bottom = symPt(g, [627, 756]);
+  const knee: P = [L.laneR, bottom[1] + Math.abs(L.laneR - bottom[0]) * 0.577];
+  const tailPts: P[] = [bottom, knee, [L.laneR, Math.max(knee[1], g.tailEnd)]];
+  const tailT = beats(range(p, tec ? 0.84 : 0.8, 1), 2);
+  const tail = draw(tailPts, tailT, onDark);
+  out += tail.svg;
+  if (tailT > 0 && tailT < 1) out += tec ? headTec(tail.head, onDark) : needle(tail.head);
+  if (tec) out += regMark(knee[0], knee[1], onDark, "01", range(p, 0.9, 1));
+
+  // ---------------- Do hero ao contato ----------------
+  type Seg = { pts: P[]; s0: number; s1: number; color: string; follow?: boolean; beats?: number };
+  const segs: Seg[] = [];
+  let last = g.end;
+  const push = (pts: P[], s0: number, s1: number, color: string, o: Partial<Seg> = {}) => {
+    const a = Math.max(s0, last);
+    const b = Math.max(s1, a + 1);
+    segs.push({ pts, s0: a, s1: b, color, ...o });
+    last = b;
+  };
+  const vertical = (x: number, y0: number, y1: number, color: string) => push([[x, y0], [x, y1]], y0 - H, y1 - H, color, { follow: true });
+  const marks: { x: number; y: number; color: string; label: string; s: number; side: "left" | "right" }[] = [];
+
+  const y0 = g.laneStart;
+  vertical(L.laneR, y0, L.produtos.y, onDark);
+  marks.push({ x: L.laneR, y: L.produtos.y, color: onDark, label: "02", s: L.produtos.y - H, side: "left" });
+  const yN = L.aplic.y;
+  vertical(L.laneR, L.produtos.y, yN, onDark);
+  marks.push({ x: L.laneR, y: yN, color: onDark, label: "03", s: yN - H, side: "left" });
+  // T2 (simplificado): três pontos prendem o espaço à noite, na pista
+  const t2 = zigzag(L.laneR - 42, L.laneR, yN, 6);
+  const yB = L.sob.y;
+  vertical(L.laneR, yN, yB, onDark);
+
+  // T3, a virada da noite para o papel: janela longa, em compassos
+  const t3s0 = yB - L.vh * 0.88;
+  const t3s1 = yB - L.vh * 0.22;
+  last = Math.max(last, t3s1);
+  const t3 = range(sy, t3s0, t3s1);
+
+  vertical(L.laneL, yB, L.como.y, onPaper);
+  marks.push({ x: L.laneL, y: yB, color: onPaper, label: "04", s: t3s1, side: "right" });
+  // réguas costuradas em zigue-zague (Como trabalhamos, Equipe)
+  push([[L.laneL, L.como.y], [L.laneR, L.como.y]], L.como.y - H, L.como.y - H + L.vh * 0.2, onPaper, { beats: 2 });
+  marks.push({ x: L.laneR, y: L.como.y, color: onPaper, label: "05", s: L.como.y - H + L.vh * 0.2, side: "left" });
+  vertical(L.laneR, L.como.y, L.equipe.y, onPaper);
+  push([[L.laneR, L.equipe.y], [L.laneL, L.equipe.y]], L.equipe.y - H, L.equipe.y - H + L.vh * 0.2, onPaper, { beats: 2 });
+  marks.push({ x: L.laneL, y: L.equipe.y, color: onPaper, label: "06", s: L.equipe.y - H + L.vh * 0.2, side: "right" });
+  vertical(L.laneL, L.equipe.y, L.contato.y, onPaper);
+  marks.push({ x: L.laneL, y: L.contato.y, color: onPaper, label: "07", s: L.contato.y - H, side: "right" });
+
+  // contato
+  const off = 14;
+  const R = tec ? 0 : 24;
+  const fx0 = L.form.x - off;
+  const fx1 = L.form.r + off;
+  const fy0 = L.form.y - off;
+  const fy1 = L.form.b + off;
+  const midX = (fx0 + fx1) / 2;
+  const cS0 = fy0 - L.vh * 0.9;
+  const cS1 = fy1 - L.vh * 0.55;
+  const gapX = L.contatoText ? (L.contatoText.r + fx0) / 2 : fx0 - 24;
+  if (!tec) {
+    if (L.mobile) vertical(L.laneL, L.contato.y, fy0 + R, onPaper);
+    else {
+      push([[L.laneL, L.contato.y], [midX, L.contato.y]], L.contato.y - H, L.contato.y - H + L.vh * 0.22, onPaper, { beats: 2 });
+      vertical(midX, L.contato.y, fy0, onPaper);
+    }
+  } else {
+    if (L.mobile) vertical(L.laneL, L.contato.y, fy1, onPaper);
+    else {
+      // a régua vira uma fiada de 30°/150° até o vão entre o texto e o formulário, e desce como a cota do formulário
+      const zz = zigzag(L.laneL, gapX, L.contato.y + 10, 10);
+      const zpts: P[] = [[L.laneL, L.contato.y], ...zz.map((s) => s[1])];
+      push(zpts, L.contato.y - H, L.contato.y - H + L.vh * 0.24, onPaper, { beats: 3 });
+      vertical(zpts[zpts.length - 1][0], zpts[zpts.length - 1][1], fy1, onPaper);
+    }
+  }
+
+  // --- desenha os segmentos ---
+  let headAt: { q: P; color: string } | null = null;
+  for (const sg of segs) {
+    const t = range(sy, sg.s0, sg.s1);
+    if (t <= 0) break;
+    const tt = sg.follow ? t : beats(t, sg.beats ?? 1);
+    const r = draw(sg.pts, tt, sg.color);
+    out += r.svg;
+    headAt = t < 1 ? { q: r.head, color: sg.color } : { q: sg.pts[sg.pts.length - 1], color: sg.color };
+  }
+  // T2: três pontos
+  const t2t = range(sy, yN - H - L.vh * 0.05, yN - H + L.vh * 0.1);
+  if (!tec && t2t > 0) t2.forEach((sg, i) => { const k = range(t2t, i / 3, (i + 1) / 3); if (k > 0) out += `<path d="M${f1(sg[0][0])} ${f1(sg[0][1])}L${f1(sg[0][0] + (sg[1][0] - sg[0][0]) * k)} ${f1(sg[0][1] + (sg[1][1] - sg[0][1]) * k)}" stroke="${seamColor}" stroke-width="3"/>`; });
+
+  // T3: a costura que prende a noite ao papel
+  if (t3 > 0) {
+    const amp0 = tec ? 10 : 9;
+    const sew = beats(range(t3, 0.26, 0.8), 4);
+    const tight = settleOut(range(t3, 0.8, 1));
+    const amp = amp0 - (tec ? 0 : 3.5 * tight);
+    const zz = zigzag(L.laneR, L.laneL, yB, amp);
+    const n = zz.length;
+    const done = sew * n;
+    if (!tec) {
+      zz.forEach((s, i) => {
+        const f = clamp(done - i);
+        if (f <= 0) return;
+        // cada ponto, encurtado nas pontas: os pontos não se tocam
+        const a = s[0];
+        const b = s[1];
+        const ux = (b[0] - a[0]) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const uy = (b[1] - a[1]) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const a2: P = [a[0] + ux * 2.5, a[1] + uy * 2.5];
+        const b2: P = [b[0] - ux * 2.5, b[1] - uy * 2.5];
+        const e: P = [a2[0] + (b2[0] - a2[0]) * f, a2[1] + (b2[1] - a2[1]) * f];
+        out += `<path d="M${f1(a2[0])} ${f1(a2[1])}L${f1(e[0])} ${f1(e[1])}" stroke="${seamColor}" stroke-width="3" stroke-linecap="butt"/>`;
+      });
+      if (tight > 0) out += `<path d="M${f1(L.laneR)} ${f1(yB)}L${f1(L.laneR + (L.laneL - L.laneR) * clamp(tight))} ${f1(yB)}" stroke="${seamColor}" stroke-width="1" opacity=".55"/>`;
+      if (sew > 0 && sew < 1) out += needle(zz[Math.min(n - 1, Math.floor(done))]?.[1] ?? [L.laneR, yB]);
+    } else {
+      const pts: P[] = [[L.laneR, yB], ...zz.map((s) => s[1])];
+      const r = solid(pts, sew, seamColor, 1.5);
+      out += r.svg;
+      if (sew > 0 && sew < 1) out += headTec(r.head, seamColor);
+      out += regMark(L.laneR, yB, onDark, "03", range(t3, 0.12, 0.3), "left");
+    }
+  }
+
+  // contato
+  const ct = tec ? range(sy, cS0, cS1) : range(sy, Math.max(cS0, last - 1), cS1);
+  let fim = cS1 + L.vh * 0.3;
+  if (ct > 0) {
+    if (!tec) {
+      // duas agulhas descem pelos lados e se encontram embaixo; o arremate fecha
+      const half = (side: -1 | 1): P[] => {
+        const fx = side < 0 ? fx0 : fx1;
+        if (L.mobile) {
+          return side < 0
+            ? [[fx0, fy0 + R], [fx0, fy1 - R], ...arc(fx0 + R, fy1 - R, R, Math.PI, Math.PI / 2), [midX, fy1]]
+            : [[fx0, fy0 + R], ...arc(fx0 + R, fy0 + R, R, Math.PI, Math.PI * 1.5), [fx1 - R, fy0], ...arc(fx1 - R, fy0 + R, R, -Math.PI / 2, 0), [fx1, fy1 - R], ...arc(fx1 - R, fy1 - R, R, 0, Math.PI / 2), [midX, fy1]];
+        }
+        return side < 0
+          ? [[midX, fy0], [fx0 + R, fy0], ...arc(fx0 + R, fy0 + R, R, Math.PI * 1.5, Math.PI), [fx, fy1 - R], ...arc(fx0 + R, fy1 - R, R, Math.PI, Math.PI / 2), [midX, fy1]]
+          : [[midX, fy0], [fx1 - R, fy0], ...arc(fx1 - R, fy0 + R, R, -Math.PI / 2, 0), [fx, fy1 - R], ...arc(fx1 - R, fy1 - R, R, 0, Math.PI / 2), [midX, fy1]];
+      };
+      // compassos: topo (até os cantos), pausa; lados acompanham a rolagem; base fecha; arremate
+      const phase = (h: P[], t: number) => {
+        const total = polyLen(h);
+        const topLen = L.mobile ? (h.length > 12 ? Math.abs(fx1 - fx0) : 0) : Math.abs(midX - fx0);
+        const sideLen = fy1 - fy0;
+        const a = topLen / total;
+        const b = (topLen + sideLen) / total;
+        if (t < 0.18) return a * beats(t / 0.18, 1);
+        if (t < 0.8) return a + (b - a) * ((t - 0.18) / 0.62);
+        if (t < 0.92) return b + (1 - b) * easeInOut((t - 0.8) / 0.12);
+        return 1;
+      };
+      const hA = half(-1);
+      const hB = half(1);
+      const ra = stitched(hA, phase(hA, ct), onPaper);
+      const rb = stitched(hB, phase(hB, ct), onPaper);
+      out += ra.svg + rb.svg;
+      if (ct < 0.92) out += needle(ra.head) + needle(rb.head);
+      const knot = range(ct, 0.92, 1);
+      if (knot > 0) {
+        // arremate: dois pontos cruzados e o nó (o ponto do i)
+        const k = settleOut(knot);
+        const l = 11 * k;
+        out += `<path d="M${f1(midX - l)} ${f1(fy1 - l * 0.58)}L${f1(midX + l)} ${f1(fy1 + l * 0.58)}M${f1(midX - l)} ${f1(fy1 + l * 0.58)}L${f1(midX + l)} ${f1(fy1 - l * 0.58)}" stroke="${onPaper}" stroke-width="3"/>`;
+        out += `<circle cx="${f1(midX)}" cy="${f1(fy1)}" r="${f1(6 * k)}" fill="${C.e500}"/>`;
+      }
+      fim = cS1 + L.vh * 0.25;
+    } else {
+      // marcas de corte nos cantos e a cota descendo pelo lado; o registro final leva o ponto
+      out += cropMark(fx0, fy0, 1, 1, onPaper, range(ct, 0.02, 0.12)) + cropMark(fx1, fy0, -1, 1, onPaper, range(ct, 0.08, 0.18));
+      out += cropMark(fx0, fy1, 1, -1, onPaper, range(ct, 0.8, 0.88)) + cropMark(fx1, fy1, -1, -1, onPaper, range(ct, 0.84, 0.92));
+      const cx = fx1 + 26;
+      const dl = range(ct, 0.18, 0.8);
+      if (dl > 0) {
+        const yy = fy0 + (fy1 - fy0) * dl;
+        out += `<path d="M${f1(fx1 + 4)} ${f1(fy0)}H${f1(cx + 8)}" stroke="${C.n500}" stroke-width="1"/>`;
+        out += `<path d="M${f1(cx)} ${f1(fy0)}V${f1(yy)}" stroke="${onPaper}" stroke-width="1.5"/><path d="M${f1(cx - 5)} ${f1(fy0 + 3)}l10 -6" stroke="${onPaper}" stroke-width="1.5"/>`;
+        if (dl >= 1) out += `<path d="M${f1(fx1 + 4)} ${f1(fy1)}H${f1(cx + 8)}M${f1(cx - 5)} ${f1(fy1 + 3)}l10 -6" stroke="${onPaper}" stroke-width="1.5"/>`;
+      }
+      if (!L.mobile && ct > 0.05) { const gx = gapX; out += `<path d="M${f1(L.form.x - 4)} ${f1(L.form.y)}H${f1(gx - 8)}M${f1(gx - 5)} ${f1(L.form.y + 3)}l10 -6" stroke="${C.n500}" stroke-width="1"/>`; if (ct > 0.8) out += `<path d="M${f1(L.form.x - 4)} ${f1(L.form.b)}H${f1(gx - 8)}M${f1(gx - 5)} ${f1(L.form.b + 3)}l10 -6" stroke="${C.n500}" stroke-width="1"/>`; }
+      const fin = range(ct, 0.92, 1);
+      if (fin > 0) {
+        out += regMark(fx1, fy1 + 30, onPaper, "07", fin, "right");
+        out += `<circle cx="${f1(fx1)}" cy="${f1(fy1 + 30)}" r="${f1(4.5 * settleOut(fin))}" fill="${C.e500}"/>`;
+      }
+      fim = cS1 + L.vh * 0.25;
+    }
+  }
+
+  // cabeça da linha (quando não há outra agulha em cena)
+  if (headAt && (t3 <= 0 || t3 >= 1) && ct <= 0) out += tec ? headTec(headAt.q, headAt.color) : needle(headAt.q);
+  // marcas de registro (só no técnico)
+  if (tec) for (const m of marks) out += regMark(m.x, m.y, m.color, m.label, range(sy, m.s - L.vh * 0.02, m.s + L.vh * 0.08), m.side);
+
+  marcos = {
+    fim,
+    lista: [
+      ["1 · capítulo 01: as peças afastadas", 0],
+      ["2 · 01: pespontada, a peça é puxada", g.end * 0.38],
+      ["3 · 01: a última peça assenta", g.end * 0.75],
+      ["4 · a linha desce pela margem", L.aplic.y - H + L.vh * 0.2],
+      ["5 · 03 → 04: o ponto que prende a noite ao papel", t3s0 + (t3s1 - t3s0) * 0.62],
+      ["6 · 04 → 04: assentou", t3s1 + L.vh * 0.05],
+      ["7 · 07: as duas agulhas descem", cS0 + (cS1 - cS0) * 0.55],
+      ["8 · 07: o arremate", cS1 + L.vh * 0.12],
+    ],
+    comparar: [g.end * 0.66, t3s0 + (t3s1 - t3s0) * 0.62, cS0 + (cS1 - cS0) * 0.9],
+  };
+  return { svg: out, defs: "" };
+}
+
+/* ------------------------------------------------------------------ */
+/* Costura v3 (rodada 2, correção de rumo): "estrutura" e "plano"       */
+/* Fio contínuo; nos clímax ele vira estrutura. Sem brilho, sem degradê */
+/* na linha, poucas cores; ritmo: acelera, freia seco, assenta com peso.*/
+/* ------------------------------------------------------------------ */
+type Trat3 = "estrutura" | "plano";
+const COS30 = Math.cos(Math.PI / 6);
+const SIN30 = 0.5;
+
+/** Acelera, freia seco e assenta com peso (passa 2,5% e volta). */
+function heavy(t: number) {
+  t = clamp(t);
+  if (t < 0.6) {
+    const k = t / 0.6;
+    return 1.025 * k * k * k;
+  }
+  if (t < 0.78) return 1.025 - 0.035 * easeOut((t - 0.6) / 0.18);
+  return 0.99 + 0.01 * easeInOut((t - 0.78) / 0.22);
+}
+/** Impulso curto depois de um impacto (o conjunto recua e volta). */
+const kick = (v: number, a: number, len: number) => {
+  const t = (v - a) / len;
+  return t <= 0 || t >= 1 ? 0 : Math.sin(Math.PI * t) * (1 - t);
+};
+const polyg = (pts: P[], fill: string) => `<polygon points="${pts.map((q) => `${f1(q[0])},${f1(q[1])}`).join(" ")}" fill="${fill}"/>`;
+
+/** Viga isométrica: face da frente, topo a 30° e a ponta direita. */
+function beam(x0: number, x1: number, yTop: number, th: number, depth: number, cTop: string, cFront: string, cEnd: string) {
+  if (x1 - x0 <= 0.5) return "";
+  const dx = depth * COS30;
+  const dy = depth * SIN30;
+  let s = "";
+  if (depth > 0.3) s += polyg([[x0, yTop], [x1, yTop], [x1 + dx, yTop - dy], [x0 + dx, yTop - dy]], cTop);
+  s += polyg([[x0, yTop], [x1, yTop], [x1, yTop + th], [x0, yTop + th]], cFront);
+  if (depth > 0.3) s += polyg([[x1, yTop], [x1 + dx, yTop - dy], [x1 + dx, yTop - dy + th], [x1, yTop + th]], cEnd);
+  return s;
+}
+/** Cubo isométrico (o ponto final), apoiado em (x, y). */
+function cube(x: number, y: number, a: number, cTop: string, cRight: string, cLeft: string) {
+  const dx = a * COS30;
+  const dy = a * SIN30;
+  const top: P[] = [[x, y - a - 2 * dy], [x + dx, y - a - dy], [x, y - a], [x - dx, y - a - dy]];
+  const right: P[] = [[x, y - a], [x + dx, y - a - dy], [x + dx, y - dy], [x, y]];
+  const left: P[] = [[x, y - a], [x - dx, y - a - dy], [x - dx, y - dy], [x, y]];
+  return polyg(top, cTop) + polyg(right, cRight) + polyg(left, cLeft);
+}
+
+function renderCosturaV3(L: Layout, sy: number, trat: Trat3) {
+  const plano = trat === "plano";
+  const H = L.vh * 0.72;
+  const g = heroSymbol(L, sy);
+  const p = g.p;
+  const onDark = C.cyan;
+  const onPaper = C.e700;
+  const W = plano ? 6 : 3;
+  const lineSvg = (pts: P[], color: string, w = W) =>
+    pts.length < 2 ? "" : `<path d="${pathOf(pts)}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="square" stroke-linejoin="miter"/>`;
+  // cabeça do fio: um losango isométrico, sem brilho
+  const node = (q: P, color: string) => {
+    const r = plano ? 8 : 6.5;
+    return polyg([[q[0], q[1] - r], [q[0] + r * COS30, q[1]], [q[0], q[1] + r], [q[0] - r * COS30, q[1]]], color);
+  };
+  let out = mobileBand(L, g);
+
+  // ---------------- 01: o símbolo grande, montado com força ----------------
+  const symH = L.mobile ? Math.min(L.quadro.h * 0.86, (L.vw - 48) / 0.815, 420) : Math.min(L.quadro.h * 0.84, L.vh * 0.74, 640);
+  const s = symH / 498;
+  const sym = { s, cx: g.cx, cy: g.cy };
+  const DIRS = L.mobile ? DIR_MOB : DIR_DESK;
+  const fly = (L.mobile ? 460 : 1000) / s; // de fora da tela, em unidades do símbolo
+  const plan: { ks: (keyof typeof PIECES)[]; a: number; b: number; dir: P }[] = [
+    { ks: ["Ct", "Cf"], a: 0.06, b: 0.22, dir: DIRS.Ct },
+    { ks: ["A"], a: 0.22, b: 0.38, dir: DIRS.A },
+    { ks: ["B"], a: 0.38, b: 0.54, dir: DIRS.B },
+    { ks: ["D"], a: 0.54, b: 0.7, dir: DIRS.D },
+  ];
+  // recuo do conjunto a cada impacto
+  let rx = 0;
+  let ry = 0;
+  for (const st of plan) {
+    const hit = st.a + (st.b - st.a) * 0.6;
+    const k = kick(p, hit, 0.07) * (L.mobile ? 4 : 7);
+    rx += st.dir[0] * k;
+    ry += st.dir[1] * k;
+  }
+  const fills = plano ? FILL_CLARO : FILL;
+  if (plano) {
+    // um plano claro (papel) entra pela direita e recebe o símbolo: contraste forte
+    const t = heavy(range(p, 0.0, 0.12));
+    if (L.mobile) {
+      const top = L.quadro.y + 6;
+      const bot = L.quadro.b - 6;
+      const x0 = L.vw * (1 - t);
+      out += polyg([[x0, top], [L.vw + 1, top], [L.vw + 1, bot], [x0 - 0, bot]], C.n50);
+    } else {
+      const top = g.cy - symH * 0.66;
+      const bot = g.cy + symH * 0.66;
+      const left = g.cx - symH * 0.815 * 0.6;
+      const x0 = left + (L.vw + 40 - left) * (1 - t);
+      out += polyg([[x0, top], [L.vw + 1, top], [L.vw + 1, bot], [x0, bot]], C.n50);
+    }
+  } else {
+    out += `<circle cx="${f1(g.cx)}" cy="${f1(g.cy)}" r="${f1(symH * 0.62)}" fill="url(#fio-luz)" opacity="0.45"/>`;
+  }
+  let inner = "";
+  // o molde: os lugares das peças, tom sobre tom, e a planta do hexágono
+  const mold = plano ? C.n100 : C.n900;
+  for (const k of ["A", "B", "Ct", "Cf", "D"] as const) inner += `<path d="${PIECES[k]}" fill="${mold}"/>`;
+  inner += `<path d="${pathOf(HEX)}" fill="none" stroke="${plano ? C.n200 : C.n600}" stroke-width="${f1(1.2 / s)}" opacity="${(1 - range(p, 0.1, 0.5)).toFixed(2)}"/>`;
+  for (const st of plan) {
+    const t = range(p, st.a, st.b);
+    if (t <= 0) continue;
+    const o = fly * (1 - heavy(t));
+    for (const k of st.ks) inner += `<path d="${PIECES[k]}" fill="${fills[k]}" transform="translate(${f1(st.dir[0] * o)} ${f1(st.dir[1] * o)})"/>`;
+  }
+  out += `<g transform="translate(${f1(sym.cx + rx)} ${f1(sym.cy + ry)}) scale(${s.toFixed(4)}) translate(${-SYM_C[0]} ${-SYM_C[1]})">${inner}</g>`;
+  const top0 = symPt(sym, [627, 258]);
+  if (p < 0.06) out += node(top0, C.e500);
+
+  // saída: do vértice de baixo, a 30°, até a pista; dois compassos
+  const bottom = symPt(sym, [627, 756]);
+  const kneeY = bottom[1] + Math.abs(L.laneR - bottom[0]) * 0.577;
+  const tailPts: P[] = [bottom, [L.laneR, kneeY], [L.laneR, Math.max(kneeY, g.tailEnd)]];
+  const tailT = beats(range(p, 0.8, 1), 2);
+  if (tailT > 0) {
+    const tp = polyPart(tailPts, tailT);
+    out += lineSvg(tp.pts, onDark);
+    if (tailT < 1) out += node(tp.head, onDark);
+  }
+
+  // ---------------- do hero ao contato ----------------
+  type Seg = { pts: P[]; s0: number; s1: number; color: string; follow?: boolean; beats?: number };
+  const segs: Seg[] = [];
+  let last = g.end;
+  const push = (pts: P[], s0: number, s1: number, color: string, o: Partial<Seg> = {}) => {
+    const a = Math.max(s0, last);
+    const b = Math.max(s1, a + 1);
+    segs.push({ pts, s0: a, s1: b, color, ...o });
+    last = b;
+  };
+  const vertical = (x: number, y0: number, y1: number, color: string) => push([[x, y0], [x, y1]], y0 - H, y1 - H, color, { follow: true });
+  const y0 = g.laneStart;
+  const yN = L.aplic.y;
+  vertical(L.laneR, y0, yN, onDark);
+  // T2 (simplificado): um dente a 30° na passagem do espaço para a noite
+  push([[L.laneR, yN], [L.laneR - 16, yN + 9], [L.laneR, yN + 18]], yN - H, yN - H + L.vh * 0.06, onDark);
+  const yB = L.sob.y;
+  vertical(L.laneR, yN + 18, yB, onDark);
+  // T3: janela longa, com compassos
+  const t3s0 = yB - L.vh * 0.88;
+  const t3s1 = yB - L.vh * 0.22;
+  last = Math.max(last, t3s1);
+  const t3 = range(sy, t3s0, t3s1);
+  vertical(L.laneL, yB, L.como.y, onPaper);
+  push([[L.laneL, L.como.y], [L.laneR, L.como.y]], L.como.y - H, L.como.y - H + L.vh * 0.18, onPaper, { beats: 1 });
+  vertical(L.laneR, L.como.y, L.equipe.y, onPaper);
+  push([[L.laneR, L.equipe.y], [L.laneL, L.equipe.y]], L.equipe.y - H, L.equipe.y - H + L.vh * 0.18, onPaper, { beats: 1 });
+  vertical(L.laneL, L.equipe.y, L.contato.y, onPaper);
+  // contato: a régua leva o fio até a borda do formulário
+  const ex = 20 * COS30; // extrusão do cartão (estrutura)
+  const ey = 20 * SIN30;
+  const fr = L.form;
+  const xr = plano ? fr.x - 17 : Math.min(L.vw - 4, fr.r + ex);
+  push([[L.laneL, L.contato.y], [xr, L.contato.y]], L.contato.y - H, L.contato.y - H + L.vh * 0.2, onPaper, { beats: 1 });
+  vertical(xr, L.contato.y, fr.y, onPaper);
+  const cS0 = fr.y - L.vh * 0.8;
+  const cS1 = fr.b - L.vh * 0.3;
+
+  let headAt: { q: P; color: string } | null = null;
+  for (const sg of segs) {
+    const t = range(sy, sg.s0, sg.s1);
+    if (t <= 0) break;
+    const part = polyPart(sg.pts, sg.follow ? t : heavy(t));
+    out += lineSvg(part.pts, sg.color);
+    headAt = { q: part.head, color: sg.color };
+  }
+
+  // ---------------- T3: a virada vira estrutura ----------------
+  if (t3 > 0) {
+    if (!plano) {
+      // viga isométrica de borda a borda, montada em blocos que chegam pela direita e travam com peso
+      const N = L.mobile ? 4 : 8;
+      const w = L.vw / N;
+      const sink = heavy(range(t3, 0.8, 1));
+      const th = (L.mobile ? 20 : 32) * (1 - sink) + 3 * sink;
+      const depth = (L.mobile ? 16 : 26) * (1 - sink);
+      let jolt = 0;
+      for (let i = 0; i < N; i++) {
+        const a = 0.24 + (i * 0.4) / N;
+        const hit = a + 0.16 * 0.6;
+        jolt += kick(t3, hit, 0.05) * 3;
+      }
+      const yTop = yB - th / 2 + jolt;
+      for (let i = 0; i < N; i++) {
+        const a = 0.24 + (i * 0.4) / N;
+        const t = range(t3, a, a + 0.16);
+        if (t <= 0) continue;
+        const off = (L.vw + 60) * (1 - heavy(t));
+        const x1 = L.vw - i * w + off;
+        const x0 = x1 - w + (i === N - 1 ? 0 : 0);
+        out += beam(Math.max(-2, x0), x1, yTop, th, depth, C.cyan, C.e700, C.n800);
+      }
+    } else {
+      // um corte: plano elétrico de borda a borda, com as pontas a 60°, que varre e depois fecha no fio
+      const hP0 = L.mobile ? 44 : 84;
+      const close = heavy(range(t3, 0.78, 1));
+      const hP = hP0 * (1 - close) + 6 * close;
+      const k = hP * 0.577;
+      const sweep = heavy(range(t3, 0.24, 0.62));
+      const xA = L.vw + k - (L.vw + 2 * k) * sweep;
+      const top = yB - hP / 2;
+      out += polyg([[xA, top], [L.vw + k, top], [L.vw, top + hP], [xA - k, top + hP]], C.e700);
+    }
+  }
+
+  // ---------------- contato: o fio vira peça ----------------
+  const ct = range(sy, cS0, cS1);
+  if (ct > 0) {
+    if (!plano) {
+      // o cartão do formulário ganha espessura: a face da direita cresce com a rolagem, a de baixo trava, e um cubo assenta no canto
+      const press = heavy(range(ct, 0.92, 1));
+      const kx = 1 - 0.3 * press;
+      const exx = ex * kx;
+      const eyy = ey * kx;
+      const grow = range(ct, 0.08, 0.72);
+      const yy = fr.y + fr.h * grow;
+      out += polyg([[fr.r, fr.y], [fr.r + exx, fr.y + eyy], [fr.r + exx, yy + eyy], [fr.r, yy]], C.e700);
+      const bt = heavy(range(ct, 0.72, 0.82));
+      if (bt > 0) {
+        const xs = fr.r - fr.w * bt;
+        out += polyg([[xs, fr.b], [fr.r, fr.b], [fr.r + exx, fr.b + eyy], [xs + exx, fr.b + eyy]], C.e900);
+      }
+      if (grow > 0 && grow < 1) out += node([fr.r + exx, yy + eyy], onPaper);
+      const cb = range(ct, 0.82, 0.92);
+      if (cb > 0) {
+        const a = L.mobile ? 14 : 20;
+        const drop = (1 - heavy(cb)) * 120;
+        out += cube(fr.x + exx * 0.5, fr.b + eyy + a * 0.2 - drop + 3 * press, a, C.e500, C.e700, C.e900);
+      }
+    } else {
+      // um L elétrico emoldura o formulário por fora (esquerda e base) e o ponto assenta
+      const tk = L.mobile ? 8 : 14;
+      const lx = fr.x - 10 - tk;
+      const grow = range(ct, 0.08, 0.72);
+      const yy = fr.y + (fr.h + 10) * grow;
+      out += polyg([[lx, fr.y], [lx + tk, fr.y], [lx + tk, yy], [lx, yy]], C.e700);
+      const bt = heavy(range(ct, 0.72, 0.86));
+      if (bt > 0) {
+        const xe = lx + (fr.r + 10 - lx) * bt;
+        out += polyg([[lx, fr.b + 10], [xe, fr.b + 10], [xe, fr.b + 10 + tk], [lx, fr.b + 10 + tk]], C.e700);
+      }
+      const dt = range(ct, 0.86, 0.96);
+      if (dt > 0) out += `<circle cx="${f1(fr.r + 10 + tk)}" cy="${f1(fr.b + 10 + tk / 2)}" r="${f1(tk * 0.75 * heavy(dt))}" fill="${C.e500}"/>`;
+    }
+  }
+
+  // cabeça do fio nas pistas
+  if (headAt && (t3 <= 0 || t3 >= 1) && ct <= 0) out += node(headAt.q, headAt.color);
+
+  marcos = {
+    fim: cS1 + L.vh * 0.15,
+    lista: [
+      ["1 · 01: o molde vazio", 0],
+      ["2 · 01: a primeira peça bate e o conjunto recua", g.end * 0.2],
+      ["3 · 01: as peças chegam de fora da tela", g.end * 0.47],
+      ["4 · 01: o símbolo montado; o fio sai", g.end * 0.9],
+      ["5 · 03 → 04: a viga atravessa a tela", t3s0 + (t3s1 - t3s0) * 0.55],
+      ["6 · 03 → 04: assenta e vira fio", t3s0 + (t3s1 - t3s0) * 0.93],
+      ["7 · 07: o formulário ganha espessura", cS0 + (cS1 - cS0) * 0.6],
+      ["8 · 07: o cubo assenta no canto", cS1 + L.vh * 0.1],
+    ],
+    comparar: [g.end * 0.47, t3s0 + (t3s1 - t3s0) * 0.55, cS0 + (cS1 - cS0) * 0.88],
+  };
+  return { svg: out, defs: "" };
+}
+
 const CSS = `
 html[data-fio] .hero-estudio__quadro picture,
 html[data-fio] .hero-estudio__canvas,
 html[data-fio] .hero-estudio__selo { visibility: hidden; }
 nextjs-portal { display: none !important; }
+html[data-fio] .produtos > .produto:nth-child(2) { display: none; }
+html[data-fio] .produtos { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) {
+  html[data-fio] .produtos > .produto:first-child { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: center; column-gap: var(--space-7); padding: var(--space-6); }
+}
+@media (min-width: 768px) {
+  html[data-fio] .hero-estudio__textos { padding-bottom: calc(var(--space-7) + 45svh); }
+}
 .fio-overlay { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 40; }
 `;
 
@@ -606,6 +1358,7 @@ export function FioPrototipo() {
     const mode = params.get("fio");
     if (mode !== "costura" && mode !== "montagem") return;
     const gravar = params.has("gravar");
+    const trat = params.get("trat") ?? "estrutura";
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches && !gravar;
     document.documentElement.dataset.fio = mode;
     const style = document.createElement("style");
@@ -621,7 +1374,14 @@ export function FioPrototipo() {
       raf = 0;
       const L = measure();
       const sy = reduce ? 1e7 : scrollY;
-      const r = mode === "costura" ? renderCostura(L, sy) : renderMontagem(L, sy);
+      const r =
+        mode === "montagem"
+          ? renderMontagem(L, sy)
+          : trat === "v1"
+            ? renderCostura(L, sy)
+            : trat === "pesponto" || trat === "tecnico"
+              ? renderCosturaV2(L, sy, trat)
+              : renderCosturaV3(L, sy, trat === "plano" ? "plano" : "estrutura");
       svg.innerHTML = DEFS.replace("</defs>", r.defs + "</defs>") + r.svg;
       (window as unknown as { __fioMarcos?: unknown }).__fioMarcos = marcos;
     };
