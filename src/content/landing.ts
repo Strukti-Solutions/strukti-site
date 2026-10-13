@@ -143,7 +143,7 @@ export const landingContent = {
     },
     b: {
       eyebrow: "Strukti Soluções, de João Pessoa",
-      headline: "Replay para quadras e aplicativos sob medida.",
+      headline: "Replay para quadras e aplicativos sob medida.",
       body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
     },
     c: {
@@ -155,7 +155,7 @@ export const landingContent = {
 
   heroEstudio: {
     eyebrow: "Strukti Soluções, de João Pessoa",
-    headline: "Replay para quadras e aplicativos sob medida.",
+    headline: "Replay para quadras e aplicativos sob medida.",
     body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
     primaryCta: "Ver os produtos",
     whatsappCta: "Falar no WhatsApp",
