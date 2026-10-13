@@ -126,7 +126,8 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
   }, [scrub]);
 
   useEffect(() => {
-    if (!canAnimate || prefersSavingData()) return;
+    // SPIKE [S1-A]: com ?fio=..., o hero fica sem a sequência (o fio abre a página).
+    if (!canAnimate || prefersSavingData() || new URLSearchParams(window.location.search).has("fio")) return;
     const section = sectionRef.current;
     const fundo = fundoRef.current;
     const area = areaRef.current;

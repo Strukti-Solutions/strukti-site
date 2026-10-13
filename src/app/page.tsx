@@ -13,6 +13,7 @@ import { Contato } from "@/components/sections/Contato";
 import { Faq } from "@/components/sections/Faq";
 import { Rodape } from "@/components/sections/Rodape";
 import { linkBancadaSeAtiva } from "@/lib/bancada/link";
+import { FioPrototipo } from "@/components/spike/FioPrototipo";
 
 export default function Home() {
   // A barra do topo e o hero mudam juntos (ver siteConfig.heroVariant).
@@ -33,6 +34,8 @@ export default function Home() {
         <Faq />
       </main>
       <Rodape />
+      {/* SPIKE [S1-A]: só com ?fio=costura ou ?fio=montagem. */}
+      <FioPrototipo />
     </>
   );
 }
