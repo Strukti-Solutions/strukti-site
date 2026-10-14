@@ -104,6 +104,21 @@ cd src && python app.py          # site em http://127.0.0.1:5000
 cd src && python cliente_local.py
 ```
 
+## ➕ Adicionar uma câmera nova
+
+Uma câmera nova **não** é captada automaticamente — ela precisa de um cadastro
+único (SN + AuthCode + usuário/senha local). O **assistente** automatiza isso:
+
+```bash
+python tools/add_camera.py
+```
+Ele injeta o hook no app, você **abre a câmera nova ao vivo uma vez**, e ele
+captura tudo e **grava direto no `config.py`** (pergunta só um nome amigável).
+Depois disso a câmera funciona standalone como as outras.
+
+> Requer o celular com `android-unpinner` preparado (ver `docs/CAPTURE_GUIDE.md`).
+> Já tem um dump? `python tools/add_camera.py --parse addcam.txt`.
+
 ## 🔒 Segurança
 
 - **Nunca** comite `config.py` — ele contém segredos da sua conta/câmeras
