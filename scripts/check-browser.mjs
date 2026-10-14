@@ -34,7 +34,8 @@
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
 // e sai com Tab, conferindo que o foco não fica coberto pelo painel; e toca
-// os dois primeiros vídeos dos aplicativos (cartões 1 e 2 da grade),
+// os dois primeiros vídeos da grade de produtos (cartões 1 e 2: o replay
+// e o primeiro aplicativo, desde a prévia v2.2),
 // conferindo que só um toca por vez e que o autoplay do vídeo de fundo do
 // hero "video", se existir, nunca toca por cima (regra aceita pelo
 // Claudinho, 2ª vez que um problema só aparecia depois de uma interação —
@@ -95,9 +96,11 @@ const HERO_SIZES = [
   { width: 1440, height: 900 },
   { width: 360, height: 740 },
 ];
-const APPS_PLAY_BUTTON_SELECTOR = "#aplicativos .project-card__play";
-// Cartão N da grade de aplicativos (o vídeo só existe depois do clique em "Assistir").
-const appCard = (n) => `#aplicativos .project-card:nth-child(${n})`;
+// Grade com vídeo: desde a prévia v2.2 (#7) a seção "Aplicativos" saiu e os
+// 3 cartões com vídeo (replay + apps) ficam em #produtos.
+const APPS_PLAY_BUTTON_SELECTOR = "#produtos .project-card__play";
+// Cartão N da grade de produtos (o vídeo só existe depois do clique em "Assistir").
+const appCard = (n) => `#produtos .project-card:nth-child(${n})`;
 
 const BROWSER_CANDIDATES = [
   process.env.BROWSER_PATH,
@@ -810,7 +813,7 @@ try {
     for (const error of consoleErrors) failures.push(`hero estudio a ${size}: erro no console: ${error.split("\n")[0]}`);
   }
 
-  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos dos aplicativos; Tab pela página; espaçamento de texto 1.4.12):`);
+  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos da grade de produtos; Tab pela página; espaçamento de texto 1.4.12):`);
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
@@ -856,7 +859,7 @@ try {
     }
   }
 
-  // --- Vídeos: só um toca por vez (grade de aplicativos) e o hero "video", se existir, não toca por cima ---
+  // --- Vídeos: só um toca por vez (grade de produtos) e o hero "video", se existir, não toca por cima ---
   // (sem zerar consoleErrors: os erros do passo do menu também contam)
   loaded = cdp.once("Page.loadEventFired");
   await cdp.send("Page.navigate", { url: URL_TO_CHECK });
@@ -865,12 +868,12 @@ try {
 
   const playButtons = await evalValue(cdp, `document.querySelectorAll(${JSON.stringify(APPS_PLAY_BUTTON_SELECTOR)}).length`);
   if (playButtons < 2) {
-    failures.push(`vídeos: esperava ao menos 2 aplicativos com vídeo na grade, achei ${playButtons}`);
+    failures.push(`vídeos: esperava ao menos 2 cartões com vídeo na grade de produtos, achei ${playButtons}`);
   } else {
     const firstPlaying = await playVideo(cdp, `${appCard(1)} video`, { viaButton: `${appCard(1)} .project-card__play` });
-    if (!firstPlaying) failures.push("vídeos: o 1º aplicativo não tocou depois do clique em 'Assistir'");
+    if (!firstPlaying) failures.push("vídeos: o 1º cartão não tocou depois do clique em 'Assistir'");
     const secondPlaying = await playVideo(cdp, `${appCard(2)} video`, { viaButton: `${appCard(2)} .project-card__play` });
-    if (!secondPlaying) failures.push("vídeos: o 2º aplicativo não tocou depois do clique em 'Assistir'");
+    if (!secondPlaying) failures.push("vídeos: o 2º cartão não tocou depois do clique em 'Assistir'");
     const playingCount = await evalValue(
       cdp,
       `[...document.querySelectorAll("video")].filter((video) => !video.paused).length`,
@@ -879,7 +882,7 @@ try {
     if (await evalValue(cdp, `!!document.querySelector(${JSON.stringify(HERO_VIDEO_SELECTOR)})`)) {
       await evalValue(cdp, `window.scrollTo({ top: 0, behavior: "instant" })`);
       await sleep(1500);
-      if (!(await isPaused(cdp, HERO_VIDEO_SELECTOR))) failures.push("vídeos: o hero tocou sozinho por cima do aplicativo que a pessoa estava vendo");
+      if (!(await isPaused(cdp, HERO_VIDEO_SELECTOR))) failures.push("vídeos: o hero tocou sozinho por cima do vídeo da grade que a pessoa estava vendo");
     }
     console.log(`  vídeos: 1º ${firstPlaying ? "tocou" : "não tocou"}, 2º ${secondPlaying ? "tocou" : "não tocou"}; tocando juntos: ${playingCount}`);
   }
@@ -975,7 +978,7 @@ console.log(
   "\nDetector de CSP conferido (acusou a violação provocada). " +
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
-    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo dos aplicativos toca por vez e o hero \"video\", se existir, não toca por cima; " +
+    "Menu fecha e o foco não fica coberto ao sair com Tab; só um vídeo da grade de produtos toca por vez e o hero \"video\", se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado.",
 );

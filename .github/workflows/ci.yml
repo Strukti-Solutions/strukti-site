@@ -68,7 +68,7 @@ jobs:
   browser:
     # O check:browser abre o Chrome headless direto pelo CDP (sem Playwright) e
     # confere a página servida: console sem erro, CSP, rolagem horizontal, menu e
-    # foco, vídeos dos aplicativos, WCAG 1.4.12 e o hero "estudio" (a 1440 e a
+    # foco, vídeos da grade de produtos, WCAG 1.4.12 e o hero "estudio" (a 1440 e a
     # 360). Roda contra o build de produção (`next start`), como no ar.
     name: check:browser (build de produção)
     runs-on: ubuntu-latest
