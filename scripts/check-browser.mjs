@@ -710,6 +710,7 @@ try {
             variant: document.querySelector("main")?.dataset.heroVariant ?? null,
             height: section ? section.offsetHeight : null,
             scrub: section ? (section.dataset.scrub ?? null) : null,
+            sequencia: section ? (section.dataset.sequencia ?? null) : null,
           };
         })()`,
         { awaitPromise: true },
@@ -730,6 +731,14 @@ try {
       }
       if (staticPage.scrub !== "false") {
         failures.push(`hero estudio a ${size}: sem JavaScript o HTML veio com data-scrub=${staticPage.scrub} (esperado false)`);
+      }
+      // Prévia aprovada em 13/10/2026: a sequência de quadros está desligada (o
+      // símbolo é desenhado pelo fio). O giro não existe, então o passo dele
+      // avisa que pulou; a conferência do fio vem com a implementação definitiva
+      // (spec do fio, §11.2). O resto da checagem continua igual.
+      if (staticPage.sequencia === "desligada") {
+        console.log(`  hero estudio: passo do giro pulado a ${size} (sequência de quadros desligada na prévia)`);
+        continue;
       }
 
       for (const reduce of [false, true]) {
