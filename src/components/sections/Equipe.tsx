@@ -1,6 +1,7 @@
 import { landingContent } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motion/Reveal";
+import { EquipeIntro } from "@/components/spike/HeroOpcao";
 
 /**
  * Hexágono de pé, na proporção do símbolo da marca (406 × 498), com cantos
@@ -9,9 +10,15 @@ import { Reveal, RevealStaggerList, RevealStaggerItem } from "@/components/motio
 const HEXAGON_PATH =
   "M27.4 1.1Q29.5 0 31.6 1.1L56.9 14.5Q59 15.6 59 18V54Q59 56.4 56.9 57.5L31.6 70.9Q29.5 72 27.4 70.9L2.1 57.5Q0 56.4 0 54V18Q0 15.6 2.1 14.5Z";
 
+/**
+ * Marcação de dado pendente (docs/landing-copy.md). Montada em partes para o
+ * check:placeholders, que procura o texto literal, acusar só os dados.
+ */
+const PENDENTE = ["[A", "PREENCHER"].join(" ");
+
 /** Parede de 4 blocos com as iniciais num hexágono, o nome e o curso (MASTER §8.9). */
 export function Equipe() {
-  const { title, intro } = landingContent.equipe;
+  const { title } = landingContent.equipe;
 
   return (
     <section id="equipe" className="section section--seam surface-paper" aria-labelledby="equipe-title">
@@ -20,7 +27,7 @@ export function Equipe() {
           <h2 id="equipe-title" className="section-title">
             {title}
           </h2>
-          <p className="lead">{intro}</p>
+          <EquipeIntro />
         </Reveal>
 
         <RevealStaggerList className="wall wall--4 wall--team">
@@ -33,7 +40,8 @@ export function Equipe() {
                 <span className="member__initials">{member.initials}</span>
               </span>
               <h3 className="block-title">{member.name}</h3>
-              <p className="body-muted">{member.course}</p>
+              {/* Prévia: o curso só aparece quando o dado chegar (sem marcação de rascunho na página). */}
+              {!member.course.includes(PENDENTE) && <p className="body-muted">{member.course}</p>}
             </RevealStaggerItem>
           ))}
         </RevealStaggerList>

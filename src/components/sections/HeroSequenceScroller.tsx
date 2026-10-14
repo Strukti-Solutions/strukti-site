@@ -13,6 +13,12 @@ import {
   sectionProgress,
 } from "@/lib/heroSequence";
 
+/**
+ * Prévia aprovada (13/10): o hero não anima mais a sequência do 3D; o símbolo
+ * é desenhado pelo fio (FioPrototipo). O pôster fica escondido pelo CSS.
+ */
+const SEQUENCIA_DESLIGADA = true;
+
 /** Mais que isto de quadros com erro (ex.: navegador sem AVIF) e o hero fica no pôster. */
 const MAX_FAILED_RATIO = 0.1;
 
@@ -126,7 +132,8 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
   }, [scrub]);
 
   useEffect(() => {
-    if (!canAnimate || prefersSavingData()) return;
+    // SPIKE [S1-A]: com ?fio=..., o hero fica sem a sequência (o fio abre a página).
+    if (SEQUENCIA_DESLIGADA || !canAnimate || prefersSavingData()) return;
     const section = sectionRef.current;
     const fundo = fundoRef.current;
     const area = areaRef.current;
@@ -292,6 +299,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
       className="hero-estudio surface-space"
       aria-labelledby="hero-title"
       data-scrub={scrub ? "true" : "false"}
+      data-sequencia={SEQUENCIA_DESLIGADA ? "desligada" : undefined}
       data-hides-fab=""
     >
       {/* O fundo: o quadro (pôster e canvas), o selo e a área de leitura, que
@@ -322,6 +330,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
         <div className="hero-estudio__bloco hero-estudio__abertura">
           <div className="hero-estudio__bloco-texto">{opening}</div>
         </div>
+        {steps.length > 0 && (
         <div className="hero-estudio__como">
           <h2 id="hero-passos-title" className="hero-estudio__como-titulo">
             {stepsTitle}
@@ -342,6 +351,7 @@ export function HeroSequenceScroller({ opening, stepsTitle, steps, badge }: Hero
             ))}
           </ol>
         </div>
+        )}
       </div>
     </section>
   );
