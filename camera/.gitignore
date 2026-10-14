@@ -1,0 +1,63 @@
+# ==== SEGREDOS / DADOS PESSOAIS — NUNCA COMITAR ====
+config.py
+src/config.py
+**/config.py
+*.env
+tools/captura.env
+
+# ==== Artefatos locais (binários, capturas, mídia, dumps) ====
+local/
+ghidra_work/
+
+# Binários grandes / proprietários
+*.apk
+*.so
+frida-server
+*.zip
+
+# Capturas de tráfego / dumps / bancos
+*.pcap
+*.pcapng
+*.flows
+dump*.txt
+http*.txt
+appsecret*.txt
+creds.txt
+gen.txt
+inject.txt
+*.db
+*.db-wal
+*.db-shm
+token6611.txt
+webview_storage.log
+*xworld*.xml
+Users_new.xml
+
+# Mídia / saídas de vídeo
+*.h264
+*.mp4
+*.raw
+*.jpg
+*.jpeg
+*.png
+*.pdf
+camera_remota_*
+camera_local*
+web_frame*
+frame_*
+
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# ==== Editores / SO ====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

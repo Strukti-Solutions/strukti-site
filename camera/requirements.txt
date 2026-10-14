@@ -1,0 +1,12 @@
+# Dependências Python do projeto (pip install -r requirements.txt)
+Flask>=3.0          # site de visualização (app.py / webcam.py)
+
+# --- Opcionais (só para ferramentas de engenharia reversa em tools/) ---
+# pyelftools        # refun.py (análise do libFunSDK.so)
+# capstone          # refun.py (disassembly aarch64)
+# pycryptodome      # testes de cripto
+# reportlab         # gerar_plano_pdf.py
+
+# Externo (não via pip):
+#   ffmpeg          — conversão H.264 -> MP4/MJPEG (winget install Gyan.FFmpeg)
+#   adb + frida     — apenas para a captura inicial das credenciais (ver docs/)
