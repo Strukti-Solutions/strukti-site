@@ -14,10 +14,7 @@ import { Rodape } from "@/components/sections/Rodape";
 import { linkBancadaSeAtiva } from "@/lib/bancada/link";
 import { FioPrototipo } from "@/components/spike/FioPrototipo";
 
-export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  // PRÉVIA v2.2: ?hero=a|b|c (sem a chave, a B).
-  const sp = await searchParams;
-  const heroOpcao = sp.hero === "a" || sp.hero === "c" ? sp.hero : "b";
+export default function Home() {
   // A barra do topo e o hero mudam juntos (ver siteConfig.heroVariant).
   const variant = siteConfig.heroVariant;
 
@@ -26,11 +23,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       {variant === "classic" ? <Header /> : <TopBar linkBancada={linkBancadaSeAtiva()} />}
       {/* data-hero-variant: o check:browser lê daqui qual hero conferir. */}
       <main id="conteudo-principal" data-hero-variant={variant}>
-        {variant === "estudio" ? <HeroSequence opcao={heroOpcao} /> : variant === "video" ? <HeroVideo /> : <Hero />}
+        {variant === "estudio" ? <HeroSequence /> : variant === "video" ? <HeroVideo /> : <Hero />}
         <Produtos />
         <ChamadaHardware />
         <ComoResolvemos />
-        <Equipe heroOpcao={heroOpcao} />
+        <Equipe />
         <Faq />
         <Contato />
       </main>

@@ -171,55 +171,7 @@ export const landingContent = {
       oneLiner:
         "Para quadras de aluguel: o jogador aperta um botão na beira da quadra, leva o lance no celular e ganha mais um motivo para voltar.",
       illustrationBadge: "Ilustração do conceito",
-      stepsTitle: "Como funciona",
-      steps: [
-        {
-          lead: "Aperta o botão.",
-          rest: "Saiu um lance bonito? O jogador aperta o botão na beira da quadra.",
-        },
-        {
-          lead: "O clipe é cortado.",
-          rest: "O equipamento da quadra separa os 30 segundos antes do aperto e mais alguns depois.",
-        },
-        {
-          lead: "Chega no celular.",
-          rest: "O clipe sobe pelo Wi-Fi da arena, e o jogador vê e compartilha pelo celular. Esta etapa ainda está em construção, e é ela que o piloto vai testar.",
-        },
-      ],
-      specs: [
-        { value: "30 s", label: "Antes do aperto" },
-        { value: "Wi-Fi", label: "Da própria arena" },
-        { value: "1 cabo", label: "Para energia e imagem" },
-      ],
       cta: "Quero o piloto na minha quadra",
-      emBreve: "Cortes automáticos e destaque por jogador, com inteligência artificial.",
-      // Bloco novo (PROPOSTA §2.4). Sem dado, não publica: as marcações aparecem na prévia.
-      piloto: {
-        title: "Piloto gratuito para as primeiras quadras",
-        intro:
-          "O replay ainda está em teste. Nas primeiras quadras, instalamos o equipamento sem custo durante o piloto, e a quadra nos ajuda a acertar o produto antes do lançamento.",
-        leva: {
-          title: "A Strukti leva",
-          items: [
-            "O equipamento da quadra: [A PREENCHER: confirmar a lista, por exemplo câmera, botão e o aparelho que guarda e corta os lances].",
-            "A instalação e os ajustes.",
-            "O suporte pelo WhatsApp, com quem instalou.",
-          ],
-        },
-        precisa: {
-          title: "A sua quadra precisa ter",
-          items: [
-            'Wi-Fi funcionando [A PREENCHER: confirmar o alcance, por exemplo "perto da quadra"].',
-            "[A PREENCHER: ponto de energia? onde?]",
-            "[A PREENCHER: lugar para a câmera e o botão, por exemplo no alambrado]",
-          ],
-        },
-        status:
-          "Pronto e testado em bancada: a gravação e o corte do lance. O que o piloto vai testar: o envio do clipe para o celular do jogador.",
-        fim: '[A PREENCHER: o que acontece no fim do piloto. Exemplo do formato, a confirmar: "No fim do piloto, você decide se continua. Antes disso, apresentamos o preço e o modelo, sem compromisso."]',
-        cta: "Quero o piloto na minha quadra",
-        ctaNote: "Sem custo durante o piloto. A conversa começa pelo WhatsApp.",
-      },
       // Animação feita em código (projeto strukti-video), no lugar do pôster 3D.
       video: {
         src: "/video/replay.mp4",
