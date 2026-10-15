@@ -2813,9 +2813,24 @@ textarea.field__input {
   line-height: 1.4;
 }
 
+/*
+ * Volume de verdade, não um achatado com sombra em camadas: cada objeto tem
+ * uma face da frente (translateZ para a metade da espessura) e uma face
+ * lateral (girada 90° e empurrada para a borda), dentro de um
+ * transform-style: preserve-3d. A perspectiva vem do .hero-objetos__palco
+ * (o pai) — por isso a rotação aqui é só rotateY/rotateX, sem perspective()
+ * de novo no transform (duplicar o contexto de perspectiva distorce a
+ * posição das faces).
+ */
 .hero-objetos__figura {
   position: relative;
+  transform-style: preserve-3d;
   transition: filter 200ms ease;
+}
+
+.hero-objetos__face {
+  position: absolute;
+  inset: 0;
 }
 
 /* A flutuação só liga depois de montar e sem prefers-reduced-motion
@@ -2830,18 +2845,29 @@ textarea.field__input {
   animation-delay: 0.6s;
 }
 
-/* Celular */
+/* Celular: 54 × 96 × 14 px (W × H × D). */
 
 .hero-objetos__figura--celular {
-  width: 3.4rem;
-  height: 6rem;
-  border-radius: 0.9rem;
+  width: 54px;
+  height: 96px;
+  transform: rotateY(-32deg) rotateX(8deg);
+}
+
+.hero-objetos__figura--celular .hero-objetos__face--frente {
+  border-radius: 14px;
   background: var(--color-navy-950);
-  box-shadow:
-    5px 5px 0 0 var(--color-navy-800),
-    10px 10px 0 0 var(--color-navy-900),
-    0 22px 34px -14px rgba(8, 18, 29, 0.45);
-  transform: perspective(220px) rotateY(-32deg) rotateX(10deg);
+  box-shadow: 0 22px 34px -14px rgba(8, 18, 29, 0.45);
+  transform: translateZ(7px);
+}
+
+.hero-objetos__figura--celular .hero-objetos__face--lateral-celular {
+  top: 0;
+  left: calc(50% - 7px);
+  width: 14px;
+  height: 96px;
+  border-radius: 4px;
+  background: var(--color-navy-800);
+  transform: rotateY(90deg) translateZ(27px);
 }
 
 .hero-objetos__celular-notch {
@@ -2880,18 +2906,29 @@ textarea.field__input {
   background: var(--color-cyan-300);
 }
 
-/* Placa */
+/* Placa: 84 × 84 × 14 px. */
 
 .hero-objetos__figura--placa {
-  width: 5.25rem;
-  height: 5.25rem;
-  border-radius: 0.6rem;
+  width: 84px;
+  height: 84px;
+  transform: rotateY(-26deg) rotateX(10deg);
+}
+
+.hero-objetos__figura--placa .hero-objetos__face--frente {
+  border-radius: 10px;
   background: var(--color-navy-800);
-  box-shadow:
-    5px 5px 0 0 var(--color-navy-900),
-    10px 10px 0 0 var(--color-navy-950),
-    0 22px 34px -14px rgba(8, 18, 29, 0.45);
-  transform: perspective(220px) rotateY(-26deg) rotateX(12deg);
+  box-shadow: 0 22px 34px -14px rgba(8, 18, 29, 0.45);
+  transform: translateZ(7px);
+}
+
+.hero-objetos__figura--placa .hero-objetos__face--lateral-placa {
+  top: 0;
+  left: calc(50% - 7px);
+  width: 14px;
+  height: 84px;
+  border-radius: 3px;
+  background: var(--color-navy-900);
+  transform: rotateY(90deg) translateZ(42px);
 }
 
 .hero-objetos__placa-pino {
@@ -2955,19 +2992,19 @@ textarea.field__input {
 @keyframes hero-objetos-flutuar-celular {
   0%,
   100% {
-    transform: translateY(0) perspective(220px) rotateY(-32deg) rotateX(10deg);
+    transform: translateY(0) rotateY(-32deg) rotateX(8deg);
   }
   50% {
-    transform: translateY(-10px) perspective(220px) rotateY(-32deg) rotateX(10deg);
+    transform: translateY(-10px) rotateY(-32deg) rotateX(8deg);
   }
 }
 
 @keyframes hero-objetos-flutuar-placa {
   0%,
   100% {
-    transform: translateY(0) perspective(220px) rotateY(-26deg) rotateX(12deg);
+    transform: translateY(0) rotateY(-26deg) rotateX(10deg);
   }
   50% {
-    transform: translateY(-9px) perspective(220px) rotateY(-26deg) rotateX(12deg);
+    transform: translateY(-9px) rotateY(-26deg) rotateX(10deg);
   }
 }
