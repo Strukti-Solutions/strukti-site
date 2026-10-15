@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
-import type { HeroVariant } from "@/config/site";
 import { landingContent, type ProductStatus } from "@/content/landing";
 import { siteConfig } from "@/config/site";
 import { Produtos } from "./Produtos";
@@ -9,19 +8,6 @@ import { Aplicativos } from "./Aplicativos";
 import { ChamadaHardware } from "./ChamadaHardware";
 
 const { produtos, aplicativos, chamadaHardware, heroEstudio, statusLabels, whatsappMessages } = landingContent;
-
-// Variante do hero em uso: os passos do replay ficam no hero "estudio" e só
-// voltam ao cartão de Produtos nas outras variantes (mesmo mock do page.test).
-const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
-vi.mock("@/config/site", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/config/site")>();
-  return {
-    ...actual,
-    siteConfig: new Proxy(actual.siteConfig, {
-      get: (target, key) => (key === "heroVariant" ? heroVariant.current : Reflect.get(target, key)),
-    }),
-  };
-});
 
 /**
  * Selo de cada aplicativo, decisão do Thiago (spec §3.4 e §4): escrito aqui
@@ -33,10 +19,6 @@ const APP_STATUS: Record<string, ProductStatus> = {
 };
 
 describe("<Produtos />", () => {
-  beforeEach(() => {
-    heroVariant.current = "estudio";
-  });
-
   it("mostra o replay com selo, ilustração do conceito, ficha e o WhatsApp com a mensagem pronta", async () => {
     const { container } = render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
@@ -62,28 +44,17 @@ describe("<Produtos />", () => {
     expect(within(replay).getByText(produtos.replay.video.caption)).toBeTruthy();
   });
 
-  it('com o hero "estudio", "Como funciona" e os passos ficam só no hero, fora do cartão', () => {
-    render(<Produtos />);
+  it('o cartão do replay mostra "Como funciona" e os 3 passos', async () => {
+    const { container } = render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
-    expect(within(replay).queryByText(produtos.replay.stepsTitle)).toBeNull();
-    expect(within(replay).queryAllByRole("listitem")).toHaveLength(0);
+
+    expect(within(replay).getByRole("heading", { level: 4, name: produtos.replay.stepsTitle })).toBeTruthy();
+    const list = within(replay).getByRole("list", { name: produtos.replay.stepsTitle });
+    expect(within(list).getAllByRole("listitem").map((item) => item.textContent)).toEqual(
+      produtos.replay.steps.map((step) => `${step.lead} ${step.rest}`),
+    );
+    expect((await axe.run(container)).violations).toEqual([]);
   });
-
-  it.each(["video", "classic"] as const)(
-    'com o hero "%s", o cartão do replay mostra "Como funciona" e os 3 passos',
-    async (variant) => {
-      heroVariant.current = variant;
-      const { container } = render(<Produtos />);
-      const replay = screen.getByRole("article", { name: produtos.replay.name });
-
-      expect(within(replay).getByRole("heading", { level: 4, name: produtos.replay.stepsTitle })).toBeTruthy();
-      const list = within(replay).getByRole("list", { name: produtos.replay.stepsTitle });
-      expect(within(list).getAllByRole("listitem").map((item) => item.textContent)).toEqual(
-        produtos.replay.steps.map((step) => `${step.lead} ${step.rest}`),
-      );
-      expect((await axe.run(container)).violations).toEqual([]);
-    },
-  );
 
   it("não mostra o link do site do replay enquanto o endereço não existir", () => {
     render(<Produtos />);
