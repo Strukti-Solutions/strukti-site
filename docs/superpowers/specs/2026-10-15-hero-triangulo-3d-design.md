@@ -1,7 +1,9 @@
 # Hero: triângulo de objetos 3D girando — design
 
+> **Situação em 15/10/2026 (fim do dia):** o hero de objetos 3D / triângulo (H1–H8) **não foi adotado**: os objetos chegaram a entrar no branch `feat/hero-triangulo-3d` e foram revertidos (o hero "estudio" voltou ao palco em sequência de quadros do `main`). O hero padrão passa a ser a variante **"expansao"** (MASTER §9.8, ADR-010). Desta spec, foram **implementados** só N1 (barra em cápsula ao rolar), N2 (`aria-current` nos links da barra) e N5 (atalhos no topo de Produtos). N3, N4 e N6 seguem não feitos. O texto abaixo fica como registro do brainstorm.
+
 **Data:** 15/10/2026
-**Status:** rascunho, para revisão do Thiago antes de virar tarefa.
+**Status:** rascunho, para revisão do Thiago antes de virar tarefa (ver a situação acima).
 **Autor:** Claudinho, a partir de brainstorm com o Thiago e inspeção técnica (REA) de padrões do site aferium.com.br.
 **Base:**
 - Protótipo interativo descartável (Claude Artifact, não é código do projeto): `https://claude.ai/artifact/8VYLc8bDykwFxfmxFEo6WH`.
