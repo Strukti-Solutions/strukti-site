@@ -135,19 +135,6 @@ export const landingContent = {
     primaryCta: "Conhecer o replay",
     whatsappCta: "Falar no WhatsApp",
     illustrationBadge: "Ilustração do conceito",
-    /** Os dois objetos que flutuam ao lado do texto (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md). */
-    objetos: {
-      aplicativos: {
-        label: "Aplicativos sob medida",
-        desc: "Feitos para o jeito que sua empresa já trabalha.",
-        href: "#aplicativos",
-      },
-      hardware: {
-        label: "Produtos de hardware",
-        desc: "Equipamento com software e suporte da própria Strukti.",
-        href: "#produtos",
-      },
-    },
   },
 
   produtos: {

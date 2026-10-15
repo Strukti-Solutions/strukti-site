@@ -1,4 +1,5 @@
 import { landingContent } from "@/content/landing";
+import { siteConfig } from "@/config/site";
 import { Palco } from "@/components/ui/Palco";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { FichaTecnica } from "@/components/ui/FichaTecnica";
@@ -11,14 +12,13 @@ import { ReplayVideo } from "./ReplayVideo";
  * com o vídeo de demonstração no palco (mesmo padrão dos aplicativos), e o
  * estacionamento em desenvolvimento.
  *
- * "Como funciona" e os 3 passos do replay ficam sempre aqui, no cartão do
- * replay: nenhum hero mostra mais os passos ao lado (docs/superpowers/specs/
- * 2026-10-15-hero-triangulo-3d-design.md substitui o palco em sequência de
- * quadros do hero "estudio", que era o único que os tirava daqui).
+ * "Como funciona" e os 3 passos do replay (spec §4, linha 3) ficam no hero
+ * "estudio", ao lado do giro (MASTER §9.7). Com os heros "video" e "classic",
+ * que não têm os passos, eles voltam para o cartão do replay.
  */
 export function Produtos() {
   const { title, intro, replay, estacionamento } = landingContent.produtos;
-  const stepsInCard = true;
+  const stepsInCard = siteConfig.heroVariant !== "estudio";
 
   return (
     <section id="produtos" className="section surface-space" aria-labelledby="produtos-title">
