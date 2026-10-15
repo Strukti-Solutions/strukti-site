@@ -167,6 +167,7 @@ src/
     opengraph-image.tsx    imagem de compartilhamento gerada por código (next/og)
   components/
     sections/               um componente por seção da home, na ordem da página:
+      HeroExpansao.tsx        hero "expansao", o padrão (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
       HeroSequence.tsx        hero "estudio" (+ HeroSequenceScroller.tsx: quadros guiados pela rolagem)
       Produtos.tsx            produtos de hardware (replay e estacionamento inteligente)
       Aplicativos.tsx         aplicativos sob medida (grade de vídeos de ProjectGrid.tsx)
@@ -175,8 +176,9 @@ src/
       Equipe.tsx              nomes e cursos
       Contato.tsx             formulário único, com o assunto (interesse)
       Faq.tsx, Rodape.tsx     dúvidas e rodapé
-    ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica) e
-                            blackhole-hero-section (o buraco negro do hero "classic")
+    ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica),
+                            blackhole-hero-section (o buraco negro do hero "classic") e
+                            scroll-expansion-hero (o quadro que cresce do hero "expansao")
     InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
   config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
@@ -195,14 +197,22 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-Há três versões do topo da página (barra + hero), escolhidas numa linha de
+Há quatro versões do topo da página (barra + hero), escolhidas numa linha de
 `src/config/site.ts`:
 
 ```ts
-heroVariant: "estudio", // ou "video" ou "classic"
+heroVariant: "expansao", // ou "estudio", "video" ou "classic"
 ```
 
-- `"estudio"` (padrão) — `HeroSequence.tsx` + `TopBar.tsx`: o botão de
+O `page.tsx` liga cada valor ao seu hero num `Record<HeroVariant, …>`: uma
+variante nova sem hero ali é erro de tipo.
+
+- `"expansao"` (padrão) — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
+  vídeo "Fim de expediente" cresce com a roda ou o toque até quase a tela
+  inteira, o fundo se apaga, o título se abre para os lados e, com a
+  expansão completa, aparecem a abertura e os botões (`MASTER.md` §9.8,
+  ADR-010).
+- `"estudio"` — `HeroSequence.tsx` + `TopBar.tsx`: o botão de
   replay em 3D, num quadro em tela inteira, gira conforme a rolagem, e os
   textos passam por cima dele (a abertura; depois, "Como funciona" e os 3
   passos do replay).
@@ -213,8 +223,36 @@ heroVariant: "estudio", // ou "video" ou "classic"
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
 
-Com `"video"` ou `"classic"`, "Como funciona" e os 3 passos do replay
-aparecem no cartão do replay em Produtos (no `"estudio"`, eles ficam no hero).
+Com `"expansao"`, `"video"` ou `"classic"`, "Como funciona" e os 3 passos do
+replay aparecem no cartão do replay em Produtos (no `"estudio"`, eles ficam
+no hero).
+
+**O hero "expansao"** (`MASTER.md` §9.8, ADR-010) é o `ScrollExpandMedia`
+do 21st.dev (licença MIT, `src/components/ui/scroll-expansion-hero.tsx`,
+aviso em `THIRD_PARTY_NOTICES.md`), adaptado sem framer-motion: o progresso
+vai para a propriedade CSS `--hx-p`, e o tamanho do quadro, o deslize do
+título e o apagar do fundo são `calc()` no `globals.css` (bloco "Hero
+expansao"). Enquanto o quadro cresce, a roda e o toque fazem a expansão
+andar em vez de rolar a página (exceção controlada, a pedido do dono); uma
+rolagem que o hero não causou (âncora, barra de rolagem, foco) completa a
+expansão, e um link direto para uma âncora (ex.: `/#contato`) já abre
+expandido. Sem JavaScript ou com reduced motion, fica a composição parada
+(quadro pequeno com o pôster, título e linha de apoio), com a abertura e os
+botões logo abaixo, e a página rola normalmente. O texto fica em
+`landingContent.heroExpansao` (o título e a dica são proposta, aguardando
+aprovação).
+
+**Trocar a mídia do hero "expansao":** os arquivos ficam em
+`public/hero/expansao/` com nomes e tamanhos fixos, apontados em
+`siteConfig.heroExpansao`: `fundo.avif`/`fundo.jpg` (1920 × 1080),
+`fundo-retrato.avif`/`fundo-retrato.jpg` (1080 × 1920, telas em pé),
+`midia.webm` (VP9) e `midia.mp4` (H.264), 1280 × 720, loop mudo de 10 s sem
+emenda, e `midia-poster.avif`/`midia-poster.jpg` (1280 × 720, igual ao 1º
+quadro do vídeo). Basta sobrescrever com os mesmos nomes; enquanto existir
+`LEIA-PROVISORIO.txt`, a mídia é a provisória. O corte das imagens fica em
+`.hero-expansao` no `globals.css` (`--hx-fundo-pos`, `--hx-fundo-pos-retrato`
+e `--hx-midia-pos`). A mídia precisa ser escura atrás do título e das
+legendas (limites de luminância no `MASTER.md` §3.4).
 
 **O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
 de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de

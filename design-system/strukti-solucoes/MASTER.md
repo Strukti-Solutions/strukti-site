@@ -16,7 +16,7 @@
 
 **Escuro para mostrar, claro para ler.** O escuro é a base da página: topo, produtos, aplicativos e rodapé. O claro fica só onde se lê e se age: a chamada para outros problemas, como trabalhamos, equipe, contato, dúvidas e o aviso de privacidade.
 
-**Uma ousadia só.** O momento memorável é o hero "estudio" (§9.7): o produto girando sob a luz conforme a rolagem. Todo o resto é quieto, preciso e tipográfico.
+**Uma ousadia só.** O momento memorável é o hero em uso (`siteConfig.heroVariant`): o "expansao" (§9.8, o padrão desde 15/10/2026), um quadro calmo que cresce com a rolagem até quase a tela inteira enquanto o título se abre, ou o "estudio" (§9.7), o produto girando sob a luz conforme a rolagem. Nunca os dois na mesma página. Todo o resto é quieto, preciso e tipográfico.
 
 ### Quatro assinaturas da marca (as únicas "decorações" permitidas)
 
@@ -62,7 +62,8 @@
 
 ```
 Barra do topo ........ espaço
-Hero ................. espaço    produto em tela inteira, textos por cima (§9.7)
+Hero ................. espaço    quadro que cresce com a rolagem (§9.8; ou o
+                                 produto em tela inteira do "estudio", §9.7)
 Produtos ............. espaço    palcos de hardware (#produtos)
 Aplicativos .......... noite     palcos com a tela do app (#aplicativos)
 Chamada geral ........ papel     outros problemas (#sob-medida)
@@ -190,6 +191,9 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | Contorno dos selos no papel navy-500 / papel · branco | 6,16 / 6,75 | 3 ✅ |
 | Selo de ilustração navy-200 / palco (espaço · noite) | 11,73 / 10,72 | 4,5 ✅ |
 | **Pior caso do palco:** selo de ilustração navy-200 sobre a noite com a luz elétrica inteira atrás (electric-500 a 0,45) | 5,60 | 4,5 ✅ |
+| **Hero "expansao"** (exceção da §9.8: texto sobre a mídia, sem véu de 0,86): título navy-50 sobre o pixel mais claro permitido na faixa do título, depois do tom do fundo e da sombra do quadro (luminância ≤ 0,163, cerca de `#707070`) | ≥ 4,5 | 4,5 ✅ (condição da mídia) |
+| **Hero "expansao":** linha de apoio e dica navy-100 sobre o pixel mais claro permitido na faixa delas (luminância ≤ 0,137, cerca de `#686868`) | ≥ 4,5 | 4,5 ✅ (condição da mídia) |
+| **Hero "expansao":** conteúdo depois do palco, sobre o espaço sólido: branco / navy-200 | 18,84 / 11,73 | 4,5 ✅ |
 
 Decorativos (sem exigência): junta navy-100 sobre branco 1,25; junta da
 barra do topo navy-800 sobre espaço 1,24 (e sobre a noite, 1,13); ponto do i
@@ -349,6 +353,12 @@ desfoque.
    de trás de uma linha (word pull-up, 900 ms) e o ponto do i cai no lugar
    (520 ms, depois dela). Só CSS (ADR-004): começa no 1º quadro, sem
    esperar a hidratação, e some com prefers-reduced-motion.
+5. **Hero "expansao"** (§9.8): o vídeo do quadro em loop (só por
+   JavaScript, nunca com reduced motion) e a expansão guiada pela roda, pelo
+   toque e pelo teclado, a exceção de rolagem descrita abaixo. As durações
+   são as do componente de origem (fundo 100 ms, sombra do quadro 200 ms,
+   conteúdo 700 ms; teclado e saltos, 300 ms com `--ease-out`), não os
+   tokens: fazem parte da animação que o dono pediu para manter.
 
 O cartão 3D na rolagem (`ScrollTiltCard`) saiu na v3, junto com o vídeo em
 destaque do portfólio em que era usado.
@@ -366,8 +376,10 @@ destaque do portfólio em que era usado.
 **Regras de uso:**
 - O visual do hero é o único movimento que acontece sozinho no
   carregamento (no hero "video", o vídeo e a subida da palavra gigante,
-  que é decorativa). Nenhuma animação de entrada no texto do hero (o H1
-  não pode esperar uma animação para aparecer).
+  que é decorativa; no "expansao", o vídeo do quadro). Nenhuma animação de
+  entrada no texto do hero (o H1 não pode esperar uma animação para
+  aparecer; o do "expansao" está à vista em p = 0 e só se move com a
+  rolagem).
 - `Reveal` vai no **grupo** (cabeçalho de seção, uma parede inteira), não
   em cada parágrafo. Paredes usam o escalonamento existente, com no máximo
   60 ms entre blocos.
@@ -378,7 +390,15 @@ destaque do portfólio em que era usado.
   No hero, o visual congela num quadro (buraco negro com `paused`) ou fica
   o estático.
 
-Animação guiada pela rolagem só existe no hero "estudio" (§9.7). No resto da página continuam as entradas suaves (Reveal).
+Animação guiada pela rolagem só existe no hero em uso (`siteConfig.heroVariant`): o giro do "estudio" (§9.7), com a rolagem nativa e o fundo preso por `position: sticky`, ou a expansão do "expansao" (§9.8). No resto da página continuam as entradas suaves (Reveal).
+
+**Exceção controlada: a rolagem segurada do hero "expansao"** (ADR-010). Fora dela, vale a regra geral: a rolagem é sempre a do navegador (nada de `preventDefault` em `wheel`, `touchmove` ou teclas, `window.scrollTo` para segurar a página, `overflow: hidden` no `body` ou bibliotecas de "smooth scroll"). No "expansao", a pedido do dono, o comportamento do componente de origem fica: enquanto o quadro não chega ao tamanho final, a roda e o toque fazem a expansão andar em vez de rolar a página. Isso só vale com estas garantias, e cada uma tem teste:
+- **Só com animação:** a página só é segurada depois de montar, com `useCanAnimate()` (sem reduced motion), em scroll 0 e sem âncora fora do hero na URL. Servidor, sem JavaScript e reduced motion mostram a composição parada (p = 0) com o conteúdo logo abaixo, e a página rola normalmente (mesma árvore, ADR-004; o CSS de `prefers-reduced-motion: reduce` também força o estado parado).
+- **Nunca volta ao topo sozinha:** qualquer rolagem que o hero não causou (âncora da barra, barra de rolagem, busca na página, foco, posição restaurada) completa a expansão no lugar de desfazer a rolagem. Uma âncora fora do hero, ao montar ou no `hashchange`, começa expandida.
+- **Âncoras estáveis:** a altura do hero não muda entre os estados (só `transform`, opacidade e o tamanho do quadro, que é absoluto). O alvo de uma âncora fica onde o navegador o pôs.
+- **Teclado e foco:** enquanto segura (foco no body ou dentro do hero, fora de campos), seta ±0,1, Page Down/Up e Espaço ±0,34, End expande e Home recolhe; expandido em scroll ≤ 5, as teclas para cima recolhem, como a roda. Foco em qualquer coisa do hero, menos o controle do vídeo, completa a expansão: nada focado fica invisível.
+- **Zoom e menus:** Ctrl + roda (zoom), pinça com dois dedos e o painel aberto do menu da barra ficam com o navegador. `preventDefault` só em evento cancelável.
+- **Scroll programático instantâneo:** o único é o do recolher (`behavior: "instant"`; o `html` tem `scroll-behavior: smooth`).
 
 ---
 
@@ -419,7 +439,7 @@ fim do texto.
 | Variante | Fundo | Texto | Hover | Onde |
 |---|---|---|---|---|
 | WhatsApp | `#25D366` | navy-950 | `#1FBF5B` | Todo botão que abre o WhatsApp (sempre o de maior destaque) |
-| Primário | electric-700 | branco | electric-800 | "Conhecer o replay" (hero "estudio"), "Diagnóstico gratuito" (Aplicativos), "Contar o meu problema" (Chamada geral) e o envio do formulário |
+| Primário | electric-700 | branco | electric-800 | "Conhecer o replay" (heros "expansao" e "estudio"), "Diagnóstico gratuito" (Aplicativos), "Contar o meu problema" (Chamada geral) e o envio do formulário |
 | Contorno (escuro) | transparente, borda 1,5 px navy-300 | branco | fundo `rgb(255 255 255 / .06)` | "Ver o site do replay" (Produtos, escondido até o endereço existir), "Mostrar mais projetos" (Aplicativos, com mais de 6) e o secundário dos heros "video" e "classic" |
 | Contorno (claro) | transparente, borda 1,5 px navy-800 | navy-800 | fundo navy-100 | Secundário no claro, quando houver |
 
@@ -451,10 +471,10 @@ Direita: botão WhatsApp compacto (44 px).
   aprovado.
 - Até 400 px: botão com `padding: 0 14px` e 15 px, para caber com a
   assinatura a 360 px sem rolagem horizontal.
-- Este cabeçalho é o do hero "classic". Os heros "estudio" e "video" usam a
-  barra da §8.3.1.
+- Este cabeçalho é o do hero "classic". Os heros "expansao", "estudio" e
+  "video" usam a barra da §8.3.1.
 
-### 8.3.1 Barra do topo — de borda a borda (heros "estudio" e "video")
+### 8.3.1 Barra do topo — de borda a borda (heros "expansao", "estudio" e "video")
 
 `src/components/TopBar.tsx`. Uma faixa em espaço (navy-950), sólida, **fixa
 a página toda** (substitui o cabeçalho sticky), na **largura inteira da
@@ -538,8 +558,9 @@ mas **sem número à mostra**: a régua faz a separação. Itens separados por r
 
 A parede vertical de passos numerados do Diagnóstico saiu com a seção. Os
 3 passos do replay ("Como funciona") ficam no hero "estudio" (§9.7), com o
-número "01" a "03" decorativo; com os heros "video" e "classic", voltam ao
-cartão do replay em Produtos, como lista numerada simples.
+número "01" a "03" decorativo; com os heros "expansao" (o padrão), "video"
+e "classic", ficam no cartão do replay em Produtos, como lista numerada
+simples.
 
 ### 8.7 Formulário
 
@@ -673,7 +694,7 @@ Crivo): ele some enquanto
   conferido em rolagem, redimensionamento e foco. Ele nunca cobre um botão,
   campo, link ou controle de vídeo.
 
-**Com a barra do topo (§8.3.1, heros "estudio" e "video"), o FAB só existe abaixo de 75em
+**Com a barra do topo (§8.3.1, heros "expansao", "estudio" e "video"), o FAB só existe abaixo de 75em
 (1200 px)** (decisão do Claudinho no HR1; o ponto acompanha o da barra
 larga desde a TB2): a partir daí o WhatsApp já está sempre à mostra na
 barra fixa. É CSS (`.topbar ~ .fab-whatsapp { display: none }` em ≥ 75em),
@@ -689,7 +710,7 @@ Oculto de verdade: `data-visible="false"`, atributo `inert` (fora do Tab e
 do leitor de tela) e `visibility: hidden`, não só opacidade. Começa oculto
 no SSR (o hero está na tela ao carregar: sem divergência de hidratação e
 sem piscar); sem JavaScript fica oculto: no hero "classic", o botão do
-cabeçalho continua lá; nos heros com a barra ("estudio" e "video"), abaixo
+cabeçalho continua lá; nos heros com a barra ("expansao", "estudio" e "video"), abaixo
 de 75em o menu da barra não abre sem JavaScript, e o WhatsApp fica no botão
 do hero.
 A transição só existe com `prefers-reduced-motion: no-preference` e só na
@@ -832,8 +853,9 @@ Sem animação de entrada (§6).
 ### 9.6 Hero "video" (padrão do HR1 até a v3)
 
 As §9.1–9.5 descrevem o hero **"classic"**, que continua no código. A
-versão em uso é escolhida em `siteConfig.heroVariant` (`"estudio"`, o
-padrão desde a v3, `"video"` ou `"classic"`, em `src/config/site.ts`); a
+versão em uso é escolhida em `siteConfig.heroVariant` (`"expansao"`, o
+padrão desde 15/10/2026, `"estudio"`, o padrão da v3, `"video"` ou
+`"classic"`, em `src/config/site.ts`); a
 barra do topo muda junto (§8.3 ou §8.3.1). Os heros "video" e "classic"
 saem na limpeza dos heros (spec §5.2). Implementação própria (ADR-005) no estilo pedido pelo
 cliente; componentes em `src/components/sections/HeroVideo*.tsx` e
@@ -922,7 +944,7 @@ navy-300 14 px. Botões em pílula (exceção da ADR-007, §8.1).
   motion (foi a pessoa que pediu). Só aparece depois de montar.
 - O hero tem `data-hides-fab` (§8.12).
 
-### 9.7 Hero "estudio" (padrão desde a v3)
+### 9.7 Hero "estudio" (padrão da v3 até 15/10/2026)
 
 Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos passam por cima dele. O produto é uma sequência de quadros pré-renderizada (`public/hero/sequencia/`, gerada por `scripts/hero-3d/`): desktop com 90 quadros de 1600 × 1000, celular (até 767 px) com 45 quadros de 800 × 900. O conjunto é escolhido uma vez, ao montar, pela largura da tela: girar a tela não baixa tudo de novo.
 
@@ -931,7 +953,7 @@ Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos
 2. "Como funciona" (h2), no estilo do sobretítulo: cyan-300, peso 600, sem caixa-alta (§10);
 3. os 3 passos do replay (`<ol role="list">`), com o número "01" a "03" decorativo (`aria-hidden`; a lista já numera).
 
-Os passos saíram do cartão do replay em Produtos, para não repetir. Com os heros "video" e "classic", que não os têm, eles voltam ao cartão (§8.6).
+Os passos saíram do cartão do replay em Produtos, para não repetir. Com os heros "expansao", "video" e "classic", que não os têm, eles ficam no cartão (§8.6).
 
 **Enquadramento.** Em qualquer quadro do giro, a peça fica entre 9% e 92% da altura do quadro e entre 30% e 70% da largura (15% e 85% no celular). O quadro é dimensionado por ela, e a peça aparece sempre inteira e abaixo da barra:
 - **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 63% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça. Aqui o fundo fica atrás dos textos.
@@ -954,6 +976,62 @@ Os passos saíram do cartão do replay em Produtos, para não repetir. Com os he
 **Pôster e selo:**
 - O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML, com `alt=""` (é decorativo, como o canvas), e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
 - O selo "Ilustração do conceito" fica sempre visível num canto do quadro, fora da peça (§8.14).
+
+### 9.8 Hero "expansao" (padrão desde 15/10/2026)
+
+Seção `#inicio` (`.hero-expansao`, `surface-space`), escolhida com `siteConfig.heroVariant = "expansao"`; a barra do topo é a da §8.3.1, e a seção seguinte é Produtos. Quando está em uso, é ela a ousadia da página (§1). Componente de terceiro com licença MIT, adaptado: `ScrollExpandMedia`, de @arunachalam (21st.dev), em `src/components/ui/scroll-expansion-hero.tsx` (licença, origem e a lista de mudanças no comentário do topo e em `THIRD_PARTY_NOTICES.md`); a seção é `src/components/sections/HeroExpansao.tsx`; decisões na ADR-010.
+
+**Tema da mídia** ("Fim de expediente", produção própria): um ambiente que transmite paz, com detalhes sutis do que a Strukti faz. Uma mesa calma junto a uma janela alta na hora azul, a cidade desfocada lá fora, a luz do abajur, um caderno fechado, uma caneca, um celular com uma rota do Rota de Vendas e a caixa do botão do replay com o LED ciano. Sem florestas, árvores, montanhas ou paisagens naturais; sem texto, logo de cliente ou dado na imagem (§9.1).
+
+**A animação** (a do componente de origem, mantida a pedido do dono, com os mesmos números). O progresso p vai de 0 a 1:
+- **Quadro** (`.hero-expansao__midia`): centrado num palco de 100svh, de 300 × 400 px a (300 + 1250p) × (400 + 400p) px; abaixo de 768 px, (300 + 650p) × (400 + 200p). Limite de 95vw × 85vh (nas telas baixas, também 100svh menos duas vezes a barra, para nunca passar sob ela). Raio de 16 px e sombra `0 0 50px rgb(0 0 0 / .3)`: são do componente, fora da escala da §5.3 e da §5.4, como exceção deste hero.
+- **Fundo** (`.hero-expansao__fundo`): opacidade 1 − p, até sobrar o espaço (navy-950) da seção: o hero termina em espaço (§9.1).
+- **Sombra do vídeo:** preto a 30% com opacidade 0,5 − 0,3p.
+- **Título e legendas:** a 1ª linha do título e a linha de apoio deslizam −p × 150vw (−180vw abaixo de 768 px); a 2ª linha e a dica, +p × 150vw (+180vw). O corte lateral é `overflow-x: clip` na seção (sem rolagem horizontal).
+- **Conteúdo** (`.hero-expansao__conteudo`): aparece em p = 1 (fade de 700 ms) e some se p voltar abaixo de 0,75.
+- **Entrada:** a roda soma deltaY × 0,0009 (linhas × 16 px, páginas × a altura da tela); o toque soma o arrasto × 0,005 para expandir e × 0,008 para recolher; o teclado, como na §6. Expandido, roda para cima ou arrasto de mais de 20 px para baixo com scroll ≤ 5 recolhe (a página volta ao topo, instantâneo, e o progresso fica em 1 até a próxima roda).
+- O p é escrito em `--hx-p` (um `requestAnimationFrame`), e todas as fórmulas são `calc()` no CSS; os números do celular vêm de `@media (max-width: 47.99em)`. Roda e toque mexem no quadro sem transição (como no original); teclado e saltos (âncora, foco) ganham 300 ms.
+
+**Camadas** (do palco, de baixo para cima):
+```
+4. Controle do vídeo   44 px, canto de baixo à direita do palco (gutter;
+                       16 px do pé), à vista em qualquer progresso
+3. Título              H1 em duas linhas, por cima do quadro (z-index 2)
+2. Quadro              pôster + vídeo + sombra; linha de apoio e dica
+                       logo abaixo dele (acompanham o tamanho)
+1. Fundo               <picture> decorativo (alt=""), tom de 10% de
+                       espaço e desbotamento para o espaço no pé
+0. Base                espaço (navy-950)
+```
+
+**Os textos** (`landingContent.heroExpansao`; o título, a dica, a descrição da mídia e os nomes do controle são proposta, aguardando aprovação em `docs/landing-copy.md`):
+1. **H1** (`#hero-title`): um único `<h1>` com as duas linhas em `<span>`, "Tecnologia que trabalha" / "em silêncio"; o nome acessível é a frase inteira. Geologica 700, SHRP 100, `clamp(2rem, 1.2rem + 3.6vw, 3.75rem)`, navy-50, `text-shadow: 0 2px 24px rgb(8 18 29 / .6)`, `text-wrap: balance`, centrado (exceção deste hero ao alinhamento à esquerda da §4: é a composição do componente). Sem `mix-blend-mode`.
+2. **Linha de apoio** (o `date` do original): o sobretítulo aprovado, "Replay para quadras · Aplicativos sob medida", navy-100, de 16 a 22 px, peso 500.
+3. **Dica**: "Role para expandir", navy-100, 15 px, peso 500, `aria-hidden` (é instrução para o olho). Só aparece quando a expansão anda (`data-pin` ou `data-expanded`); parada, ela mentiria.
+4. **Conteúdo** (os `children` do original), depois do palco, no fluxo, sobre o espaço, alinhado à esquerda no `.container`: a abertura aprovada como H2, o corpo (`.lead`) e os dois botões ("Conhecer o replay", primário, para `#produtos`, e o WhatsApp com a mensagem geral). Os dois botões estão no HTML do servidor.
+5. **Quadro**: `role="img"` com a descrição da cena como nome acessível; o fundo é decorativo.
+
+**Estados** (atributos da seção, lidos pelo CSS, pelos testes e pelo check:browser):
+
+| Estado | `data-pin` | `data-expanded` | `data-progress` | `data-content` |
+|---|---|---|---|---|
+| Parado (servidor, sem JavaScript, reduced motion, antes de montar) | `false` | `false` | `0.00` | `visible` |
+| Segurando (p < 1, ou recolhido em p = 1) | `true` | `false` | `0.00`…`1.00` | `hidden` até p = 1; `visible` até p voltar abaixo de 0,75 |
+| Expandido (página livre) | `false` | `true` | `1.00` | `visible` |
+
+O parado é a composição de p = 0 (fundo, quadro de 300 × 400 com o pôster, título e linha de apoio), sem a dica, com o conteúdo logo abaixo e a página rolando normalmente. Em scroll 0, a composição é a mesma com e sem animação (nada salta ao montar). `data-input` ("wheel", "touch", "key", "auto") diz o que mexeu por último.
+
+**Mídia** (`public/hero/expansao/`, nomes e tamanhos fixos; a versão final substitui os arquivos sem mexer no código; `LEIA-PROVISORIO.txt` marca a versão provisória):
+- Fundo: `fundo.avif`/`fundo.jpg` (1920 × 1080) e `fundo-retrato.avif`/`fundo-retrato.jpg` (1080 × 1920, para `(orientation: portrait)`), num `<picture>` com `alt=""`, `fetchpriority="high"` (é o LCP), `object-fit: cover`. O corte é `--hx-fundo-pos` (50% 70%) e `--hx-fundo-pos-retrato` (50% 60%) em `.hero-expansao`, como a produção da mídia recomendar.
+- Vídeo do quadro: `midia.webm` (VP9) e `midia.mp4` (H.264), 1280 × 720, loop de 10 s sem emenda, mudo; pôster `midia-poster.avif`/`.jpg`, idêntico ao 1º quadro. Servido pelo site, nunca de CDN nem `<iframe>` (CSP).
+- Mecanismo da §9.6 (`HeroVideoProvider`, `HeroVideoClip`, `HeroVideoToggle`): sem `autoplay`, `play()` só por JavaScript depois de montar, com as cinco condições (sem reduced motion, sem "economizar dados", quadro na tela, aba visível, nenhum vídeo do portfólio tocando); mudo por propriedade; `opacity: 0` até tocar; `preload="metadata"` (o quadro é pequeno; o LCP é o fundo); `data-hero-video`. Só um vídeo toca por vez na página (§8.8). Com reduced motion, fica o pôster.
+- **Controle** (WCAG 2.2.2): o botão da §9.6, com os nomes "Pausar o vídeo" / "Tocar o vídeo". Focar nele não expande o quadro (dá para pausar antes).
+
+**Garantias** (além das da §6, "Exceção controlada"):
+- **Contraste** (exceção ao véu de 0,86 da §9.1): o texto fica sobre a mídia, como no componente. A mídia é escura na faixa do texto: depois do tom do fundo e da sombra do quadro, o pixel mais claro atrás do título fica com luminância ≤ 0,163 e atrás da linha de apoio e da dica, ≤ 0,137 (§3.4). Toda troca de mídia confere isso nas capturas da §11.
+- **FAB:** a seção tem `data-hides-fab` (§8.12).
+- **Barra fixa:** o quadro expandido nunca passa sob a barra; o título fica no meio do palco.
+- **Sem JavaScript:** o conteúdo (com os dois botões) está à vista logo abaixo do palco.
 
 ---
 

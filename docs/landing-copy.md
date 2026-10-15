@@ -4,6 +4,8 @@ Status: **aprovado pelo Thiago em 03/10/2026** · Versão 2.0 · 03/10/2026 · H
 
 *Nota: a v2.0 reescreve a home inteira para o novo rumo (spec `docs/superpowers/specs/2026-10-03-identidade-estudio-design.md`). O histórico até a v1.8 está no git (`git log -- docs/landing-copy.md`).*
 
+*Nota de 15/10/2026: a seção 2a (hero "expansao", o novo padrão) é **proposta — aguardando aprovação**; todo o resto continua aprovado como na v2.0.*
+
 ## Como ler este documento
 
 - O texto depois de cada rótulo em negrito (**Título (H1):**, **Botão:** etc.) é o **texto final** e vai para o site exatamente assim, com a mesma pontuação e acentuação.
@@ -29,7 +31,7 @@ Ordem e fundos conforme a spec §4.
 | # | Seção | Âncora | Fundo | Chamada para ação |
 |---|---|---|---|---|
 | 1 | Barra do topo | — | escuro | WhatsApp (mensagem geral) |
-| 2 | Abertura (hero) | `#inicio` | escuro | "Conhecer o replay" (âncora `#produtos`) e "Falar no WhatsApp" |
+| 2 | Abertura (hero; "expansao" desde 15/10/2026, seção 2a) | `#inicio` | escuro | "Conhecer o replay" (âncora `#produtos`) e "Falar no WhatsApp" |
 | 3 | Produtos de hardware | `#produtos` | escuro, palcos | Replay: WhatsApp (mensagem do replay). Estacionamento: WhatsApp (mensagem do estacionamento) |
 | 4 | Aplicativos | `#aplicativos` | escuro, palcos | "Diagnóstico gratuito" → formulário com o assunto "Aplicativo" |
 | 5 | Tem um problema que pede hardware? | `#sob-medida` | claro | Formulário com o assunto "Outro" |
@@ -130,6 +132,36 @@ Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithM
 *Nota: o título não fala de IA de propósito: hoje nenhum produto tem IA pronta. A IA aparece no texto, com "em breve" escrito.*
 
 *Nota: os textos do hero "video" e "classic" (`hero.*`, inclusive os nomes do controle do vídeo de fundo, "Pausar o vídeo de fundo" e "Tocar o vídeo de fundo") continuam como na v1.8 enquanto essas variantes estiverem no código. Eles não aparecem com o hero "estudio".*
+
+---
+
+## 2a. Abertura (hero "expansao") — proposta, aguardando aprovação
+
+Status: **proposta — aguardando aprovação do Thiago** (15/10/2026). O hero "expansao" (MASTER §9.8, ADR-010) é o padrão desde 15/10/2026; enquanto esta seção não for aprovada, os textos novos abaixo estão no site como proposta. Os textos já aprovados vêm da seção 2, por referência, sem mudança.
+
+**Textos novos (proposta):**
+
+- **`heroExpansao.titleLines[0]` (1ª parte do título, desliza para a esquerda):** Tecnologia que trabalha
+- **`heroExpansao.titleLines[1]` (2ª parte do título, desliza para a direita):** em silêncio
+- **`heroExpansao.title` (o H1, numa leitura só):** Tecnologia que trabalha em silêncio
+- **`heroExpansao.hint` (dica abaixo do quadro, só para o olho, aparece só quando a expansão anda):** Role para expandir
+- **`heroExpansao.mediaAlt` (nome acessível do quadro com o vídeo):** Fim de expediente: uma mesa junto a uma janela alta na hora azul, com a cidade desfocada lá fora, a luz do abajur, um caderno fechado, uma caneca, um celular mostrando uma rota do Rota de Vendas e a caixa do botão do replay com o LED ciano aceso.
+- **`heroExpansao.videoPause` (controle do vídeo, tocando):** Pausar o vídeo
+- **`heroExpansao.videoPlay` (controle do vídeo, parado):** Tocar o vídeo
+
+**Textos já aprovados (seção 2), reaproveitados:**
+
+- **`heroExpansao.date` (linha de apoio abaixo do quadro, desliza para a esquerda):** o sobretítulo aprovado, `heroEstudio.eyebrow` ("Replay para quadras · Aplicativos sob medida").
+- **`heroExpansao.headline` (H2 do conteúdo que aparece com a expansão completa):** `heroEstudio.headline`.
+- **`heroExpansao.body`:** `heroEstudio.body`.
+- **`heroExpansao.primaryCta` (botão principal, âncora `#produtos`):** `heroEstudio.primaryCta` ("Conhecer o replay").
+- **`heroExpansao.whatsappCta` (WhatsApp com a mensagem geral):** `heroEstudio.whatsappCta` ("Falar no WhatsApp").
+
+*Nota: o título curto existe para caber nas duas partes que se abrem para os lados (o H1 aprovado, com 11 palavras, não cabe). A frase aprovada continua no site, como H2 do conteúdo que aparece logo depois.*
+
+*Nota: "Role para expandir" é instrução visual: fica fora do leitor de tela e não aparece sem animação (reduced motion, sem JavaScript), quando seria mentira.*
+
+*Nota: os nomes do controle tiram o "de fundo" do hero "video", porque aqui o vídeo fica num quadro no meio da tela, não no fundo.*
 
 ---
 
