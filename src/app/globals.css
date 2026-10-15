@@ -986,6 +986,70 @@ video:focus-visible {
   }
 }
 
+/*
+ * Ao rolar, a barra larga (75em+) recolhe numa cápsula centralizada e
+ * flutuante: menos altura, cantos arredondados, fundo translúcido com
+ * desfoque (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md,
+ * N1). Abaixo de 75em a barra não muda — o painel do menu (`topbar__nav`)
+ * depende da largura total dela.
+ */
+@media (min-width: 75em) {
+  .topbar[data-scrolled="true"] {
+    background-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .topbar[data-scrolled="true"] .topbar__bar {
+    max-width: 860px;
+    height: calc(var(--topbar-height) - 16px);
+    margin-top: 12px;
+    padding-inline: 20px;
+    border: 1px solid rgb(30 53 80 / 0.6);
+    border-radius: 999px;
+    background-color: rgb(8 18 29 / 0.72);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: var(--shadow-float);
+  }
+
+  /* O link da seção visível ganha um traço embaixo (N2): sinaliza nos links
+     que já existem, sem componente novo. */
+  .topbar__links a[aria-current] {
+    color: #ffffff;
+    position: relative;
+  }
+
+  .topbar__links a[aria-current]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -6px;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background-color: var(--color-cyan-400);
+  }
+}
+
+@media (min-width: 75em) and (prefers-reduced-motion: no-preference) {
+  .topbar {
+    transition:
+      background-color var(--duration-base) var(--ease-standard),
+      border-color var(--duration-base) var(--ease-standard);
+  }
+
+  .topbar__bar {
+    transition:
+      max-width var(--duration-base) var(--ease-standard),
+      height var(--duration-base) var(--ease-standard),
+      margin-top var(--duration-base) var(--ease-standard),
+      padding-inline var(--duration-base) var(--ease-standard),
+      border-radius var(--duration-base) var(--ease-standard),
+      background-color var(--duration-base) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* 8c. Hero com vídeo (MASTER §9.6)                                    */
 /* ------------------------------------------------------------------ */
@@ -2230,6 +2294,15 @@ textarea.field__input {
 /* ------------------------------------------------------------------ */
 /* Catálogo: produtos, aplicativos, chamada (spec 2026-10-03 §4)        */
 /* ------------------------------------------------------------------ */
+
+/* Atalhos para os cartões (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md, N5). */
+.produtos__atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
 .produtos {
   display: grid;
   gap: var(--space-6);

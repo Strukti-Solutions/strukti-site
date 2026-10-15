@@ -30,9 +30,45 @@ export const TOPBAR_WIDE_QUERY = "(min-width: 75em)";
 export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   const { nav, whatsappButton, menuButton } = landingContent.header;
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+
+  // A barra recolhe numa cápsula ao rolar, e o link do menu da seção visível
+  // ganha aria-current (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md,
+  // N1/N2). O estado parte sempre de "não rolou" (servidor e 1º render do
+  // cliente iguais): não é preferência de movimento, é posição de rolagem,
+  // que começa em 0 nos dois.
+  useEffect(() => {
+    const targets = nav.map((item) => item.href.slice(1));
+
+    const computeActive = () => {
+      const offset = 96;
+      const scrollPos = window.scrollY + offset;
+      let current: string | null = null;
+      for (const id of targets) {
+        const element = document.getElementById(id);
+        if (element && element.offsetTop <= scrollPos) current = id;
+      }
+      return current;
+    };
+
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+      const current = computeActive();
+      setActiveHref(current ? `#${current}` : null);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [nav]);
 
   // Fecha com Esc (devolvendo o foco ao botão), com clique fora e quando a
   // tela passa para a largura em que os links ficam sempre à mostra.
@@ -76,6 +112,7 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       ref={headerRef}
       className="topbar"
       data-open={open ? "true" : "false"}
+      data-scrolled={scrolled ? "true" : "false"}
       onBlur={closeWhenFocusLeaves}
     >
       <div className="container topbar__bar">
@@ -106,7 +143,11 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
           <ul className="topbar__links">
             {nav.map((item) => (
               <li key={item.href}>
-                <a href={item.href} onClick={() => setOpen(false)}>
+                <a
+                  href={item.href}
+                  aria-current={activeHref === item.href ? "true" : undefined}
+                  onClick={() => setOpen(false)}
+                >
                   {item.label}
                 </a>
               </li>

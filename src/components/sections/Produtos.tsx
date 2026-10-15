@@ -30,8 +30,19 @@ export function Produtos() {
           <p className="lead">{intro}</p>
         </Reveal>
 
+        {/* Atalhos para os cartões abaixo (docs/superpowers/specs/
+            2026-10-15-hero-triangulo-3d-design.md, N5). */}
+        <nav aria-label="Atalhos para os produtos" className="produtos__atalhos">
+          <a href="#produto-replay" className="btn btn--outline btn--compact">
+            {replay.name}
+          </a>
+          <a href="#produto-estacionamento" className="btn btn--outline btn--compact">
+            {estacionamento.name}
+          </a>
+        </nav>
+
         <div className="produtos">
-          <article className="produto" aria-labelledby="produto-replay-title">
+          <article id="produto-replay" className="produto" aria-labelledby="produto-replay-title">
             <div>
               <Palco className="project-card__palco">
                 <ReplayVideo video={replay.video} />
@@ -86,7 +97,7 @@ export function Produtos() {
             </div>
           </article>
 
-          <article className="produto" aria-labelledby="produto-estacionamento-title">
+          <article id="produto-estacionamento" className="produto" aria-labelledby="produto-estacionamento-title">
             <div className="produto__corpo">
               <SeloStatus status="desenvolvimento" />
               <h3 id="produto-estacionamento-title" className="block-title">

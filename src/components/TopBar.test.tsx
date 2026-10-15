@@ -139,6 +139,64 @@ describe("TopBar", () => {
   });
 });
 
+// N1/N2 (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md): a
+// barra recolhe numa cápsula ao rolar, e o link da seção visível ganha
+// aria-current. A troca de visual (cápsula) é CSS, por data-scrolled; aqui
+// só o estado que o CSS lê.
+describe("barra ao rolar", () => {
+  let mockedSections: HTMLElement[] = [];
+
+  function mockSection(id: string, top: number) {
+    const el = document.createElement("div");
+    el.id = id;
+    Object.defineProperty(el, "offsetTop", { configurable: true, value: top });
+    document.body.appendChild(el);
+    mockedSections.push(el);
+    return el;
+  }
+
+  function setScrollY(value: number) {
+    Object.defineProperty(window, "scrollY", { configurable: true, value });
+  }
+
+  afterEach(() => {
+    setScrollY(0);
+    mockedSections.forEach((el) => el.remove());
+    mockedSections = [];
+  });
+
+  it("sem rolar, data-scrolled é false e nenhum link tem aria-current", () => {
+    for (const item of landingContent.header.nav) mockSection(item.href.slice(1), 1000);
+    const { container } = render(<TopBar />);
+    act(() => fireEvent.scroll(window));
+
+    expect(container.querySelector("header.topbar")?.getAttribute("data-scrolled")).toBe("false");
+    for (const item of landingContent.header.nav) {
+      expect(screen.getByRole("link", { name: item.label }).hasAttribute("aria-current")).toBe(false);
+    }
+  });
+
+  it("ao passar de 40px, data-scrolled vira true", () => {
+    const { container } = render(<TopBar />);
+    setScrollY(80);
+    act(() => fireEvent.scroll(window));
+    expect(container.querySelector("header.topbar")?.getAttribute("data-scrolled")).toBe("true");
+  });
+
+  it("o link da seção visível ganha aria-current; os outros, não", () => {
+    const [produtos, aplicativos] = landingContent.header.nav;
+    mockSection(produtos.href.slice(1), 0);
+    mockSection(aplicativos.href.slice(1), 900);
+
+    render(<TopBar />);
+    setScrollY(950);
+    act(() => fireEvent.scroll(window));
+
+    expect(screen.getByRole("link", { name: aplicativos.label }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getByRole("link", { name: produtos.label }).hasAttribute("aria-current")).toBe(false);
+  });
+});
+
 // TB2 (WCAG 1.4.12): o ponto da barra larga é um só. Se o CSS e o TopBar
 // divergirem, numa faixa de larguras o painel fica aberto sem botão, ou o
 // FAB some sem o WhatsApp da barra à mostra.

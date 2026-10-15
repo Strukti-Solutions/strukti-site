@@ -68,6 +68,23 @@ describe("<Produtos />", () => {
     const cta = within(card).getByRole("link", { name: new RegExp(produtos.estacionamento.cta) });
     expect(cta.getAttribute("href")).toBe(siteConfig.whatsapp.linkWithMessage(whatsappMessages.estacionamento));
   });
+
+  it('tem atalhos para os dois cartões (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md, N5)', () => {
+    render(<Produtos />);
+    const atalhos = screen.getByRole("navigation", { name: "Atalhos para os produtos" });
+
+    const replayAtalho = within(atalhos).getByRole("link", { name: produtos.replay.name });
+    expect(replayAtalho.getAttribute("href")).toBe("#produto-replay");
+    expect(document.getElementById("produto-replay")).toBe(
+      screen.getByRole("article", { name: produtos.replay.name }),
+    );
+
+    const estacionamentoAtalho = within(atalhos).getByRole("link", { name: produtos.estacionamento.name });
+    expect(estacionamentoAtalho.getAttribute("href")).toBe("#produto-estacionamento");
+    expect(document.getElementById("produto-estacionamento")).toBe(
+      screen.getByRole("article", { name: produtos.estacionamento.name }),
+    );
+  });
 });
 
 describe("mensagem pronta do WhatsApp", () => {
