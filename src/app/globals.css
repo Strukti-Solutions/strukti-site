@@ -2757,9 +2757,7 @@ textarea.field__input {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-7);
-  padding: var(--space-8) var(--gutter);
-  max-width: var(--content-max);
-  margin-inline: auto;
+  padding-block: var(--space-8);
 }
 
 .hero-objetos-secao__texto {
@@ -2799,7 +2797,10 @@ textarea.field__input {
   align-items: center;
   justify-content: center;
   height: 7.5rem;
-  perspective: 40rem;
+  /* Perto do tamanho do objeto (~80 px): só assim a inclinação aparece.
+     Com uma distância grande (ex.: em rem, centenas de px), o efeito de
+     3D fica quase invisível num objeto tão pequeno. */
+  perspective: 220px;
 }
 
 .hero-objetos__rotulo {
@@ -2840,7 +2841,7 @@ textarea.field__input {
     5px 5px 0 0 var(--color-navy-800),
     10px 10px 0 0 var(--color-navy-900),
     0 22px 34px -14px rgba(8, 18, 29, 0.45);
-  transform: perspective(40rem) rotateY(-20deg) rotateX(6deg);
+  transform: perspective(220px) rotateY(-32deg) rotateX(10deg);
 }
 
 .hero-objetos__celular-notch {
@@ -2890,7 +2891,7 @@ textarea.field__input {
     5px 5px 0 0 var(--color-navy-900),
     10px 10px 0 0 var(--color-navy-950),
     0 22px 34px -14px rgba(8, 18, 29, 0.45);
-  transform: perspective(40rem) rotateY(-14deg) rotateX(8deg);
+  transform: perspective(220px) rotateY(-26deg) rotateX(12deg);
 }
 
 .hero-objetos__placa-pino {
@@ -2954,19 +2955,19 @@ textarea.field__input {
 @keyframes hero-objetos-flutuar-celular {
   0%,
   100% {
-    transform: translateY(0) perspective(40rem) rotateY(-20deg) rotateX(6deg);
+    transform: translateY(0) perspective(220px) rotateY(-32deg) rotateX(10deg);
   }
   50% {
-    transform: translateY(-10px) perspective(40rem) rotateY(-20deg) rotateX(6deg);
+    transform: translateY(-10px) perspective(220px) rotateY(-32deg) rotateX(10deg);
   }
 }
 
 @keyframes hero-objetos-flutuar-placa {
   0%,
   100% {
-    transform: translateY(0) perspective(40rem) rotateY(-14deg) rotateX(8deg);
+    transform: translateY(0) perspective(220px) rotateY(-26deg) rotateX(12deg);
   }
   50% {
-    transform: translateY(-9px) perspective(40rem) rotateY(-14deg) rotateX(8deg);
+    transform: translateY(-9px) perspective(220px) rotateY(-26deg) rotateX(12deg);
   }
 }
