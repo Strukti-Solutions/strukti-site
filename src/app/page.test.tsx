@@ -5,11 +5,11 @@ import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import Home from "./page";
 
-// Estrutura da home v3 (spec 2026-10-03 §4). As âncoras rodam com as três
-// versões do topo, como o page.axe.test.tsx: os heros "video" e "classic"
-// seguem no código até a limpeza e também não podem apontar para uma seção
-// que saiu da página.
-const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
+// Estrutura da home v3 (spec 2026-10-03 §4), com o hero "expansao" (o
+// padrão) e o "estudio". As âncoras rodam com as quatro versões do topo,
+// como o page.axe.test.tsx: os heros "video" e "classic" seguem no código
+// até a limpeza e também não podem apontar para uma seção que saiu da página.
+const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
   return {
@@ -32,9 +32,9 @@ const SECTION_ORDER = [
   "duvidas",
 ];
 
-describe("home v3 (hero estudio) — estrutura", () => {
+describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura", (variant) => {
   beforeEach(() => {
-    heroVariant.current = "estudio";
+    heroVariant.current = variant;
   });
 
   it("tem as seções na ordem da spec e um único H1", () => {
@@ -78,7 +78,7 @@ describe("home v3 (hero estudio) — estrutura", () => {
   it("os botões do hero levam a Produtos e ao WhatsApp com a mensagem geral", () => {
     const { container } = render(<Home />);
     const hero = within(container.querySelector<HTMLElement>("#inicio")!);
-    const { primaryCta, whatsappCta } = landingContent.heroEstudio;
+    const { primaryCta, whatsappCta } = variant === "expansao" ? landingContent.heroExpansao : landingContent.heroEstudio;
 
     expect(hero.getByRole("link", { name: primaryCta }).getAttribute("href")).toBe("#produtos");
     expect(hero.getByRole("link", { name: whatsappCta }).getAttribute("href")).toBe(
@@ -99,7 +99,7 @@ describe("home v3 (hero estudio) — estrutura", () => {
   });
 });
 
-describe.each(["estudio", "video", "classic"] as const)("home (hero %s) — variante e âncoras", (variant) => {
+describe.each(["expansao", "estudio", "video", "classic"] as const)("home (hero %s) — variante e âncoras", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });
@@ -116,5 +116,19 @@ describe.each(["estudio", "video", "classic"] as const)("home (hero %s) — vari
 
     expect(hrefs.length).toBeGreaterThan(0);
     expect(hrefs.filter((href) => href.length > 1 && !container.querySelector(href))).toEqual([]);
+  });
+
+  it("o hero (#inicio) é filho direto do <main> e esconde o WhatsApp flutuante (data-hides-fab)", () => {
+    const { container } = render(<Home />);
+
+    expect(container.querySelector("main > section#inicio")?.hasAttribute("data-hides-fab")).toBe(true);
+  });
+
+  it('"Como funciona" e os passos do replay aparecem uma vez só: no hero "estudio" ou no cartão do replay', () => {
+    const { container } = render(<Home />);
+    const lists = within(container).getAllByRole("list", { name: landingContent.produtos.replay.stepsTitle });
+
+    expect(lists).toHaveLength(1);
+    expect(lists[0]?.closest(variant === "estudio" ? "#inicio" : "#produto-replay")).not.toBeNull();
   });
 });

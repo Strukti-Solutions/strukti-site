@@ -10,9 +10,10 @@ import { ChamadaHardware } from "./ChamadaHardware";
 
 const { produtos, aplicativos, chamadaHardware, heroEstudio, statusLabels, whatsappMessages } = landingContent;
 
-// Variante do hero em uso: os passos do replay ficam no hero "estudio" e só
-// voltam ao cartão de Produtos nas outras variantes (mesmo mock do page.test).
-const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
+// Variante do hero em uso: os passos do replay ficam no hero "estudio"; nos
+// outros heros ("expansao", o padrão, "video" e "classic") ficam no cartão de
+// Produtos (mesmo mock do page.test).
+const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
   return {
@@ -34,7 +35,7 @@ const APP_STATUS: Record<string, ProductStatus> = {
 
 describe("<Produtos />", () => {
   beforeEach(() => {
-    heroVariant.current = "estudio";
+    heroVariant.current = "expansao";
   });
 
   it("mostra o replay com selo, ilustração do conceito, ficha e o WhatsApp com a mensagem pronta", async () => {
@@ -63,13 +64,14 @@ describe("<Produtos />", () => {
   });
 
   it('com o hero "estudio", "Como funciona" e os passos ficam só no hero, fora do cartão', () => {
+    heroVariant.current = "estudio";
     render(<Produtos />);
     const replay = screen.getByRole("article", { name: produtos.replay.name });
     expect(within(replay).queryByText(produtos.replay.stepsTitle)).toBeNull();
     expect(within(replay).queryAllByRole("listitem")).toHaveLength(0);
   });
 
-  it.each(["video", "classic"] as const)(
+  it.each(["expansao", "video", "classic"] as const)(
     'com o hero "%s", o cartão do replay mostra "Como funciona" e os 3 passos',
     async (variant) => {
       heroVariant.current = variant;

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { landingContent, type ProductStatus } from "./landing";
 
+// Marca de dado pendente, montada em partes: o check:placeholders procura o
+// texto inteiro em src/ e não pode achar este teste.
+const PLACEHOLDER = ["[A", "PREENCHER"].join(" ");
+
 /** Selo de cada aplicativo, decisão do Thiago (spec §3.4 e §4). */
 const APP_STATUS: Record<string, ProductStatus> = {
   "rota-de-vendas": "piloto",
@@ -26,6 +30,21 @@ describe("landingContent v2.0", () => {
 
   it("o hero identifica o 3D como ilustração do conceito", () => {
     expect(landingContent.heroEstudio.illustrationBadge).toBe("Ilustração do conceito");
+  });
+
+  it('o hero "expansao": o H1 é as duas linhas numa leitura só, e o resto reaproveita o texto aprovado', () => {
+    const { heroExpansao, heroEstudio } = landingContent;
+    expect(heroExpansao.titleLines).toHaveLength(2);
+    expect(heroExpansao.title).toBe(heroExpansao.titleLines.join(" "));
+    expect(heroExpansao.date).toBe(heroEstudio.eyebrow);
+    expect(heroExpansao.headline).toBe(heroEstudio.headline);
+    expect(heroExpansao.body).toBe(heroEstudio.body);
+    expect(heroExpansao.primaryCta).toBe(heroEstudio.primaryCta);
+    expect(heroExpansao.whatsappCta).toBe(heroEstudio.whatsappCta);
+    for (const text of Object.values(heroExpansao).flat()) {
+      expect(text).toMatch(/\S/);
+      expect(text).not.toContain(PLACEHOLDER);
+    }
   });
 
   it("todo aplicativo tem um status da lista, e a lista de aplicativos não vem vazia", () => {

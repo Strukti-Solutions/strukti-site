@@ -2340,6 +2340,19 @@ textarea.field__input {
   margin-top: var(--space-5);
 }
 
+/* "Como funciona" e os passos no cartão do replay: com todo hero que não
+   seja o "estudio" (o "expansao", padrão, incluído). */
+.produto__passos-titulo {
+  margin-top: var(--space-5);
+  font-weight: 600;
+}
+
+.produto__passos {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: 1.25em;
+}
+
 /* Aplicativos: a tela do app no lugar do objeto, no palco (MASTER §8.13). O
    palco é o topo do cartão (rente às bordas dele, como era o pôster) e deixa
    uma moldura em volta da tela, onde aparecem a luz de estúdio e o contorno
@@ -2742,5 +2755,328 @@ textarea.field__input {
      (altura útil − altura do passo) / 2 = 6rem. */
   .hero-estudio[data-scrub="true"] .hero-estudio__textos {
     padding-bottom: 6rem;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero "expansao" (MASTER §9.8, ADR-010)                               */
+/* ------------------------------------------------------------------ */
+/* O ScrollExpandMedia (src/components/ui/scroll-expansion-hero.tsx) escreve
+   o progresso p (0 a 1) em --hx-p, num requestAnimationFrame; tudo o que
+   muda com ele é calc() aqui, com os números do original (21st.dev):
+   quadro de 300 × 400 que ganha p × 1250 × 400 px (650 × 200 abaixo de
+   768 px), até 95vw × 85vh; fundo com opacidade 1 − p; sombra do vídeo
+   0,5 − 0,3p; título e legendas abertos p × 150vw (180vw no celular).
+
+   Estados (atributos da seção): data-pin="true" enquanto a expansão segura
+   a página; data-expanded="true" com p = 1; data-content="hidden" esconde o
+   conteúdo até a expansão completar. Parado (servidor, sem JavaScript,
+   reduced motion): --hx-p não existe (vale 0), nada fica preso, a dica não
+   aparece e o conteúdo fica à vista. A altura do hero nunca muda entre os
+   estados (só transform, opacidade e o tamanho do quadro, que é absoluto):
+   as âncoras abaixo dele ficam no lugar. */
+.hero-expansao {
+  --hx-p: 0;
+  --hx-cresce-largura: 1250px;
+  --hx-cresce-altura: 400px;
+  --hx-desliza: 150vw;
+  --hx-barra: calc(var(--topbar-height) + var(--topbar-joint));
+  /* Corte das imagens (object-position), como recomenda a produção da
+     mídia: o fundo deitado, o fundo em pé e o quadro do vídeo. */
+  --hx-fundo-pos: 50% 70%;
+  --hx-fundo-pos-retrato: 50% 60%;
+  --hx-midia-pos: 50% 50%;
+  position: relative;
+  /* O título aberto passa da tela: corta sem virar caixa de rolagem
+     (hidden fica só para quem não tem clip). */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@media (max-width: 47.99em) {
+  .hero-expansao {
+    --hx-cresce-largura: 650px;
+    --hx-cresce-altura: 200px;
+    --hx-desliza: 180vw;
+  }
+}
+
+/* O palco: a 1ª tela inteira (svh: a altura não pula quando a barra do
+   navegador do celular some). O quadro fica centrado nele. */
+.hero-expansao__palco {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  height: 100svh;
+}
+
+/* Fundo decorativo, sobre o espaço da seção: some com a expansão até sobrar
+   só o navy-950. Embaixo, desbota para o espaço, emendando no conteúdo. */
+.hero-expansao__fundo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: calc(1 - var(--hx-p));
+  pointer-events: none;
+}
+
+.hero-expansao__fundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(8 18 29 / 0.1) 0%,
+    rgb(8 18 29 / 0.1) 72%,
+    var(--color-navy-950) 100%
+  );
+}
+
+.hero-expansao__fundo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--hx-fundo-pos);
+}
+
+@media (orientation: portrait) {
+  .hero-expansao__fundo-img {
+    object-position: var(--hx-fundo-pos-retrato);
+  }
+}
+
+/* Título: um H1, duas partes que se abrem para os lados. Por cima do
+   quadro, como no original, com sombra no texto em vez de mix-blend. */
+.hero-expansao__titulo {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-inline: var(--gutter);
+}
+
+.hero-expansao__titulo h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  color: var(--color-navy-50);
+  font-size: clamp(2rem, 1.2rem + 3.6vw, 3.75rem);
+  font-weight: 700;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-align: center;
+  text-shadow: 0 2px 24px rgb(8 18 29 / 0.6);
+  text-wrap: balance;
+}
+
+.hero-expansao__linha {
+  display: block;
+}
+
+/* O quadro que cresce. O tamanho é o único que muda o layout, e só o dele:
+   é absoluto, fora do fluxo. Nunca passa sob a barra fixa nas telas baixas
+   (o mínimo com 100svh − 2 × a barra só age abaixo de ~790 px de altura). */
+.hero-expansao__midia {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: calc(300px + var(--hx-p) * var(--hx-cresce-largura));
+  height: calc(400px + var(--hx-p) * var(--hx-cresce-altura));
+  max-width: 95vw;
+  max-height: 85vh;
+  max-height: min(85svh, calc(100svh - 2 * var(--hx-barra)));
+  translate: -50% -50%;
+  border-radius: 16px;
+  box-shadow: 0 0 50px rgb(0 0 0 / 0.3);
+}
+
+.hero-expansao__quadro {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--color-navy-900);
+}
+
+.hero-expansao__poster,
+.hero-expansao__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--hx-midia-pos);
+}
+
+/* O vídeo só aparece tocando; parado, fica o pôster (o mesmo quadro). */
+.hero-expansao__video[data-playing="false"] {
+  opacity: 0;
+}
+
+.hero-expansao__sombra {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: rgb(0 0 0 / 0.3);
+  opacity: calc(0.5 - var(--hx-p) * 0.3);
+  pointer-events: none;
+}
+
+/* Linha de apoio e dica, logo abaixo do quadro (acompanham o tamanho dele). */
+.hero-expansao__legendas {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: min(90vw, 36rem);
+  margin-top: var(--space-4);
+  translate: -50% 0;
+  color: var(--color-navy-100);
+  text-align: center;
+  text-shadow: 0 1px 12px rgb(8 18 29 / 0.7);
+}
+
+.hero-expansao__data {
+  margin: 0;
+  font-size: clamp(1rem, 0.85rem + 0.6vw, 1.375rem);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.hero-expansao__dica {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  /* Só quando a expansão anda (com JavaScript, sem reduced motion). */
+  opacity: 0;
+}
+
+.hero-expansao:is([data-pin="true"], [data-expanded="true"]) .hero-expansao__dica {
+  opacity: 1;
+}
+
+.hero-expansao__linha--1,
+.hero-expansao__data {
+  transform: translateX(calc(var(--hx-p) * -1 * var(--hx-desliza)));
+}
+
+.hero-expansao__linha--2,
+.hero-expansao__dica {
+  transform: translateX(calc(var(--hx-p) * var(--hx-desliza)));
+}
+
+/* Controle do vídeo (WCAG 2.2.2): canto de baixo à direita do palco, à
+   vista em qualquer progresso, longe da barra e das legendas. */
+.hero-expansao__controle {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--space-4);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+}
+
+.hero-expansao__controle .hero-expansao__toggle {
+  top: 0;
+  right: 0;
+}
+
+/* O conteúdo (os children do original): a abertura aprovada e os botões,
+   no fluxo, sobre o espaço. Escondido (opacidade) até a expansão
+   completar; focar nele completa a expansão. */
+.hero-expansao__conteudo {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(var(--space-7), 6vw, var(--space-9));
+}
+
+.hero-expansao[data-content="hidden"] .hero-expansao__conteudo {
+  opacity: 0;
+}
+
+.hero-expansao__chamada {
+  max-width: 22ch;
+  margin: 0 0 var(--space-4);
+  color: var(--text);
+  font-size: clamp(1.75rem, 1.1rem + 2.4vw, 3rem);
+  font-weight: 720;
+  font-variation-settings: "SHRP" 100;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.hero-expansao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* As transições do original: fundo 0,1 s, sombra 0,2 s, conteúdo 0,7 s. A
+   roda e o toque mexem no quadro e no título sem transição (como no
+   original); teclado e os saltos (âncora, foco) ganham uma curta. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-expansao__fundo {
+    transition: opacity 100ms ease;
+  }
+
+  .hero-expansao__sombra {
+    transition: opacity 200ms ease;
+  }
+
+  .hero-expansao__conteudo {
+    transition: opacity 700ms ease;
+  }
+
+  .hero-expansao__dica {
+    transition: opacity var(--duration-slow) var(--ease-standard);
+  }
+
+  .hero-expansao:is([data-input="key"], [data-input="auto"]) .hero-expansao__midia {
+    transition:
+      width 300ms var(--ease-out),
+      height 300ms var(--ease-out);
+  }
+
+  .hero-expansao:is([data-input="key"], [data-input="auto"]) :is(.hero-expansao__linha, .hero-expansao__data) {
+    transition: transform 300ms var(--ease-out);
+  }
+
+  .hero-expansao:is([data-input="key"], [data-input="auto"]) .hero-expansao__dica {
+    transition:
+      opacity var(--duration-slow) var(--ease-standard),
+      transform 300ms var(--ease-out);
+  }
+}
+
+/* Reduced motion: a composição parada, mesmo que algo escreva o progresso
+   (o JavaScript nem liga a expansão: useCanAnimate). */
+@media (prefers-reduced-motion: reduce) {
+  .hero-expansao {
+    --hx-p: 0 !important;
+  }
+
+  .hero-expansao .hero-expansao__dica {
+    opacity: 0 !important;
+  }
+
+  .hero-expansao .hero-expansao__conteudo {
+    opacity: 1 !important;
   }
 }
