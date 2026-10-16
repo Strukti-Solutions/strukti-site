@@ -35,7 +35,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
 | Q17 | Os cartões entram em sequência quando a seção aparece; com movimento reduzido, tudo aparece pronto. |
 | Q18 | Com muitos itens, a fileira desliza para o lado; ela não quebra em linhas. |
 | Q19 | Filtro por tipo: Todos · Hardware · Aplicativos · Sites. |
-| Q20 | O painel tem abas (Visão geral · Como funciona · Telas), altura fixa e nada de rolagem interna (exceção na §8.6). |
+| Q20 | O painel tem abas (Visão geral · Como funciona · Telas), altura fixa e nada de rolagem interna (exceção na §4). |
 | Q21 | **A seção tem altura constante**, fechada ou aberta. Nada abaixo se mexe. |
 | Q22 | Navegar com o painel aberto: miniaturas, setas ‹ ›, ← → do teclado e deslizar o dedo. O último leva ao primeiro. Trocar de produto não cria entradas no histórico. |
 | Q23 | Fechar: X, Esc ou o voltar do navegador, com a animação inversa. |
@@ -330,7 +330,7 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
 ## 11. Documentos a atualizar
 
 - **MASTER:**
-  - seção de Produtos (§8.8) reescrita para o catálogo: coverflow, painel, fita, altura constante, movimento, acessibilidade e exceção de telas baixas;
+  - §8.8 (hoje "Aplicativos (grade de vídeos)") reescrita como "Catálogo de produtos": coverflow, painel, fita, altura constante, movimento, acessibilidade e exceção de telas baixas;
   - §6 (movimento): loop de 5 s e "nada gira sozinho";
   - §3.4 (contraste do texto sobre a arte).
 - **`docs/DECISOES.md`, ADR-011:**
