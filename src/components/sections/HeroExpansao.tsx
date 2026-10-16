@@ -40,18 +40,27 @@ export function HeroExpansao() {
             <source media={portrait} type="image/avif" srcSet={fundo.retratoAvif} />
             <source media={portrait} type="image/jpeg" srcSet={fundo.retratoJpg} />
             <source type="image/avif" srcSet={fundo.avif} />
+            {/* Sem fetchpriority: o fundo cobre a tela inteira e não conta
+                para o LCP; o LCP é o pôster do quadro (posterPriority), que
+                não pode disputar banda com ele. */}
             <img
               className="hero-expansao__fundo-img"
               src={fundo.jpg}
               alt=""
               width={fundo.width}
               height={fundo.height}
-              fetchPriority="high"
               decoding="async"
             />
           </picture>
         }
-        media={<HeroVideoClip clip={midia} posterClassName="hero-expansao__poster" videoClassName="hero-expansao__video" />}
+        media={
+          <HeroVideoClip
+            clip={midia}
+            posterClassName="hero-expansao__poster"
+            videoClassName="hero-expansao__video"
+            posterPriority
+          />
+        }
         mediaControl={<HeroVideoToggle labels={{ videoPause, videoPlay }} className="hero-expansao__toggle" />}
       >
         <h2 className="hero-expansao__chamada">{headline}</h2>

@@ -10,26 +10,40 @@ import { HeroExpansao } from "./HeroExpansao";
 /**
  * Hero "expansao" (MASTER §9.8, ADR-010): o contrato do HTML, o estado
  * parado (servidor, sem JavaScript, reduced motion) e a expansão com roda,
- * toque e teclado, com as garantias de âncora, rolagem e foco.
+ * toque e teclado, com as garantias de âncora, rolagem, foco, zoom e menu.
  */
 
-// Portão de montagem (useCanAnimate) com uma flag por teste, com o mesmo
-// `false` no 1º render do hook real (ADR-004), como no HeroSequence.test.
-// O motion guarda a preferência num cache do módulo; a integração real com
-// ele fica nos testes de hidratação da página.
-const motionGate = vi.hoisted(() => ({ canAnimate: true }));
-vi.mock("@/lib/motion", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/motion")>();
-  const { useEffect, useState } = await import("react");
+// prefers-reduced-motion por uma media query falsa que o teste liga e
+// desliga (com o evento "change", como o navegador): o portão de montagem
+// de verdade (useCanAnimate) lê e acompanha esta preferência. As outras
+// media queries (as do motion, por exemplo) não casam.
+const reducedMotion = (() => {
+  const listeners = new Set<() => void>();
+  const query = {
+    matches: false,
+    media: "(prefers-reduced-motion: reduce)",
+    onchange: null,
+    addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+    addListener: (listener: () => void) => listeners.add(listener),
+    removeListener: (listener: () => void) => listeners.delete(listener),
+    dispatchEvent: () => false,
+  };
+  const other = (media: string) => ({ ...query, media, matches: false, addEventListener() {}, removeEventListener() {} });
   return {
-    ...actual,
-    useCanAnimate: () => {
-      const [mounted, setMounted] = useState(false);
-      useEffect(() => setMounted(true), []);
-      return mounted && motionGate.canAnimate;
+    query,
+    matchMedia: (media: string) => (media.includes("prefers-reduced-motion") ? query : other(media)),
+    /** Troca a preferência e avisa quem ouve ("change"). */
+    set(reduce: boolean) {
+      query.matches = reduce;
+      listeners.forEach((listener) => listener());
+    },
+    reset() {
+      query.matches = false;
+      listeners.clear();
     },
   };
-});
+})();
 
 /** IntersectionObserver que o teste dispara à mão (o stub padrão nunca dispara). */
 class SpyIntersectionObserver {
@@ -68,7 +82,8 @@ function setScrollY(y: number) {
 }
 
 beforeEach(() => {
-  motionGate.canAnimate = true;
+  reducedMotion.reset();
+  vi.stubGlobal("matchMedia", vi.fn(reducedMotion.matchMedia));
   setScrollY(0);
   window.history.replaceState(null, "", "/");
   // A pintura (requestAnimationFrame) roda na hora, como no HeroSequence.test.
@@ -111,6 +126,15 @@ const state = () => ({
   content: hero().dataset.content,
 });
 
+/** O painel do menu da barra, aberto (abaixo de 75em). */
+const openMenu = (
+  <header className="topbar" data-open="true">
+    <nav className="topbar__nav">
+      <a href="#produtos">Produtos</a>
+    </nav>
+  </header>
+);
+
 /** Monta o hero (e o que vier junto) e espera a expansão ligar. */
 async function mount(extra?: ReactNode) {
   const result = render(
@@ -132,11 +156,20 @@ function wheel(deltaY: number, init: WheelEventInit = {}, target: EventTarget = 
 }
 
 /** Toque com um dedo em `clientY` (ou nenhum, no touchend). */
-function touch(type: "touchstart" | "touchmove" | "touchend", clientY?: number) {
+function touch(type: "touchstart" | "touchmove" | "touchend" | "touchcancel", clientY?: number, target: EventTarget = window) {
+  return touches(type, clientY === undefined ? [] : [clientY], target);
+}
+
+/** Toque com um dedo por item de `clientYs` (dois = pinça). */
+function touches(
+  type: "touchstart" | "touchmove" | "touchend" | "touchcancel",
+  clientYs: number[],
+  target: EventTarget = window,
+) {
   const event = new Event(type, { cancelable: true, bubbles: true });
-  Object.defineProperty(event, "touches", { value: clientY === undefined ? [] : [{ clientY }] });
+  Object.defineProperty(event, "touches", { value: clientYs.map((clientY) => ({ clientY })) });
   act(() => {
-    window.dispatchEvent(event);
+    target.dispatchEvent(event);
   });
   return event;
 }
@@ -202,24 +235,26 @@ describe("<HeroExpansao /> — HTML do servidor (estado parado)", () => {
     );
   });
 
-  it("mídia local e decorativa; o vídeo sem autoplay, fora do Tab, WebM antes do MP4; o controle só depois de montar", () => {
+  it("mídia local e decorativa; o vídeo sem autoplay e sem preload, fora do Tab, WebM antes do MP4; o controle só depois de montar", () => {
     const container = serverDom();
     const video = container.querySelector("video") as HTMLVideoElement;
     const fundo = container.querySelector(".hero-expansao__fundo") as HTMLElement;
 
     expect(video.hasAttribute("autoplay")).toBe(false);
     expect(video.hasAttribute("data-hero-video")).toBe(true);
-    expect(video.getAttribute("preload")).toBe("metadata");
+    // Nada baixa antes do play(): quem não vê o vídeo tocar não o baixa.
+    expect(video.getAttribute("preload")).toBe("none");
     expect(video.getAttribute("tabindex")).toBe("-1");
     expect(video.hasAttribute("loop")).toBe(true);
     expect(video.hasAttribute("playsinline")).toBe(true);
+    // Invisível só até o 1º quadro tocar.
+    expect(video.dataset.started).toBe("false");
     expect([...video.querySelectorAll("source")].map((source) => source.getAttribute("type"))).toEqual([
       "video/webm",
       "video/mp4",
     ]);
     expect(fundo.getAttribute("aria-hidden")).toBe("true");
     expect(fundo.querySelector("img")?.getAttribute("alt")).toBe("");
-    expect(fundo.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
     expect(container.querySelector(".hero-expansao__quadro")?.getAttribute("aria-label")).toBe(heroExpansao.mediaAlt);
     const urls = [...container.querySelectorAll("img, source")].map(
       (element) => element.getAttribute("src") ?? element.getAttribute("srcset") ?? "",
@@ -229,8 +264,15 @@ describe("<HeroExpansao /> — HTML do servidor (estado parado)", () => {
     expect((container.querySelector(".hero-video__toggle") as HTMLButtonElement).hidden).toBe(true);
   });
 
+  it("o LCP é o pôster do quadro (prioridade alta); o fundo, que cobre a tela e não conta, não disputa banda", () => {
+    const container = serverDom();
+
+    expect(container.querySelector("img.hero-expansao__poster")?.getAttribute("fetchpriority")).toBe("high");
+    expect(container.querySelector(".hero-expansao__fundo img")?.hasAttribute("fetchpriority")).toBe(false);
+  });
+
   it("não tem violações detectáveis pelo axe-core", async () => {
-    motionGate.canAnimate = false;
+    reducedMotion.set(true);
     const { container } = render(<HeroExpansao />);
     await act(async () => {});
     expect((await axe.run(container)).violations).toEqual([]);
@@ -260,14 +302,7 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
   });
 
   it("roda em linhas (Firefox) vale 16 px por linha; Ctrl + roda (zoom) e o painel aberto do menu ficam com o navegador", async () => {
-    const menu = (
-      <header className="topbar" data-open="true">
-        <nav className="topbar__nav">
-          <a href="#produtos">Produtos</a>
-        </nav>
-      </header>
-    );
-    const { container } = await mount(menu);
+    const { container } = await mount(openMenu);
 
     wheel(3, { deltaMode: 1 }); // 48 px × 0,0009
     expect(state().progress).toBe("0.04");
@@ -275,6 +310,17 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(wheel(100, { ctrlKey: true }).defaultPrevented).toBe(false);
     expect(wheel(100, {}, container.querySelector(".topbar__nav a")!).defaultPrevented).toBe(false);
     expect(state().progress).toBe("0.04");
+  });
+
+  it("roda só de lado (o gesto de voltar e avançar do trackpad) fica com o navegador e não mexe no hero", async () => {
+    await mount();
+    wheel(100);
+    const input = hero().dataset.input;
+
+    const sideways = wheel(0, { deltaX: 100 });
+    expect(sideways.defaultPrevented).toBe(false);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.09" });
+    expect(hero().dataset.input).toBe(input);
   });
 
   it("expandido, roda para cima no topo recolhe (de volta ao topo, instantâneo) e as próximas voltam o progresso", async () => {
@@ -297,6 +343,29 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ progress: "0.91", content: "visible" });
     for (let index = 0; index < 2; index++) wheel(-100);
     expect(state()).toMatchObject({ progress: "0.73", content: "hidden" });
+  });
+
+  it("expandido e rolado além de uma tela, a roda e o touchmove (não passivos) saem da window; voltam antes do topo", async () => {
+    await mount();
+    for (let index = 0; index < 12; index++) wheel(100);
+    expect(state().expanded).toBe("true");
+    const removed = vi.spyOn(window, "removeEventListener");
+    const added = vi.spyOn(window, "addEventListener");
+
+    scrollPage(2000);
+    expect(removed.mock.calls.map(([type]) => type)).toEqual(expect.arrayContaining(["wheel", "touchmove"]));
+    // Fora da window de fato: mesmo em scrollY 3 sem passar pelo scroll, a
+    // roda para cima não é mais do hero.
+    setScrollY(3);
+    expect(wheel(-100).defaultPrevented).toBe(false);
+    expect(state().expanded).toBe("true");
+
+    // A rolagem de volta (o scroll é passivo e fica) os põe de novo, a tempo de recolher.
+    scrollPage(3);
+    expect(added.mock.calls.filter(([type]) => type === "wheel" || type === "touchmove")).toHaveLength(2);
+    expect(added.mock.calls.find(([type]) => type === "wheel")?.[2]).toEqual({ passive: false });
+    expect(wheel(-100).defaultPrevented).toBe(true);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false" });
   });
 
   it("toque: arrastar para cima expande (× 0,005) e para baixo recolhe (× 0,008); expandido, puxar mais de 20 px no topo recolhe", async () => {
@@ -322,6 +391,54 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ progress: "0.68", content: "hidden" });
   });
 
+  it("toque: o touchcancel esquece o início, e um toque que começa no painel aberto do menu fica com o navegador", async () => {
+    const { container } = await mount(openMenu);
+
+    touch("touchstart", 500);
+    touch("touchcancel");
+    expect(touch("touchmove", 400).defaultPrevented).toBe(false);
+    expect(state().progress).toBe("0.00");
+
+    const link = container.querySelector(".topbar__nav a")!;
+    touch("touchstart", 500, link);
+    expect(touch("touchmove", 400, link).defaultPrevented).toBe(false);
+    expect(state().progress).toBe("0.00");
+  });
+
+  it("pinça (dois dedos): nada é segurado, e a rolagem que o zoom causa (até 300 ms depois) não completa a expansão", async () => {
+    let now = 1_000;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    await mount();
+
+    touches("touchstart", [400, 500]);
+    expect(touches("touchmove", [380, 520]).defaultPrevented).toBe(false);
+    expect(state().progress).toBe("0.00");
+    // O zoom arrasta a página uns pixels: o título que a pessoa amplia fica.
+    scrollPage(5);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
+
+    touches("touchend", [380]);
+    touches("touchend", []);
+    now += 200;
+    scrollPage(6);
+    expect(state().pin).toBe("true");
+
+    // Passada a pinça, uma rolagem que o hero não causou completa, como sempre.
+    now += 200;
+    scrollPage(40);
+    expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+  });
+
+  it("com a página ampliada (visualViewport.scale > 1), roda e toque movem a lupa, não o hero", async () => {
+    vi.stubGlobal("visualViewport", { scale: 2 });
+    await mount();
+
+    expect(wheel(100).defaultPrevented).toBe(false);
+    touch("touchstart", 500);
+    expect(touch("touchmove", 400).defaultPrevented).toBe(false);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
+  });
+
   it("teclado: seta ±0,1, Page Down e Espaço +0,34, End expande; campos e o Espaço num botão ficam de fora", async () => {
     const { container } = await mount(<input aria-label="Campo fora do hero" />);
 
@@ -333,11 +450,14 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state().progress).toBe("0.78");
     key("ArrowUp");
     expect(state().progress).toBe("0.68");
+    // Shift + Espaço sobe uma página.
+    expect(key(" ", document.body, { shiftKey: true }).prevented).toBe(true);
+    expect(state().progress).toBe("0.34");
 
     expect(key("ArrowDown", container.querySelector("input")!).prevented).toBe(false);
     const toggle = container.querySelector(".hero-video__toggle")!;
     expect(key(" ", toggle).prevented).toBe(false);
-    expect(state().progress).toBe("0.68");
+    expect(state().progress).toBe("0.34");
 
     key("End");
     expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
@@ -347,6 +467,33 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(key("PageDown").prevented).toBe(false);
     expect(key("Home").prevented).toBe(true);
     expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+  });
+
+  it("teclado: Alt, Ctrl, Meta, Shift (seleção, menos o Espaço), composição e tecla já tratada ficam com o navegador", async () => {
+    await mount();
+
+    for (const modifier of ["altKey", "ctrlKey", "metaKey"] as const) {
+      expect(key("ArrowDown", document.body, { [modifier]: true }).prevented).toBe(false);
+      expect(key("End", document.body, { [modifier]: true }).prevented).toBe(false);
+    }
+    for (const keyName of ["ArrowDown", "PageDown", "End", "Home"]) {
+      expect(key(keyName, document.body, { shiftKey: true }).prevented).toBe(false);
+    }
+    expect(key("ArrowDown", document.body, { isComposing: true }).prevented).toBe(false);
+    const handled = (event: Event) => event.preventDefault();
+    document.body.addEventListener("keydown", handled);
+    key("PageDown");
+    document.body.removeEventListener("keydown", handled);
+
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
+  });
+
+  it("teclado: com o painel do menu aberto, as teclas ficam com a página (como a roda)", async () => {
+    await mount(openMenu);
+
+    expect(key("ArrowDown").prevented).toBe(false);
+    expect(key("End").prevented).toBe(false);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
   });
 
   it("teclado: dez setas para baixo expandem (sem a deriva do ponto flutuante: 10 × 0,1 = 0,999…)", async () => {
@@ -390,19 +537,26 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ pin: "false", expanded: "true", content: "visible" });
   });
 
-  it("foco num botão do conteúdo completa a expansão; foco no controle do vídeo, não", async () => {
-    await mount();
+  it("foco num botão do conteúdo completa a expansão; foco no controle do vídeo ou na própria mídia, não", async () => {
+    const { container } = await mount();
     const toggle = screen.getByRole("button", { name: heroExpansao.videoPlay });
 
     act(() => toggle.focus());
     expect(state().pin).toBe("true");
+
+    // O <video tabindex="-1"> ganha foco num clique (no navegador, o CSS
+    // tira o clique da mídia; aqui, o foco direto).
+    const video = container.querySelector("video") as HTMLVideoElement;
+    act(() => video.focus());
+    expect(document.activeElement).toBe(video);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
 
     act(() => screen.getByRole("link", { name: heroExpansao.primaryCta }).focus());
     expect(state()).toMatchObject({ pin: "false", expanded: "true", content: "visible" });
   });
 
   it("com reduced motion (ou antes de montar) nunca prende: a roda, o toque e as teclas ficam com a página", async () => {
-    motionGate.canAnimate = false;
+    reducedMotion.set(true);
     await mount();
 
     expect(state()).toEqual({ pin: "false", expanded: "false", progress: "0.00", content: "visible" });
@@ -414,23 +568,37 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(hero().style.getPropertyValue("--hx-p")).toBe("");
   });
 
-  it("reduced motion ligado depois (ou desmontar): volta ao estado parado e solta a página", async () => {
-    const { rerender, unmount } = await mount();
+  it("reduced motion ligado no meio da visita (o portão de verdade, pelo 'change'): solta a página e pausa o vídeo; desligado, prende de novo", async () => {
+    const { container, unmount } = await mount();
+    const video = container.querySelector("video") as HTMLVideoElement;
+    act(() => SpyIntersectionObserver.fire(video, true));
+    expect(video.paused).toBe(false);
     wheel(100);
-    expect(state().pin).toBe("true");
+    expect(state()).toMatchObject({ pin: "true", progress: "0.09" });
 
-    motionGate.canAnimate = false;
-    rerender(<HeroExpansao />);
-    await act(async () => {});
+    act(() => reducedMotion.set(true));
     expect(state()).toEqual({ pin: "false", expanded: "false", progress: "0.00", content: "visible" });
     expect(hero().style.getPropertyValue("--hx-p")).toBe("");
     expect(wheel(100).defaultPrevented).toBe(false);
+    expect(key("PageDown").prevented).toBe(false);
+    expect(video.paused).toBe(true);
 
-    motionGate.canAnimate = true;
-    rerender(<HeroExpansao />);
-    await act(async () => {});
+    act(() => reducedMotion.set(false));
+    expect(state()).toMatchObject({ pin: "true", progress: "0.00" });
     unmount();
     expect(wheel(100).defaultPrevented).toBe(false);
+  });
+
+  it("a roda, o toque e as teclas conferem o reduced motion na hora do evento (antes de o React desligar a expansão)", async () => {
+    await mount();
+    // A preferência mudou, mas o "change" ainda não chegou ao React.
+    reducedMotion.query.matches = true;
+
+    expect(wheel(100).defaultPrevented).toBe(false);
+    touch("touchstart", 500);
+    expect(touch("touchmove", 400).defaultPrevented).toBe(false);
+    expect(key("PageDown").prevented).toBe(false);
+    expect(state().progress).toBe("0.00");
   });
 });
 
@@ -454,8 +622,20 @@ describe("<HeroExpansao /> — vídeo do quadro (MASTER §9.6)", () => {
     expect(play).toHaveBeenCalledTimes(1);
   });
 
+  it("depois do 1º quadro, pausar deixa o quadro parado à vista (data-started fica), sem voltar ao pôster", async () => {
+    const { container } = await mount();
+    const video = container.querySelector("video") as HTMLVideoElement;
+    expect(video.dataset).toMatchObject({ started: "false", playing: "false" });
+
+    act(() => SpyIntersectionObserver.fire(video, true));
+    expect(video.dataset).toMatchObject({ started: "true", playing: "true" });
+
+    fireEvent.click(screen.getByRole("button", { name: heroExpansao.videoPause }));
+    expect(video.dataset).toMatchObject({ started: "true", playing: "false" });
+  });
+
   it("com reduced motion fica o pôster: não toca sozinho", async () => {
-    motionGate.canAnimate = false;
+    reducedMotion.set(true);
     const { container } = await mount();
     const video = container.querySelector("video") as HTMLVideoElement;
 

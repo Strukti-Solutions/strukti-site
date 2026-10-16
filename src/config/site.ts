@@ -70,7 +70,10 @@ export interface HeroSequenceSource {
  * (object-position) fica no CSS, em `.hero-expansao` (--hx-fundo-pos…).
  */
 export interface HeroExpansaoMedia {
-  /** Fundo decorativo (o LCP): some com a expansão, até sobrar o espaço. */
+  /**
+   * Fundo decorativo: some com a expansão, até sobrar o espaço. Cobre a tela
+   * inteira, então não conta para o LCP (o LCP é o pôster do quadro).
+   */
   fundo: {
     /** Telas deitadas, 1920 × 1080. */
     avif: string;
@@ -87,7 +90,7 @@ export interface HeroExpansaoMedia {
     webm: string;
     /** H.264 em MP4, para quem não toca WebM. */
     mp4: string;
-    /** Pôster: o 1º quadro do loop, em AVIF com JPG de reserva. */
+    /** Pôster: o 1º quadro do loop, em AVIF com JPG de reserva (o LCP da página). */
     posterAvif: string;
     posterJpg: string;
     width: number;

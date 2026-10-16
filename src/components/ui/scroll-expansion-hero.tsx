@@ -2,16 +2,17 @@
 
 /**
  * Componente de terceiro, licença MIT (ADR-005 e ADR-010, docs/DECISOES.md).
- * Origem: "Scroll Expansion Hero" (`ScrollExpandMedia`), de @arunachalam,
- * 21st.dev.
+ * Origem: "Scroll Expansion Hero" (`ScrollExpandMedia`), de Arunachalam
+ * (@arunachalam), 21st.dev.
  * https://21st.dev/@arunachalam/components/scroll-expansion-hero
  * Licença conferida em 15/10/2026. A página de origem publica a licença MIT
- * e o autor, sem ano nem arquivo de licença; o aviso abaixo usa o nome do
- * autor como está lá. Cópia também em THIRD_PARTY_NOTICES.md.
+ * e o autor (nome e perfil), sem ano nem arquivo de licença; o aviso abaixo
+ * usa o nome e o perfil do autor como estão lá. Cópia também em
+ * THIRD_PARTY_NOTICES.md.
  *
  * MIT License
  *
- * Copyright (c) @arunachalam
+ * Copyright (c) Arunachalam (@arunachalam, 21st.dev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +38,9 @@
  * recolher; expandido, roda para cima (ou arrasto de mais de 20 px para
  * baixo) com scrollY ≤ 5 recolhe; o conteúdo aparece em p = 1 e some abaixo
  * de 0,75; o quadro vai de 300 × 400 a 1550 × 800 px (950 × 600 abaixo de
- * 768 px), até 95vw × 85vh; o fundo some (1 − p); o título e as legendas se
- * abrem p × 150vw (180vw abaixo de 768 px). Mudanças:
+ * 768 px), até 95vw × 85vh (e nunca sob a barra fixa, ver abaixo); o fundo
+ * some (1 − p); o título e as legendas se abrem p × 150vw (180vw abaixo de
+ * 768 px). Mudanças:
  * - Sem framer-motion (ADR-002) e sem motion: tudo o que mudava com p virou
  *   CSS. O p vai para a propriedade `--hx-p` da seção, escrita num
  *   requestAnimationFrame (com `data-progress`, 2 casas), e as fórmulas do
@@ -47,10 +49,23 @@
  *   original (0,1 s no fundo, 0,2 s na sombra, 0,7 s no conteúdo) são
  *   `transition` do CSS, e os números do celular vêm de uma media query
  *   (`max-width: 47.99em`), sem `innerWidth` em estado nem ouvinte de resize.
+ *   As legendas (linha de apoio e dica) descem com `translate` (a altura do
+ *   quadro + 16 px) em vez de seguir o quadro no fluxo: os mesmos pixels,
+ *   sem deslocamento de layout (CLS) a cada passo da roda.
+ * - Altura máxima do quadro: min(85svh, 100svh − 2 × a barra do topo) no
+ *   lugar de 85vh, para o quadro nunca passar sob a barra fixa (que o
+ *   original não tinha). Age nas telas com menos de ~787 px de altura
+ *   (abaixo de 1200 px de largura, barra de 56 + 3 px) ou de ~840 px (de
+ *   1200 px para cima, 60 + 3 px): a 1366 × 768, o quadro expandido fica com
+ *   642 px de altura em vez de 653; a 740 × 360, com 242 em vez de 306 (o
+ *   cartão de p = 0 também).
  * - Ouvintes registrados uma vez, lendo refs (o original os recriava a cada
  *   mudança do progresso e lia valores velhos); eventos do DOM tipados, sem
  *   `as unknown as EventListener`; `touches[0]` conferido
- *   (noUncheckedIndexedAccess).
+ *   (noUncheckedIndexedAccess). A roda e o `touchmove`, os únicos não
+ *   passivos (por causa do `preventDefault`), saem da window com a página
+ *   expandida e rolada além de uma tela e voltam antes de ela chegar ao topo
+ *   (o original os deixava a visita inteira, atrasando toda rolagem).
  * - Sem o `window.scrollTo(0, 0)` a cada rolagem: uma rolagem que o hero não
  *   causou (âncora da barra do topo, barra de rolagem, busca na página, foco
  *   num controle abaixo) completa a expansão em vez de voltar ao topo. Âncora
@@ -62,14 +77,25 @@
  *   título e linha de apoio) e o conteúdo logo abaixo, à vista; nada fica
  *   preso. Mesma árvore com e sem animação (ADR-004); só prende depois de
  *   montar, com `useCanAnimate()`, em scrollY = 0 e sem âncora fora do hero.
+ *   O portão acompanha o prefers-reduced-motion ao vivo: ligar no meio da
+ *   visita solta a página na hora, e a roda, o toque e as teclas ainda
+ *   conferem a preferência na hora do evento.
  * - Teclado enquanto preso (foco no body ou dentro do hero, fora de campos):
- *   seta ±0,1, Page Down/Up e Espaço ±0,34, End/Home; expandido no topo, as
- *   teclas para cima recolhem, como a roda. Foco em qualquer coisa do hero,
- *   menos o controle do vídeo, completa a expansão.
+ *   seta ±0,1, Page Down/Up e Espaço ±0,34 (Shift + Espaço sobe), End/Home;
+ *   expandido no topo, as teclas para cima recolhem, como a roda. Com Alt,
+ *   Ctrl, Meta ou Shift (seleção de texto, navegação por cursor) e com o
+ *   painel do menu da barra aberto, as teclas ficam com o navegador. Foco em
+ *   qualquer coisa do hero, menos o controle do vídeo e a própria mídia,
+ *   completa a expansão; a mídia não recebe clique (`pointer-events: none`,
+ *   como no original), então um clique no quadro não a foca nem expande.
  * - Roda: `deltaMode` normalizado (linhas × 16 px, páginas × innerHeight),
- *   Ctrl + roda (zoom) ignorado, `preventDefault` só quando cancelável e o
+ *   Ctrl + roda (zoom) e roda só de lado (deltaY 0: o gesto de voltar e
+ *   avançar do trackpad) ignorados, `preventDefault` só quando cancelável e o
  *   painel aberto do menu da barra rola normalmente. Toque: um dedo só
- *   (pinça é zoom), `touchstart` passivo, `touchcancel` tratado.
+ *   (pinça é zoom), `touchstart` passivo, `touchcancel` tratado; a rolagem
+ *   que o navegador fizer durante uma pinça (e até 300 ms depois) não
+ *   completa a expansão. Com a página ampliada (`visualViewport.scale` > 1),
+ *   roda e toque são do navegador.
  * - Título: um H1 com as duas partes em `<span>` (o original tinha dois
  *   `<h2>`); sem `mix-blend-mode` (o `textBlend` saiu); cores do DS. O `date`
  *   é a linha de apoio; o `scrollToExpand` é a dica, `aria-hidden`, que só
@@ -87,7 +113,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
-import { useCanAnimate } from "@/lib/motion";
+import { REDUCED_MOTION_QUERY, useCanAnimate } from "@/lib/motion";
 
 /** Roda: progresso por pixel de deltaY (original: 0,0009). */
 const WHEEL_GAIN = 0.0009;
@@ -98,13 +124,17 @@ const TOUCH_GAIN_BACK = 0.008;
 const CONTENT_HIDE_BELOW = 0.75;
 /** "No topo", para recolher (original: scrollY ≤ 5). */
 const TOP_SLOP_PX = 5;
-/** Arrasto para baixo, no topo, que recolhe (original: 20 px). */
+/** Arrasto para baixo, no topo, que recolhe (original: mais de 20 px). */
 const TOUCH_COLLAPSE_PX = 20;
 /** Teclado: uma seta e uma página. */
 const KEY_LINE = 0.1;
 const KEY_PAGE = 0.34;
 /** `deltaMode` 1 (linhas, Firefox): px por linha. */
 const WHEEL_LINE_PX = 16;
+/** Depois de uma pinça, a rolagem que o navegador fizer ainda é dele por este tempo. */
+const MULTI_TOUCH_GRACE_MS = 300;
+/** Página ampliada (pinça) acima desta escala: roda e toque são do navegador. */
+const ZOOMED_SCALE = 1.01;
 
 /** O que mudou o progresso por último (`data-input`: o CSS anima "key" e "auto"). */
 type ProgressInput = "wheel" | "touch" | "key" | "auto";
@@ -153,8 +183,16 @@ function insideOpenMenu(target: EventTarget | null) {
   return target instanceof Element && target.closest(OPEN_MENU_SELECTOR) !== null;
 }
 
+/** A página está ampliada (pinça)? Aí a roda e o toque movem a lupa, não o hero. */
+function pageZoomed() {
+  return (window.visualViewport?.scale ?? 1) > ZOOMED_SCALE;
+}
+
 /** Passo da tecla: ± fração, ±Infinity (End/Home) ou `null` (não é nossa). */
 function keyStep(event: KeyboardEvent): number | null {
+  // Shift + seta, Home ou End estende a seleção (e move o cursor da
+  // navegação por cursor, F7); só o Shift + Espaço é "subir uma página".
+  if (event.shiftKey && event.key !== " ") return null;
   switch (event.key) {
     case "ArrowDown":
       return KEY_LINE;
@@ -283,18 +321,27 @@ export function ScrollExpandMedia({
     const section = sectionRef.current;
     if (!section) return;
 
+    // A preferência na hora do evento: entre a pessoa ligar o reduced motion
+    // e o React desligar a expansão (o useCanAnimate acompanha ao vivo), nada
+    // é segurado.
+    const reduceQuery = typeof window.matchMedia === "function" ? window.matchMedia(REDUCED_MOTION_QUERY) : null;
+    const motionReduced = () => reduceQuery?.matches === true;
+    // Dedos na tela agora e até quando a rolagem ainda é da pinça.
+    let touchCount = 0;
+    let multiTouchUntil = 0;
+    // A roda e o touchmove (não passivos) estão na window?
+    let holding = false;
+
     armedRef.current = true;
     expandedRef.current = false;
     setArmed(true);
-    // Página já rolada (posição restaurada) ou âncora fora do hero: começa
-    // expandido, sem prender.
-    setProgress(window.scrollY > 0 || hashTargetOutside(section) ? 1 : 0, "auto");
 
     const onWheel = (event: WheelEvent) => {
       // deltaY antes do deltaMode: o Firefox passa a medir em linhas se o
       // deltaMode for lido primeiro.
       const deltaY = event.deltaY;
-      if (event.ctrlKey || insideOpenMenu(event.target)) return;
+      // Só de lado (o gesto de voltar e avançar do trackpad) ou zoom: é do navegador.
+      if (deltaY === 0 || event.ctrlKey || insideOpenMenu(event.target) || motionReduced() || pageZoomed()) return;
       const scale = event.deltaMode === 1 ? WHEEL_LINE_PX : event.deltaMode === 2 ? window.innerHeight : 1;
       const delta = deltaY * scale;
       if (expandedRef.current) {
@@ -308,15 +355,24 @@ export function ScrollExpandMedia({
       setProgress(progressRef.current + delta * WHEEL_GAIN, "wheel");
     };
 
+    /** Conta os dedos; com dois ou mais (pinça), a rolagem fica com o navegador por um tempo. */
+    const noteTouches = (event: TouchEvent) => {
+      const count = event.touches.length;
+      if (count >= 2 || touchCount >= 2) multiTouchUntil = performance.now() + MULTI_TOUCH_GRACE_MS;
+      touchCount = count;
+    };
+
     const onTouchStart = (event: TouchEvent) => {
+      noteTouches(event);
       const touch = event.touches.length === 1 ? event.touches[0] : undefined;
       touchStartRef.current = touch && !insideOpenMenu(event.target) ? touch.clientY : null;
     };
 
     const onTouchMove = (event: TouchEvent) => {
+      noteTouches(event);
       const start = touchStartRef.current;
       const touch = event.touches[0];
-      if (start === null || !touch || event.touches.length !== 1) return;
+      if (start === null || !touch || event.touches.length !== 1 || motionReduced() || pageZoomed()) return;
       const delta = start - touch.clientY;
       if (expandedRef.current) {
         if (delta < -TOUCH_COLLAPSE_PX && window.scrollY <= TOP_SLOP_PX) {
@@ -330,12 +386,15 @@ export function ScrollExpandMedia({
       touchStartRef.current = touch.clientY;
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = (event: TouchEvent) => {
+      noteTouches(event);
       touchStartRef.current = null;
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
+      // Com o painel do menu aberto, a página fica com o navegador (como a roda).
+      if (motionReduced() || document.querySelector(OPEN_MENU_SELECTOR)) return;
       const step = keyStep(event);
       if (step === null || !keyBelongsToHero(event, section)) return;
       if (expandedRef.current) {
@@ -349,19 +408,43 @@ export function ScrollExpandMedia({
       setProgress(step === Infinity ? 1 : step === -Infinity ? 0 : progressRef.current + step, "key");
     };
 
+    /**
+     * A roda e o touchmove só ficam na window enquanto podem agir: preso, ou
+     * expandido até uma tela abaixo do topo. Recolher pede scrollY ≤ 5, e a
+     * rolagem até lá passa por aqui antes (o scroll é passivo e fica sempre).
+     */
+    const syncHoldListeners = () => {
+      const needed = !expandedRef.current || window.scrollY <= window.innerHeight;
+      if (needed === holding) return;
+      holding = needed;
+      if (needed) {
+        window.addEventListener("wheel", onWheel, { passive: false });
+        window.addEventListener("touchmove", onTouchMove, { passive: false });
+      } else {
+        window.removeEventListener("wheel", onWheel);
+        window.removeEventListener("touchmove", onTouchMove);
+      }
+    };
+
     // Preso, roda e toque não rolam a página: uma rolagem aqui veio de outra
     // coisa (âncora, barra de rolagem, busca, foco). Completa, sem voltar.
+    // Menos durante uma pinça (e logo depois): o zoom arrasta a página uns
+    // pixels, e o título que a pessoa amplia não pode sair de lado.
     const onScroll = () => {
-      if (!expandedRef.current && window.scrollY > 0) setProgress(1, "auto");
+      const pinching = touchCount >= 2 || performance.now() < multiTouchUntil;
+      if (!expandedRef.current && window.scrollY > 0 && !pinching) setProgress(1, "auto");
+      syncHoldListeners();
     };
 
     const onHashChange = () => {
       if (!expandedRef.current && hashTargetOutside(section)) setProgress(1, "auto");
     };
 
-    window.addEventListener("wheel", onWheel, { passive: false });
+    // Página já rolada (posição restaurada) ou âncora fora do hero: começa
+    // expandido, sem prender.
+    setProgress(window.scrollY > 0 || hashTargetOutside(section) ? 1 : 0, "auto");
+    syncHoldListeners();
     window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     window.addEventListener("keydown", onKeyDown);
@@ -370,8 +453,8 @@ export function ScrollExpandMedia({
 
     return () => {
       window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
       window.removeEventListener("keydown", onKeyDown);
@@ -392,11 +475,13 @@ export function ScrollExpandMedia({
   }, [canAnimate, setProgress, unexpand]);
 
   // Foco dentro do hero (Tab até um botão do conteúdo, leitor de tela):
-  // completa a expansão, para nada focado ficar invisível. O controle do
-  // vídeo fica de fora: dá para pausar sem expandir.
+  // completa a expansão, para nada focado ficar invisível. Ficam de fora o
+  // controle do vídeo (dá para pausar sem expandir) e a própria mídia (o
+  // `<video tabindex="-1">`, que está à vista em p = 0).
   const onFocus = (event: FocusEvent<HTMLElement>) => {
     if (!armedRef.current || expandedRef.current) return;
-    if (event.target instanceof Element && event.target.closest(CONTROL_SELECTOR)) return;
+    const target = event.target;
+    if (target instanceof HTMLMediaElement || (target instanceof Element && target.closest(CONTROL_SELECTOR))) return;
     setProgress(1, "auto");
   };
 

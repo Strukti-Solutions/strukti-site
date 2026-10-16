@@ -45,11 +45,11 @@ SOFTWARE.
 
 - **Arquivo:** `src/components/ui/scroll-expansion-hero.tsx` (adaptado; as
   mudanças estão descritas no comentário do topo do arquivo e na ADR-010)
-- **Autor:** @arunachalam
+- **Autor:** Arunachalam (@arunachalam, 21st.dev)
 - **Origem:** https://21st.dev/@arunachalam/components/scroll-expansion-hero
 - **Licença:** MIT, conferida em 15/10/2026. A página de origem publica a
-  licença e o autor, sem ano e sem arquivo de licença; o aviso abaixo usa o
-  nome do autor como está lá.
+  licença e o autor (nome e perfil), sem ano e sem arquivo de licença; o
+  aviso abaixo usa o nome e o perfil do autor como estão lá.
 - A mídia do hero ("Fim de expediente", `public/hero/expansao/`) é produção
   própria, não deste componente (a demonstração original usa imagens e
   vídeos de terceiros, que não entram no site).
@@ -57,7 +57,7 @@ SOFTWARE.
 ```
 MIT License
 
-Copyright (c) @arunachalam
+Copyright (c) Arunachalam (@arunachalam, 21st.dev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
