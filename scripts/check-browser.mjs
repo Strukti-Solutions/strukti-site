@@ -1559,26 +1559,35 @@ const EXP_SPACING_EXPR = `(async () => {
 
 /**
  * 8. WCAG 1.4.12 nas telas mais estreitas (320 px, com a barra de rolagem
- * clássica e a sobreposta do celular): com o espaçamento de texto, a linha
- * de apoio e a dica não passam por baixo do controle do vídeo nem saem da
- * largura da tela (preso, em p = 0).
+ * clássica e a sobreposta do celular) e o zoom de 400% (1280 × 1024 a 4×:
+ * 320 × 256, sem espaçamento): a linha de apoio e a dica não passam por
+ * baixo do controle do vídeo nem saem da largura da tela, e a linha de apoio
+ * termina dentro da tela (preso, em p = 0: a página não rola e a expansão a
+ * leva para o lado, então uma linha abaixo da tela nunca seria lida).
  */
-async function expSpacingPass(cdp, ctx, mobile) {
+async function expSpacingPass(cdp, ctx, { mobile, dsf = 1, spaced = true }) {
+  const what = spaced ? "espaçamento 1.4.12" : `zoom de ${dsf * 100}%`;
   await setReducedMotion(cdp, false);
-  await cdp.send("Emulation.setDeviceMetricsOverride", { width: ctx.width, height: ctx.height, deviceScaleFactor: 1, mobile });
-  if (!(await expLoadPinned(cdp, ctx, "espaçamento 1.4.12"))) return;
-  await evalValue(
-    cdp,
-    `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(TEXT_SPACING_CSS)}; document.head.appendChild(s); })()`,
-  );
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: ctx.width, height: ctx.height, deviceScaleFactor: dsf, mobile });
+  if (!(await expLoadPinned(cdp, ctx, what))) return;
+  if (spaced) {
+    await evalValue(
+      cdp,
+      `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(TEXT_SPACING_CSS)}; document.head.appendChild(s); })()`,
+    );
+  }
   const result = await evalValue(cdp, EXP_SPACING_EXPR, { awaitPromise: true });
   if (!result) {
-    ctx.fail("espaçamento 1.4.12: sem o controle do vídeo");
+    ctx.fail(`${what}: sem o controle do vídeo`);
     return;
   }
-  for (const problem of result.problems) ctx.fail(`espaçamento 1.4.12 (${mobile ? "celular" : "barra clássica"}): ${problem}`);
+  const where = mobile ? "celular" : "barra clássica";
+  if (result.bottom > result.vh + 0.5) {
+    result.problems.push(`a linha de apoio termina em y=${result.bottom}, abaixo da tela (${result.vh}), enquanto o hero segura`);
+  }
+  for (const problem of result.problems) ctx.fail(`${what} (${where}): ${problem}`);
   ctx.log(
-    `espaçamento 1.4.12 (${mobile ? "celular" : "barra clássica"}, largura útil ${result.cw}px): ${result.problems.length === 0 ? "legendas livres do controle do vídeo e dentro da largura" : `${result.problems.length} problema(s)`}; a linha de apoio vai até y=${result.bottom} (tela de ${result.vh})`,
+    `${what} (${where}, largura útil ${result.cw}px): ${result.problems.length === 0 ? "legendas livres do controle do vídeo, dentro da largura e da altura" : `${result.problems.length} problema(s)`}; a linha de apoio vai até y=${result.bottom} (tela de ${result.vh})`,
   );
 }
 
@@ -1972,10 +1981,12 @@ try {
       await runExpPass(ctx, "reduced motion", () => expReducedPass(cdp, ctx, staticHeight));
     }
     // Telas e entradas que as três passadas acima não cobrem: o 1.4.12 a
-    // 320 px (com a barra de rolagem clássica e a do celular) e o toque.
+    // 320 px (com a barra de rolagem clássica e a do celular), o zoom de
+    // 400% e o toque.
     for (const { width, height, run, what } of [
-      { width: 320, height: 568, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, false) },
-      { width: 320, height: 640, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, true) },
+      { width: 320, height: 568, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, { mobile: false }) },
+      { width: 320, height: 640, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, { mobile: true }) },
+      { width: 320, height: 256, what: "zoom de 400%", run: (ctx) => expSpacingPass(cdp, ctx, { mobile: false, dsf: 4, spaced: false }) },
       { width: 390, height: 844, what: "toque", run: (ctx) => expTouchPass(cdp, ctx) },
     ]) {
       const size = `${width}×${height}`;
@@ -2168,7 +2179,7 @@ console.log(
   "\nDetector de CSP conferido (acusou a violação provocada). " +
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
-    'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, as legendas não passam sob o controle; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
+    'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado e ela não cobre o hero.",
