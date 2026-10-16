@@ -248,8 +248,8 @@ aprovação).
 `fundo-retrato.avif`/`fundo-retrato.jpg` (1080 × 1920, telas em pé),
 `midia.webm` (VP9) e `midia.mp4` (H.264), 1280 × 720, loop mudo de 10 s sem
 emenda, e `midia-poster.avif`/`midia-poster.jpg` (1280 × 720, igual ao 1º
-quadro do vídeo). Basta sobrescrever com os mesmos nomes; enquanto existir
-`LEIA-PROVISORIO.txt`, a mídia é a provisória. O corte das imagens fica em
+quadro do vídeo). Basta sobrescrever com os mesmos nomes (a mídia atual é a
+final, "Fim de expediente"). O corte das imagens fica em
 `.hero-expansao` no `globals.css` (`--hx-fundo-pos`, `--hx-fundo-pos-retrato`
 e `--hx-midia-pos`). A mídia precisa ser escura atrás do título e das
 legendas (limites de luminância no `MASTER.md` §3.4).

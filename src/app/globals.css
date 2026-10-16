@@ -2783,8 +2783,8 @@ textarea.field__input {
   --hx-barra: calc(var(--topbar-height) + var(--topbar-joint));
   /* Corte das imagens (object-position), como recomenda a produção da
      mídia: o fundo deitado, o fundo em pé e o quadro do vídeo. */
-  --hx-fundo-pos: 50% 70%;
-  --hx-fundo-pos-retrato: 50% 60%;
+  --hx-fundo-pos: 50% 85%;
+  --hx-fundo-pos-retrato: 50% 75%;
   --hx-midia-pos: 50% 50%;
   position: relative;
   /* O título aberto passa da tela: corta sem virar caixa de rolagem
@@ -2867,7 +2867,10 @@ textarea.field__input {
   gap: var(--space-4);
   margin: 0;
   color: var(--color-navy-50);
-  font-size: clamp(2rem, 1.2rem + 3.6vw, 3.75rem);
+  /* No celular, o termo com 8,6vw faz a 1ª linha ("Tecnologia que
+     trabalha", cerca de 11,5em) caber numa linha só de 320 a 464 px: o
+     título fica em duas linhas, como as duas partes que se abrem. */
+  font-size: clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem);
   font-weight: 700;
   font-variation-settings: "SHRP" 100;
   line-height: 1.05;
@@ -2956,6 +2959,8 @@ textarea.field__input {
   font-size: clamp(1rem, 0.85rem + 0.6vw, 1.375rem);
   font-weight: 500;
   line-height: 1.35;
+  /* Em telas de até ~400 px ela quebra: duas metades, sem palavra sozinha. */
+  text-wrap: balance;
 }
 
 .hero-expansao__dica {

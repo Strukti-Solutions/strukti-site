@@ -100,8 +100,7 @@ export interface HeroExpansaoMedia {
  * terceiros). Mesa calma junto a uma janela alta na hora azul, a cidade
  * desfocada lá fora, a luz do abajur, o caderno fechado, a caneca, o
  * celular com uma rota do Rota de Vendas e a caixa do botão do replay com o
- * LED ciano. Enquanto existir public/hero/expansao/LEIA-PROVISORIO.txt, os
- * arquivos são a versão provisória.
+ * LED ciano. Os arquivos em public/hero/expansao/ são a versão final.
  */
 const FIM_DE_EXPEDIENTE: HeroExpansaoMedia = {
   fundo: {
