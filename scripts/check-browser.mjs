@@ -50,10 +50,11 @@
 //   3. teclado com o foco no body (só a 1440): Page Down, Espaço (keyDown
 //      com texto " ") e seta para baixo expandem e depois rolam a página;
 //      End expande e, de novo, vai ao fim; Home recolhe;
-//   4. âncoras (menos a 740): clica no link #produtos da barra fixa sem
-//      rolar antes (a 360, pelo Menu) e abre /#contato direto (passando por
-//      about:blank): a página termina no alvo, sem voltar ao topo, e 1,5 s
-//      depois continua lá;
+//   4. âncoras (menos a 740): clica no 1º link da barra fixa (#replay, o
+//      cartão do replay em Produtos, v2.2) sem rolar antes (a 360, pelo
+//      Menu) e abre /#contato direto (passando por about:blank): a página
+//      termina no alvo (no scroll-padding-top mais o scroll-margin-top
+//      dele), sem voltar ao topo, e 1,5 s depois continua lá;
 //   5. clique e foco: um clique no quadro preso não cai na mídia nem
 //      expande, e o Tab até o controle do vídeo não rola nem expande (abaixo
 //      de 640 px, a faixa do FAB no scroll-padding-bottom rolava);
@@ -84,7 +85,7 @@
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
 // e sai com Tab, conferindo que o foco não fica coberto pelo painel; e toca
-// os dois primeiros vídeos dos aplicativos (cartões 1 e 2 da grade),
+// os dois primeiros vídeos da parede de Produtos (cartões 1 e 2: o replay e o Rota de Vendas),
 // conferindo que só um toca por vez na página inteira (o vídeo do hero
 // conta) e que o vídeo do hero ("video" ou "expansao", [data-hero-video]),
 // se existir, nunca toca sozinho por cima (regra aceita pelo
@@ -168,9 +169,14 @@ const EXPANSAO_SIZES = [
 // orçamento sobra para expandir (~28 eventos).
 const EXP_WHEEL_DELTA = 40;
 const EXP_WHEEL_BUDGET = 80;
-const APPS_PLAY_BUTTON_SELECTOR = "#aplicativos .project-card__play";
-// Cartão N da grade de aplicativos (o vídeo só existe depois do clique em "Assistir").
-const appCard = (n) => `#aplicativos .project-card:nth-child(${n})`;
+// v2.2: os vídeos dos produtos ficam todos na parede de Produtos (o replay e
+// os 2 aplicativos, no mesmo formato de cartão).
+const APPS_PLAY_BUTTON_SELECTOR = "#produtos .project-card__play";
+// Cartão N da parede de Produtos (o vídeo só existe depois do clique em "Assistir").
+const appCard = (n) => `#produtos .project-card:nth-child(${n})`;
+// Link da barra que o passo de âncoras do "expansao" clica: na v2.2, a barra
+// tem um link por produto (cartões dentro de #produtos), Equipe e Contato.
+const BAR_ANCHOR_SELECTOR = "#replay";
 
 const BROWSER_CANDIDATES = [
   process.env.BROWSER_PATH,
@@ -809,8 +815,11 @@ const expAnchorExpr = (targetSelector) => `(async () => {
     else { stable = 0; last = scrollY; }
   }
   const doc = document.documentElement;
-  const pad = parseFloat(getComputedStyle(doc).scrollPaddingTop) || 0;
-  const top = target.getBoundingClientRect().top;
+  // Onde o alvo para: o scroll-padding-top do html mais o scroll-margin-top
+  // dele (os cartões de Produtos têm o seu, v2.2).
+  const pad = (parseFloat(getComputedStyle(doc).scrollPaddingTop) || 0) + (parseFloat(getComputedStyle(target).scrollMarginTop) || 0);
+  const box = target.getBoundingClientRect();
+  const top = box.top;
   const maxScroll = doc.scrollHeight - innerHeight;
   const label = (el) => {
     if (!el) return "nada";
@@ -822,9 +831,12 @@ const expAnchorExpr = (targetSelector) => `(async () => {
   document.head.append(probe);
   const covered = [];
   try {
+    // Na largura do alvo (um cartão de Produtos não ocupa a linha toda).
+    const left = Math.max(0, box.left);
+    const width = Math.min(innerWidth, box.right) - left;
     for (const fx of [0.1, 0.5, 0.9]) {
       for (const dy of [4, 48]) {
-        const x = Math.round(innerWidth * fx);
+        const x = Math.round(left + width * fx);
         const y = Math.round(top + dy);
         if (y < 0 || y >= innerHeight) continue;
         const el = document.elementFromPoint(x, y);
@@ -1317,7 +1329,7 @@ function expCheckAnchor(ctx, what, state, targetSelector) {
 async function expAnchorPass(cdp, ctx) {
   await setReducedMotion(cdp, false);
   if (await expLoadPinned(cdp, ctx, "âncora da barra")) {
-    const link = `.topbar__links a[href="${AFTER_HERO_SELECTOR}"]`;
+    const link = `.topbar__links a[href="${BAR_ANCHOR_SELECTOR}"]`;
     const linkShown = await evalValue(
       cdp,
       `(() => { const el = document.querySelector(${JSON.stringify(link)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden"; })()`,
@@ -1333,15 +1345,15 @@ async function expAnchorPass(cdp, ctx) {
     const before = await expState(cdp);
     if (before.scrollY > 0.5) ctx.fail(`âncora da barra: a página saiu do topo antes do clique (scrollY ${before.scrollY})`);
     await clickFixed(cdp, link);
-    const state = await evalValue(cdp, expAnchorExpr(AFTER_HERO_SELECTOR), { awaitPromise: true });
-    expCheckAnchor(ctx, `âncora da barra${linkShown ? "" : " (pelo Menu)"}`, state, AFTER_HERO_SELECTOR);
-    if (state && state.hash !== AFTER_HERO_SELECTOR) ctx.fail(`âncora da barra: a URL ficou com "${state.hash}" (esperado ${AFTER_HERO_SELECTOR})`);
+    const state = await evalValue(cdp, expAnchorExpr(BAR_ANCHOR_SELECTOR), { awaitPromise: true });
+    expCheckAnchor(ctx, `âncora da barra${linkShown ? "" : " (pelo Menu)"}`, state, BAR_ANCHOR_SELECTOR);
+    if (state && state.hash !== BAR_ANCHOR_SELECTOR) ctx.fail(`âncora da barra: a URL ficou com "${state.hash}" (esperado ${BAR_ANCHOR_SELECTOR})`);
     if (state && state.expanded !== "true") ctx.fail(`âncora da barra: o hero não completou a expansão (data-expanded=${state.expanded})`);
     await sleep(1500);
-    const later = await evalValue(cdp, expAnchorExpr(AFTER_HERO_SELECTOR), { awaitPromise: true });
-    expCheckAnchor(ctx, "âncora da barra, 1,5 s depois", later, AFTER_HERO_SELECTOR);
+    const later = await evalValue(cdp, expAnchorExpr(BAR_ANCHOR_SELECTOR), { awaitPromise: true });
+    expCheckAnchor(ctx, "âncora da barra, 1,5 s depois", later, BAR_ANCHOR_SELECTOR);
     ctx.log(
-      `âncora da barra${linkShown ? "" : " (pelo Menu)"}: ${AFTER_HERO_SELECTOR} em y=${state?.top} (scroll-padding ${state?.pad}), scrollY ${state?.scrollY}; 1,5 s depois em y=${later?.top}; data-expanded=${state?.expanded}`,
+      `âncora da barra${linkShown ? "" : " (pelo Menu)"}: ${BAR_ANCHOR_SELECTOR} em y=${state?.top} (scroll-padding + margin ${state?.pad}), scrollY ${state?.scrollY}; 1,5 s depois em y=${later?.top}; data-expanded=${state?.expanded}`,
     );
   }
 
@@ -1980,7 +1992,7 @@ try {
     await setReducedMotion(cdp, false);
   }
 
-  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos dos aplicativos; Tab pela página; espaçamento de texto 1.4.12):`);
+  console.log(`\nPasso de interação a ${INTERACTION_WIDTH}px, reduced motion desligado (menu + Tab; vídeos de Produtos; Tab pela página; espaçamento de texto 1.4.12):`);
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
   });
@@ -2029,7 +2041,7 @@ try {
     }
   }
 
-  // --- Vídeos: só um toca por vez (grade de aplicativos) e o hero "video", se existir, não toca por cima ---
+  // --- Vídeos: só um toca por vez (parede de Produtos) e o vídeo do hero, se existir, não toca por cima ---
   // (sem zerar consoleErrors: os erros do passo do menu também contam)
   loaded = cdp.once("Page.loadEventFired");
   await cdp.send("Page.navigate", { url: URL_TO_CHECK });
@@ -2038,12 +2050,12 @@ try {
 
   const playButtons = await evalValue(cdp, `document.querySelectorAll(${JSON.stringify(APPS_PLAY_BUTTON_SELECTOR)}).length`);
   if (playButtons < 2) {
-    failures.push(`vídeos: esperava ao menos 2 aplicativos com vídeo na grade, achei ${playButtons}`);
+    failures.push(`vídeos: esperava ao menos 2 produtos com vídeo na parede de Produtos, achei ${playButtons}`);
   } else {
     const firstPlaying = await playVideo(cdp, `${appCard(1)} video`, { viaButton: `${appCard(1)} .project-card__play` });
-    if (!firstPlaying) failures.push("vídeos: o 1º aplicativo não tocou depois do clique em 'Assistir'");
+    if (!firstPlaying) failures.push("vídeos: o 1º produto não tocou depois do clique em 'Assistir'");
     const secondPlaying = await playVideo(cdp, `${appCard(2)} video`, { viaButton: `${appCard(2)} .project-card__play` });
-    if (!secondPlaying) failures.push("vídeos: o 2º aplicativo não tocou depois do clique em 'Assistir'");
+    if (!secondPlaying) failures.push("vídeos: o 2º produto não tocou depois do clique em 'Assistir'");
     const playingCount = await evalValue(
       cdp,
       `[...document.querySelectorAll("video")].filter((video) => !video.paused).length`,
@@ -2052,7 +2064,7 @@ try {
     if (await evalValue(cdp, `!!document.querySelector(${JSON.stringify(HERO_VIDEO_SELECTOR)})`)) {
       await evalValue(cdp, `window.scrollTo({ top: 0, behavior: "instant" })`);
       await sleep(1500);
-      if (!(await isPaused(cdp, HERO_VIDEO_SELECTOR))) failures.push("vídeos: o hero tocou sozinho por cima do aplicativo que a pessoa estava vendo");
+      if (!(await isPaused(cdp, HERO_VIDEO_SELECTOR))) failures.push("vídeos: o hero tocou sozinho por cima do vídeo de produto que a pessoa estava vendo");
       const playingAtTop = await evalValue(
         cdp,
         `[...document.querySelectorAll("video")].filter((video) => !video.paused).length`,
