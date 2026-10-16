@@ -47,16 +47,27 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
     // v2.2: os links de produto apontam para os cartões (#replay…), dentro de
     // #produtos, e não para seções do <main>. Por isso a posição vem do
     // retângulo na tela (o offsetTop de um cartão é relativo ao pai) e o alvo
-    // só vale enquanto cruza a linha logo abaixo da barra: entre dois alvos
-    // (Sob medida, Como trabalhamos, Dúvidas), nenhum link fica marcado. Com
-    // os cartões lado a lado, vale o primeiro do menu.
+    // só vale enquanto cruza a sua linha: onde o clique na barra o deixa, o
+    // scroll-padding-top do html mais o scroll-margin-top dele (os cartões
+    // têm o seu e param mais abaixo que as seções), com 1 px de folga para o
+    // arredondamento. Entre dois alvos (Sob medida, Como trabalhamos,
+    // Dúvidas), nenhum link fica marcado. Com os cartões lado a lado (mesmo
+    // topo), vale o da âncora da URL, que o clique na barra define; sem ela,
+    // o primeiro do menu.
     const computeActive = () => {
-      const line = 96;
+      const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const hash = window.location.hash.slice(1);
+      let first: string | null = null;
       for (const id of targets) {
-        const rect = document.getElementById(id)?.getBoundingClientRect();
-        if (rect && rect.top <= line && rect.bottom > line) return id;
+        const target = document.getElementById(id);
+        if (!target) continue;
+        const line = pad + (parseFloat(getComputedStyle(target).scrollMarginTop) || 0) + 1;
+        const rect = target.getBoundingClientRect();
+        if (rect.top > line || rect.bottom <= line) continue;
+        if (id === hash) return id;
+        first ??= id;
       }
-      return null;
+      return first;
     };
 
     const onScroll = () => {
@@ -65,12 +76,16 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       setActiveHref(current ? `#${current}` : null);
     };
 
+    // A âncora também muda sem rolar: com os cartões lado a lado e a página
+    // já parada neles, o clique em outro produto só troca a URL.
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
+    window.addEventListener("hashchange", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      window.removeEventListener("hashchange", onScroll);
     };
   }, [nav]);
 

@@ -170,10 +170,44 @@ describe("barra ao rolar", () => {
       .map((item) => item.href);
   }
 
+  // Onde o clique na barra deixa os alvos (globals.css, barra larga): o
+  // scroll-padding-top do html (barra de 72 px + 16) e, nos cartões de
+  // Produtos, mais o scroll-margin-top deles (60 + 3 + 16). Sem isso, no
+  // jsdom os dois valem 0.
+  const PADDING = 88;
+  const CARD_MARGIN = 79;
+
+  function withScrollOffsets(cards: HTMLElement[]) {
+    document.documentElement.style.setProperty("scroll-padding-top", `${PADDING}px`);
+    for (const card of cards) card.style.setProperty("scroll-margin-top", `${CARD_MARGIN}px`);
+  }
+
+  /** O que o clique num link da barra faz: a âncora na URL e a página parada com o alvo em `landing`. */
+  function landOn(href: string, top: number, landing: number) {
+    window.history.replaceState(null, "", href);
+    setScrollY(top - landing);
+    act(() => {
+      fireEvent(window, new HashChangeEvent("hashchange"));
+      fireEvent.scroll(window);
+    });
+  }
+
+  /** Os 3 cartões lado a lado (mesmo topo, 1000 px), a Equipe e o Contato. */
+  function mockPage() {
+    const [replay, rota, fleet, equipe, contato] = landingContent.header.nav;
+    const cards = [replay, rota, fleet].map((item) => mockSection(item.href.slice(1), 1000, 600));
+    mockSection(equipe.href.slice(1), 3000);
+    mockSection(contato.href.slice(1), 4500);
+    withScrollOffsets(cards);
+    return { replay, rota, fleet, equipe, contato };
+  }
+
   afterEach(() => {
     setScrollY(0);
     mockedSections.forEach((el) => el.remove());
     mockedSections = [];
+    document.documentElement.style.removeProperty("scroll-padding-top");
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
   });
 
   it("sem rolar, data-scrolled é false e nenhum link tem aria-current", () => {
@@ -204,14 +238,59 @@ describe("barra ao rolar", () => {
     expect(current()).toEqual([segundo.href]);
   });
 
-  it("com os cartões lado a lado, vale o primeiro do menu; entre os alvos, nenhum fica marcado", () => {
-    const [replay, rota, fleet, equipe] = landingContent.header.nav;
-    for (const item of [replay, rota, fleet]) mockSection(item.href.slice(1), 1000, 600);
-    mockSection(equipe.href.slice(1), 3000);
-
+  it("o link clicado na barra fica marcado onde a página para (scroll-padding do html + scroll-margin do alvo)", () => {
+    const { replay, rota, fleet, equipe, contato } = mockPage();
     render(<TopBar />);
+
+    // Cartão a 88 + 79 = 167 px do topo; seção a 88 px. Com a linha fixa de
+    // 96 px de antes, nenhum produto ficava marcado logo depois do clique.
+    for (const [item, top, landing] of [
+      [replay, 1000, PADDING + CARD_MARGIN],
+      [rota, 1000, PADDING + CARD_MARGIN],
+      [fleet, 1000, PADDING + CARD_MARGIN],
+      [equipe, 3000, PADDING],
+      [contato, 4500, PADDING],
+    ] as const) {
+      landOn(item.href, top, landing);
+      expect(current()).toEqual([item.href]);
+    }
+
+    // Meio pixel abaixo da linha (arredondamento da rolagem) ainda vale.
+    landOn(fleet.href, 1000, PADDING + CARD_MARGIN + 0.5);
+    expect(current()).toEqual([fleet.href]);
+  });
+
+  it("clique ou âncora #fleet-analytics-bi com os cartões lado a lado: marca o Fleet, não o Replay, e segue marcado ao rolar", () => {
+    const { replay, rota, fleet } = mockPage();
+    render(<TopBar />);
+
+    landOn(fleet.href, 1000, PADDING + CARD_MARGIN);
+    expect(current()).toEqual([fleet.href]);
+
+    // Mais 120 px de roda: os 3 cartões ainda cruzam a linha; vale a âncora.
+    setScrollY(window.scrollY + 120);
+    act(() => fireEvent.scroll(window));
+    expect(current()).toEqual([fleet.href]);
+
+    // Outro produto com a página já parada nos cartões: só a URL muda, sem
+    // rolar (o hashchange basta).
+    window.history.replaceState(null, "", rota.href);
+    act(() => fireEvent(window, new HashChangeEvent("hashchange")));
+    expect(current()).toEqual([rota.href]);
+    expect(current()).not.toContain(replay.href);
+  });
+
+  it("com os cartões lado a lado e sem âncora de produto na URL, vale o primeiro do menu; entre os alvos, nenhum fica marcado", () => {
+    const { replay, equipe } = mockPage();
+    render(<TopBar />);
+
     setScrollY(1200);
     act(() => fireEvent.scroll(window));
+    expect(current()).toEqual([replay.href]);
+
+    // Âncora de outro trecho (ex.: veio de #equipe e rolou para cima).
+    window.history.replaceState(null, "", equipe.href);
+    act(() => fireEvent(window, new HashChangeEvent("hashchange")));
     expect(current()).toEqual([replay.href]);
 
     // Depois dos cartões e antes da Equipe (ex.: Sob medida), nada marcado.

@@ -52,9 +52,12 @@
 //      End expande e, de novo, vai ao fim; Home recolhe;
 //   4. âncoras (menos a 740): clica no 1º link da barra fixa (#replay, o
 //      cartão do replay em Produtos, v2.2) sem rolar antes (a 360, pelo
-//      Menu) e abre /#contato direto (passando por about:blank): a página
-//      termina no alvo (no scroll-padding-top mais o scroll-margin-top
-//      dele), sem voltar ao topo, e 1,5 s depois continua lá;
+//      Menu), depois no do último produto (#fleet-analytics-bi; a 1440, com
+//      os cartões lado a lado, a página não rola e só a âncora muda) e abre
+//      /#contato direto (passando por about:blank): a página termina no alvo
+//      (no scroll-padding-top mais o scroll-margin-top dele), sem voltar ao
+//      topo, e 1,5 s depois continua lá; depois de cada clique na barra, o
+//      link clicado, e só ele, tem aria-current;
 //   5. clique e foco: um clique no quadro preso não cai na mídia nem
 //      expande, e o Tab até o controle do vídeo não rola nem expande (abaixo
 //      de 640 px, a faixa do FAB no scroll-padding-bottom rolava);
@@ -177,6 +180,9 @@ const appCard = (n) => `#produtos .project-card:nth-child(${n})`;
 // Link da barra que o passo de âncoras do "expansao" clica: na v2.2, a barra
 // tem um link por produto (cartões dentro de #produtos), Equipe e Contato.
 const BAR_ANCHOR_SELECTOR = "#replay";
+// O último produto da barra, clicado em seguida: com os cartões lado a lado,
+// o aria-current ficava no Replay, o 1º do menu (revisão do merge, RM-1).
+const BAR_ANCHOR_SIDE_SELECTOR = "#fleet-analytics-bi";
 
 const BROWSER_CANDIDATES = [
   process.env.BROWSER_PATH,
@@ -856,6 +862,8 @@ const expAnchorExpr = (targetSelector) => `(async () => {
     pin: root ? (root.dataset.pin ?? null) : null,
     expanded: root ? (root.dataset.expanded ?? null) : null,
     covered,
+    // Os links da barra marcados como o trecho atual.
+    current: [...document.querySelectorAll(".topbar__links a[aria-current]")].map((a) => a.getAttribute("href")),
   };
 })()`;
 
@@ -1325,23 +1333,35 @@ function expCheckAnchor(ctx, what, state, targetSelector) {
   for (const point of state.covered) ctx.fail(`${what}: o topo de ${targetSelector} está coberto por ${point}`);
 }
 
-/** 4. Âncoras: o link da barra fixa (sem rolar antes) e /#contato direto. */
+/** Depois do clique num link da barra, ele (e só ele) tem aria-current. */
+function expCheckCurrent(ctx, what, state, targetSelector) {
+  if (state && (state.current.length !== 1 || state.current[0] !== targetSelector)) {
+    ctx.fail(`${what}: aria-current em ${JSON.stringify(state.current)} (esperado só ${targetSelector}, o link clicado)`);
+  }
+}
+
+/** Abre o Menu se o link não está à mostra (abaixo de 75em, os links ficam no painel). */
+async function expShowBarLink(cdp, ctx, link, what) {
+  const linkShown = await evalValue(
+    cdp,
+    `(() => { const el = document.querySelector(${JSON.stringify(link)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden"; })()`,
+  );
+  if (!linkShown) {
+    await clickFixed(cdp, ".topbar__toggle");
+    await sleep(300);
+    if (!(await evalValue(cdp, `document.querySelector(".topbar")?.getAttribute("data-open") === "true"`))) {
+      ctx.fail(`${what}: o Menu não abriu`);
+    }
+  }
+  return linkShown;
+}
+
+/** 4. Âncoras: os links da barra fixa (o 1º sem rolar antes) e /#contato direto. */
 async function expAnchorPass(cdp, ctx) {
   await setReducedMotion(cdp, false);
   if (await expLoadPinned(cdp, ctx, "âncora da barra")) {
     const link = `.topbar__links a[href="${BAR_ANCHOR_SELECTOR}"]`;
-    const linkShown = await evalValue(
-      cdp,
-      `(() => { const el = document.querySelector(${JSON.stringify(link)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden"; })()`,
-    );
-    if (!linkShown) {
-      // Abaixo de 75em, os links ficam no painel do Menu.
-      await clickFixed(cdp, ".topbar__toggle");
-      await sleep(300);
-      if (!(await evalValue(cdp, `document.querySelector(".topbar")?.getAttribute("data-open") === "true"`))) {
-        ctx.fail("âncora da barra: o Menu não abriu");
-      }
-    }
+    const linkShown = await expShowBarLink(cdp, ctx, link, "âncora da barra");
     const before = await expState(cdp);
     if (before.scrollY > 0.5) ctx.fail(`âncora da barra: a página saiu do topo antes do clique (scrollY ${before.scrollY})`);
     await clickFixed(cdp, link);
@@ -1349,11 +1369,26 @@ async function expAnchorPass(cdp, ctx) {
     expCheckAnchor(ctx, `âncora da barra${linkShown ? "" : " (pelo Menu)"}`, state, BAR_ANCHOR_SELECTOR);
     if (state && state.hash !== BAR_ANCHOR_SELECTOR) ctx.fail(`âncora da barra: a URL ficou com "${state.hash}" (esperado ${BAR_ANCHOR_SELECTOR})`);
     if (state && state.expanded !== "true") ctx.fail(`âncora da barra: o hero não completou a expansão (data-expanded=${state.expanded})`);
+    expCheckCurrent(ctx, "âncora da barra", state, BAR_ANCHOR_SELECTOR);
     await sleep(1500);
     const later = await evalValue(cdp, expAnchorExpr(BAR_ANCHOR_SELECTOR), { awaitPromise: true });
     expCheckAnchor(ctx, "âncora da barra, 1,5 s depois", later, BAR_ANCHOR_SELECTOR);
+    expCheckCurrent(ctx, "âncora da barra, 1,5 s depois", later, BAR_ANCHOR_SELECTOR);
     ctx.log(
-      `âncora da barra${linkShown ? "" : " (pelo Menu)"}: ${BAR_ANCHOR_SELECTOR} em y=${state?.top} (scroll-padding + margin ${state?.pad}), scrollY ${state?.scrollY}; 1,5 s depois em y=${later?.top}; data-expanded=${state?.expanded}`,
+      `âncora da barra${linkShown ? "" : " (pelo Menu)"}: ${BAR_ANCHOR_SELECTOR} em y=${state?.top} (scroll-padding + margin ${state?.pad}), scrollY ${state?.scrollY}; 1,5 s depois em y=${later?.top}; data-expanded=${state?.expanded}; aria-current ${JSON.stringify(later?.current)}`,
+    );
+
+    // Em seguida, o último produto, com a página já em Produtos.
+    const sideLink = `.topbar__links a[href="${BAR_ANCHOR_SIDE_SELECTOR}"]`;
+    const sideShown = await expShowBarLink(cdp, ctx, sideLink, `âncora da barra, ${BAR_ANCHOR_SIDE_SELECTOR}`);
+    const sideWhat = `âncora da barra, ${BAR_ANCHOR_SIDE_SELECTOR}${sideShown ? "" : " (pelo Menu)"}`;
+    await clickFixed(cdp, sideLink);
+    const side = await evalValue(cdp, expAnchorExpr(BAR_ANCHOR_SIDE_SELECTOR), { awaitPromise: true });
+    expCheckAnchor(ctx, sideWhat, side, BAR_ANCHOR_SIDE_SELECTOR);
+    if (side && side.hash !== BAR_ANCHOR_SIDE_SELECTOR) ctx.fail(`${sideWhat}: a URL ficou com "${side.hash}" (esperado ${BAR_ANCHOR_SIDE_SELECTOR})`);
+    expCheckCurrent(ctx, sideWhat, side, BAR_ANCHOR_SIDE_SELECTOR);
+    ctx.log(
+      `${sideWhat}: em y=${side?.top} (scroll-padding + margin ${side?.pad}), scrollY ${side?.scrollY} (antes ${later?.scrollY}); aria-current ${JSON.stringify(side?.current)}`,
     );
   }
 
