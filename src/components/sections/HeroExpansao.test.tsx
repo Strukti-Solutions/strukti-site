@@ -349,6 +349,14 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ pin: "true", expanded: "false" });
   });
 
+  it("teclado: dez setas para baixo expandem (sem a deriva do ponto flutuante: 10 × 0,1 = 0,999…)", async () => {
+    await mount();
+    for (let i = 0; i < 9; i++) key("ArrowDown");
+    expect(state()).toMatchObject({ expanded: "false", progress: "0.90" });
+    key("ArrowDown");
+    expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
+  });
+
   it("uma rolagem que o hero não causou (âncora, barra de rolagem, busca) completa a expansão, sem voltar ao topo", async () => {
     await mount();
     wheel(100);

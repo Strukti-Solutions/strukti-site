@@ -250,7 +250,9 @@ export function ScrollExpandMedia({
     (next: number, input: ProgressInput) => {
       const section = sectionRef.current;
       if (section) section.dataset.input = input;
-      const progress = Math.min(Math.max(next, 0), 1);
+      // Arredondado na 6ª casa: sem a deriva do ponto flutuante (10 × 0,1 dá
+      // 0,999…, e a 10ª seta não expandiria). Imperceptível na roda e no toque.
+      const progress = Math.min(Math.max(Math.round(next * 1e6) / 1e6, 0), 1);
       progressRef.current = progress;
       if (!paintScheduled.current) {
         paintScheduled.current = true;
