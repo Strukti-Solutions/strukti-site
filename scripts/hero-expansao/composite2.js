@@ -1,4 +1,4 @@
-// Builds the periodic ffmpeg composite of the plates -> plates/master.mkv (lossless, 251 frames: 0..250, frame 250 must equal frame 0)
+// Builds the periodic ffmpeg composite of the plates -> plates2/master.mkv (lossless, 251 frames: 0..250, frame 250 must equal frame 0)
 // final(t) = A + T*city(t) + k(t)*E + j(t)*Lp + steam(t) + dust(t)
 const { execFileSync } = require('child_process'); const fs = require('fs');
 const P = __dirname + '/plates2/'; const DUR = '10.04';

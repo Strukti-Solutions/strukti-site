@@ -2323,7 +2323,6 @@ textarea.field__input {
 /* ------------------------------------------------------------------ */
 /* Catálogo: produtos, aplicativos, chamada (spec 2026-10-03 §4)        */
 /* ------------------------------------------------------------------ */
-
 .produtos {
   display: grid;
   gap: var(--space-6);

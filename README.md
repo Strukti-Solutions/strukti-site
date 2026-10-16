@@ -226,7 +226,7 @@ variante nova sem hero ali é erro de tipo.
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
 
-Com qualquer hero, as 3 opções do texto do hero de marca da v2.2 ficam
+Nos heros "expansao" e "estudio", as 3 opções do texto do hero de marca da v2.2 ficam
 acessíveis por `?hero=a` e `?hero=c` (sem a chave, a B), para comparar: no
 "expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
 passos do replay ("Como funciona") saíram do site na v2.2.

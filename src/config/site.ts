@@ -4,9 +4,9 @@
  * - "expansao" (padrão): o quadro com o vídeo "Fim de expediente" cresce com
  *   a rolagem até quase a tela inteira, o fundo se apaga e o título se abre
  *   para os lados (MASTER §9.8, ADR-010); usa a barra do topo do "video".
- *   Sem os passos do replay: "Como funciona" fica no cartão de Produtos;
+ *   Os passos do replay saíram do site na v2.2, com qualquer hero;
  * - "estudio": hero da v3 (MASTER §9.7): produto 3D em sequência de quadros
- *   guiada pela rolagem, com os passos do replay; usa a barra do "video";
+ *   guiada pela rolagem; usa a barra do "video";
  * - "video": barra escura fixa de borda a borda no topo, vídeo de fundo e
  *   a palavra "Strukti" gigante (MASTER §8.3.1 e §9.6);
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
