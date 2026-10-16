@@ -35,6 +35,15 @@ export function HeroTextos() {
   );
 }
 
+/**
+ * Um texto do hero de marca na opção da URL, sem marcação em volta. O hero
+ * "expansao" (o padrão desde 15/10/2026) usa na linha de apoio (sobretítulo),
+ * no H2 do conteúdo (título) e na frase; o H1 dele é outro.
+ */
+export function HeroOpcaoTexto({ campo }: { campo: "eyebrow" | "headline" | "body" }) {
+  return <>{landingContent.heroOpcoes[useHeroOpcao()][campo]}</>;
+}
+
 /** Introdução da Equipe: com a opção C do hero, volta à da v2.0 (sem repetir o título do hero). */
 export function EquipeIntro() {
   const opcao = useHeroOpcao();

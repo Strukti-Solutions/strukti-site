@@ -7,7 +7,9 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**", "node_modules/**", "public/**", "next-env.d.ts"],
+    // scripts/hero-expansao: a produção da mídia do hero (renderizador Canvas2D
+    // que roda no navegador e sondas CommonJS do Node), fora do app.
+    ignores: [".next/**", "node_modules/**", "public/**", "next-env.d.ts", "scripts/hero-expansao/**"],
   },
 ];
 
