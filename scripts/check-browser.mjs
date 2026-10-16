@@ -32,29 +32,42 @@
 // pode mudar.
 //
 // Com "expansao" (ScrollExpandMedia, MASTER §9.8, ADR-010), confere a
-// 1440×900, 360×740 e 740×360 (celular deitado), em cinco passadas:
+// 1440×900, 360×740 e 740×360 (celular deitado), nestas passadas:
 //   1. sem JavaScript: a composição parada (data-pin="false",
 //      data-expanded="false", data-progress="0.00"), com fundo, quadro,
 //      pôster e título à vista, sem a dica, e o conteúdo com os dois botões
 //      legível e clicável; guarda a altura do hero;
 //   2. roda do mouse (eventos de verdade do CDP, de 40 px, no meio da tela):
 //      o progresso só sobe, o palco fica preso cobrindo a tela até expandir,
-//      o quadro cresce de fato (área ≥ 1,3×; o atributo sozinho não basta),
-//      as duas linhas do título e as legendas se abrem para os lados, o
-//      fundo some, o conteúdo aparece, a altura do hero não muda; depois a
-//      roda rola até Produtos (sem nada cobrindo o topo dela) e, de volta ao
-//      topo, a roda para cima recolhe;
-//   3. teclado com o foco no body: Page Down, Espaço (keyDown com texto " ")
-//      e seta para baixo expandem e depois rolam a página; End expande e,
-//      de novo, vai ao fim; Home recolhe;
-//   4. âncoras: clica no link #produtos da barra fixa sem rolar antes (a
-//      360, pelo Menu) e abre /#contato direto (passando por about:blank):
-//      a página termina no alvo, sem voltar ao topo, e 1,5 s depois continua
-//      lá;
-//   5. reduced motion: nunca prende, a composição parada, a mesma altura da
+//      o quadro cresce de fato (área ≥ 1,3×; o atributo sozinho não basta)
+//      e segue as fórmulas do original em cada amostra (os "mesmos números"
+//      do dono: min(300 + 1250p, 95vw) × min(400 + 400p, 85vh, vh − 2 ×
+//      barra), 650 × 200 abaixo de 768 px, e a 1ª linha do título a
+//      −p × 150vw, 180vw abaixo de 768 px), as duas linhas do título e as
+//      legendas se abrem para os lados, o fundo some, o conteúdo aparece, a
+//      altura do hero não muda; depois a roda rola até Produtos (sem nada
+//      cobrindo o topo dela) e, de volta ao topo, a roda para cima recolhe;
+//   3. teclado com o foco no body (só a 1440): Page Down, Espaço (keyDown
+//      com texto " ") e seta para baixo expandem e depois rolam a página;
+//      End expande e, de novo, vai ao fim; Home recolhe;
+//   4. âncoras (menos a 740): clica no link #produtos da barra fixa sem
+//      rolar antes (a 360, pelo Menu) e abre /#contato direto (passando por
+//      about:blank): a página termina no alvo, sem voltar ao topo, e 1,5 s
+//      depois continua lá;
+//   5. clique e foco: um clique no quadro preso não cai na mídia nem
+//      expande, e o Tab até o controle do vídeo não rola nem expande (abaixo
+//      de 640 px, a faixa do FAB no scroll-padding-bottom rolava);
+//   6. cores forçadas (só a 1440): o ícone do controle do vídeo, nos dois
+//      estados, tem contraste ≥ 3:1 sobre o botão;
+//   7. reduced motion: nunca prende, a composição parada, a mesma altura da
 //      página sem JavaScript, e a roda e o Page Down rolam a página.
-// Só usa os ganchos estáveis do hero (data-pin, data-expanded,
-// data-progress, data-content e as classes .hero-expansao__*).
+// E, à parte: o espaçamento de texto da WCAG 1.4.12 a 320×568 (barra de
+// rolagem clássica) e 320×640 (celular), em que a linha de apoio e a dica
+// não podem passar por baixo do controle do vídeo nem sair da largura; e o
+// toque de verdade a 390×844 (celular, toque emulado): um dedo arrastado
+// 100 px expande metade e segura, e uma pinça amplia a página sem mexer no
+// hero. Só usa os ganchos estáveis do hero (data-pin, data-expanded,
+// data-progress, data-content, --hx-p e as classes .hero-expansao__*).
 //
 // Com um hero que prende a rolagem, três conferências gerais poderiam
 // "passar" sem conferir nada; por isso: a varredura das larguras falha se não
@@ -727,7 +740,17 @@ const EXP_STATE_EXPR = `(async () => {
   };
   const active = document.activeElement;
   const rootRect = root.getBoundingClientRect();
+  // A altura da barra do topo (--hx-barra), medida por uma sonda: o limite
+  // do quadro é 100svh − 2 × ela.
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:absolute;top:0;left:0;width:0;visibility:hidden;height:var(--hx-barra)";
+  root.append(probe);
+  const bar = probe.getBoundingClientRect().height;
+  probe.remove();
+  const hxp = root.style.getPropertyValue("--hx-p");
   return {
+    hxp: hxp === "" ? null : Number(hxp),
+    bar,
     pin: root.dataset.pin ?? null,
     expanded: root.dataset.expanded ?? null,
     progress: root.dataset.progress ?? null,
@@ -964,14 +987,66 @@ async function expWaitPin(cdp, ms = 5000) {
   return false;
 }
 
-/** Carrega a página com JavaScript e espera a expansão prender (data-pin="true"). */
+/** Espera (até ms) o controle do vídeo aparecer: ele só existe depois de montar. */
+async function expWaitMounted(cdp, ms = 5000) {
+  for (let waited = 0; waited < ms; waited += 100) {
+    const shown = await evalValue(
+      cdp,
+      `(() => { const b = document.querySelector(".hero-expansao__controle button"); return !!b && !b.hidden; })()`,
+    );
+    if (shown) return true;
+    await sleep(100);
+  }
+  return false;
+}
+
+/** Carrega a página com JavaScript e espera a expansão prender (data-pin="true"), sem espera fixa. */
 async function expLoadPinned(cdp, ctx, what) {
   await navigate(cdp, URL_TO_CHECK, `carregar (${what}) a ${ctx.size}`);
-  await sleep(1500); // hidratação + efeitos de montagem
-  if (await expWaitPin(cdp)) return true;
+  if (await expWaitPin(cdp)) {
+    await sleep(300); // os outros efeitos de montagem (vídeo, IntersectionObserver)
+    return true;
+  }
   const state = await expState(cdp);
   ctx.fail(`${what}: depois de montar, a expansão não prendeu (data-pin=${state?.pin}, scrollY=${state?.scrollY})`);
   return false;
+}
+
+/**
+ * Os "mesmos números" do original, na geometria de verdade (o atributo e a
+ * área sozinhos não pegam uma fórmula trocada): para cada amostra da roda,
+ * com o p escrito em --hx-p, o quadro tem min(300 + 1250p, 95vw) ×
+ * min(400 + 400p, 85vh, vh − 2 × barra) (650 e 200 abaixo de 768 px), com
+ * 1 px de folga, e a 1ª linha do título andou −p × 150vw (180vw) desde
+ * p = 0, com 2 px. Amostras de teclado ou salto (300 ms de transição) ficam
+ * de fora.
+ */
+function expCheckFormulas(ctx, what, samples) {
+  const s0 = samples[0];
+  let checked = 0;
+  for (const s of samples) {
+    if (s.hxp === null || !s.midia || !s.linha1 || !s0?.linha1) continue;
+    if (s !== s0 && s.input !== "wheel" && s.input !== "touch") continue;
+    const phone = s.vw < 768;
+    const [gw, gh, slide] = phone ? [650, 200, 1.8] : [1250, 400, 1.5];
+    const w = Math.min(300 + gw * s.hxp, 0.95 * s.vw);
+    const h = Math.min(400 + gh * s.hxp, 0.85 * s.vh, s.vh - 2 * s.bar);
+    if (Math.abs(s.midia.w - w) > 1 || Math.abs(s.midia.h - h) > 1) {
+      ctx.fail(
+        `${what}: com p = ${s.hxp.toFixed(4)}, o quadro tem ${s.midia.w.toFixed(1)}×${s.midia.h.toFixed(1)}; as fórmulas do original dão ${w.toFixed(1)}×${h.toFixed(1)}`,
+      );
+      return;
+    }
+    const dx = s.linha1.left - s0.linha1.left;
+    const expected = -s.hxp * slide * s.vw;
+    if (Math.abs(dx - expected) > 2) {
+      ctx.fail(`${what}: com p = ${s.hxp.toFixed(4)}, a 1ª linha do título andou ${dx.toFixed(1)}px; o original dá ${expected.toFixed(1)}px`);
+      return;
+    }
+    checked++;
+  }
+  if (checked < 3) ctx.fail(`${what}: só ${checked} amostra(s) para conferir as fórmulas do quadro e do título`);
+  return checked;
 }
 
 /**
@@ -1058,8 +1133,11 @@ async function expWheelPass(cdp, ctx, staticHeight) {
       break;
     }
   }
+  const formulas = expCheckFormulas(ctx, "roda", samples);
   const last = samples.at(-1);
-  ctx.log(`roda: ${wheels} eventos de ${EXP_WHEEL_DELTA}px; progresso ${samples.map((s) => s.progress).join(" → ")}`);
+  ctx.log(
+    `roda: ${wheels} eventos de ${EXP_WHEEL_DELTA}px; progresso ${samples.map((s) => s.progress).join(" → ")}; fórmulas do quadro e do título conferidas em ${formulas ?? 0} amostra(s)`,
+  );
   if (last.expanded !== "true") {
     ctx.fail(`roda: ${wheels} eventos de ${EXP_WHEEL_DELTA}px e não expandiu (progresso ${last.progress})`);
     return;
@@ -1286,7 +1364,9 @@ async function expAnchorPass(cdp, ctx) {
 async function expReducedPass(cdp, ctx, staticHeight) {
   await setReducedMotion(cdp, true);
   await navigate(cdp, URL_TO_CHECK, `carregar com reduced motion a ${ctx.size}`);
-  await sleep(1500);
+  // Sem espera fixa: o controle do vídeo aparece quando o hero monta (o
+  // expStaticExpr reprova se ele não aparecer).
+  await expWaitMounted(cdp);
   const result = await evalValue(cdp, expStaticExpr(true), { awaitPromise: true });
   if (result.missing) {
     ctx.fail(`reduced motion: a página não tem ${HERO_EXP_SELECTOR}`);
@@ -1314,6 +1394,240 @@ async function expReducedPass(cdp, ctx, staticHeight) {
   ctx.log(
     `reduced motion: ${result.problems.length === 0 ? "parado, nada preso" : `${result.problems.length} problema(s)`}; altura ${result.height}px; a roda rolou até scrollY ${Math.round(wheeled.scrollY)} e o Page Down até ${Math.round(paged.scrollY)}`,
   );
+}
+
+// Um ponto do quadro preso que esteja à vista (abaixo do título): o que o
+// elementFromPoint acha lá e se é a própria mídia (que não pode receber clique).
+const EXP_CARD_POINT_EXPR = `(() => {
+  const midia = document.querySelector(${JSON.stringify(EXP_MIDIA_SELECTOR)});
+  if (!midia) return null;
+  const r = midia.getBoundingClientRect();
+  for (const f of [0.85, 0.75, 0.92]) {
+    const x = Math.round(r.left + r.width / 2);
+    const y = Math.round(r.top + r.height * f);
+    const el = document.elementFromPoint(x, y);
+    if (!el || !midia.contains(el) || el.closest(".hero-expansao__legendas")) continue;
+    const cls = typeof el.className === "string" ? el.className.trim().split(/\\s+/)[0] : "";
+    return { x, y, hit: el.tagName.toLowerCase() + (cls ? "." + cls : ""), media: !!el.closest("video, picture, img") };
+  }
+  return null;
+})()`;
+
+/**
+ * 6. Clique no quadro e Tab até o controle do vídeo, preso: nada expande nem
+ * rola. A mídia não recebe clique (senão o <video tabindex="-1"> ganha foco,
+ * e o foco no hero completa a expansão); abaixo de 640 px, o foco no
+ * controle (na faixa do scroll-padding-bottom do FAB) não pode rolar a
+ * página, porque a rolagem também completaria a expansão.
+ */
+async function expFocusPass(cdp, ctx) {
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "clique e foco"))) return;
+  const point = await evalValue(cdp, EXP_CARD_POINT_EXPR);
+  let clickNote = "sem ponto à vista";
+  if (!point) ctx.fail("clique no quadro: nenhum ponto do quadro preso à vista abaixo do título");
+  else {
+    if (point.media) ctx.fail(`clique no quadro: o clique cai na mídia (${point.hit}); ela não pode receber clique (pointer-events: none)`);
+    await clickAt(cdp, point.x, point.y);
+    await sleep(500);
+    const clicked = await expState(cdp);
+    if (clicked.pin !== "true" || clicked.progress !== "0.00" || clicked.scrollY > 0.5) {
+      ctx.fail(
+        `clique no quadro: a expansão andou (data-pin=${clicked.pin}, progresso ${clicked.progress}, scrollY ${clicked.scrollY}, foco em ${clicked.active})`,
+      );
+    }
+    clickNote = `clique em ${point.hit} (${point.x}, ${point.y}): progresso ${clicked.progress}, foco em ${clicked.active}`;
+  }
+  let tabs = 0;
+  let where = "fora";
+  while (tabs < 20 && where === "fora") {
+    await pressTab(cdp);
+    tabs++;
+    where = await evalValue(
+      cdp,
+      `(() => { const a = document.activeElement; const root = document.querySelector(${JSON.stringify(HERO_EXP_SELECTOR)}); if (a && a.closest(".hero-expansao__controle")) return "controle"; return root && root.contains(a) ? "hero" : "fora"; })()`,
+    );
+  }
+  if (where !== "controle") {
+    ctx.fail(`Tab até o controle do vídeo: ${where === "hero" ? "outra coisa do hero ganhou o foco antes" : `não chegou em ${tabs} Tabs`}`);
+    return;
+  }
+  await sleep(700); // a rolagem suave do foco, se houvesse
+  const focused = await expState(cdp);
+  if (focused.scrollY > 0.5 || focused.pin !== "true" || focused.expanded !== "false" || focused.progress !== "0.00") {
+    ctx.fail(
+      `Tab até o controle do vídeo: a página rolou ou a expansão andou (scrollY ${focused.scrollY}, data-pin=${focused.pin}, progresso ${focused.progress}); focar nele não pode expandir`,
+    );
+  }
+  ctx.log(`clique e foco: ${clickNote}; ${tabs} Tab(s) até o controle do vídeo, scrollY ${focused.scrollY}, data-pin=${focused.pin}`);
+}
+
+// Cores forçadas: o ícone do controle do vídeo nos dois estados (o atributo
+// trocado só para ler o estilo; volta como estava). O ícone precisa de cor
+// própria (fundo ou gradiente) com contraste ≥ 3:1 sobre o botão.
+const EXP_FORCED_ICON_EXPR = `(() => {
+  const button = document.querySelector(".hero-expansao__controle button");
+  const icon = button && button.querySelector(".hero-video__toggle-icon");
+  if (!icon) return null;
+  const rgb = (text) => { const m = /rgba?\\(([^)]*)\\)/.exec(text || ""); if (!m) return null; const [r, g, b, a = 1] = m[1].split(",").map(Number); return { r, g, b, a }; };
+  const lum = ({ r, g, b }) => { const c = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b); };
+  const ratio = (x, y) => { const [hi, lo] = [lum(x), lum(y)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
+  const read = (playing) => {
+    button.dataset.playing = playing;
+    const s = getComputedStyle(icon);
+    const back = rgb(getComputedStyle(button).backgroundColor);
+    const fill = s.backgroundImage.includes("gradient") ? rgb(s.backgroundImage) : rgb(s.backgroundColor);
+    const visible = !!fill && fill.a > 0.5 && !!back;
+    return { fill: fill ? [fill.r, fill.g, fill.b, fill.a].join(",") : "nenhum", back: back ? [back.r, back.g, back.b, back.a].join(",") : "?", ratio: visible ? Math.round(ratio(fill, back) * 100) / 100 : 0 };
+  };
+  const was = button.dataset.playing;
+  const result = { pausar: read("true"), tocar: read("false") };
+  button.dataset.playing = was;
+  return result;
+})()`;
+
+/** 7. Cores forçadas (alto contraste): o ícone do controle do vídeo continua à vista. */
+async function expForcedColorsPass(cdp, ctx) {
+  await cdp.send("Emulation.setEmulatedMedia", {
+    features: [
+      { name: "forced-colors", value: "active" },
+      { name: "prefers-reduced-motion", value: "no-preference" },
+    ],
+  });
+  try {
+    await navigate(cdp, URL_TO_CHECK, `carregar com cores forçadas a ${ctx.size}`);
+    if (!(await expWaitMounted(cdp))) {
+      ctx.fail("cores forçadas: o controle do vídeo não apareceu depois de montar");
+      return;
+    }
+    const icons = await evalValue(cdp, EXP_FORCED_ICON_EXPR);
+    if (!icons) {
+      ctx.fail("cores forçadas: sem o ícone do controle do vídeo");
+      return;
+    }
+    for (const [what, icon] of Object.entries(icons)) {
+      if (icon.ratio < 3) {
+        ctx.fail(`cores forçadas: o ícone "${what}" do controle do vídeo some (cor ${icon.fill} sobre ${icon.back}, contraste ${icon.ratio}:1)`);
+      }
+    }
+    ctx.log(`cores forçadas: ícone "pausar" ${icons.pausar.ratio}:1 e "tocar" ${icons.tocar.ratio}:1 sobre o botão`);
+  } finally {
+    await setReducedMotion(cdp, false);
+  }
+}
+
+// Com o espaçamento do 1.4.12 já aplicado: as linhas da linha de apoio e da
+// dica (as caixas de cada linha, por um Range) contra o controle do vídeo.
+const EXP_SPACING_EXPR = `(async () => {
+  await document.fonts.ready;
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const root = document.querySelector(${JSON.stringify(HERO_EXP_SELECTOR)});
+  const button = root && root.querySelector(".hero-expansao__controle button");
+  if (!button) return null;
+  const cw = document.documentElement.clientWidth;
+  const t = button.getBoundingClientRect();
+  const problems = [];
+  let bottom = 0;
+  for (const [sel, what] of [[".hero-expansao__data", "a linha de apoio"], [".hero-expansao__dica", "a dica"]]) {
+    const el = root.querySelector(sel);
+    if (!el) continue;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const lines = [...range.getClientRects()];
+    lines.forEach((r, i) => {
+      if (sel === ".hero-expansao__data") bottom = Math.max(bottom, r.bottom);
+      const w = Math.min(r.right, t.right) - Math.max(r.left, t.left);
+      const h = Math.min(r.bottom, t.bottom) - Math.max(r.top, t.top);
+      if (w > 0.5 && h > 0.5) problems.push(what + ", linha " + (i + 1) + ": o controle do vídeo cobre " + Math.round(w) + "px dela");
+      if (r.left < -0.5 || r.right > cw + 0.5) problems.push(what + ", linha " + (i + 1) + ": passa da largura da tela (x " + Math.round(r.left) + "–" + Math.round(r.right) + ")");
+    });
+  }
+  return { problems, cw, bottom: Math.round(bottom), vh: innerHeight };
+})()`;
+
+/**
+ * 8. WCAG 1.4.12 nas telas mais estreitas (320 px, com a barra de rolagem
+ * clássica e a sobreposta do celular): com o espaçamento de texto, a linha
+ * de apoio e a dica não passam por baixo do controle do vídeo nem saem da
+ * largura da tela (preso, em p = 0).
+ */
+async function expSpacingPass(cdp, ctx, mobile) {
+  await setReducedMotion(cdp, false);
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: ctx.width, height: ctx.height, deviceScaleFactor: 1, mobile });
+  if (!(await expLoadPinned(cdp, ctx, "espaçamento 1.4.12"))) return;
+  await evalValue(
+    cdp,
+    `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(TEXT_SPACING_CSS)}; document.head.appendChild(s); })()`,
+  );
+  const result = await evalValue(cdp, EXP_SPACING_EXPR, { awaitPromise: true });
+  if (!result) {
+    ctx.fail("espaçamento 1.4.12: sem o controle do vídeo");
+    return;
+  }
+  for (const problem of result.problems) ctx.fail(`espaçamento 1.4.12 (${mobile ? "celular" : "barra clássica"}): ${problem}`);
+  ctx.log(
+    `espaçamento 1.4.12 (${mobile ? "celular" : "barra clássica"}, largura útil ${result.cw}px): ${result.problems.length === 0 ? "legendas livres do controle do vídeo e dentro da largura" : `${result.problems.length} problema(s)`}; a linha de apoio vai até y=${result.bottom} (tela de ${result.vh})`,
+  );
+}
+
+/**
+ * 9. Toque de verdade (celular com toque emulado, Input.dispatchTouchEvent):
+ * um dedo arrastado 100 px para cima expande metade (× 0,005) e segura; uma
+ * pinça (dois dedos se abrindo) amplia a página e não mexe no hero, nem pela
+ * rolagem que o zoom causa.
+ */
+async function expTouchPass(cdp, ctx) {
+  await setReducedMotion(cdp, false);
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: ctx.width, height: ctx.height, deviceScaleFactor: 2, mobile: true });
+  await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  try {
+    if (!(await expLoadPinned(cdp, ctx, "toque"))) return;
+    const x = Math.round(ctx.width / 2);
+    const y0 = Math.round(ctx.height * 0.8);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: y0, id: 1 }] });
+    for (let i = 1; i <= 5; i++) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y0 - i * 20, id: 1 }] });
+      await sleep(30);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    const dragged = await expState(cdp);
+    if (Math.abs(Number(dragged.progress) - 0.5) > 0.02 || dragged.pin !== "true" || !holdsViewport(dragged)) {
+      ctx.fail(`toque: um dedo, 100 px para cima: progresso ${dragged.progress}, data-pin=${dragged.pin}, scrollY ${dragged.scrollY} (esperado 0.50 e preso)`);
+    }
+
+    if (!(await expLoadPinned(cdp, ctx, "pinça"))) return;
+    const cy = Math.round(ctx.height / 2);
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [
+        { x: x - 30, y: cy, id: 1 },
+        { x: x + 30, y: cy + 8, id: 2 },
+      ],
+    });
+    for (let i = 1; i <= 12; i++) {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          { x: x - 30 - i * 10, y: cy - i, id: 1 },
+          { x: x + 30 + i * 10, y: cy + 8 + i, id: 2 },
+        ],
+      });
+      await sleep(30);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await sleep(600);
+    const pinched = await expState(cdp);
+    const scale = await evalValue(cdp, `window.visualViewport ? visualViewport.scale : 1`);
+    if (pinched.pin !== "true" || pinched.progress !== "0.00") {
+      ctx.fail(`toque: a pinça mexeu no hero (data-pin=${pinched.pin}, progresso ${pinched.progress}, scrollY ${pinched.scrollY}, zoom ${scale})`);
+    }
+    ctx.log(
+      `toque: um dedo, 100 px: progresso ${dragged.progress}, preso; pinça: zoom ${Math.round(scale * 100) / 100}×, progresso ${pinched.progress}, data-pin=${pinched.pin}`,
+    );
+  } finally {
+    await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: false }).catch(() => {});
+    await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 }).catch(() => {});
+  }
 }
 
 // Controle positivo da detecção de CSP: uma imagem de origem externa, que a
@@ -1632,7 +1946,27 @@ try {
       // partir de 75em; abaixo, pelo Menu). O celular deitado fica com a roda.
       if (width === 1440) await runExpPass(ctx, "teclado", () => expKeyPass(cdp, ctx));
       if (width !== 740) await runExpPass(ctx, "âncoras", () => expAnchorPass(cdp, ctx));
+      await runExpPass(ctx, "clique e foco", () => expFocusPass(cdp, ctx));
+      if (width === 1440) await runExpPass(ctx, "cores forçadas", () => expForcedColorsPass(cdp, ctx));
       await runExpPass(ctx, "reduced motion", () => expReducedPass(cdp, ctx, staticHeight));
+    }
+    // Telas e entradas que as três passadas acima não cobrem: o 1.4.12 a
+    // 320 px (com a barra de rolagem clássica e a do celular) e o toque.
+    for (const { width, height, run, what } of [
+      { width: 320, height: 568, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, false) },
+      { width: 320, height: 640, what: "espaçamento 1.4.12", run: (ctx) => expSpacingPass(cdp, ctx, true) },
+      { width: 390, height: 844, what: "toque", run: (ctx) => expTouchPass(cdp, ctx) },
+    ]) {
+      const size = `${width}×${height}`;
+      const ctx = {
+        size,
+        width,
+        height,
+        fail: (message) => failures.push(`hero expansao a ${size}: ${message}`),
+        log: (message) => console.log(`  ${message}`),
+      };
+      console.log(`\nHero "expansao" a ${size} (${what}):`);
+      await runExpPass(ctx, what, () => run(ctx));
     }
     await setReducedMotion(cdp, false);
   }
@@ -1813,7 +2147,7 @@ console.log(
   "\nDetector de CSP conferido (acusou a violação provocada). " +
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
-    'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; com reduced motion, nunca prende e a altura é a mesma. ' +
+    'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, as legendas não passam sob o controle; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado e ela não cobre o hero.",
