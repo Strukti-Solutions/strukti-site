@@ -9,8 +9,10 @@ import { HeroVideo } from "./HeroVideo";
  * motion fica o pôster; o controle (WCAG 2.2.2) pausa e toca.
  */
 
-// O motion guarda a preferência de movimento num cache do módulo e só a
-// atualiza pelo evento "change" da media query (ver page.hydration.test.tsx).
+// A preferência de movimento por uma media query falsa: o portão de
+// montagem (useCanAnimate) a lê pelo matchMedia e acompanha o evento
+// "change"; o motion (nos botões) também a lê daqui e guarda num cache do
+// módulo (ver page.hydration.test.tsx).
 const reducedMotion = (() => {
   const listeners = new Set<() => void>();
   const query = {
