@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>steam2</title>
+<style>html,body{margin:0;padding:0;width:520px;height:420px;overflow:hidden;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="520" height="420"></canvas>
+<script>
+// 2x assets: [0,0] steam strip 96x400 (tileable in y, period 400), [100,0] column mask 96x240.
+// v2: wisps carry density puffs along y (period 200/133 px) and a 3-harmonic lateral wiggle, so a rise of 1.6 px/frame (1x)
+// changes real pixels every frame (VP9 kept freezing the old uniform wisp, whose frame-to-frame change was below one code value).
+const c=document.getElementById('c'),x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,520,420);
+const n100=[223,231,239];const rgba=(k,a)=>`rgba(${k[0]},${k[1]},${k[2]},${a})`;
+{const s=document.createElement('canvas');s.width=96;s.height=1200;const g=s.getContext('2d');
+ const W=[{p:0.4,a1:6.5,a2:3.4,a3:1.8,ph2:1.3,ph3:2.2,dx:-3,w:5.2,al:0.48,pp:0.7,pk:2},{p:3.6,a1:5,a2:2.8,a3:1.4,ph2:4.1,ph3:0.6,dx:5,w:3.8,al:0.32,pp:2.9,pk:3}];
+ for(const w of W){
+  const t1=document.createElement('canvas');t1.width=96;t1.height=1200;const h=t1.getContext('2d');h.lineCap='round';h.filter='blur(3.4px)';
+  h.beginPath();for(let y=0;y<=1200;y+=2){const t=2*Math.PI*y/400;const xx=48+w.dx+w.a1*Math.sin(t+w.p)+w.a2*Math.sin(2*t+w.ph2)+w.a3*Math.sin(3*t+w.ph3);y?h.lineTo(xx,y):h.moveTo(xx,y);}
+  h.strokeStyle='rgba(255,255,255,1)';h.lineWidth=w.w;h.stroke();h.filter='none';
+  // density along y: puffs, periodic in 400
+  h.globalCompositeOperation='destination-in';const gr=h.createLinearGradient(0,0,0,1200);
+  for(let y=0;y<=1200;y+=8){const t=2*Math.PI*y/400;const d=0.5+0.5*Math.sin(w.pk*t+w.pp);const a=0.28+0.72*Math.pow(d,1.6);gr.addColorStop(y/1200,`rgba(0,0,0,${a.toFixed(3)})`);}
+  h.fillStyle=gr;h.fillRect(0,0,96,1200);
+  // tint + alpha onto the strip
+  const t2=document.createElement('canvas');t2.width=96;t2.height=1200;const k=t2.getContext('2d');k.fillStyle=rgba(n100,1);k.fillRect(0,0,96,1200);k.globalCompositeOperation='destination-in';k.drawImage(t1,0,0);
+  g.globalAlpha=w.al;g.drawImage(t2,0,0);g.globalAlpha=1;}
+ x.drawImage(s,0,400,96,400,0,0,96,400);}   // middle period: no blur edge effects, seamless
+{const m=document.createElement('canvas');m.width=96;m.height=240;const g=m.getContext('2d');
+ const v=g.createLinearGradient(0,240,0,0);v.addColorStop(0,'rgba(255,255,255,0)');v.addColorStop(0.1,'rgba(255,255,255,0.55)');v.addColorStop(0.25,'rgba(255,255,255,1)');v.addColorStop(0.5,'rgba(255,255,255,0.75)');v.addColorStop(1,'rgba(255,255,255,0)');
+ g.fillStyle=v;g.fillRect(0,0,96,240);g.globalCompositeOperation='destination-in';const hh=g.createLinearGradient(0,0,96,0);hh.addColorStop(0,'rgba(0,0,0,0)');hh.addColorStop(0.2,'rgba(0,0,0,1)');hh.addColorStop(0.8,'rgba(0,0,0,1)');hh.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=hh;g.fillRect(0,0,96,240);
+ x.fillStyle='#000';x.fillRect(100,0,96,240);x.drawImage(m,100,0);}
+</script></body></html>

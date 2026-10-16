@@ -257,7 +257,9 @@ vídeo; é o LCP da página e vai com prioridade alta). Basta sobrescrever com o
 final, "Fim de expediente"). O corte das imagens fica em
 `.hero-expansao` no `globals.css` (`--hx-fundo-pos`, `--hx-fundo-pos-retrato`
 e `--hx-midia-pos`). A mídia precisa ser escura atrás do título e das
-legendas (limites de luminância no `MASTER.md` §3.4).
+legendas (limites de luminância no `MASTER.md` §3.4). Para gerar a mídia de novo
+(a cena, os passes, o loop e as codificações), veja
+`scripts/hero-expansao/README.md`.
 
 **O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
 de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de
