@@ -235,6 +235,22 @@ describe("<HeroExpansao /> — HTML do servidor (estado parado)", () => {
     );
   });
 
+  it.each(["a", "c"] as const)(
+    "com ?hero=%s, a linha de apoio, o H2 e a frase trocam pela opção depois de montar (o H1 e os botões não)",
+    async (opcao) => {
+      window.history.replaceState(null, "", `/?hero=${opcao}`);
+      const { container } = await mount();
+      const { eyebrow, headline, body } = landingContent.heroOpcoes[opcao];
+      const conteudo = within(container.querySelector<HTMLElement>(".hero-expansao__conteudo")!);
+
+      expect(container.querySelector(".hero-expansao__data")?.textContent).toBe(eyebrow);
+      expect(conteudo.getByRole("heading", { level: 2 }).textContent).toBe(headline);
+      expect(conteudo.getByText(body)).toBeTruthy();
+      expect(container.querySelector("h1")?.textContent).toBe(heroExpansao.title);
+      expect(conteudo.getByRole("link", { name: heroExpansao.primaryCta })).toBeTruthy();
+    },
+  );
+
   it("mídia local e decorativa; o vídeo sem autoplay e sem preload, fora do Tab, WebM antes do MP4; o controle só depois de montar", () => {
     const container = serverDom();
     const video = container.querySelector("video") as HTMLVideoElement;

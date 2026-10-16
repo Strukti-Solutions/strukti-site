@@ -281,11 +281,14 @@ Elements of Typographic Style*.
 - 12 colunas com gutter de 24 px a partir de 1024. Abaixo disso, coluna
   única (blocos em 2 colunas a partir de 768, quando couber).
 - Composições com intenção (e não tudo em três cartões iguais):
-  - **Produto em destaque + secundário** (Produtos): a partir de 1024, o
-    cartão do replay e o do estacionamento lado a lado, em 2fr e 1fr,
-    alinhados pelo topo; empilham abaixo disso. Cada cartão é um bloco em
-    `--surface-raised` com `--radius-3`; o do replay tem o palco (§8.13) em
-    cima.
+  - **Parede de 3 cartões** (Produtos, v2.2, prévia aprovada para
+    homologação em 13/10/2026): o replay, o Rota de Vendas e o Fleet
+    Analytics BI no mesmo formato (palco do vídeo em cima, selo, nome,
+    frase, legenda e botão), encaixados com a junta; 3 colunas a partir de
+    1024; de 768 a 1023, o replay ocupa a linha de cima (palco ao lado do
+    texto) e os 2 aplicativos ficam embaixo; empilhados abaixo de 768. Cada
+    cartão tem a âncora do link da barra do topo (`#replay`,
+    `#rota-de-vendas`, `#fleet-analytics-bi`).
   - **Parede** (grade dos aplicativos, Equipe): blocos encaixados com a
     junta.
   - **Chamada** (Chamada geral): título, texto e botão numa coluna de até
@@ -443,7 +446,7 @@ fim do texto.
 | Variante | Fundo | Texto | Hover | Onde |
 |---|---|---|---|---|
 | WhatsApp | `#25D366` | navy-950 | `#1FBF5B` | Todo botão que abre o WhatsApp (sempre o de maior destaque) |
-| Primário | electric-700 | branco | electric-800 | "Conhecer o replay" (heros "expansao" e "estudio"), "Diagnóstico gratuito" (Aplicativos), "Contar o meu problema" (Chamada geral) e o envio do formulário |
+| Primário | electric-700 | branco | electric-800 | "Ver os produtos" (heros "expansao" e "estudio"), "Pedir diagnóstico gratuito" (cartões dos aplicativos em Produtos), "Contar o meu problema" (Chamada geral) e o envio do formulário |
 | Contorno (escuro) | transparente, borda 1,5 px navy-300 | branco | fundo `rgb(255 255 255 / .06)` | "Ver o site do replay" (Produtos, escondido até o endereço existir), "Mostrar mais projetos" (Aplicativos, com mais de 6) e o secundário dos heros "video" e "classic" |
 | Contorno (claro) | transparente, borda 1,5 px navy-800 | navy-800 | fundo navy-100 | Secundário no claro, quando houver |
 
@@ -561,10 +564,9 @@ mas **sem número à mostra**: a régua faz a separação. Itens separados por r
 ### 8.6 Passos numerados (legado: sem uso desde a v3)
 
 A parede vertical de passos numerados do Diagnóstico saiu com a seção. Os
-3 passos do replay ("Como funciona") ficam no hero "estudio" (§9.7), com o
-número "01" a "03" decorativo; com os heros "expansao" (o padrão), "video"
-e "classic", ficam no cartão do replay em Produtos, como lista numerada
-simples.
+3 passos do replay ("Como funciona") também saíram do site na v2.2 (prévia
+aprovada para homologação em 13/10/2026), com qualquer hero: o detalhe vai
+para a futura página do replay.
 
 ### 8.7 Formulário
 
@@ -957,7 +959,7 @@ Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos
 2. "Como funciona" (h2), no estilo do sobretítulo: cyan-300, peso 600, sem caixa-alta (§10);
 3. os 3 passos do replay (`<ol role="list">`), com o número "01" a "03" decorativo (`aria-hidden`; a lista já numera).
 
-Os passos saíram do cartão do replay em Produtos, para não repetir. Com os heros "expansao", "video" e "classic", que não os têm, eles ficam no cartão (§8.6).
+*Nota (v2.2, prévia aprovada para homologação em 13/10/2026):* o "estudio" virou o hero de marca: sobretítulo, H1 e frase de uma das 3 opções (`landingContent.heroOpcoes`; a B no servidor, `?hero=a` ou `?hero=c` troca depois de montar), "Ver os produtos" e o link de texto do WhatsApp. A sequência de quadros está desligada (`SEQUENCIA_DESLIGADA` em `HeroSequenceScroller.tsx`, `data-sequencia="desligada"`), e o símbolo da marca é desenhado pelo fio (`src/components/spike/FioPrototipo.tsx`, protótipo). Os passos saíram do site (§8.6). Desde 15/10/2026, o padrão é o "expansao" (§9.8).
 
 **Enquadramento.** Em qualquer quadro do giro, a peça fica entre 9% e 92% da altura do quadro e entre 30% e 70% da largura (15% e 85% no celular). O quadro é dimensionado por ela, e a peça aparece sempre inteira e abaixo da barra:
 - **Tela deitada, a partir de 768 px** (mais larga que 5:4): a peça fica à direita, com o centro a 63% da largura, entre a barra e uma faixa de 3,5 rem no pé. Os textos ficam à esquerda dela, sobre a parte escura do quadro, sem cobrir a peça. Aqui o fundo fica atrás dos textos.
@@ -1010,9 +1012,9 @@ Seção `#inicio` (`.hero-expansao`, `surface-space`), escolhida com `siteConfig
 
 **Os textos** (`landingContent.heroExpansao`; o título, a dica, a descrição da mídia e os nomes do controle são proposta, aguardando aprovação em `docs/landing-copy.md`):
 1. **H1** (`#hero-title`): um único `<h1>` com as duas linhas em `<span>`, "Tecnologia que trabalha" / "em silêncio"; o nome acessível é a frase inteira. Geologica 700, SHRP 100, `clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem)` (o termo com 8,6vw age só abaixo de ~464 px: de 320 px para cima, "Tecnologia que trabalha" cabe numa linha só, e o título fica nas duas partes que se abrem), navy-50, `text-shadow: 0 2px 24px rgb(8 18 29 / .6)`, `text-wrap: balance`, centrado (exceção deste hero ao alinhamento à esquerda da §4: é a composição do componente). Sem `mix-blend-mode`.
-2. **Linha de apoio** (o `date` do original): o sobretítulo aprovado, "Replay para quadras · Aplicativos sob medida", navy-100, de 16 a 22 px, peso 500, `text-wrap: balance` (até ~400 px ela quebra em duas metades, sem palavra sozinha na 2ª linha). Até 360 px, as legendas deixam livre, dos dois lados, a coluna do controle do vídeo (44 px + gutter + 4 px; em `cqw`, a largura útil do palco): as duas linhas de sempre cabem, e com o espaçamento de texto da WCAG 1.4.12 ela quebra em mais linhas em vez de passar por baixo do botão (a 320 × 568, a 4ª linha passa do pé da tela enquanto o hero segura; a 320 × 640, cabe).
+2. **Linha de apoio** (o `date` do original): o sobretítulo aprovado do hero de marca da v2.2 (opção B), "Strukti Soluções, de João Pessoa" (com `?hero=c`, o da opção C), navy-100, de 16 a 22 px, peso 500, `text-wrap: balance` (até ~400 px ela quebra em duas metades, sem palavra sozinha na 2ª linha). Até 360 px, as legendas deixam livre, dos dois lados, a coluna do controle do vídeo (44 px + gutter + 4 px; em `cqw`, a largura útil do palco): as duas linhas de sempre cabem, e com o espaçamento de texto da WCAG 1.4.12 ela quebra em mais linhas em vez de passar por baixo do botão (a 320 × 568, a 4ª linha passa do pé da tela enquanto o hero segura; a 320 × 640, cabe).
 3. **Dica**: "Role para expandir", navy-100, 15 px, peso 500, `aria-hidden` (é instrução para o olho). Só aparece quando a expansão anda (`data-pin` ou `data-expanded`); parada, ela mentiria.
-4. **Conteúdo** (os `children` do original), depois do palco, no fluxo, sobre o espaço, alinhado à esquerda no `.container`: a abertura aprovada como H2, o corpo (`.lead`) e os dois botões ("Conhecer o replay", primário, para `#produtos`, e o WhatsApp com a mensagem geral). Os dois botões estão no HTML do servidor.
+4. **Conteúdo** (os `children` do original), depois do palco, no fluxo, sobre o espaço, alinhado à esquerda no `.container`: o título do hero de marca da v2.2 como H2 e a frase (`.lead`), os dois da opção B (`?hero=a` ou `?hero=c` troca a linha de apoio, o H2 e a frase depois de montar, como no "estudio"), e os dois botões ("Ver os produtos", primário, para `#produtos`, e o WhatsApp com a mensagem geral). Os dois botões estão no HTML do servidor.
 5. **Quadro**: `role="img"` com a descrição da cena como nome acessível; o fundo é decorativo.
 
 **Estados** (atributos da seção, lidos pelo CSS, pelos testes e pelo check:browser):

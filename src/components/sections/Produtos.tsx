@@ -1,28 +1,32 @@
-import { landingContent } from "@/content/landing";
-import { siteConfig } from "@/config/site";
-import { Palco } from "@/components/ui/Palco";
-import { SeloStatus } from "@/components/ui/SeloStatus";
-import { FichaTecnica } from "@/components/ui/FichaTecnica";
+import { landingContent, type Project } from "@/content/landing";
 import { Reveal } from "@/components/motion/Reveal";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { ReplayVideo } from "./ReplayVideo";
+import { ProjectGrid } from "./ProjectGrid";
 
 /**
- * Produtos de hardware (spec 2026-10-03 §4, seção 3): o replay em destaque,
- * com o vídeo de demonstração no palco (mesmo padrão dos aplicativos), e o
- * estacionamento em desenvolvimento.
- *
- * "Como funciona" e os 3 passos do replay (spec §4, linha 3) ficam no hero
- * "estudio", ao lado do giro (MASTER §9.7). Com os heros "expansao" (o
- * padrão), "video" e "classic", que não têm os passos, eles ficam no cartão
- * do replay.
+ * PRÉVIA v2.2 [S1-B] (spike, sem portões): uma seção só, "Produtos", com os
+ * 3 cartões no mesmo formato (landing-copy-v2.2 §3), na parede de blocos
+ * com a junta (MASTER §5.2): vídeo no palco → selo (no replay, + "Ilustração
+ * do conceito") → nome → frase → etiquetas → legenda e descrição → botão.
+ * Cada cartão tem a sua âncora (#replay, #rota-de-vendas, #fleet-analytics-bi).
  */
 export function Produtos() {
-  const { title, intro, replay, estacionamento } = landingContent.produtos;
-  const stepsInCard = siteConfig.heroVariant !== "estudio";
+  const { title, intro, replay } = landingContent.produtos;
+  const { projects, grid, videoDescriptionLinkLabel } = landingContent.aplicativos;
+
+  const replayCard: Project = {
+    slug: "replay",
+    name: replay.name,
+    summary: replay.oneLiner,
+    videoTitle: "",
+    video: replay.video,
+    platforms: [],
+    status: "piloto",
+    illustrationBadge: replay.illustrationBadge,
+    cta: { label: replay.cta, kind: "whatsapp-replay" },
+  };
 
   return (
-    <section id="produtos" className="section surface-space" aria-labelledby="produtos-title">
+    <section id="produtos" className="section surface-space produtos-secao" aria-labelledby="produtos-title">
       <div className="container">
         <Reveal className="section-head">
           <h2 id="produtos-title" className="section-title">
@@ -30,83 +34,7 @@ export function Produtos() {
           </h2>
           <p className="lead">{intro}</p>
         </Reveal>
-
-        {/* Atalhos para os cartões abaixo (docs/superpowers/specs/
-            2026-10-15-hero-triangulo-3d-design.md, N5). */}
-        <nav aria-label="Atalhos para os produtos" className="produtos__atalhos">
-          <a href="#produto-replay" className="btn btn--outline btn--compact">
-            {replay.name}
-          </a>
-          <a href="#produto-estacionamento" className="btn btn--outline btn--compact">
-            {estacionamento.name}
-          </a>
-        </nav>
-
-        <div className="produtos">
-          <article id="produto-replay" className="produto" aria-labelledby="produto-replay-title">
-            <div>
-              <Palco className="project-card__palco">
-                <ReplayVideo video={replay.video} />
-              </Palco>
-              <div className="portfolio__meta">
-                <p className="caption">{replay.video.caption}</p>
-                <details>
-                  <summary>{landingContent.aplicativos.videoDescriptionLinkLabel}</summary>
-                  <p>{replay.video.description}</p>
-                </details>
-              </div>
-            </div>
-            <div className="produto__corpo">
-              <div className="produto__selos">
-                <SeloStatus status="piloto" />
-                {/* O vídeo é animação do conceito: a spec §10 manda identificá-lo. */}
-                <span className="selo selo--conceito">{landingContent.heroEstudio.illustrationBadge}</span>
-              </div>
-              <h3 id="produto-replay-title" className="block-title">
-                {replay.name}
-              </h3>
-              <p className="body-muted">{replay.oneLiner}</p>
-              {stepsInCard && (
-                <>
-                  <h4 id="produto-replay-passos-title" className="produto__passos-titulo">
-                    {replay.stepsTitle}
-                  </h4>
-                  <ol className="body-muted produto__passos" aria-labelledby="produto-replay-passos-title">
-                    {replay.steps.map((step) => (
-                      <li key={step.lead}>
-                        <strong>{step.lead}</strong> {step.rest}
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
-              <FichaTecnica items={replay.specs} />
-              <div className="produto__acoes">
-                <WhatsAppButton message={landingContent.whatsappMessages.replay}>{replay.cta}</WhatsAppButton>
-                {replay.siteUrl && (
-                  <a href={replay.siteUrl} className="btn btn--outline">
-                    {replay.siteLinkLabel}
-                  </a>
-                )}
-              </div>
-            </div>
-          </article>
-
-          <article id="produto-estacionamento" className="produto" aria-labelledby="produto-estacionamento-title">
-            <div className="produto__corpo">
-              <SeloStatus status="desenvolvimento" />
-              <h3 id="produto-estacionamento-title" className="block-title">
-                {estacionamento.name}
-              </h3>
-              <p className="body-muted">{estacionamento.oneLiner}</p>
-              <div className="produto__acoes">
-                <WhatsAppButton message={landingContent.whatsappMessages.estacionamento}>
-                  {estacionamento.cta}
-                </WhatsAppButton>
-              </div>
-            </div>
-          </article>
-        </div>
+        <ProjectGrid projects={[replayCard, ...projects]} labels={grid} descriptionLinkLabel={videoDescriptionLinkLabel} />
       </div>
     </section>
   );

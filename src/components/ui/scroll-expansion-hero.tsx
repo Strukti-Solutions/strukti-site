@@ -230,8 +230,11 @@ export interface ScrollExpandMediaProps {
   titleId: string;
   /** As duas partes do H1: a 1ª se abre para a esquerda, a 2ª para a direita. */
   title: readonly [string, string];
-  /** Linha de apoio abaixo do quadro (o `date` do original); vai para a esquerda. */
-  date?: string;
+  /**
+   * Linha de apoio abaixo do quadro (o `date` do original); vai para a
+   * esquerda. Aceita um nó: o hero da home troca o texto pela opção do ?hero=.
+   */
+  date?: ReactNode;
   /** Dica abaixo do quadro (o `scrollToExpand` do original); vai para a direita. */
   scrollToExpand?: string;
   /** Fundo decorativo, que some com a expansão (ex.: um `<picture>` com alt=""). */

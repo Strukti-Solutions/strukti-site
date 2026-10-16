@@ -229,9 +229,9 @@ export function Contato() {
                       aria-describedby={fieldErrors.interest ? "interest-error" : undefined}
                     >
                       <option value="">{form.fields.interest.placeholder}</option>
-                      {INTERESTS.map((value) => (
+                      {INTERESTS.filter((value) => value !== "estacionamento").map((value) => (
                         <option key={value} value={value}>
-                          {form.fields.interest.options[value]}
+                          {form.fields.interest.options[value as keyof typeof form.fields.interest.options]}
                         </option>
                       ))}
                     </select>

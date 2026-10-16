@@ -11,7 +11,7 @@ const APP_STATUS: Record<string, ProductStatus> = {
   "fleet-analytics-bi": "emUso",
 };
 
-describe("landingContent v2.0", () => {
+describe("landingContent v2.2", () => {
   it("tem os quatro rótulos de status exatamente como na spec", () => {
     expect(landingContent.statusLabels).toEqual({
       piloto: "Piloto gratuito",
@@ -21,15 +21,18 @@ describe("landingContent v2.0", () => {
     });
   });
 
-  it("o replay tem 3 passos e a ficha com Wi-Fi (nunca 4G)", () => {
-    const { replay } = landingContent.produtos;
-    expect(replay.steps).toHaveLength(3);
-    expect(replay.specs.map((spec) => spec.value)).toContain("Wi-Fi");
+  it("nada fala de 4G (o replay usa o Wi-Fi da arena)", () => {
     expect(JSON.stringify(landingContent)).not.toMatch(/\b4G\b/);
   });
 
-  it("o hero identifica o 3D como ilustração do conceito", () => {
-    expect(landingContent.heroEstudio.illustrationBadge).toBe("Ilustração do conceito");
+  it("o cartão do replay identifica o vídeo como ilustração do conceito", () => {
+    expect(landingContent.produtos.replay.illustrationBadge).toBe("Ilustração do conceito");
+  });
+
+  it("o hero tem as 3 opções da v2.2, e a padrão (heroEstudio) é a B", () => {
+    expect(Object.keys(landingContent.heroOpcoes).sort()).toEqual(["a", "b", "c"]);
+    const { eyebrow, headline, body } = landingContent.heroEstudio;
+    expect({ eyebrow, headline, body }).toEqual(landingContent.heroOpcoes.b);
   });
 
   it('o hero "expansao": o H1 é as duas linhas numa leitura só, e o resto reaproveita o texto aprovado', () => {
@@ -62,9 +65,7 @@ describe("landingContent v2.0", () => {
     expect(statusBySlug).toEqual(APP_STATUS);
   });
 
-  it("o formulário tem as quatro opções de interesse", () => {
-    expect(Object.keys(landingContent.contato.form.fields.interest.options).sort()).toEqual(
-      ["aplicativo", "estacionamento", "outro", "replay"],
-    );
+  it("o formulário tem as três opções de interesse (o estacionamento saiu do site)", () => {
+    expect(Object.keys(landingContent.contato.form.fields.interest.options).sort()).toEqual(["aplicativo", "outro", "replay"]);
   });
 });

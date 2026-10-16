@@ -5,10 +5,13 @@ import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import Home from "./page";
 
-// Estrutura da home v3 (spec 2026-10-03 §4), com o hero "expansao" (o
-// padrão) e o "estudio". As âncoras rodam com as quatro versões do topo,
-// como o page.axe.test.tsx: os heros "video" e "classic" seguem no código
-// até a limpeza e também não podem apontar para uma seção que saiu da página.
+// Estrutura da home na v2.2 do texto (prévia aprovada para homologação em 13/10/2026):
+// 7 capítulos até o Contato, com Dúvidas antes dele e os 3 produtos numa seção só,
+// com o hero "expansao" (o padrão desde 15/10/2026) e o "estudio" (o hero de
+// marca da v2.2). (Antes: spec 2026-10-03 §4.) As âncoras rodam com as quatro
+// versões do topo, como o page.axe.test.tsx: os heros "video" e "classic"
+// seguem no código até a limpeza e também não podem apontar para uma seção
+// que saiu da página.
 const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
@@ -20,17 +23,11 @@ vi.mock("@/config/site", async (importOriginal) => {
   };
 });
 
-/** Ordem das seções da spec §4 (a barra do topo e o rodapé ficam fora do <main>). */
-const SECTION_ORDER = [
-  "inicio",
-  "produtos",
-  "aplicativos",
-  "sob-medida",
-  "como-trabalhamos",
-  "equipe",
-  "contato",
-  "duvidas",
-];
+/** Marcação de dado pendente, montada em partes (o check:placeholders procura o literal). */
+const PENDENTE = ["[A", "PREENCHER"].join(" ");
+
+/** Ordem das seções da v2.2 (a barra do topo e o rodapé ficam fora do <main>). */
+const SECTION_ORDER = ["inicio", "produtos", "sob-medida", "como-trabalhamos", "equipe", "duvidas", "contato"];
 
 describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura", (variant) => {
   beforeEach(() => {
@@ -44,24 +41,39 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
     expect(container.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("o menu tem os quatro itens da v2.0, e cada um aponta para uma seção da página", () => {
+  it("o menu tem um link por produto, mais Equipe e Contato, e cada um aponta para algo da página", () => {
     const { container } = render(<Home />);
 
-    expect(landingContent.header.nav.map((item) => item.href)).toEqual(["#produtos", "#aplicativos", "#equipe", "#contato"]);
+    expect(landingContent.header.nav.map((item) => item.href)).toEqual([
+      "#replay",
+      "#rota-de-vendas",
+      "#fleet-analytics-bi",
+      "#equipe",
+      "#contato",
+    ]);
     for (const item of landingContent.header.nav) {
-      expect(container.querySelector(`main > section${item.href}`)).not.toBeNull();
+      expect(container.querySelector(`main ${item.href}`)).not.toBeNull();
     }
   });
 
-  it("a equipe mostra o curso de cada pessoa logo abaixo do nome", () => {
+  it("nenhuma marcação de dado pendente aparece na página", () => {
+    const { container } = render(<Home />);
+
+    expect(container.textContent).not.toContain(PENDENTE);
+    expect(container.querySelector("mark.rascunho")).toBeNull();
+  });
+
+  it("a equipe mostra o curso logo abaixo do nome só quando o dado existe (sem marcação de rascunho)", () => {
     const { container } = render(<Home />);
     const equipe = within(container.querySelector<HTMLElement>("#equipe")!);
 
     for (const member of siteConfig.team) {
-      expect(member.course).toMatch(/\S/);
       const name = equipe.getByRole("heading", { level: 3, name: member.name });
-      expect(name.nextElementSibling).not.toBeNull();
-      expect(name.nextElementSibling?.textContent).toBe(member.course);
+      if (member.course.includes(PENDENTE)) {
+        expect(name.nextElementSibling).toBeNull();
+      } else {
+        expect(name.nextElementSibling?.textContent).toBe(member.course);
+      }
     }
   });
 
@@ -86,12 +98,14 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
     );
   });
 
-  it('as chamadas marcam o assunto no formulário: "Diagnóstico gratuito" → aplicativo; "Contar o meu problema" → outro', () => {
+  it('as chamadas marcam o assunto no formulário: "Pedir diagnóstico gratuito" (em cada app) → aplicativo; "Contar o meu problema" → outro', () => {
     render(<Home />);
     const select = screen.getByLabelText(landingContent.contato.form.fields.interest.label) as HTMLSelectElement;
     expect(select.value).toBe("");
 
-    fireEvent.click(screen.getByRole("link", { name: landingContent.aplicativos.cta }));
+    const diagnostico = screen.getAllByRole("link", { name: landingContent.aplicativos.cta });
+    expect(diagnostico).toHaveLength(landingContent.aplicativos.projects.length);
+    fireEvent.click(diagnostico[0]!);
     expect(select.value).toBe("aplicativo");
 
     fireEvent.click(screen.getByRole("link", { name: landingContent.chamadaHardware.cta }));
@@ -124,11 +138,10 @@ describe.each(["expansao", "estudio", "video", "classic"] as const)("home (hero 
     expect(container.querySelector("main > section#inicio")?.hasAttribute("data-hides-fab")).toBe(true);
   });
 
-  it('"Como funciona" e os passos do replay aparecem uma vez só: no hero "estudio" ou no cartão do replay', () => {
+  it("o estacionamento e os passos do replay saíram do site (v2.2)", () => {
     const { container } = render(<Home />);
-    const lists = within(container).getAllByRole("list", { name: landingContent.produtos.replay.stepsTitle });
 
-    expect(lists).toHaveLength(1);
-    expect(lists[0]?.closest(variant === "estudio" ? "#inicio" : "#produto-replay")).not.toBeNull();
+    expect(container.textContent).not.toMatch(/estacionamento/i);
+    expect(within(container).queryByText("Como funciona")).toBeNull();
   });
 });

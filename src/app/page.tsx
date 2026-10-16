@@ -7,7 +7,6 @@ import { HeroVideo } from "@/components/sections/HeroVideo";
 import { HeroSequence } from "@/components/sections/HeroSequence";
 import { HeroExpansao } from "@/components/sections/HeroExpansao";
 import { Produtos } from "@/components/sections/Produtos";
-import { Aplicativos } from "@/components/sections/Aplicativos";
 import { ChamadaHardware } from "@/components/sections/ChamadaHardware";
 import { ComoResolvemos } from "@/components/sections/ComoResolvemos";
 import { Equipe } from "@/components/sections/Equipe";
@@ -15,6 +14,7 @@ import { Contato } from "@/components/sections/Contato";
 import { Faq } from "@/components/sections/Faq";
 import { Rodape } from "@/components/sections/Rodape";
 import { linkBancadaSeAtiva } from "@/lib/bancada/link";
+import { FioPrototipo } from "@/components/spike/FioPrototipo";
 
 /**
  * O hero de cada variante. `Record<HeroVariant, …>`: uma variante nova sem
@@ -39,14 +39,15 @@ export default function Home() {
       <main id="conteudo-principal" data-hero-variant={variant}>
         <HeroSection />
         <Produtos />
-        <Aplicativos />
         <ChamadaHardware />
         <ComoResolvemos />
         <Equipe />
-        <Contato />
         <Faq />
+        <Contato />
       </main>
       <Rodape />
+      {/* SPIKE [S1-A]: só com ?fio=costura ou ?fio=montagem. */}
+      <FioPrototipo />
     </>
   );
 }

@@ -1,33 +1,37 @@
 import { landingContent } from "@/content/landing";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { siteConfig } from "@/config/site";
+import { HeroTextos } from "@/components/spike/HeroOpcao";
 import { HeroSequenceScroller } from "./HeroSequenceScroller";
 
 /**
- * Hero "estudio" (MASTER §9.7): o produto em tela inteira e, por cima, o texto
- * aprovado da abertura e os passos do replay ("Como funciona", que saíram do
- * cartão do replay em Produtos para não repetir).
+ * PRÉVIA v2.2 [S1-B] (spike): hero de marca, com as 3 opções do Verbo
+ * (landing-copy v2.2 §2): a B no servidor; ?hero=a|c troca depois de montar. O
+ * visual é o símbolo montado pelo fio (?fio=costura). Botão "Ver os
+ * produtos" (âncora #produtos) e o link do WhatsApp com a mensagem geral.
  */
 export function HeroSequence() {
-  const { eyebrow, headline, body, primaryCta, whatsappCta, illustrationBadge } = landingContent.heroEstudio;
-  const { stepsTitle, steps } = landingContent.produtos.replay;
+  const { primaryCta, whatsappCta, illustrationBadge } = landingContent.heroEstudio;
 
   return (
     <HeroSequenceScroller
       badge={illustrationBadge}
-      stepsTitle={stepsTitle}
-      steps={steps}
+      stepsTitle=""
+      steps={[]}
       opening={
         <>
-          <p className="hero-estudio__eyebrow">{eyebrow}</p>
-          <h1 id="hero-title" className="hero-estudio__title">
-            {headline}
-          </h1>
-          <p className="lead">{body}</p>
+          <HeroTextos />
           <div className="hero-estudio__actions">
             <a href="#produtos" className="btn btn--primary">
               {primaryCta}
             </a>
-            <WhatsAppButton message={landingContent.whatsappMessages.general}>{whatsappCta}</WhatsAppButton>
+            <a
+              href={siteConfig.whatsapp.linkWithMessage(landingContent.whatsappMessages.general)}
+              className="hero-estudio__link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {whatsappCta}
+            </a>
           </div>
         </>
       }

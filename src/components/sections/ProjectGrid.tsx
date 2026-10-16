@@ -6,6 +6,9 @@ import type { Project } from "@/content/landing";
 import { Palco } from "@/components/ui/Palco";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { pauseOtherVideos } from "@/lib/videoCoordination";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { InterestLink } from "@/components/InterestLink";
+import { landingContent } from "@/content/landing";
 
 /** Quantos cartões a grade mostra antes do botão "Mostrar mais projetos". */
 export const PROJECT_GRID_STEP = 6;
@@ -72,7 +75,7 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
             project={project}
             playing={playingSlug === project.slug}
             onPlay={() => setPlayingSlug(project.slug)}
-            playLabel={labels.playLabel.replace("{nome}", project.name)}
+            playLabel={labels.playLabel.replace("{nome}", project.name).replace(" ({duração})", project.video.durationLabel ? ` (${project.video.durationLabel})` : "")}
             playButtonRef={index === PROJECT_GRID_STEP ? firstRevealedRef : undefined}
             descriptionLinkLabel={descriptionLinkLabel}
             wide={wide}
@@ -123,7 +126,7 @@ function ProjectCard({
   }, [playing]);
 
   return (
-    <li className={wide ? "project-card project-card--wide" : "project-card"}>
+    <li id={project.slug} className={wide ? "project-card project-card--wide" : "project-card"}>
       {/* A tela do app no lugar do objeto, no palco (spec §3.3). */}
       <Palco className="project-card__palco">
         <div className="project-card__media">
@@ -168,7 +171,12 @@ function ProjectCard({
         </div>
       </Palco>
       <div className="project-card__body">
-        {project.status && <SeloStatus status={project.status} />}
+        {(project.status || project.illustrationBadge) && (
+          <div className="project-card__selos">
+            {project.status && <SeloStatus status={project.status} />}
+            {project.illustrationBadge && <span className="selo selo--conceito">{project.illustrationBadge}</span>}
+          </div>
+        )}
         <h3 className="block-title">{project.name}</h3>
         <p className="project-card__summary">{project.summary}</p>
         {project.platforms.length > 0 && (
@@ -185,6 +193,17 @@ function ProjectCard({
             <p>{project.video.description}</p>
           </details>
         </div>
+        {project.cta && (
+          <div className="project-card__cta">
+            {project.cta.kind === "whatsapp-replay" ? (
+              <WhatsAppButton message={landingContent.whatsappMessages.replay}>{project.cta.label}</WhatsAppButton>
+            ) : (
+              <InterestLink interest="aplicativo" className="btn btn--primary">
+                {project.cta.label}
+              </InterestLink>
+            )}
+          </div>
+        )}
       </div>
     </li>
   );

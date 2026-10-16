@@ -36,7 +36,7 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
 
-  // A barra recolhe numa cápsula ao rolar, e o link do menu da seção visível
+  // A barra recolhe numa cápsula ao rolar, e o link do menu do trecho visível
   // ganha aria-current (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md,
   // N1/N2). O estado parte sempre de "não rolou" (servidor e 1º render do
   // cliente iguais): não é preferência de movimento, é posição de rolagem,
@@ -44,15 +44,19 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   useEffect(() => {
     const targets = nav.map((item) => item.href.slice(1));
 
+    // v2.2: os links de produto apontam para os cartões (#replay…), dentro de
+    // #produtos, e não para seções do <main>. Por isso a posição vem do
+    // retângulo na tela (o offsetTop de um cartão é relativo ao pai) e o alvo
+    // só vale enquanto cruza a linha logo abaixo da barra: entre dois alvos
+    // (Sob medida, Como trabalhamos, Dúvidas), nenhum link fica marcado. Com
+    // os cartões lado a lado, vale o primeiro do menu.
     const computeActive = () => {
-      const offset = 96;
-      const scrollPos = window.scrollY + offset;
-      let current: string | null = null;
+      const line = 96;
       for (const id of targets) {
-        const element = document.getElementById(id);
-        if (element && element.offsetTop <= scrollPos) current = id;
+        const rect = document.getElementById(id)?.getBoundingClientRect();
+        if (rect && rect.top <= line && rect.bottom > line) return id;
       }
-      return current;
+      return null;
     };
 
     const onScroll = () => {

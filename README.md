@@ -142,7 +142,7 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário, acessibilidade (axe) e hidratação da página inteira com e sem prefers-reduced-motion |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
 | `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
-| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim (e falha se não chegar lá ou não ficar lá: um hero preso deixaria a página no topo) e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Lê a variante do hero no HTML (`<main data-hero-variant>`, de `siteConfig.heroVariant`): com "estudio", a 1440×900 (lado a lado) e a 360×740 (celular, quadro em cima), confere que a rolagem troca o quadro do canvas (0 no topo, outro no meio da seção), que, com reduced motion, o hero fica no pôster, sem quadro desenhado e sem altura extra (a mesma altura da página sem JavaScript, com folga de 10% da tela), e que, com a animação, ao rolar até `#produtos` o fundo preso do hero já soltou: falha se ele ainda cobrir o topo da seção (pelo retângulo dele e pelo `elementFromPoint` em 6 pontos). Falha também se a seção `.hero-estudio` não existir; com outra variante, avisa "passo pulado". Com "expansao", a 1440×900, 360×740 e 740×360 (`.hero-expansao`, pelos atributos `data-pin`, `data-expanded`, `data-progress` e `data-content` e pela geometria de verdade): sem JavaScript, a composição parada e legível, com os dois botões clicáveis; com a roda do mouse (eventos do CDP), o progresso só sobe, o palco fica preso cobrindo a tela, o quadro cresce de fato e segue as fórmulas do original em cada amostra (largura min(300 + 1250p, 95vw), altura min(400 + 400p, 85vh, a tela menos duas barras), 650 e 200 abaixo de 768 px, e a 1ª linha do título a −p × 150vw, 180vw abaixo de 768 px), o título se abre, o fundo some, o conteúdo aparece e a altura do hero não muda, depois a roda rola até `#produtos` (topo livre) e, no topo, a roda para cima recolhe; com o teclado (Page Down, Espaço, seta, End, Home), o mesmo; as âncoras (o link `#produtos` da barra fixa, clicado sem rolar antes, e `/#contato` aberto direto) terminam no alvo e continuam lá 1,5 s depois; um clique no quadro preso não cai na mídia nem expande, e o Tab até o controle do vídeo não rola nem expande; com cores forçadas (a 1440), o ícone do controle tem contraste ≥ 3:1 nos dois estados; com reduced motion, nunca prende e a página rola. À parte, com o espaçamento de texto da WCAG 1.4.12 a 320×568 (barra de rolagem clássica) e 320×640 (celular), a linha de apoio e a dica não passam por baixo do controle do vídeo nem saem da largura, e, com toque de verdade a 390×844 (toque emulado), um dedo arrastado 100 px expande metade e segura e uma pinça amplia a página sem mexer no hero. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto nem invisível), toca os vídeos dos aplicativos (só um por vez na página, o do hero incluído) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo, coberto ou invisível (opacidade efetiva abaixo de 0,5, depois das transições). Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero (ou o quadro e o título do "expansao"). Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
+| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim (e falha se não chegar lá ou não ficar lá: um hero preso deixaria a página no topo) e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Lê a variante do hero no HTML (`<main data-hero-variant>`, de `siteConfig.heroVariant`): com "estudio", a 1440×900 (lado a lado) e a 360×740 (celular, quadro em cima), confere que a rolagem troca o quadro do canvas (0 no topo, outro no meio da seção), que, com reduced motion, o hero fica no pôster, sem quadro desenhado e sem altura extra (a mesma altura da página sem JavaScript, com folga de 10% da tela), e que, com a animação, ao rolar até `#produtos` o fundo preso do hero já soltou: falha se ele ainda cobrir o topo da seção (pelo retângulo dele e pelo `elementFromPoint` em 6 pontos). Falha também se a seção `.hero-estudio` não existir; com outra variante, avisa "passo pulado". Na prévia aprovada em 13/10/2026, com a sequência de quadros desligada (`data-sequencia="desligada"` no hero; o símbolo é desenhado pelo fio), o passo do giro também avisa "passo pulado" e o resto da checagem segue. Com "expansao", a 1440×900, 360×740 e 740×360 (`.hero-expansao`, pelos atributos `data-pin`, `data-expanded`, `data-progress` e `data-content` e pela geometria de verdade): sem JavaScript, a composição parada e legível, com os dois botões clicáveis; com a roda do mouse (eventos do CDP), o progresso só sobe, o palco fica preso cobrindo a tela, o quadro cresce de fato e segue as fórmulas do original em cada amostra (largura min(300 + 1250p, 95vw), altura min(400 + 400p, 85vh, a tela menos duas barras), 650 e 200 abaixo de 768 px, e a 1ª linha do título a −p × 150vw, 180vw abaixo de 768 px), o título se abre, o fundo some, o conteúdo aparece e a altura do hero não muda, depois a roda rola até `#produtos` (topo livre) e, no topo, a roda para cima recolhe; com o teclado (Page Down, Espaço, seta, End, Home), o mesmo; as âncoras (o link `#produtos` da barra fixa, clicado sem rolar antes, e `/#contato` aberto direto) terminam no alvo e continuam lá 1,5 s depois; um clique no quadro preso não cai na mídia nem expande, e o Tab até o controle do vídeo não rola nem expande; com cores forçadas (a 1440), o ícone do controle tem contraste ≥ 3:1 nos dois estados; com reduced motion, nunca prende e a página rola. À parte, com o espaçamento de texto da WCAG 1.4.12 a 320×568 (barra de rolagem clássica) e 320×640 (celular), a linha de apoio e a dica não passam por baixo do controle do vídeo nem saem da largura, e, com toque de verdade a 390×844 (toque emulado), um dedo arrastado 100 px expande metade e segura e uma pinça amplia a página sem mexer no hero. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto nem invisível), toca os vídeos dos aplicativos (só um por vez na página, o do hero incluído) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo, coberto ou invisível (opacidade efetiva abaixo de 0,5, depois das transições). Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero (ou o quadro e o título do "expansao"). Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH` |
 
 ### Definição de pronto
 
@@ -168,14 +168,15 @@ src/
   components/
     sections/               um componente por seção da home, na ordem da página:
       HeroExpansao.tsx        hero "expansao", o padrão (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
-      HeroSequence.tsx        hero "estudio" (+ HeroSequenceScroller.tsx: quadros guiados pela rolagem)
-      Produtos.tsx            produtos de hardware (replay e estacionamento inteligente)
-      Aplicativos.tsx         aplicativos sob medida (grade de vídeos de ProjectGrid.tsx)
+      HeroSequence.tsx        hero "estudio", o hero de marca da v2.2 (+ HeroSequenceScroller.tsx)
+      Produtos.tsx            os 3 produtos (Replay, Rota de Vendas, Fleet Analytics BI) na parede de ProjectGrid.tsx
       ChamadaHardware.tsx     "Tem um problema que pede hardware?"
       ComoResolvemos.tsx      "Como trabalhamos" (etapas)
       Equipe.tsx              nomes e cursos
       Contato.tsx             formulário único, com o assunto (interesse)
-      Faq.tsx, Rodape.tsx     dúvidas e rodapé
+      Faq.tsx, Rodape.tsx     dúvidas (antes do Contato) e rodapé
+    spike/                  protótipos da prévia v2.2: FioPrototipo.tsx (o fio condutor) e
+                            HeroOpcao.tsx (as 3 opções do hero de marca, ?hero=a|c)
     ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica),
                             blackhole-hero-section (o buraco negro do hero "classic") e
                             scroll-expansion-hero (o quadro que cresce do hero "expansao")
@@ -192,7 +193,8 @@ src/
 ```
 
 O texto em `src/content/landing.ts` é o texto aprovado pelo Thiago em
-`docs/landing-copy.md` (v2.0). Qualquer mudança de texto deve primeiro ser
+`docs/landing-copy.md` (v2.2, aprovada para homologação em 13/10/2026; o
+texto novo do hero "expansao" é proposta, aguardando aprovação). Qualquer mudança de texto deve primeiro ser
 aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
@@ -210,12 +212,13 @@ variante nova sem hero ali é erro de tipo.
 - `"expansao"` (padrão) — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
   vídeo "Fim de expediente" cresce com a roda ou o toque até quase a tela
   inteira, o fundo se apaga, o título se abre para os lados e, com a
-  expansão completa, aparecem a abertura e os botões (`MASTER.md` §9.8,
-  ADR-010).
-- `"estudio"` — `HeroSequence.tsx` + `TopBar.tsx`: o botão de
-  replay em 3D, num quadro em tela inteira, gira conforme a rolagem, e os
-  textos passam por cima dele (a abertura; depois, "Como funciona" e os 3
-  passos do replay).
+  expansão completa, aparecem o texto do hero de marca da v2.2 e os botões
+  (`MASTER.md` §9.8, ADR-010).
+- `"estudio"` — `HeroSequence.tsx` + `TopBar.tsx`: na v2.2, o hero de
+  marca (as 3 opções de texto, com a sequência de quadros do 3D desligada
+  e o símbolo desenhado pelo fio, `src/components/spike/FioPrototipo.tsx`).
+  O giro do 3D guiado pela rolagem segue no código (`SEQUENCIA_DESLIGADA`
+  em `HeroSequenceScroller.tsx`).
 - `"video"` — `HeroVideo.tsx` + `TopBar.tsx`: vídeo de fundo, a
   palavra "Strukti" gigante e a barra fixa no topo, de borda a borda, com
   menu recolhível abaixo de 75em, 1200px com a fonte padrão (`MASTER.md`
@@ -223,9 +226,10 @@ variante nova sem hero ali é erro de tipo.
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
 
-Com `"expansao"`, `"video"` ou `"classic"`, "Como funciona" e os 3 passos do
-replay aparecem no cartão do replay em Produtos (no `"estudio"`, eles ficam
-no hero).
+Com qualquer hero, as 3 opções do texto do hero de marca da v2.2 ficam
+acessíveis por `?hero=a` e `?hero=c` (sem a chave, a B), para comparar: no
+"expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
+passos do replay ("Como funciona") saíram do site na v2.2.
 
 **O hero "expansao"** (`MASTER.md` §9.8, ADR-010) é o `ScrollExpandMedia`
 do 21st.dev (licença MIT, `src/components/ui/scroll-expansion-hero.tsx`,
@@ -240,7 +244,8 @@ expandido. Sem JavaScript ou com reduced motion, fica a composição parada
 (quadro pequeno com o pôster, título e linha de apoio), com a abertura e os
 botões logo abaixo, e a página rola normalmente. O texto fica em
 `landingContent.heroExpansao` (o título e a dica são proposta, aguardando
-aprovação).
+aprovação; a linha de apoio, o H2, a frase e os botões são os do hero de
+marca da v2.2).
 
 **Trocar a mídia do hero "expansao":** os arquivos ficam em
 `public/hero/expansao/` com nomes e tamanhos fixos, apontados em

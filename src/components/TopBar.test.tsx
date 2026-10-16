@@ -140,16 +140,21 @@ describe("TopBar", () => {
 });
 
 // N1/N2 (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md): a
-// barra recolhe numa cápsula ao rolar, e o link da seção visível ganha
+// barra recolhe numa cápsula ao rolar, e o link do trecho visível ganha
 // aria-current. A troca de visual (cápsula) é CSS, por data-scrolled; aqui
-// só o estado que o CSS lê.
+// só o estado que o CSS lê. Na v2.2 os links de produto apontam para os
+// cartões (#replay…), dentro de #produtos: a posição vem do retângulo na tela.
 describe("barra ao rolar", () => {
   let mockedSections: HTMLElement[] = [];
 
-  function mockSection(id: string, top: number) {
+  /** Um alvo do menu de `top` a `top + height` na página (o retângulo acompanha a rolagem). */
+  function mockSection(id: string, top: number, height = 900) {
     const el = document.createElement("div");
     el.id = id;
-    Object.defineProperty(el, "offsetTop", { configurable: true, value: top });
+    el.getBoundingClientRect = () => {
+      const y = top - window.scrollY;
+      return { top: y, bottom: y + height, left: 0, right: 0, width: 0, height, x: 0, y, toJSON: () => ({}) };
+    };
     document.body.appendChild(el);
     mockedSections.push(el);
     return el;
@@ -157,6 +162,12 @@ describe("barra ao rolar", () => {
 
   function setScrollY(value: number) {
     Object.defineProperty(window, "scrollY", { configurable: true, value });
+  }
+
+  function current() {
+    return landingContent.header.nav
+      .filter((item) => screen.getByRole("link", { name: item.label }).getAttribute("aria-current") === "true")
+      .map((item) => item.href);
   }
 
   afterEach(() => {
@@ -171,9 +182,7 @@ describe("barra ao rolar", () => {
     act(() => fireEvent.scroll(window));
 
     expect(container.querySelector("header.topbar")?.getAttribute("data-scrolled")).toBe("false");
-    for (const item of landingContent.header.nav) {
-      expect(screen.getByRole("link", { name: item.label }).hasAttribute("aria-current")).toBe(false);
-    }
+    expect(current()).toEqual([]);
   });
 
   it("ao passar de 40px, data-scrolled vira true", () => {
@@ -183,17 +192,32 @@ describe("barra ao rolar", () => {
     expect(container.querySelector("header.topbar")?.getAttribute("data-scrolled")).toBe("true");
   });
 
-  it("o link da seção visível ganha aria-current; os outros, não", () => {
-    const [produtos, aplicativos] = landingContent.header.nav;
-    mockSection(produtos.href.slice(1), 0);
-    mockSection(aplicativos.href.slice(1), 900);
+  it("o link do trecho visível ganha aria-current; os outros, não", () => {
+    const [primeiro, segundo] = landingContent.header.nav;
+    mockSection(primeiro.href.slice(1), 0);
+    mockSection(segundo.href.slice(1), 900);
 
     render(<TopBar />);
     setScrollY(950);
     act(() => fireEvent.scroll(window));
 
-    expect(screen.getByRole("link", { name: aplicativos.label }).getAttribute("aria-current")).toBe("true");
-    expect(screen.getByRole("link", { name: produtos.label }).hasAttribute("aria-current")).toBe(false);
+    expect(current()).toEqual([segundo.href]);
+  });
+
+  it("com os cartões lado a lado, vale o primeiro do menu; entre os alvos, nenhum fica marcado", () => {
+    const [replay, rota, fleet, equipe] = landingContent.header.nav;
+    for (const item of [replay, rota, fleet]) mockSection(item.href.slice(1), 1000, 600);
+    mockSection(equipe.href.slice(1), 3000);
+
+    render(<TopBar />);
+    setScrollY(1200);
+    act(() => fireEvent.scroll(window));
+    expect(current()).toEqual([replay.href]);
+
+    // Depois dos cartões e antes da Equipe (ex.: Sob medida), nada marcado.
+    setScrollY(2000);
+    act(() => fireEvent.scroll(window));
+    expect(current()).toEqual([]);
   });
 });
 

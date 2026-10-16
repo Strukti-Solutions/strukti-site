@@ -2324,14 +2324,6 @@ textarea.field__input {
 /* Catálogo: produtos, aplicativos, chamada (spec 2026-10-03 §4)        */
 /* ------------------------------------------------------------------ */
 
-/* Atalhos para os cartões (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md, N5). */
-.produtos__atalhos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-}
-
 .produtos {
   display: grid;
   gap: var(--space-6);
@@ -2367,19 +2359,6 @@ textarea.field__input {
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-5);
-}
-
-/* "Como funciona" e os passos no cartão do replay: com todo hero que não
-   seja o "estudio" (o "expansao", padrão, incluído). */
-.produto__passos-titulo {
-  margin-top: var(--space-5);
-  font-weight: 600;
-}
-
-.produto__passos {
-  display: grid;
-  gap: var(--space-2);
-  padding-left: 1.25em;
 }
 
 /* Aplicativos: a tela do app no lugar do objeto, no palco (MASTER §8.13). O
@@ -3195,5 +3174,89 @@ textarea.field__input {
 
   .hero-expansao .hero-expansao__conteudo {
     opacity: 1 !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* SPIKE: prévia [S1-B/S1-A] — descartável, sem portões                 */
+/* ------------------------------------------------------------------ */
+/* Hero: sem o 3D (o fio desenha o símbolo, ?fio=costura); no celular, a
+   faixa do símbolo cai para ~34% da tela, para o botão caber na 1ª tela;
+   e mais rolagem para a montagem do símbolo. */
+.hero-estudio__quadro picture,
+.hero-estudio__canvas,
+.hero-estudio__selo {
+  visibility: hidden;
+}
+
+@media (max-width: 767px) {
+  .hero-estudio {
+    --he-qh: min(34svh, 74vw);
+  }
+}
+
+.hero-estudio__textos {
+  padding-bottom: calc(var(--space-7) + 60svh);
+}
+
+@media (min-width: 768px) {
+  .hero-estudio__textos {
+    padding-bottom: calc(var(--space-7) + 45svh);
+  }
+}
+
+.hero-estudio__actions {
+  align-items: center;
+  column-gap: var(--space-5);
+}
+
+.hero-estudio__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.hero-estudio__link:hover {
+  color: var(--link-hover, #ffffff);
+  text-decoration-thickness: 2px;
+}
+
+/* PRÉVIA v2.2 [S1-B]: Produtos, uma seção com os 3 cartões na parede (MASTER §5.2). */
+.produtos-secao .project-card {
+  scroll-margin-top: calc(var(--topbar-height) + var(--topbar-joint) + 16px);
+}
+
+.project-card__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.project-card__body .project-card__selos .selo {
+  margin-bottom: 0;
+}
+
+.project-card__cta {
+  margin-top: var(--space-4);
+}
+
+/* De 768 a 1023: o replay ocupa a linha de cima (palco ao lado do texto) e os 2 apps vêm embaixo. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .produtos-secao .wall--3 > .project-card:first-child {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    padding-bottom: 0;
+  }
+
+  .produtos-secao .wall--3 > .project-card:first-child .project-card__body {
+    padding: var(--space-5);
   }
 }
