@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><title>preview 360x740</title>
+<style>
+@font-face{font-family:Geologica;src:url(geologica.woff2) format('woff2');font-weight:100 900}
+html,body{margin:0;overflow:hidden;background:#000;font-family:Geologica,system-ui,sans-serif}
+.palco{position:relative;width:360px;height:740px;container-type:size;overflow:hidden;background:#08121d;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.fundo{position:absolute;inset:0}
+.fundo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 75%)}
+.fundo::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,18,29,.1) 0%,rgba(8,18,29,.1) 72%,#08121d 100%)}
+.midia{position:absolute;top:50%;left:50%;width:300px;height:400px;translate:-50% -50%;border-radius:16px;box-shadow:0 0 50px rgba(0,0,0,.3);z-index:1}
+.quadro{position:relative;overflow:hidden;width:100%;height:100%;border-radius:inherit;background:#0e1c2b}
+.quadro img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sombra{position:absolute;inset:0;background:rgba(0,0,0,.3);opacity:.5}
+.leg{position:absolute;top:100%;left:50%;translate:-50% 0;width:min(90cqw,36rem);margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#dfe7ef;text-align:center;text-shadow:0 1px 12px rgba(8,18,29,.7)}
+.data{margin:0;font-size:clamp(1rem,.85rem + .6cqw,1.375rem);font-weight:500;line-height:1.35}
+.dica{margin:0;font-size:.9375rem;font-weight:500}
+.titulo{position:relative;z-index:2;width:100%;padding-inline:20px;box-sizing:border-box}
+h1{display:flex;flex-direction:column;align-items:center;gap:16px;margin:0;color:#f1f5f8;font-size:clamp(2rem,1.2rem + 3.6cqw,3.75rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;text-align:center;text-shadow:0 2px 24px rgba(8,18,29,.6);text-wrap:balance}
+h1 span{max-width:100%}
+</style></head><body><section class="palco">
+<div class="fundo"><img src="../../public/hero/expansao/fundo-retrato.avif" alt=""></div>
+<div class="midia"><div class="quadro"><img src="../../public/hero/expansao/midia-poster.avif" alt=""><div class="sombra"></div></div><div class="leg"><p class="data">Strukti Soluções, de João Pessoa</p><p class="dica">Role para expandir</p></div></div>
+<div class="titulo"><h1><span>Tecnologia que trabalha</span><span>em silêncio</span></h1></div>
+</section></body></html>

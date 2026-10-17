@@ -41,6 +41,45 @@ SOFTWARE.
 
 ---
 
+## Scroll Expansion Hero (`ScrollExpandMedia`)
+
+- **Arquivo:** `src/components/ui/scroll-expansion-hero.tsx` (adaptado; as
+  mudanças estão descritas no comentário do topo do arquivo e na ADR-010)
+- **Autor:** Arunachalam (@arunachalam, 21st.dev)
+- **Origem:** https://21st.dev/@arunachalam/components/scroll-expansion-hero
+- **Licença:** MIT, conferida em 15/10/2026. A página de origem publica a
+  licença e o autor (nome e perfil), sem ano e sem arquivo de licença; o
+  aviso abaixo usa o nome e o perfil do autor como estão lá.
+- A mídia do hero ("Fim de expediente", `public/hero/expansao/`) é produção
+  própria, não deste componente (a demonstração original usa imagens e
+  vídeos de terceiros, que não entram no site).
+
+```
+MIT License
+
+Copyright (c) Arunachalam (@arunachalam, 21st.dev)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
+
 ## Vídeo de fundo do hero: "Aerial Footage of Truck on the Road"
 
 - **Arquivos:** `public/video/hero/rota-entardecer-*` (dois loops MP4 e quatro

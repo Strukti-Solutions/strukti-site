@@ -1,14 +1,18 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
- * - "estudio" (padrão): hero da v3 (MASTER §9.7): produto 3D em sequência
- *   de quadros guiada pela rolagem; usa a barra do topo do "video";
+ * - "expansao" (padrão): o quadro com o vídeo "Fim de expediente" cresce com
+ *   a rolagem até quase a tela inteira, o fundo se apaga e o título se abre
+ *   para os lados (MASTER §9.8, ADR-010); usa a barra do topo do "video".
+ *   Os passos do replay saíram do site na v2.2, com qualquer hero;
+ * - "estudio": hero da v3 (MASTER §9.7): produto 3D em sequência de quadros
+ *   guiada pela rolagem; usa a barra do "video";
  * - "video": barra escura fixa de borda a borda no topo, vídeo de fundo e
  *   a palavra "Strukti" gigante (MASTER §8.3.1 e §9.6);
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
  *   §9.1–9.5), escolhido em `siteConfig.heroVisual`.
  */
-export type HeroVariant = "estudio" | "video" | "classic";
+export type HeroVariant = "expansao" | "estudio" | "video" | "classic";
 
 /**
  * Peça de fundo do hero "classic". Trocar o visual é mudar este valor — ver
@@ -58,6 +62,68 @@ export interface HeroSequenceSource {
   celular: HeroFrameSet;
 }
 
+/**
+ * Mídia do hero "expansao" (MASTER §9.8), servida pelo próprio site
+ * (public/hero/expansao/), nunca de CDN (CSP: img-src e media-src 'self').
+ * Os nomes e tamanhos são fixos: a versão final da mídia substitui os
+ * arquivos com os mesmos nomes, sem mexer no código. A posição de corte
+ * (object-position) fica no CSS, em `.hero-expansao` (--hx-fundo-pos…).
+ */
+export interface HeroExpansaoMedia {
+  /**
+   * Fundo decorativo: some com a expansão, até sobrar o espaço. Cobre a tela
+   * inteira, então não conta para o LCP (o LCP é o pôster do quadro).
+   */
+  fundo: {
+    /** Telas deitadas, 1920 × 1080. */
+    avif: string;
+    jpg: string;
+    width: number;
+    height: number;
+    /** Telas em pé (orientation: portrait), 1080 × 1920. */
+    retratoAvif: string;
+    retratoJpg: string;
+  };
+  /** O vídeo do quadro que cresce: loop mudo e sem emenda, 1280 × 720. */
+  midia: {
+    /** VP9 em WebM (vem primeiro: mais leve). */
+    webm: string;
+    /** H.264 em MP4, para quem não toca WebM. */
+    mp4: string;
+    /** Pôster: o 1º quadro do loop, em AVIF com JPG de reserva (o LCP da página). */
+    posterAvif: string;
+    posterJpg: string;
+    width: number;
+    height: number;
+  };
+}
+
+/*
+ * "Fim de expediente": produção própria da Strukti (sem licença de
+ * terceiros). Mesa calma junto a uma janela alta na hora azul, a cidade
+ * desfocada lá fora, a luz do abajur, o caderno fechado, a caneca, o
+ * celular com uma rota do Rota de Vendas e a caixa do botão do replay com o
+ * LED ciano. Os arquivos em public/hero/expansao/ são a versão final.
+ */
+const FIM_DE_EXPEDIENTE: HeroExpansaoMedia = {
+  fundo: {
+    avif: "/hero/expansao/fundo.avif",
+    jpg: "/hero/expansao/fundo.jpg",
+    width: 1920,
+    height: 1080,
+    retratoAvif: "/hero/expansao/fundo-retrato.avif",
+    retratoJpg: "/hero/expansao/fundo-retrato.jpg",
+  },
+  midia: {
+    webm: "/hero/expansao/midia.webm",
+    mp4: "/hero/expansao/midia.mp4",
+    posterAvif: "/hero/expansao/midia-poster.avif",
+    posterJpg: "/hero/expansao/midia-poster.jpg",
+    width: 1280,
+    height: 720,
+  },
+};
+
 /*
  * "Rota ao entardecer": "Aerial Footage of Truck on the Road", de K (Pexels),
  * https://www.pexels.com/video/aerial-footage-of-truck-on-the-road-9339061/
@@ -84,9 +150,10 @@ const ROTA_ENTARDECER: HeroVideoSource = {
 
 export const siteConfig = {
   brand: "Strukti Soluções",
-  heroVariant: "estudio" as HeroVariant,
+  heroVariant: "expansao" as HeroVariant,
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
+  heroExpansao: FIM_DE_EXPEDIENTE,
   heroSequence: {
     desktop: { frames: 90, width: 1600, height: 1000 },
     celular: { frames: 45, width: 800, height: 900 },

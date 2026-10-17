@@ -26,16 +26,20 @@ node scripts/quality-gate/compare-baseline.mjs
 ```
 
 ## Métricas (v1: estáticas, sem build nem banco, sobre `src/`)
-| Métrica | Classe | Baseline (13/10/2026) |
+| Métrica | Classe | Baseline (16/10/2026) |
 |---|---|---|
-| `duplication_pct` (jscpd 5.3.2) | blocking | 1,40% |
-| `files_over_400_lines` (.ts/.tsx) | blocking | 3 (`blackhole-hero-section.tsx`, `landing.ts`, `spike/FioPrototipo.tsx`) |
+| `duplication_pct` (jscpd 5.3.2) | blocking | 1,60% |
+| `files_over_400_lines` (.ts/.tsx) | blocking | 5 (`blackhole-hero-section.tsx`, `HeroExpansao.test.tsx`, `landing.ts`, `scroll-expansion-hero.tsx`, `spike/FioPrototipo.tsx`) |
 | `largest_file_lines` (.ts/.tsx) | warning | 1243 (`blackhole-hero-section.tsx`) |
 
 O baseline acompanha o estado de `homologacao` quando o gate entra. Ele foi
 recongelado em 13/10/2026, depois da prévia v2.2 (#7), que trouxe o protótipo
-`spike/FioPrototipo.tsx` com 525 linhas. Quando o fio tiver a implementação
-definitiva, dividir esse arquivo baixa o limite de volta.
+`spike/FioPrototipo.tsx` com 525 linhas, e de novo em 16/10/2026, depois do
+hero "expansao" (#8), que trouxe `scroll-expansion-hero.tsx` (548 linhas) e
+`HeroExpansao.test.tsx` (661 linhas) e subiu a duplicação de 1,40% para 1,60%.
+Nos dois casos este PR não mexe em `src/`: o código já estava em `homologacao`.
+Quando o fio tiver a implementação definitiva e o hero for dividido, o limite
+baixa de volta.
 
 O `jscpd` roda via `npx` numa versão **exata**, publicada há mais de 7 dias, para
 respeitar a regra de quarentena do projeto. Para atualizar a versão, escolha uma que

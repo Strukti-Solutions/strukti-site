@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
-import { useCanAnimate } from "@/lib/motion";
+import { useCanAnimateOnce } from "@/lib/motion";
 
 interface RevealProps {
   children: ReactNode;
@@ -12,7 +12,7 @@ interface RevealProps {
 
 /** Revelação suave (fade + leve subida) de um bloco ao entrar na tela. */
 export function Reveal({ children, className, style }: RevealProps) {
-  const canAnimate = useCanAnimate();
+  const canAnimate = useCanAnimateOnce();
 
   if (!canAnimate) {
     return (
@@ -48,7 +48,7 @@ const staggerItem: Variants = {
 
 /** Lista (`<ul>`) cujos `<RevealStaggerItem>` revelam em cascata ao rolar. */
 export function RevealStaggerList({ children, className, style }: RevealProps) {
-  const canAnimate = useCanAnimate();
+  const canAnimate = useCanAnimateOnce();
 
   if (!canAnimate) {
     return (
@@ -73,7 +73,7 @@ export function RevealStaggerList({ children, className, style }: RevealProps) {
 }
 
 export function RevealStaggerItem({ children, className, style }: RevealProps) {
-  const canAnimate = useCanAnimate();
+  const canAnimate = useCanAnimateOnce();
 
   if (!canAnimate) {
     return (

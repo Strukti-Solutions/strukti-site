@@ -4,9 +4,10 @@ import axe from "axe-core";
 import type { HeroVariant } from "@/config/site";
 import Home from "./page";
 
-// Roda com as três versões do topo (siteConfig.heroVariant): "estudio", o
-// padrão, e "video" e "classic", que seguem no código (revisão HR1 da Crivo).
-const heroVariant = vi.hoisted(() => ({ current: "estudio" as HeroVariant }));
+// Roda com as quatro versões do topo (siteConfig.heroVariant): "expansao", o
+// padrão, "estudio", e "video" e "classic", que seguem no código (revisão
+// HR1 da Crivo).
+const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
   return {
@@ -17,7 +18,7 @@ vi.mock("@/config/site", async (importOriginal) => {
   };
 });
 
-describe.each(["estudio", "video", "classic"] as const)("página inicial (hero %s) — acessibilidade", (variant) => {
+describe.each(["expansao", "estudio", "video", "classic"] as const)("página inicial (hero %s) — acessibilidade", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });

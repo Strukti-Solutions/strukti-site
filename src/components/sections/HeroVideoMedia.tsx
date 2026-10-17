@@ -30,7 +30,7 @@ const HeroVideoContext = createContext<HeroVideoState | null>(null);
 
 function useHeroVideo() {
   const state = useContext(HeroVideoContext);
-  if (!state) throw new Error("HeroVideoBackground e HeroVideoToggle ficam dentro de HeroVideoProvider.");
+  if (!state) throw new Error("HeroVideoBackground, HeroVideoClip e HeroVideoToggle ficam dentro de HeroVideoProvider.");
   return state;
 }
 
@@ -41,10 +41,12 @@ function prefersSavingData() {
 }
 
 /**
- * Decide quando o vídeo de fundo toca (MASTER §9.6). A árvore é a mesma no
+ * Decide quando o vídeo de fundo toca (MASTER §9.6; também o vídeo do quadro
+ * do hero "expansao", §9.8, pelo `HeroVideoClip`). A árvore é a mesma no
  * servidor e no cliente, com ou sem reduced motion (ADR-004): o `<video>`
- * sempre existe, sem `autoplay` e com `preload="none"`, e só o JavaScript
- * chama `play()`, depois de montar. Toca sozinho só com as cinco condições:
+ * sempre existe, sem `autoplay` e com `preload="none"` (nada baixa antes de
+ * tocar), e só o JavaScript chama `play()`, depois de montar. Toca sozinho
+ * só com as cinco condições:
  * sem prefers-reduced-motion, sem "economizar dados", hero na tela, aba
  * visível e nenhum vídeo com `controls` (Rota de Vendas, Fleet Analytics BI)
  * tocando — só um vídeo toca por vez (MASTER §8.8), e quem a pessoa está
@@ -53,7 +55,8 @@ function prefersSavingData() {
  * para (play/pause não borbulham, por isso a captura no documento); o
  * retrato do servidor é `false` (sem vídeo tocando), sem divergência de
  * hidratação. Com reduced motion, sem JavaScript ou antes de tocar, fica o
- * pôster. O controle (WCAG 2.2.2) manda acima disso: "Pausar" para de vez;
+ * pôster; quem liga o reduced motion no meio da visita pausa o vídeo na hora
+ * (o `useCanAnimate` acompanha a preferência ao vivo). O controle (WCAG 2.2.2) manda acima disso: "Pausar" para de vez;
  * "Tocar" toca mesmo com reduced motion ou com um vídeo do portfólio
  * tocando, porque foi a pessoa que pediu — e, como qualquer play, pausa esse
  * vídeo do portfólio (o listener de ProjectGrid.tsx não distingue quem
@@ -168,20 +171,105 @@ export function HeroVideoBackground({ video }: { video: HeroVideoSource }) {
   );
 }
 
+/** Um vídeo curto em loop (WebM e MP4) com o pôster do mesmo 1º quadro. */
+export interface HeroVideoClipSource {
+  webm: string;
+  mp4: string;
+  posterAvif: string;
+  posterJpg: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Pôster e vídeo de um quadro que não é o fundo da tela (hero "expansao",
+ * MASTER §9.8), com as mesmas regras do `HeroVideoBackground`: sem
+ * `autoplay`, `preload="none"` (o `play()` começa o download; quem não vê o
+ * vídeo tocar, como com reduced motion ou "economizar dados", não o baixa),
+ * só o `HeroVideoProvider` chama `play()`, mudo por propriedade e fora do
+ * Tab. Diferenças: um recorte só (o CSS corta com object-fit), WebM antes do
+ * MP4, `data-started` (invisível só até o 1º quadro tocar: depois, uma pausa
+ * deixa o quadro parado à vista, sem voltar ao pôster), o pôster com
+ * `fetchpriority="high"` quando ele é o LCP (`posterPriority`; no
+ * "expansao", o fundo cobre a tela inteira e não conta para o LCP) e
+ * `data-hero-video`, o gancho do check:browser para "só um vídeo toca".
+ */
+export function HeroVideoClip({
+  clip,
+  posterClassName,
+  videoClassName,
+  posterPriority = false,
+}: {
+  clip: HeroVideoClipSource;
+  posterClassName: string;
+  videoClassName: string;
+  /** O pôster é o maior elemento da 1ª tela (o LCP): baixa com prioridade alta. */
+  posterPriority?: boolean;
+}) {
+  const { videoRef, playing, setPlaying } = useHeroVideo();
+  // Já tocou alguma vez? Até lá, o pôster (o 1º quadro) fica à vista.
+  const [started, setStarted] = useState(false);
+
+  return (
+    <>
+      <picture>
+        <source type="image/avif" srcSet={clip.posterAvif} />
+        <img
+          className={posterClassName}
+          src={clip.posterJpg}
+          alt=""
+          width={clip.width}
+          height={clip.height}
+          fetchPriority={posterPriority ? "high" : undefined}
+          decoding="async"
+        />
+      </picture>
+      <video
+        ref={videoRef}
+        className={videoClassName}
+        data-hero-video=""
+        data-playing={playing ? "true" : "false"}
+        data-started={started ? "true" : "false"}
+        loop
+        playsInline
+        preload="none"
+        disablePictureInPicture
+        disableRemotePlayback
+        tabIndex={-1}
+        onPlaying={() => {
+          setPlaying(true);
+          setStarted(true);
+        }}
+        onPause={() => setPlaying(false)}
+      >
+        <source src={clip.webm} type="video/webm" />
+        <source src={clip.mp4} type="video/mp4" />
+      </video>
+    </>
+  );
+}
+
 /**
  * Controle do vídeo de fundo (WCAG 2.2.2: movimento automático de mais de
  * 5 s precisa poder parar). Só aparece depois de montar: sem JavaScript o
- * vídeo nem toca. O nome acessível diz o que o clique faz.
+ * vídeo nem toca. O nome acessível diz o que o clique faz; por padrão, os
+ * nomes do hero "video" (`landingContent.hero`).
  */
-export function HeroVideoToggle() {
+export function HeroVideoToggle({
+  labels = landingContent.hero,
+  className,
+}: {
+  labels?: { videoPause: string; videoPlay: string };
+  className?: string;
+} = {}) {
   const { mounted, playing, setChoice } = useHeroVideo();
-  const { videoPause, videoPlay } = landingContent.hero;
+  const { videoPause, videoPlay } = labels;
   const label = playing ? videoPause : videoPlay;
 
   return (
     <button
       type="button"
-      className="hero-video__toggle"
+      className={className ? `hero-video__toggle ${className}` : "hero-video__toggle"}
       hidden={!mounted}
       aria-label={label}
       title={label}

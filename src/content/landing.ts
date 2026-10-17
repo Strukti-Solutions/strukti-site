@@ -8,7 +8,10 @@
  *
  * `hero` é o texto dos heros "video" e "classic", que seguem no código até
  * a limpeza (fica como na v1.8, conforme a nota da v2.0); o hero da home v3
- * é `heroEstudio`.
+ * é `heroEstudio` (o hero de marca da v2.2, com as 3 opções em
+ * `heroOpcoes`), e o hero padrão desde 15/10/2026 é `heroExpansao`
+ * (proposta, aguardando aprovação; reaproveita o texto aprovado do
+ * `heroEstudio`).
  */
 
 const WHATSAPP_GENERAL_MESSAGE =
@@ -121,6 +124,35 @@ const PROJECTS: readonly Project[] = [
   },
 ];
 
+/** PRÉVIA v2.2: as 3 opções do hero de marca (landing-copy-v2.2 §2). */
+const HERO_OPCOES = {
+  a: {
+    eyebrow: "Strukti Soluções, de João Pessoa",
+    headline: "A mesma equipe monta, programa e dá suporte.",
+    body: "Fazemos o replay para quadras de aluguel e aplicativos sob medida para empresas, e cuidamos da instalação.",
+  },
+  b: {
+    eyebrow: "Strukti Soluções, de João Pessoa",
+    headline: "Replay para quadras e aplicativos sob medida.",
+    body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
+  },
+  c: {
+    eyebrow: "Replay para quadras e aplicativos sob medida",
+    headline: "Você fala direto com quem monta e programa.",
+    body: "A Strukti Soluções, de João Pessoa, faz o equipamento e o software e cuida da instalação e do suporte.",
+  },
+} as const;
+
+/** Hero de marca da v2.2 (a opção B, a padrão); o hero "expansao" reaproveita. */
+const HERO_ESTUDIO = {
+  ...HERO_OPCOES.b,
+  primaryCta: "Ver os produtos",
+  whatsappCta: "Falar no WhatsApp",
+  illustrationBadge: "Ilustração do conceito",
+} as const;
+
+const HERO_EXPANSAO_TITLE_LINES = ["Tecnologia que trabalha", "em silêncio"] as const;
+
 export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
@@ -135,31 +167,38 @@ export const landingContent = {
   } satisfies Record<ProductStatus, string>,
 
   /** PRÉVIA v2.2: as 3 opções do hero de marca (landing-copy-v2.2 §2). */
-  heroOpcoes: {
-    a: {
-      eyebrow: "Strukti Soluções, de João Pessoa",
-      headline: "A mesma equipe monta, programa e dá suporte.",
-      body: "Fazemos o replay para quadras de aluguel e aplicativos sob medida para empresas, e cuidamos da instalação.",
-    },
-    b: {
-      eyebrow: "Strukti Soluções, de João Pessoa",
-      headline: "Replay para quadras e aplicativos sob medida.",
-      body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
-    },
-    c: {
-      eyebrow: "Replay para quadras e aplicativos sob medida",
-      headline: "Você fala direto com quem monta e programa.",
-      body: "A Strukti Soluções, de João Pessoa, faz o equipamento e o software e cuida da instalação e do suporte.",
-    },
-  },
+  heroOpcoes: HERO_OPCOES,
 
-  heroEstudio: {
-    eyebrow: "Strukti Soluções, de João Pessoa",
-    headline: "Replay para quadras e aplicativos sob medida.",
-    body: "Montamos o equipamento, escrevemos o software e cuidamos da instalação e do suporte, sempre com a mesma equipe.",
-    primaryCta: "Ver os produtos",
-    whatsappCta: "Falar no WhatsApp",
-    illustrationBadge: "Ilustração do conceito",
+  heroEstudio: HERO_ESTUDIO,
+
+  /**
+   * Hero "expansao" (MASTER §9.8). PROPOSTA — aguardando aprovação do Thiago
+   * (docs/landing-copy.md, "Hero expansao"): o título em duas linhas, a dica
+   * de rolagem, a descrição da mídia e os nomes do controle do vídeo. O resto
+   * é o texto aprovado do hero de marca da v2.2 (opção B), por referência ao
+   * `heroEstudio`; como lá, ?hero=a ou ?hero=c troca a linha de apoio, a
+   * chamada e a frase depois de montar (src/components/spike/HeroOpcao.tsx).
+   */
+  heroExpansao: {
+    /** O H1, numa leitura só (o nome acessível). */
+    title: HERO_EXPANSAO_TITLE_LINES.join(" "),
+    /** As duas partes do H1 que se abrem para os lados com a expansão. */
+    titleLines: HERO_EXPANSAO_TITLE_LINES,
+    /** Linha de apoio abaixo do quadro (desliza para a esquerda): o sobretítulo aprovado. */
+    date: HERO_ESTUDIO.eyebrow,
+    /** Dica abaixo do quadro (desliza para a direita); só aparece quando a expansão anda. */
+    hint: "Role para expandir",
+    /** Nome acessível do quadro com o vídeo (o fundo é decorativo, sem texto). */
+    mediaAlt:
+      "Fim de expediente: uma mesa junto a uma janela alta na hora azul, com a cidade desfocada lá fora, a luz do abajur, um caderno fechado, uma caneca, um celular mostrando uma rota do Rota de Vendas e a caixa do botão do replay com o LED ciano aceso.",
+    /** Nome acessível do controle do vídeo (WCAG 2.2.2), conforme o estado. */
+    videoPause: "Pausar o vídeo",
+    videoPlay: "Tocar o vídeo",
+    /** O conteúdo que aparece com a expansão completa (texto aprovado). */
+    headline: HERO_ESTUDIO.headline,
+    body: HERO_ESTUDIO.body,
+    primaryCta: HERO_ESTUDIO.primaryCta,
+    whatsappCta: HERO_ESTUDIO.whatsappCta,
   },
 
   produtos: {

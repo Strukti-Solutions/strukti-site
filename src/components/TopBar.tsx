@@ -30,9 +30,64 @@ export const TOPBAR_WIDE_QUERY = "(min-width: 75em)";
 export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   const { nav, whatsappButton, menuButton } = landingContent.header;
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeHref, setActiveHref] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+
+  // A barra recolhe numa cápsula ao rolar, e o link do menu do trecho visível
+  // ganha aria-current (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md,
+  // N1/N2). O estado parte sempre de "não rolou" (servidor e 1º render do
+  // cliente iguais): não é preferência de movimento, é posição de rolagem,
+  // que começa em 0 nos dois.
+  useEffect(() => {
+    const targets = nav.map((item) => item.href.slice(1));
+
+    // v2.2: os links de produto apontam para os cartões (#replay…), dentro de
+    // #produtos, e não para seções do <main>. Por isso a posição vem do
+    // retângulo na tela (o offsetTop de um cartão é relativo ao pai) e o alvo
+    // só vale enquanto cruza a sua linha: onde o clique na barra o deixa, o
+    // scroll-padding-top do html mais o scroll-margin-top dele (os cartões
+    // têm o seu e param mais abaixo que as seções), com 1 px de folga para o
+    // arredondamento. Entre dois alvos (Sob medida, Como trabalhamos,
+    // Dúvidas), nenhum link fica marcado. Com os cartões lado a lado (mesmo
+    // topo), vale o da âncora da URL, que o clique na barra define; sem ela,
+    // o primeiro do menu.
+    const computeActive = () => {
+      const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const hash = window.location.hash.slice(1);
+      let first: string | null = null;
+      for (const id of targets) {
+        const target = document.getElementById(id);
+        if (!target) continue;
+        const line = pad + (parseFloat(getComputedStyle(target).scrollMarginTop) || 0) + 1;
+        const rect = target.getBoundingClientRect();
+        if (rect.top > line || rect.bottom <= line) continue;
+        if (id === hash) return id;
+        first ??= id;
+      }
+      return first;
+    };
+
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+      const current = computeActive();
+      setActiveHref(current ? `#${current}` : null);
+    };
+
+    // A âncora também muda sem rolar: com os cartões lado a lado e a página
+    // já parada neles, o clique em outro produto só troca a URL.
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    window.addEventListener("hashchange", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("hashchange", onScroll);
+    };
+  }, [nav]);
 
   // Fecha com Esc (devolvendo o foco ao botão), com clique fora e quando a
   // tela passa para a largura em que os links ficam sempre à mostra.
@@ -76,6 +131,7 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       ref={headerRef}
       className="topbar"
       data-open={open ? "true" : "false"}
+      data-scrolled={scrolled ? "true" : "false"}
       onBlur={closeWhenFocusLeaves}
     >
       <div className="container topbar__bar">
@@ -106,7 +162,11 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
           <ul className="topbar__links">
             {nav.map((item) => (
               <li key={item.href}>
-                <a href={item.href} onClick={() => setOpen(false)}>
+                <a
+                  href={item.href}
+                  aria-current={activeHref === item.href ? "true" : undefined}
+                  onClick={() => setOpen(false)}
+                >
                   {item.label}
                 </a>
               </li>

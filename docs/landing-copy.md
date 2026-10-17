@@ -52,6 +52,8 @@ Para quem compara com `src/content/landing.ts` (main `6e46a1a`):
 
 **Não muda em relação à v2.0:** Sob medida (§4), rodapé, botão flutuante, aviso de privacidade (texto e versão), página 404, SEO e compartilhamento, e os textos dos selos.
 
+*Nota de 16/10/2026: o hero "expansao" (o padrão desde 15/10/2026; subseção "Hero expansao" no fim da seção 2) é **proposta — aguardando aprovação** no título em duas linhas, na dica, na descrição da mídia e nos nomes do controle do vídeo. O resto do hero usa o texto aprovado da v2.2 (opção B; A e C por `?hero=`), e todo o resto continua como aprovado na v2.2.*
+
 ## Como ler este documento
 
 - O texto depois de cada rótulo em negrito (**Título (H1):**, **Botão:** etc.) é o **texto final** e vai para o site exatamente assim, com a mesma pontuação e acentuação.
@@ -80,7 +82,7 @@ Ordem e fundos conforme a spec §4 e a spec do fio, agora com **7 capítulos at�
 | # | Seção | Âncora | Fundo | Chamada para ação |
 |---|---|---|---|---|
 | 1 | Barra do topo | — | escuro | Um link por produto; WhatsApp (mensagem geral) |
-| 2 | Abertura (hero) | `#inicio` | escuro | "Ver os produtos" (âncora `#produtos`) e "Falar no WhatsApp" (mensagem geral) |
+| 2 | Abertura (hero "expansao", o padrão desde 15/10/2026; ver "Hero expansao" no fim da seção 2) | `#inicio` | escuro | "Ver os produtos" (âncora `#produtos`) e "Falar no WhatsApp" (mensagem geral) |
 | 3 | Produtos (Replay, Rota de Vendas, Fleet Analytics BI) | `#produtos`; cartões `#replay`, `#rota-de-vendas`, `#fleet-analytics-bi` | escuro, palcos | Replay: "Quero o piloto na minha quadra" (WhatsApp, mensagem do replay). Aplicativos: "Pedir diagnóstico gratuito" → formulário com o assunto "Aplicativo sob medida" |
 | 4 | Tem um problema que pede hardware? | `#sob-medida` | claro | Formulário com o assunto "Outro assunto" |
 | 5 | Como trabalhamos | `#como-trabalhamos` | claro | — |
@@ -224,6 +226,38 @@ O hero volta a falar da **marca** [decidido 13/10, item 11]. Abaixo, **3 opçõe
 *Nota: os textos do hero "video" e "classic" (`hero.*`, inclusive os nomes do controle do vídeo de fundo, "Pausar o vídeo de fundo" e "Tocar o vídeo de fundo") continuam como na v1.8 enquanto essas variantes estiverem no código. Eles não aparecem com o hero da home.*
 
 **Recomendação:** a **B**. O critério que guiou toda a pesquisa é o teste dos 5 segundos no celular, e a B é a única que passa nele só pelo título. A A é a segunda escolha, se o Thiago quiser um título com mais cara de marca: ela tem a mesma informação, só em ordem inversa. Antes de fechar, dá para tirar a dúvida com o teste dos 5 segundos pelo WhatsApp: mandar a primeira tela das 3 opções para 5 pessoas de fora do grupo e perguntar "sobre o que era?" e "para quem é?" (Lyssna, PESQUISA §3.1).
+
+### Hero "expansao" (o padrão desde 15/10/2026) — proposta — aguardando aprovação
+
+Status: **proposta — aguardando aprovação do Thiago** (15/10/2026; ajustada à v2.2 em 16/10/2026). O hero "expansao" (MASTER §9.8, ADR-010) substitui o hero de marca da prévia como padrão: um quadro com o vídeo "Fim de expediente" cresce com a rolagem, o título se abre para os lados e, com a expansão completa, aparece o conteúdo com o texto aprovado das opções acima. Enquanto esta subseção não for aprovada, os textos novos abaixo estão no site como proposta. Os textos já aprovados vêm das opções desta seção, por referência, sem mudança.
+
+**Textos novos (proposta):**
+
+- **`heroExpansao.titleLines[0]` (1ª parte do título, desliza para a esquerda):** Tecnologia que trabalha
+- **`heroExpansao.titleLines[1]` (2ª parte do título, desliza para a direita):** em silêncio
+- **`heroExpansao.title` (o H1, numa leitura só):** Tecnologia que trabalha em silêncio
+- **`heroExpansao.hint` (dica abaixo do quadro, só para o olho, aparece só quando a expansão anda):** Role para expandir
+- **`heroExpansao.mediaAlt` (nome acessível do quadro com o vídeo):** Fim de expediente: uma mesa junto a uma janela alta na hora azul, com a cidade desfocada lá fora, a luz do abajur, um caderno fechado, uma caneca, um celular mostrando uma rota do Rota de Vendas e a caixa do botão do replay com o LED ciano aceso.
+- **`heroExpansao.videoPause` (controle do vídeo, tocando):** Pausar o vídeo
+- **`heroExpansao.videoPlay` (controle do vídeo, parado):** Tocar o vídeo
+
+**Textos já aprovados (opção B desta seção), reaproveitados:**
+
+- **`heroExpansao.date` (linha de apoio abaixo do quadro, desliza para a esquerda):** o sobretítulo, `heroEstudio.eyebrow` ("Strukti Soluções, de João Pessoa").
+- **`heroExpansao.headline` (H2 do conteúdo que aparece com a expansão completa):** `heroEstudio.headline` ("Replay para quadras e aplicativos sob medida.").
+- **`heroExpansao.body`:** `heroEstudio.body`.
+- **`heroExpansao.primaryCta` (botão principal, âncora `#produtos`):** `heroEstudio.primaryCta` ("Ver os produtos").
+- **`heroExpansao.whatsappCta` (WhatsApp com a mensagem geral):** `heroEstudio.whatsappCta` ("Falar no WhatsApp").
+
+*Nota para o Dev: como no hero de marca, `?hero=a` ou `?hero=c` troca, depois de montar, a linha de apoio, o H2 e a frase pelos da opção A ou C (`src/components/spike/HeroOpcao.tsx`); sem a chave, fica a B. O H1 e a dica não mudam com a opção.*
+
+*Nota: o título curto existe para caber nas duas partes que se abrem para os lados. O título da opção escolhida continua no site, como H2 do conteúdo que aparece logo depois.*
+
+*Nota: "Role para expandir" é instrução visual: fica fora do leitor de tela e não aparece sem animação (reduced motion, sem JavaScript), quando seria mentira.*
+
+*Nota: os nomes do controle tiram o "de fundo" do hero "video", porque aqui o vídeo fica num quadro no meio da tela, não no fundo.*
+
+*Nota: no hero "expansao", "Falar no WhatsApp" continua como botão (o desenho do hero, MASTER §9.8), não como o link de texto do hero de marca; o texto e a mensagem são os mesmos.*
 
 ---
 
