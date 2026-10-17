@@ -1,0 +1,33 @@
+{
+  "_comment": "Quality gate do strukti-site (adaptado do lms_corporativo). v1: métricas estáticas baratas (sem build/DB), sobre src/. O jscpd fica fixado numa versão fora da quarentena de 7 dias. Método e regras: scripts/quality-gate/README.md.",
+  "strictMode": false,
+  "baselinePath": "baseline.quality-gate.json",
+  "metricsPath": "metrics-summary.quality-gate.json",
+  "reportPath": "quality-report.md",
+  "metrics": [
+    {
+      "id": "duplication_pct",
+      "description": "Percentual de linhas duplicadas (jscpd) em src/.",
+      "class": "blocking",
+      "direction": "lower_better",
+      "command": "rm -rf .qg-jscpd && npx --yes jscpd@5.3.2 src --reporters json --silent --ignore '**/node_modules/**,**/.next/**,**/coverage/**' --output .qg-jscpd >/dev/null 2>&1; cat .qg-jscpd/jscpd-report.json",
+      "extract": { "type": "json-path", "path": "statistics.total.percentage" }
+    },
+    {
+      "id": "files_over_400_lines",
+      "description": "Nº de arquivos .ts/.tsx em src/ com mais de 400 linhas (força modularização).",
+      "class": "blocking",
+      "direction": "lower_better",
+      "command": "find src -type f \\( -name '*.ts' -o -name '*.tsx' \\) -not -path '*/node_modules/*' -print0 | xargs -0 wc -l | awk '$2!=\"total\" && $1>400{c++} END{print c+0}'",
+      "extract": { "type": "stdout-number", "regex": "(\\d+)" }
+    },
+    {
+      "id": "largest_file_lines",
+      "description": "Tamanho (linhas) do maior arquivo .ts/.tsx em src/ — acompanha o pior ofensor.",
+      "class": "warning",
+      "direction": "lower_better",
+      "command": "find src -type f \\( -name '*.ts' -o -name '*.tsx' \\) -not -path '*/node_modules/*' -print0 | xargs -0 wc -l | awk '$2!=\"total\"{if($1>m)m=$1} END{print m+0}'",
+      "extract": { "type": "stdout-number", "regex": "(\\d+)" }
+    }
+  ]
+}
