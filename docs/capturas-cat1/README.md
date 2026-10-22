@@ -1,6 +1,6 @@
 # Capturas da QA visual do catálogo (CAT1)
 
-Task 12, passo 2 do plano do catálogo (spec `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`, §13 passo 3). Branch `feat/catalogo-produtos`, código em `e0961de`, arte ainda provisória (`public/catalogo/LEIA-PROVISORIO.txt`).
+Task 12, passo 2 do plano do catálogo (spec `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`, §13 passo 3). Branch `feat/catalogo-produtos`, arte ainda provisória (`public/catalogo/LEIA-PROVISORIO.txt`). A 1ª rodada foi feita com o código em `e0961de` e achou 6 defeitos visuais (rótulos da fita, painel sem pista de rolagem, "Assistir" sobre o pôster, caixa-alta nos rótulos de tipo, halo sob a arte dos inventados e o menu a 1440). Todas as 54 capturas foram refeitas, com os mesmos nomes, depois do acabamento visual, porque a etiqueta do tipo aparece em todas.
 
 **Como foram feitas:** Edge headless via CDP (as funções de `scripts/check-browser.mjs`), contra o `next dev` em `http://localhost:3000`. JPEG com qualidade 80. A 360 e a 390, celular emulado com densidade 2 (imagens de 720 e 780 px de largura). A partir de 768, densidade 1. A janela fica rolada para mostrar o `.catalogo__corpo` inteiro (a caixa de altura constante, §4) logo abaixo da barra fixa. Por isso o título "Produtos" aparece cortado ou sob a barra: é a posição da rolagem, não um defeito. O indicador do Next em dev foi escondido.
 
