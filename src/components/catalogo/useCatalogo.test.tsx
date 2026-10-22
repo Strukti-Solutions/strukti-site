@@ -10,6 +10,7 @@ let pushState: MockInstance<History["pushState"]>;
 let replaceState: MockInstance<History["replaceState"]>;
 let back: MockInstance<History["back"]>;
 let secao: HTMLElement;
+let links: HTMLAnchorElement[] = [];
 
 // Os quadros (`requestAnimationFrame`) ficam numa fila e só rodam no
 // `proximoQuadro()`: assim dá para ver que a rolagem espera um quadro.
@@ -47,6 +48,8 @@ afterEach(() => {
   scrollIntoView.mockReset();
   fila = new Map();
   secao.remove();
+  for (const a of links) a.remove();
+  links = [];
   // @ts-expect-error o protótipo do jsdom não tinha o método
   delete Element.prototype.scrollIntoView;
 });
@@ -55,6 +58,46 @@ afterEach(() => {
 function irPara(url: string) {
   window.history.replaceState(null, "", url);
   replaceState.mockClear();
+}
+
+/** Um `<a href>` de verdade na página, como os do menu "Produtos ▾". */
+function criarLink(href: string) {
+  const a = document.createElement("a");
+  a.setAttribute("href", href);
+  document.body.append(a);
+  links.push(a);
+  return a;
+}
+
+/** Promessa do próximo evento `tipo` na janela (depois do ouvinte do hook). */
+function proximoEvento(tipo: "popstate" | "hashchange") {
+  return new Promise<void>((resolve) => window.addEventListener(tipo, () => resolve(), { once: true }));
+}
+
+/**
+ * Espera as tarefas na fila do jsdom: ele navega pelo link numa tarefa
+ * (`_queueATask`), não no próprio clique.
+ */
+function esperarTarefas() {
+  return new Promise<void>((resolve) => setImmediate(resolve));
+}
+
+/**
+ * Anota a ordem dos `popstate`/`hashchange` que o jsdom dispara de verdade
+ * (no clique num link e no voltar/avançar), para o teste mostrar a sequência.
+ */
+function anotarEventos() {
+  const eventos: string[] = [];
+  const anotar = (e: Event) => eventos.push(`${e.type} ${window.location.hash}`);
+  window.addEventListener("popstate", anotar);
+  window.addEventListener("hashchange", anotar);
+  return {
+    eventos,
+    parar: () => {
+      window.removeEventListener("popstate", anotar);
+      window.removeEventListener("hashchange", anotar);
+    },
+  };
 }
 
 function montar() {
@@ -144,12 +187,19 @@ describe("useCatalogo: âncoras e rolagem", () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it("hashchange para #site-clinicas (ex.: menu da barra) abre o item e rola até o topo da seção", () => {
+  it("clique num link #site-clinicas (ex.: menu da barra): popstate e hashchange de verdade, abre e rola até o topo da seção", async () => {
     const { result } = montar();
     act(() => result.current.despachar({ tipo: "filtrar", filtro: "hardware" }));
+    const { eventos, parar } = anotarEventos();
 
-    irPara("/#site-clinicas");
-    act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+    await act(async () => {
+      const chegou = proximoEvento("hashchange");
+      criarLink("#site-clinicas").click();
+      await chegou;
+    });
+    parar();
+    // A mesma sequência de uma travessia: só o clique separa os dois casos.
+    expect(eventos).toEqual(["popstate #site-clinicas", "hashchange #site-clinicas"]);
     // §3.3: o link para fora do filtro volta o filtro para "Todos".
     expect(result.current.estado).toMatchObject({ aberto: true, ativo: "site-clinicas", filtro: "todos" });
     expect(scrollIntoView).not.toHaveBeenCalled();
@@ -158,6 +208,33 @@ describe("useCatalogo: âncoras e rolagem", () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(scrollIntoView.mock.contexts[0]).toBe(secao);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
+  });
+
+  it("clique num link para a âncora que já está na URL (sem hashchange) rola de novo até a seção", async () => {
+    irPara("/#replay");
+    const { result } = montar();
+    proximoQuadro();
+    scrollIntoView.mockClear();
+
+    const { eventos, parar } = anotarEventos();
+    await act(async () => {
+      criarLink("#replay").click();
+      await esperarTarefas();
+    });
+    parar();
+    expect(eventos).toEqual([]);
+    proximoQuadro();
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "replay" });
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("hashchange sem popstate antes (navegador que não dispara popstate na âncora) abre e rola", () => {
+    const { result } = montar();
+    irPara("/#site-clinicas");
+    act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "site-clinicas" });
+    proximoQuadro();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it("popstate com hash vazio (voltar do navegador) fecha e não rola", () => {
@@ -175,8 +252,56 @@ describe("useCatalogo: âncoras e rolagem", () => {
     expect(back).not.toHaveBeenCalled();
   });
 
-  it("avançar do navegador (popstate e o hashchange da mesma travessia) reabre sem rolar", () => {
+  it("voltar e avançar do navegador (popstate e hashchange de verdade, sem clique) fecham e reabrem sem rolar", async () => {
+    // O `back()` de verdade do jsdom, para a travessia ser a do navegador.
+    back.mockRestore();
     const { result } = montar();
+    await act(async () => {
+      const chegou = proximoEvento("hashchange");
+      criarLink("#rota-de-vendas").click();
+      await chegou;
+    });
+    proximoQuadro();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    const { eventos, parar } = anotarEventos();
+    await act(async () => {
+      const chegou = proximoEvento("hashchange");
+      window.history.back();
+      await chegou;
+    });
+    proximoQuadro();
+    expect(result.current.estado.aberto).toBe(false);
+
+    await act(async () => {
+      const chegou = proximoEvento("hashchange");
+      window.history.forward();
+      await chegou;
+    });
+    parar();
+    proximoQuadro();
+    expect(eventos).toEqual(["popstate ", "hashchange ", "popstate #rota-de-vendas", "hashchange #rota-de-vendas"]);
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "rota-de-vendas" });
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    // O próximo link volta a rolar.
+    await act(async () => {
+      const chegou = proximoEvento("hashchange");
+      criarLink("#replay").click();
+      await chegou;
+    });
+    proximoQuadro();
+    expect(result.current.estado.ativo).toBe("replay");
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  });
+
+  it("link com preventDefault não marca: a travessia que cair na mesma URL depois não rola", () => {
+    const { result } = montar();
+    const link = criarLink("#rota-de-vendas");
+    link.addEventListener("click", (e) => e.preventDefault());
+    act(() => link.click());
+    expect(window.location.hash).toBe("");
+
     irPara("/#rota-de-vendas");
     act(() => {
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -185,13 +310,6 @@ describe("useCatalogo: âncoras e rolagem", () => {
     proximoQuadro();
     expect(result.current.estado).toMatchObject({ aberto: true, ativo: "rota-de-vendas" });
     expect(scrollIntoView).not.toHaveBeenCalled();
-
-    // O próximo hashchange (um link de verdade) volta a rolar.
-    irPara("/#replay");
-    act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
-    proximoQuadro();
-    expect(result.current.estado.ativo).toBe("replay");
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it("âncora de outra seção (#contato) com o painel aberto fecha sem back e não rola", () => {
@@ -221,8 +339,8 @@ describe("useCatalogo: âncoras e rolagem", () => {
     const remover = vi.spyOn(window, "removeEventListener");
     irPara("/#replay");
     const { unmount } = montar();
-    const ouvintes = adicionar.mock.calls.filter(([tipo]) => tipo === "hashchange" || tipo === "popstate");
-    expect(ouvintes.map(([tipo]) => tipo).sort()).toEqual(["hashchange", "popstate"]);
+    const ouvintes = adicionar.mock.calls.filter(([tipo]) => ["click", "hashchange", "popstate"].includes(tipo));
+    expect(ouvintes.map(([tipo]) => tipo).sort()).toEqual(["click", "hashchange", "popstate"]);
 
     unmount();
     for (const [tipo, ouvinte] of ouvintes) expect(remover).toHaveBeenCalledWith(tipo, ouvinte);
