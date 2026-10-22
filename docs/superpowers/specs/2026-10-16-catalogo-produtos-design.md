@@ -25,7 +25,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
 | Q4/Q29 | Arte nova só no cartão fechado; no painel entram os vídeos de demonstração atuais. Arte final já para os 3 reais; os inventados com arte mais simples. |
 | Q5 | Painel com: vídeo, para quem é, benefícios, como funciona, telas, fase e link do site. **Sem WhatsApp.** |
 | Q6 | Link direto `#produto` abre o painel daquele produto; o voltar do navegador fecha. |
-| Q7 | PR empilhado no `feat/hero-expansao`. |
+| Q7 | PR empilhado no `feat/hero-expansao`. *Superada (22/10): o PR #8 entrou antes, e o PR deste trabalho aponta para `homologacao` (cabeçalho e §13, passo 5).* |
 | Q9 | Só o clique abre (Enter e espaço também). Passar o mouse é só uma dica (leve destaque). |
 | Q11/Q27 | No celular, o mesmo gesto: cartões deslizando para o lado; tocar abre o painel na largura toda, com a fita embaixo. |
 | Q13 | Começa com todos os cartões fechados. |
@@ -358,6 +358,6 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
 2. **Código, ao mesmo tempo que a arte:** implementação (§3–§9) com testes e documentos; depois a etapa do `check:browser`. Commits só de código, sem `public/catalogo/`.
 3. **Integração:** arte final no lugar, QA visual em 360, 390, 768, 1024 e 1440 (fechado, aberto e trocando, com e sem movimento reduzido), todos os gates e o commit da mídia.
 4. **Revisão adversarial:** acessibilidade ao vivo, código e ADRs, fidelidade à spec e visual, docs e testes. Depois céticos, correção e conferência final.
-5. **Publicação:** push e PR empilhado no `feat/hero-expansao`, com prévia na Vercel. O merge é do dono.
+5. **Publicação:** push e PR para `homologacao` (o PR #8 já entrou; a Q7 foi superada), com prévia na Vercel. O merge é do dono.
 
 Sempre no máximo 2 agentes ao mesmo tempo, com a trava de processos pesados, por causa da RAM.
