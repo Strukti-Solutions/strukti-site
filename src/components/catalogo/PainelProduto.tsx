@@ -51,7 +51,8 @@ function rotuloAssistir(item: ItemCatalogo, duracao: string | undefined) {
  * O painel do estado aberto (spec 2026-10-16, §3.2 e §8.3): o cabeçalho
  * (tipo, selo, nome, link do site, ‹ › e o X) e as abas no padrão APG. O
  * título recebe o foco ao abrir. ← → trocam de produto com o foco no painel,
- * menos nas abas, no vídeo e em campos; o dedo segue a regra do coverflow.
+ * menos nas abas, no vídeo e em campos; o dedo segue a regra do coverflow
+ * (o mouse, não: arrastado no painel, ele seleciona texto).
  */
 export function PainelProduto({ item, posicao, direcao, aoFechar, aoPasso }: PainelProdutoProps) {
   const id = useId();
@@ -118,10 +119,13 @@ export function PainelProduto({ item, posicao, direcao, aoFechar, aoPasso }: Pai
     abasRef.current[destino]?.focus();
   };
 
+  // Só o dedo (e a caneta) troca de produto pelo arrasto (§3, Q22). Ao
+  // contrário dos cartões, o painel é cheio de texto: arrastar o mouse aqui
+  // é selecionar uma frase, não trocar de produto.
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
     arrastouRef.current = false;
     inicioRef.current = null;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (e.pointerType === "mouse") return;
     if (e.target instanceof Element && e.target.closest(ARRASTO_DO_CONTROLE)) return;
     inicioRef.current = { x: e.clientX, y: e.clientY };
   };
@@ -236,34 +240,48 @@ export function PainelProduto({ item, posicao, direcao, aoFechar, aoPasso }: Pai
           tabIndex={0}
           hidden={aba !== "visaoGeral"}
         >
-          <div className="catalogo__painel-midia">
-            {video ? (
-              <VideoDemo
-                key={item.slug}
-                video={video}
-                playLabel={rotuloAssistir(item, video.durationLabel)}
-                sizes={TAMANHOS_MIDIA}
-              />
-            ) : (
-              // Os inventados, sem vídeo: a arte em tamanho grande, com a
-              // descrição da cena (aqui ela é a imagem principal, não enfeite).
-              <picture>
-                <source
-                  type="image/avif"
-                  srcSet={`${item.arte.base}-480.avif 480w, ${item.arte.base}.avif 800w`}
+          <div className="catalogo__painel-coluna">
+            <div className="catalogo__painel-midia">
+              {video ? (
+                <VideoDemo
+                  key={item.slug}
+                  video={video}
+                  playLabel={rotuloAssistir(item, video.durationLabel)}
                   sizes={TAMANHOS_MIDIA}
                 />
-                <img
-                  className="catalogo__painel-arte"
-                  src={`${item.arte.base}.jpg`}
-                  srcSet={`${item.arte.base}-480.jpg 480w, ${item.arte.base}.jpg 800w`}
-                  sizes={TAMANHOS_MIDIA}
-                  width={800}
-                  height={1200}
-                  alt={item.arte.alt}
-                  decoding="async"
-                />
-              </picture>
+              ) : (
+                // Os inventados, sem vídeo: a arte em tamanho grande, com a
+                // descrição da cena (aqui ela é a imagem principal, não enfeite).
+                <picture>
+                  <source
+                    type="image/avif"
+                    srcSet={`${item.arte.base}-480.avif 480w, ${item.arte.base}.avif 800w`}
+                    sizes={TAMANHOS_MIDIA}
+                  />
+                  <img
+                    className="catalogo__painel-arte"
+                    src={`${item.arte.base}.jpg`}
+                    srcSet={`${item.arte.base}-480.jpg 480w, ${item.arte.base}.jpg 800w`}
+                    sizes={TAMANHOS_MIDIA}
+                    width={800}
+                    height={1200}
+                    alt={item.arte.alt}
+                    decoding="async"
+                  />
+                </picture>
+              )}
+            </div>
+            {video && (
+              // Os vídeos só têm música: a alternativa em texto (WCAG 1.2.1 e
+              // 1.2.3) é a legenda e a descrição, como na grade da v2.2. Ela
+              // fica recolhida, para a Visão geral caber na altura (§4).
+              <div className="catalogo__video-texto">
+                <p className="caption">{video.caption}</p>
+                <details key={item.slug}>
+                  <summary>{landingContent.aplicativos.videoDescriptionLinkLabel}</summary>
+                  <p>{video.description}</p>
+                </details>
+              </div>
             )}
           </div>
           <VisaoGeralTexto item={item} />

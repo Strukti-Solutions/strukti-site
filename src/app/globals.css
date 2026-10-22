@@ -2078,7 +2078,9 @@ video:focus-visible {
 /* Estado aberto (§3.2): o coverflow sai da tela (hidden; os cartões ficam no
    DOM pela âncora), o painel ocupa a altura que sobra no .catalogo__corpo e
    a fita (~110 px) fica embaixo. A Visão geral cabe sem rolar (§5.3); a
-   rolagem interna do painel é só a exceção da §4. */
+   rolagem interna do painel é só a exceção da §4: telas baixas (menos de
+   ~800 px de altura), o celular (menos de 768 px de largura, onde o vídeo
+   e o texto empilham), zoom e espaçamento de texto. */
 .catalogo__carrossel[hidden] {
   display: none;
 }
@@ -2219,10 +2221,20 @@ video:focus-visible {
   align-items: start;
 }
 
+/* A partir de 768 px, a mídia fica com 4/9 da largura e, como a altura da
+   seção é fixa (§4), também com um teto de altura: o que sobra da seção
+   (clamp da §4) depois do filtro, cabeçalho, abas, fita e espaços (~364 px)
+   e da legenda do vídeo embaixo (~78 px), passado para a largura em 16:9.
+   Assim a Visão geral cabe sem rolar de 1280×800 para cima. */
 @media (min-width: 768px) {
   .catalogo__aba-conteudo--visao {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
     gap: var(--space-6);
+  }
+
+  .catalogo__painel-midia {
+    width: 100%;
+    max-width: calc((clamp(600px, 80svh, 860px) - 442px) * 16 / 9);
   }
 }
 
@@ -2249,6 +2261,38 @@ video:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* A coluna da mídia: o vídeo (ou a arte) e, embaixo, a legenda e a
+   descrição do vídeo, recolhida (a alternativa em texto, WCAG 1.2.1). */
+.catalogo__painel-coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.catalogo__video-texto summary {
+  width: fit-content;
+  margin-top: var(--space-1);
+  padding-block: 2px;
+  border-radius: var(--radius-1);
+  color: var(--link);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.catalogo__video-texto summary:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__video-texto details p {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 /* Vídeo de demonstração (VideoDemo): o pôster com "Assistir" e, no clique,
@@ -2634,12 +2678,16 @@ video:focus-visible {
     outline-offset: 2px;
   }
 
-  /* Painel aberto: a borda do painel, a aba ativa e a miniatura ativa. */
+  /* Painel aberto: a borda do painel, a aba ativa e a miniatura ativa. A
+     ativa e a com o mouse entram aqui também: fora do bloco, as regras delas
+     (0,2,0) pintariam o texto de branco sobre o Canvas. */
   .catalogo__painel {
     border-color: CanvasText;
   }
 
-  .catalogo__aba {
+  .catalogo__aba,
+  .catalogo__aba:hover,
+  .catalogo__aba[aria-selected="true"] {
     forced-color-adjust: none;
     background-color: Canvas;
     color: CanvasText;

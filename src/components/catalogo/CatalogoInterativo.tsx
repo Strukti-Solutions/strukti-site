@@ -8,7 +8,7 @@ import type { EventoCatalogo } from "./estado";
 import { FiltroTipo } from "./FiltroTipo";
 import { FitaMiniaturas } from "./FitaMiniaturas";
 import { PainelProduto } from "./PainelProduto";
-import { useCatalogo } from "./useCatalogo";
+import { slugDaUrl, useCatalogo } from "./useCatalogo";
 
 /** A partir daqui os ±2 aparecem (§3.1); abaixo, a CSS os esconde e eles ficam `inert`. */
 const LARGO_QUERY = "(min-width: 768px)";
@@ -89,7 +89,9 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   // Depois de fechar (já com o coverflow de volta), o foco vai ao cartão do
   // centro: pelo X ou pelo Esc, se ele estava no catálogo; e sempre que
   // ele se perdeu com o painel (o voltar do navegador, por exemplo). Quem
-  // fechou com um link de outra seção (#contato) fica onde está.
+  // fechou com um link de outra seção (#contato, inclusive o "Quero saber
+  // mais" de dentro do painel, que sai com ele e perde o foco) fica onde
+  // está: o navegador já rolou até a âncora. Sem rolar a página, nunca.
   useEffect(() => {
     const abertoAntes = abertoAntesRef.current;
     abertoAntesRef.current = estado.aberto;
@@ -98,10 +100,12 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
     focarCartaoRef.current = false;
     const raiz = raizNoRef.current;
     const foco = document.activeElement;
-    const perdido = foco === null || foco === document.body;
+    const ancora = slugDaUrl();
+    const outraSecao = ancora !== null && !itens.some((item) => item.slug === ancora);
+    const perdido = (foco === null || foco === document.body) && !outraSecao;
     if (!raiz || !(perdido || (pedido && raiz.contains(foco)))) return;
-    raiz.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.focus();
-  }, [estado.aberto]);
+    raiz.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.focus({ preventScroll: true });
+  }, [estado.aberto, itens]);
 
   const indiceAtivo = Math.max(0, visiveis.findIndex((item) => item.slug === estado.ativo));
   const itemAtivo = visiveis[indiceAtivo];

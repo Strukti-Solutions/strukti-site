@@ -26,7 +26,7 @@ import {
 } from "./estado";
 
 /** Âncora atual, sem o `#` e decodificada; `null` quando não há. */
-function slugDaUrl(): string | null {
+export function slugDaUrl(): string | null {
   const hash = window.location.hash.slice(1);
   if (!hash) return null;
   try {

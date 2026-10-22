@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import { CATALOGO, catalogoUi, type ItemCatalogo } from "@/content/catalogo";
+import { landingContent } from "@/content/landing";
 import { onInterestSelected } from "@/lib/interest";
 import { Catalogo } from "@/components/sections/Catalogo";
 import { CatalogoInterativo } from "./CatalogoInterativo";
@@ -454,6 +455,78 @@ describe("catálogo: estado aberto", () => {
     expect(tituloPainel(raiz)).toBe("Rota de Vendas");
   });
 
+  it("arrastar o mouse sobre o texto do painel (selecionar) não troca de produto nem engole o clique", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const texto = painel.querySelector<HTMLElement>(".catalogo__para-quem")!;
+
+    fireEvent.pointerDown(texto, { clientX: 300, clientY: 100, pointerType: "mouse", button: 0 });
+    fireEvent.pointerUp(texto, { clientX: 100, clientY: 104, pointerType: "mouse", button: 0 });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    // O clique que vem depois da seleção chega ao destino.
+    fireEvent.click(within(painel).getByRole("tab", { name: catalogoUi.abas.comoFunciona }));
+    expect(within(painel).getByRole("tab", { name: catalogoUi.abas.comoFunciona }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+  });
+
+  it("'Quero saber mais' no painel leva a #contato: fecha sem levar o foco (nem a rolagem) de volta ao cartão", async () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const focar = vi.spyOn(HTMLElement.prototype, "focus");
+    const link = within(painel).getByRole("link", { name: /Quero saber mais sobre Replay para quadras/ });
+    link.focus();
+
+    // O navegador segue o link: a URL vai para #contato e vem o hashchange.
+    window.history.replaceState(null, "", "#contato");
+    act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(raiz.querySelector(".catalogo__painel")).toBeNull();
+    expect(document.activeElement).not.toBe(cartao(raiz, "replay"));
+    expect(focar.mock.contexts).not.toContain(cartao(raiz, "replay"));
+    expect(window.location.hash).toBe("#contato");
+  });
+
+  it("fechar pelo X ou pelo voltar do navegador foca o cartão sem rolar a página (preventScroll)", () => {
+    const { raiz } = montar();
+    let painel = abrir(raiz);
+    const focar = vi.spyOn(HTMLElement.prototype, "focus");
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.fechar }));
+    expect(document.activeElement).toBe(cartao(raiz, "replay"));
+    const doCartao = () =>
+      focar.mock.calls.filter((_, i) => focar.mock.contexts[i] === cartao(raiz, "replay")).map(([opcoes]) => opcoes);
+    expect(doCartao()).toEqual([{ preventScroll: true }]);
+    act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+
+    // Voltar do navegador: o foco se perde com o painel e vai ao cartão.
+    painel = abrir(raiz);
+    focar.mockClear();
+    window.history.replaceState(null, "", "/");
+    act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(document.activeElement).toBe(cartao(raiz, "replay"));
+    expect(doCartao()).toEqual([{ preventScroll: true }]);
+  });
+
+  it("Visão geral com vídeo traz a legenda e a descrição do vídeo (alternativa em texto, WCAG 1.2.1)", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const { video } = porSlug("replay").painel;
+    const visao = painel.querySelector<HTMLElement>(".catalogo__aba-conteudo--visao")!;
+
+    expect(within(visao).getByText(video!.caption)).toBeTruthy();
+    const resumo = within(visao).getByText(landingContent.aplicativos.videoDescriptionLinkLabel);
+    expect(resumo.tagName).toBe("SUMMARY");
+    expect(resumo.closest("details")?.textContent).toContain(video!.description);
+
+    // Troca de produto: a legenda e a descrição acompanham o vídeo novo.
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.proximo }));
+    expect(within(visao).getByText(porSlug("rota-de-vendas").painel.video!.caption)).toBeTruthy();
+    // Os inventados não têm vídeo: nem legenda nem descrição.
+    fireEvent.click(within(fita(raiz)).getByRole("button", { name: porSlug("placar-conectado").nome }));
+    expect(within(visao).queryByText(landingContent.aplicativos.videoDescriptionLinkLabel)).toBeNull();
+  });
+
   it("miniatura do Fleet troca o painel para o Fleet sem fechar", () => {
     const { raiz } = montar();
     abrir(raiz);
@@ -616,6 +689,23 @@ describe("catálogo: foco visível nos laterais (CSS)", () => {
       const lateral = regra(`.catalogo[data-js="true"] .catalogo__cartao[data-pos="${pos}"]`);
       expect(lateral.i).toBeGreaterThan(-1);
       expect(foco.i).toBeGreaterThan(lateral.i);
+    }
+  });
+
+  // §8.7: com `forced-color-adjust: none` nas abas, a cor do autor fica. A
+  // aba ativa e a com o mouse (0,2,0, fora do bloco) davam texto branco
+  // sobre o Canvas branco de um tema de alto contraste claro.
+  it("cores forçadas: a aba normal, a com o mouse e a ativa têm texto CanvasText", () => {
+    const i = secao.lastIndexOf("@media (forced-colors: active) {");
+    expect(i).toBeGreaterThan(-1);
+    const bloco = secao.slice(i);
+    const regras = [...bloco.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, seletores, corpo]) => ({
+      seletores: seletores!.split(",").map((s) => s.trim()),
+      corpo: corpo!,
+    }));
+    for (const seletor of [".catalogo__aba", ".catalogo__aba:hover", '.catalogo__aba[aria-selected="true"]']) {
+      const comCor = regras.filter((r) => r.seletores.includes(seletor) && /(^|[\s;])color: CanvasText;/.test(r.corpo));
+      expect(comCor, seletor).not.toHaveLength(0);
     }
   });
 });
