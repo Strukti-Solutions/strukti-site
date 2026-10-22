@@ -344,10 +344,13 @@ export const landingContent = {
 
   header: {
     skipLink: "Pular para o conteúdo",
+    /**
+     * Itens da barra. Na barra do topo (TopBar), "#produtos" vira o botão do
+     * menu "Produtos ▾", com os produtos do catálogo agrupados por tipo (spec
+     * 2026-10-16, §3.5); o Header clássico lê a lista como links.
+     */
     nav: [
-      { label: "Replay", href: "#replay" },
-      { label: "Rota de Vendas", href: "#rota-de-vendas" },
-      { label: "Fleet Analytics BI", href: "#fleet-analytics-bi" },
+      { label: "Produtos", href: "#produtos" },
       { label: "Equipe", href: "#equipe" },
       { label: "Contato", href: "#contato" },
     ],

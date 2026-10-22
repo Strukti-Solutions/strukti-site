@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { HeroVariant } from "@/config/site";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
+import { CATALOGO } from "@/content/catalogo";
 import Home from "./page";
 
 // Estrutura da home na v2.2 do texto (prévia aprovada para homologação em 13/10/2026):
@@ -41,18 +42,15 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
     expect(container.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("o menu tem um link por produto, mais Equipe e Contato, e cada um aponta para algo da página", () => {
+  it("o menu tem Produtos, Equipe e Contato, e cada item (e cada produto do menu Produtos) aponta para algo da página", () => {
     const { container } = render(<Home />);
 
-    expect(landingContent.header.nav.map((item) => item.href)).toEqual([
-      "#replay",
-      "#rota-de-vendas",
-      "#fleet-analytics-bi",
-      "#equipe",
-      "#contato",
-    ]);
+    expect(landingContent.header.nav.map((item) => item.href)).toEqual(["#produtos", "#equipe", "#contato"]);
     for (const item of landingContent.header.nav) {
       expect(container.querySelector(`main ${item.href}`)).not.toBeNull();
+    }
+    for (const item of CATALOGO) {
+      expect(container.querySelector(`main #${item.slug}`)).not.toBeNull();
     }
   });
 
