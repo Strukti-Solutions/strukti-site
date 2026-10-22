@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, type Ref } from "react";
 import type { Project } from "@/content/landing";
 import { Palco } from "@/components/ui/Palco";
 import { SeloStatus } from "@/components/ui/SeloStatus";
-import { pauseOtherVideos } from "@/lib/videoCoordination";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { InterestLink } from "@/components/InterestLink";
 import { landingContent } from "@/content/landing";
@@ -55,16 +54,6 @@ export function ProjectGrid({ projects, labels, descriptionLinkLabel }: ProjectG
       firstRevealedRef.current?.focus();
     }
   }, [expanded]);
-
-  // Só um vídeo toca por vez na página (MASTER §8.8), inclusive o hero
-  // "video", se estiver em uso. "play" não borbulha: ouvir na captura.
-  useEffect(() => {
-    const onPlay = (event: Event) => {
-      if (event.target instanceof HTMLVideoElement) pauseOtherVideos(event.target);
-    };
-    document.addEventListener("play", onPlay, true);
-    return () => document.removeEventListener("play", onPlay, true);
-  }, []);
 
   return (
     <div className="portfolio__more">

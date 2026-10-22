@@ -2,26 +2,32 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ItemCatalogo } from "@/content/catalogo";
+import { pauseOtherVideos } from "@/lib/videoCoordination";
 import { Coverflow, textoPosicao } from "./Coverflow";
 import type { EventoCatalogo } from "./estado";
 import { FiltroTipo } from "./FiltroTipo";
+import { FitaMiniaturas } from "./FitaMiniaturas";
+import { PainelProduto } from "./PainelProduto";
 import { useCatalogo } from "./useCatalogo";
 
 /** A partir daqui os ±2 aparecem (§3.1); abaixo, a CSS os esconde e eles ficam `inert`. */
 const LARGO_QUERY = "(min-width: 768px)";
 
 /**
- * Raiz cliente do catálogo (spec 2026-10-16, §3): filtro, palco e a live
- * region. `data-js` é "false" no servidor e no 1º render do cliente (o
- * mesmo HTML, sem divergir na hidratação) e "true" depois de montar: só aí a
- * CSS liga o coverflow. Sem JS, fica a fileira com rolagem para o lado e o
- * `<details>` de cada cartão (§8.5).
+ * Raiz cliente do catálogo (spec 2026-10-16, §3): filtro, palco (o coverflow
+ * fechado, ou o painel e a fita abertos) e a live region. `data-js` é
+ * "false" no servidor e no 1º render do cliente (o mesmo HTML, sem divergir
+ * na hidratação) e "true" depois de montar: só aí a CSS liga o coverflow.
+ * Sem JS, fica a fileira com rolagem para o lado e o `<details>` de cada
+ * cartão (§8.5).
  */
 export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }) {
   // O hook rola até o topo da seção (§3.4): o `<section>` em volta, que é do
   // servidor (`Catalogo`).
   const secaoRef = useRef<HTMLElement | null>(null);
+  const raizNoRef = useRef<HTMLDivElement | null>(null);
   const raizRef = useCallback((no: HTMLDivElement | null) => {
+    raizNoRef.current = no;
     secaoRef.current = no?.closest("section") ?? no;
   }, []);
   const { estado, visiveis, despachar } = useCatalogo(itens, secaoRef);
@@ -29,6 +35,9 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   const [largo, setLargo] = useState(true);
   // A live region nasce vazia e só fala depois da 1ª troca feita aqui (§8.4).
   const [anunciar, setAnunciar] = useState(false);
+  // Fechou pelo X ou pelo Esc: o foco volta ao cartão de origem (§8.3).
+  const focarCartaoRef = useRef(false);
+  const abertoAntesRef = useRef(estado.aberto);
 
   useEffect(() => {
     setJs(true);
@@ -44,6 +53,16 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
     return () => query.removeEventListener("change", sincronizar);
   }, []);
 
+  // Só um vídeo toca por vez na página (MASTER §8.8): o do painel, o do hero
+  // e os loops dos cartões. "play" não borbulha: ouvir na captura.
+  useEffect(() => {
+    const onPlay = (event: Event) => {
+      if (event.target instanceof HTMLVideoElement) pauseOtherVideos(event.target);
+    };
+    document.addEventListener("play", onPlay, true);
+    return () => document.removeEventListener("play", onPlay, true);
+  }, []);
+
   const navegar = useCallback(
     (evento: EventoCatalogo) => {
       setAnunciar(true);
@@ -52,11 +71,44 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
     [despachar],
   );
 
+  const fechar = useCallback(() => {
+    focarCartaoRef.current = true;
+    despachar({ tipo: "fechar" });
+  }, [despachar]);
+
+  // Esc fecha, com o ouvinte no documento só enquanto o painel está aberto.
+  useEffect(() => {
+    if (!estado.aberto) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) fechar();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [estado.aberto, fechar]);
+
+  // Depois de fechar (já com o coverflow de volta), o foco vai ao cartão do
+  // centro: pelo X ou pelo Esc, se ele estava no catálogo; e sempre que
+  // ele se perdeu com o painel (o voltar do navegador, por exemplo). Quem
+  // fechou com um link de outra seção (#contato) fica onde está.
+  useEffect(() => {
+    const abertoAntes = abertoAntesRef.current;
+    abertoAntesRef.current = estado.aberto;
+    if (!abertoAntes || estado.aberto) return;
+    const pedido = focarCartaoRef.current;
+    focarCartaoRef.current = false;
+    const raiz = raizNoRef.current;
+    const foco = document.activeElement;
+    const perdido = foco === null || foco === document.body;
+    if (!raiz || !(perdido || (pedido && raiz.contains(foco)))) return;
+    raiz.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.focus();
+  }, [estado.aberto]);
+
   const indiceAtivo = Math.max(0, visiveis.findIndex((item) => item.slug === estado.ativo));
   const itemAtivo = visiveis[indiceAtivo];
+  const aberto = estado.aberto && itemAtivo !== undefined;
 
   return (
-    <div ref={raizRef} className="catalogo" data-js={js ? "true" : "false"} data-estado={estado.aberto ? "aberto" : "fechado"}>
+    <div ref={raizRef} className="catalogo" data-js={js ? "true" : "false"} data-estado={aberto ? "aberto" : "fechado"}>
       <div className="catalogo__corpo">
         <FiltroTipo filtro={estado.filtro} aoFiltrar={(filtro) => navegar({ tipo: "filtrar", filtro })} />
         <Coverflow
@@ -65,11 +117,28 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
           js={js}
           largo={largo}
           prioritario={itens[0]?.slug ?? ""}
+          escondido={aberto}
           aoCentralizar={(slug) => navegar({ tipo: "centralizar", slug })}
           aoPasso={(delta) => navegar({ tipo: "passo", delta })}
           aoIrPara={(posicao) => navegar({ tipo: "irPara", posicao })}
           aoAbrir={() => despachar({ tipo: "abrir" })}
         />
+        {aberto && (
+          <>
+            <PainelProduto
+              item={itemAtivo}
+              posicao={{ indice: indiceAtivo, total: visiveis.length }}
+              direcao={estado.direcao}
+              aoFechar={fechar}
+              aoPasso={(delta) => navegar({ tipo: "passo", delta })}
+            />
+            <FitaMiniaturas
+              itens={visiveis}
+              ativo={estado.ativo}
+              aoEscolher={(slug) => navegar({ tipo: "centralizar", slug })}
+            />
+          </>
+        )}
       </div>
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">
         {anunciar && itemAtivo ? textoPosicao(indiceAtivo, visiveis.length, itemAtivo.nome) : ""}

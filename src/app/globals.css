@@ -2075,6 +2075,336 @@ video:focus-visible {
   }
 }
 
+/* Estado aberto (§3.2): o coverflow sai da tela (hidden; os cartões ficam no
+   DOM pela âncora), o painel ocupa a altura que sobra no .catalogo__corpo e
+   a fita (~110 px) fica embaixo. A Visão geral cabe sem rolar (§5.3); a
+   rolagem interna do painel é só a exceção da §4. */
+.catalogo__carrossel[hidden] {
+  display: none;
+}
+
+.catalogo__painel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-4) var(--space-5);
+  overflow-y: auto;
+  border: 1px solid var(--color-navy-700);
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-900);
+  box-shadow: var(--shadow-float);
+  /* O dedo na vertical rola o painel ou a página (Review Focus 1). */
+  touch-action: pan-y;
+}
+
+.catalogo__painel-cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+
+.catalogo__painel-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.catalogo__painel-nome {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.375rem, 1.1rem + 1vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.catalogo__painel-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.catalogo__painel-site {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  color: var(--link);
+  font-weight: 600;
+}
+
+.catalogo__painel-site:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__painel-seta,
+.catalogo__fechar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.catalogo__painel-seta:hover,
+.catalogo__fechar:hover,
+.catalogo__tela-seta:hover {
+  background-color: var(--outline-hover);
+}
+
+/* Abas (§8.3): a ativa sublinhada em ciano; alvos de 44 px. */
+.catalogo__abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.catalogo__aba {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalogo__aba:hover {
+  color: var(--text);
+}
+
+.catalogo__aba[aria-selected="true"] {
+  border-bottom-color: var(--color-cyan-400);
+  color: var(--text);
+}
+
+/* Celular: as três abas numa linha só. */
+@media (max-width: 767.98px) {
+  .catalogo__painel {
+    padding-inline: var(--space-4);
+  }
+
+  .catalogo__abas {
+    gap: 0;
+  }
+
+  .catalogo__aba {
+    padding: 0 var(--space-2);
+    font-size: 0.875rem;
+  }
+}
+
+.catalogo__aba-conteudo[hidden] {
+  display: none;
+}
+
+/* Visão geral: o vídeo (ou a arte) à esquerda e o texto à direita. */
+.catalogo__aba-conteudo--visao {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .catalogo__aba-conteudo--visao {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* No painel, o texto mais junto: a Visão geral cabe sem rolar (§4). */
+.catalogo__painel .catalogo__visao {
+  gap: var(--space-2);
+}
+
+.catalogo__painel .catalogo__beneficios {
+  gap: 2px;
+}
+
+.catalogo__painel-midia {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-2);
+  background-color: #000000;
+  box-shadow: var(--shadow-screen);
+}
+
+.catalogo__painel-arte {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Vídeo de demonstração (VideoDemo): o pôster com "Assistir" e, no clique,
+   o player no mesmo lugar. A moldura corta o que passa da borda: o contorno
+   de foco é desenhado para dentro (2.4.7), como no <video>. */
+.video-demo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+}
+
+.video-demo__play {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.video-demo__play:focus-visible {
+  outline-offset: -3px;
+}
+
+.video-demo__play img {
+  object-fit: cover;
+}
+
+.video-demo__icone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-2);
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+  transform: translate(-50%, -50%);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.video-demo__play:hover .video-demo__icone {
+  background-color: var(--color-electric-800);
+}
+
+.video-demo__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000000;
+}
+
+/* Telas no painel: uma por vez, centrada, na altura que o painel deixa. */
+.catalogo__painel .catalogo__telas {
+  align-items: center;
+}
+
+.catalogo__painel .catalogo__telas-lista {
+  justify-content: center;
+  overflow: visible;
+}
+
+.catalogo__painel .catalogo__tela img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: clamp(180px, 38svh, 340px);
+}
+
+/* Fita de miniaturas (§3.2): mini-cartões de ~64×86 px, com o nome sobre
+   um degradê escuro na parte de baixo da arte, como nos cartões. As margens
+   automáticas centram poucos itens sem cortar os muitos; o padding deixa o
+   contorno de foco inteiro (a rolagem corta o que passa da borda). */
+.catalogo__fita {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+  padding: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__fita {
+    scroll-behavior: smooth;
+  }
+}
+
+.catalogo__miniatura {
+  position: relative;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 86px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-2);
+  background-color: var(--color-navy-900);
+  color: var(--color-navy-100);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.catalogo__miniatura:first-child {
+  margin-left: auto;
+}
+
+.catalogo__miniatura:last-child {
+  margin-right: auto;
+}
+
+.catalogo__miniatura-arte {
+  display: block;
+  width: 64px;
+  height: 86px;
+  border-radius: var(--radius-2);
+  object-fit: cover;
+  opacity: 0.7;
+}
+
+.catalogo__miniatura:hover .catalogo__miniatura-arte {
+  opacity: 1;
+}
+
+.catalogo__miniatura-nome {
+  position: absolute;
+  inset: auto 0 0;
+  display: -webkit-box;
+  overflow: hidden;
+  padding: 14px 3px 4px;
+  border-radius: 0 0 var(--radius-2) var(--radius-2);
+  background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.82) 60%, rgb(8 18 29 / 0) 100%);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* O ativo: contorno elétrico e o nome em destaque. */
+.catalogo__miniatura[aria-current="true"] {
+  color: #ffffff;
+}
+
+.catalogo__miniatura[aria-current="true"] .catalogo__miniatura-arte {
+  outline: 2px solid var(--color-electric-500);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
 /* Telas muito baixas (paisagem de celular, zoom, 1.4.12): a acessibilidade
    vence a altura constante (§4); a seção cresce. */
 @media (max-height: 34em) {
@@ -2215,6 +2545,30 @@ video:focus-visible {
   height: auto;
 }
 
+/* Molduras das telas (§3.2): o celular com a borda arredondada e o
+   navegador com a barra de cima e os três pontos. */
+.catalogo__tela img {
+  display: block;
+}
+
+.catalogo__tela--celular img {
+  border: 6px solid var(--color-navy-700);
+  border-radius: 22px;
+  background-color: var(--color-navy-950);
+}
+
+.catalogo__tela--navegador {
+  padding-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--color-navy-700);
+  border-radius: var(--radius-2);
+  background:
+    radial-gradient(circle at 10px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    radial-gradient(circle at 22px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    radial-gradient(circle at 34px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    var(--color-navy-700);
+}
+
 .catalogo__telas-setas {
   display: flex;
   gap: var(--space-2);
@@ -2240,6 +2594,11 @@ video:focus-visible {
   .catalogo__seta,
   .catalogo__seta:hover,
   .catalogo__tela-seta,
+  .catalogo__tela-seta:hover,
+  .catalogo__painel-seta,
+  .catalogo__painel-seta:hover,
+  .catalogo__fechar,
+  .catalogo__fechar:hover,
   .catalogo__filtro button,
   .catalogo__filtro button:hover {
     forced-color-adjust: none;
@@ -2273,6 +2632,25 @@ video:focus-visible {
   .catalogo[data-js="true"] .catalogo__cartao[data-pos="0"] .catalogo__superficie {
     outline: 2px solid CanvasText;
     outline-offset: 2px;
+  }
+
+  /* Painel aberto: a borda do painel, a aba ativa e a miniatura ativa. */
+  .catalogo__painel {
+    border-color: CanvasText;
+  }
+
+  .catalogo__aba {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .catalogo__aba[aria-selected="true"] {
+    border-bottom-color: Highlight;
+  }
+
+  .catalogo__miniatura[aria-current="true"] .catalogo__miniatura-arte {
+    outline-color: Highlight;
   }
 }
 

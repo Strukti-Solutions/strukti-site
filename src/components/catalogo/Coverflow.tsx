@@ -10,6 +10,16 @@ import { deslocamento } from "./estado";
 const DESLIZE_MINIMO = 40;
 const DESLIZE_PROPORCAO = 1.5;
 
+/**
+ * Passo de um gesto do dedo ou do mouse (dx, dy em px), ou `null` quando não
+ * troca: só vale o gesto claramente horizontal. O dedo para a esquerda traz o
+ * próximo. O painel aberto usa a mesma regra.
+ */
+export function passoDoDeslize(dx: number, dy: number): -1 | 1 | null {
+  if (Math.abs(dx) < DESLIZE_MINIMO || Math.abs(dx) <= DESLIZE_PROPORCAO * Math.abs(dy)) return null;
+  return dx < 0 ? 1 : -1;
+}
+
 /** "3 de 10: Rota de Vendas" (§8.1), no rótulo do cartão e na live region. */
 export function textoPosicao(indice: number, total: number, nome: string) {
   return catalogoUi.posicao
@@ -28,6 +38,11 @@ interface CoverflowProps {
   largo: boolean;
   /** Slug do centro inicial, cuja arte carrega sem `lazy`. */
   prioritario: string;
+  /**
+   * Painel aberto: o carrossel sai da tela (`hidden`), mas os cartões ficam
+   * no DOM, com o `id` da âncora (§3.4) e o cartão de origem para o foco.
+   */
+  escondido?: boolean;
   aoCentralizar: (slug: string) => void;
   aoPasso: (delta: -1 | 1) => void;
   aoIrPara: (posicao: "inicio" | "fim") => void;
@@ -40,7 +55,18 @@ interface CoverflowProps {
  * vai no `data-pos` e a CSS faz o resto (transform, opacidade, brilho). Não
  * gira sozinho (Q37). As setas do teclado só valem com o foco aqui dentro.
  */
-export function Coverflow({ itens, ativo, js, largo, prioritario, aoCentralizar, aoPasso, aoIrPara, aoAbrir }: CoverflowProps) {
+export function Coverflow({
+  itens,
+  ativo,
+  js,
+  largo,
+  prioritario,
+  escondido = false,
+  aoCentralizar,
+  aoPasso,
+  aoIrPara,
+  aoAbrir,
+}: CoverflowProps) {
   const total = itens.length;
   const indiceAtivo = Math.max(0, itens.findIndex((item) => item.slug === ativo));
   const botaoCentroRef = useRef<HTMLButtonElement>(null);
@@ -96,13 +122,11 @@ export function Coverflow({ itens, ativo, js, largo, prioritario, aoCentralizar,
     const inicio = inicioRef.current;
     inicioRef.current = null;
     if (!inicio || total <= 1) return;
-    const dx = e.clientX - inicio.x;
-    const dy = e.clientY - inicio.y;
-    if (Math.abs(dx) < DESLIZE_MINIMO || Math.abs(dx) <= DESLIZE_PROPORCAO * Math.abs(dy)) return;
+    const passo = passoDoDeslize(e.clientX - inicio.x, e.clientY - inicio.y);
+    if (passo === null) return;
     arrastouRef.current = true;
     focarCentroRef.current = false;
-    // O dedo para a esquerda traz o próximo.
-    aoPasso(dx < 0 ? 1 : -1);
+    aoPasso(passo);
   };
 
   const onClickCapture = (e: MouseEvent<HTMLDivElement>) => {
@@ -123,6 +147,7 @@ export function Coverflow({ itens, ativo, js, largo, prioritario, aoCentralizar,
       role="region"
       aria-roledescription={catalogoUi.roledescCarrossel}
       aria-label={catalogoUi.rotuloCarrossel}
+      hidden={escondido}
       onKeyDown={onKeyDown}
     >
       <div className="catalogo__cena">

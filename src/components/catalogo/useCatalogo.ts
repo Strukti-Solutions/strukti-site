@@ -7,6 +7,12 @@
  * Link e travessia (voltar/avançar) disparam a mesma sequência no navegador:
  * `popstate` e depois `hashchange`, com a mesma URL (HTML, "navigate to a
  * fragment"). O que separa os dois é o clique no link, que o hook anota.
+ *
+ * O `history.back()` do fechar é assíncrono (Review Focus 5): até o
+ * `popstate` dele chegar, o hook está "voltando". Reabrir nesse meio-tempo
+ * abre na hora, mas a entrada nova (`pushState`) espera a volta: criada
+ * antes, a volta pendente a desfaria, e o `popstate` atrasado, com a URL de
+ * antes de abrir, fecharia o painel recém-aberto.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { ItemCatalogo } from "@/content/catalogo";
@@ -39,7 +45,7 @@ function slugDaUrl(): string | null {
 function aplicarHistorico(efeito: NonNullable<EfeitoHistorico>) {
   switch (efeito.tipo) {
     case "push":
-      window.history.pushState(null, "", `#${efeito.slug}`);
+      criarEntrada(efeito.slug);
       break;
     case "replace":
       window.history.replaceState(null, "", `#${efeito.slug}`);
@@ -51,6 +57,10 @@ function aplicarHistorico(efeito: NonNullable<EfeitoHistorico>) {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
       break;
   }
+}
+
+function criarEntrada(slug: string) {
+  window.history.pushState(null, "", `#${slug}`);
 }
 
 /**
@@ -71,6 +81,11 @@ export function useCatalogo(
   // URL do último link `#...` desta página clicado (menu da barra, links da
   // página): o `popstate` que ele causa não é travessia.
   const linkRef = useRef<string | null>(null);
+  // O `back()` do fechar foi pedido e o `popstate` dele ainda não chegou.
+  const voltandoRef = useRef(false);
+  // Reabriu enquanto voltava: o slug da entrada a criar quando a volta
+  // terminar (troca de produto antes disso só muda o slug).
+  const entradaPendenteRef = useRef<string | null>(null);
 
   const despachar = useCallback(
     (evento: EventoCatalogo) => {
@@ -79,12 +94,31 @@ export function useCatalogo(
         estadoRef.current = novo;
         setEstado(novo);
       }
-      if (historico) {
-        // A URL mudou por nós: as marcas, se sobraram, não valem mais.
-        travessiaRef.current = null;
-        linkRef.current = null;
-        aplicarHistorico(historico);
+      if (!historico) return;
+      if (voltandoRef.current) {
+        // A entrada atual é a que o `back()` pendente vai deixar.
+        if (historico.tipo === "push") {
+          entradaPendenteRef.current = historico.slug;
+          return;
+        }
+        if (entradaPendenteRef.current !== null) {
+          // Fechar de novo: a entrada nem chegou a existir, e a volta
+          // pendente já leva para antes de abrir.
+          if (historico.tipo === "back") {
+            entradaPendenteRef.current = null;
+            return;
+          }
+          if (historico.tipo === "replace") {
+            entradaPendenteRef.current = historico.slug;
+            return;
+          }
+        }
       }
+      // A URL mudou por nós: as marcas, se sobraram, não valem mais.
+      travessiaRef.current = null;
+      linkRef.current = null;
+      if (historico.tipo === "back") voltandoRef.current = true;
+      aplicarHistorico(historico);
     },
     [itens],
   );
@@ -128,10 +162,27 @@ export function useCatalogo(
       linkRef.current = link.href;
     };
 
+    // Chegou a volta do `back()` do fechar. Se a pessoa reabriu nesse
+    // meio-tempo, o painel já está como ela quer: a URL de antes de abrir não
+    // vale, e a entrada que esperava é criada agora. O `hashchange` dessa
+    // volta, se vier, encontra a URL nova marcada como travessia (não rola).
+    const concluirVolta = () => {
+      if (!voltandoRef.current) return false;
+      voltandoRef.current = false;
+      const slug = entradaPendenteRef.current;
+      entradaPendenteRef.current = null;
+      if (slug === null) return false;
+      criarEntrada(slug);
+      travessiaRef.current = window.location.href;
+      linkRef.current = null;
+      return true;
+    };
+
     // Voltar/avançar do navegador: abre ou fecha, sem mexer na rolagem (o
     // navegador restaura a posição daquela entrada). O `popstate` de um link
     // também não rola: quem rola é o `hashchange` que vem logo depois.
     const onPopState = () => {
+      if (concluirVolta()) return;
       const href = window.location.href;
       travessiaRef.current = linkRef.current === href ? null : href;
       linkRef.current = null;
@@ -141,6 +192,8 @@ export function useCatalogo(
     // Link ou menu da barra: abre e rola. O `hashchange` que vem logo depois
     // do `popstate` na mesma travessia não rola.
     const onHashChange = () => {
+      // Navegador que não dispara `popstate` na volta: vale o `hashchange`.
+      if (concluirVolta()) return;
       linkRef.current = null;
       const daTravessia = travessiaRef.current === window.location.href;
       travessiaRef.current = null;

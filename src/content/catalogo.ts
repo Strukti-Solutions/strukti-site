@@ -487,6 +487,8 @@ export const catalogoUi = {
   anterior: "Produto anterior",
   proximo: "Próximo produto",
   irPara: "Ir para {nome}",
+  /** Grupo das miniaturas do estado aberto. */
+  rotuloFita: "Escolher produto",
   abas: { visaoGeral: "Visão geral", comoFunciona: "Como funciona", telas: "Telas" },
   paraQuem: "Para quem é",
   siteLink: "Ver o site",

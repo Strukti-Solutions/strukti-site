@@ -168,6 +168,84 @@ describe("useCatalogo: histórico", () => {
     expect(replaceState.mock.calls.map((c) => c[2])).toEqual(["#rota-de-vendas", "#fleet-analytics-bi"]);
   });
 
+  // Review Focus 5. O `back()` é assíncrono: o navegador aplica a volta e
+  // dispara o popstate (com a URL da entrada anterior, aqui "/") e o
+  // hashchange depois. Quem fecha e reabre antes disso não pode ter o painel
+  // reaberto fechado pelo popstate atrasado. A ordem abaixo é a do navegador
+  // (o jsdom resolve o `back()` contra a entrada atual na hora da tarefa e
+  // não mostra a corrida, por isso o `back` é de mentira e a volta é feita
+  // à mão: a URL muda e os dois eventos chegam, nessa ordem).
+  function concluirVolta(url = "/") {
+    irPara(url);
+    act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+    proximoQuadro();
+  }
+
+  it("fechar e reabrir antes de o popstate do back() chegar: o popstate atrasado não fecha o painel, e a entrada nova só é criada depois dele", () => {
+    const { result } = montar();
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    act(() => result.current.despachar({ tipo: "fechar" }));
+    expect(back).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "replay", entradaPropria: true });
+    // Criar a entrada agora a perderia: a volta pendente ainda vai acontecer.
+    expect(pushState).toHaveBeenCalledTimes(1);
+
+    concluirVolta();
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "replay", entradaPropria: true });
+    expect(pushState).toHaveBeenCalledTimes(2);
+    expect(pushState).toHaveBeenLastCalledWith(null, "", "#replay");
+    expect(window.location.hash).toBe("#replay");
+    // O hashchange da volta não rola a página até a seção.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    // Fechar de novo volta a entrada criada agora.
+    act(() => result.current.despachar({ tipo: "fechar" }));
+    expect(back).toHaveBeenCalledTimes(2);
+    concluirVolta();
+    expect(result.current.estado.aberto).toBe(false);
+    expect(pushState).toHaveBeenCalledTimes(2);
+  });
+
+  it("fechar, reabrir e fechar de novo antes do popstate: fica fechado, com 1 back só e nenhuma entrada nova", () => {
+    const { result } = montar();
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    act(() => {
+      result.current.despachar({ tipo: "fechar" });
+      result.current.despachar({ tipo: "abrir" });
+      result.current.despachar({ tipo: "fechar" });
+    });
+    expect(result.current.estado.aberto).toBe(false);
+    expect(back).toHaveBeenCalledTimes(1);
+
+    concluirVolta();
+    expect(result.current.estado.aberto).toBe(false);
+    expect(pushState).toHaveBeenCalledTimes(1);
+    expect(back).toHaveBeenCalledTimes(1);
+
+    // Depois da volta, abrir cria a entrada na hora, como sempre.
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    expect(pushState).toHaveBeenCalledTimes(2);
+  });
+
+  it("reabrir e trocar de produto antes do popstate: a entrada criada depois é a do produto novo, sem replace antes", () => {
+    const { result } = montar();
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    act(() => result.current.despachar({ tipo: "fechar" }));
+    act(() => result.current.despachar({ tipo: "abrir" }));
+    act(() => result.current.despachar({ tipo: "passo", delta: 1 }));
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "rota-de-vendas" });
+    // A entrada atual ainda é a que o back() vai deixar: nada de replace nela.
+    expect(replaceState).not.toHaveBeenCalled();
+
+    concluirVolta();
+    expect(result.current.estado).toMatchObject({ aberto: true, ativo: "rota-de-vendas" });
+    expect(pushState).toHaveBeenLastCalledWith(null, "", "#rota-de-vendas");
+    expect(window.location.hash).toBe("#rota-de-vendas");
+  });
+
   it("`visiveis` segue o filtro e `despachar` é o mesmo entre renders", () => {
     const { result } = montar();
     const despachar = result.current.despachar;

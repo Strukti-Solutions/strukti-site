@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import { CATALOGO, catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { onInterestSelected } from "@/lib/interest";
@@ -298,6 +298,296 @@ describe("catálogo: estado fechado", () => {
     expect(handler).toHaveBeenLastCalledWith("outro");
     expect(handler).toHaveBeenCalledTimes(2);
     parar();
+  });
+});
+
+describe("catálogo: estado aberto", () => {
+  beforeEach(async () => {
+    // O jsdom navega pelo link numa tarefa: o #contato clicado num teste de
+    // antes chegaria (hashchange) no meio de um teste daqui e fecharia o
+    // painel. Espera as tarefas pendentes e volta para "/".
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    window.history.replaceState(null, "", "/");
+    // O `back()` de verdade do jsdom navegaria pelas entradas dos outros
+    // testes; aqui só conta (a ordem real do popstate é testada no hook).
+    vi.spyOn(window.history, "back").mockImplementation(() => {});
+  });
+
+  /** Abre o produto do centro pelo "Ver detalhes" e devolve o painel. */
+  function abrir(raiz: HTMLElement, nome = "Replay para quadras") {
+    fireEvent.click(screen.getByRole("button", { name: `Ver detalhes de ${nome}` }));
+    return raiz.querySelector<HTMLElement>(".catalogo__painel")!;
+  }
+  const tituloPainel = (raiz: HTMLElement) => raiz.querySelector(".catalogo__painel h3")?.textContent;
+  const fita = (raiz: HTMLElement) => raiz.querySelector<HTMLElement>(".catalogo__fita")!;
+
+  it("clicar em 'Ver detalhes' abre: data-estado='aberto', foco no h3 'Replay para quadras', fita com 10 botões e aria-current no replay", () => {
+    const { raiz } = montar();
+    expect(raiz.querySelector(".catalogo__painel")).toBeNull();
+
+    const painel = abrir(raiz);
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(painel.tagName).toBe("SECTION");
+    const h3 = within(painel).getByRole("heading", { level: 3, name: "Replay para quadras" });
+    expect(painel.getAttribute("aria-labelledby")).toBe(h3.id);
+    expect(document.activeElement).toBe(h3);
+    // Cabeçalho: tipo, selo e o X.
+    expect(within(painel).getByText(catalogoUi.tipos.hardware)).toBeTruthy();
+    expect(within(painel).getByRole("button", { name: catalogoUi.fechar })).toBeTruthy();
+
+    const botoes = [...fita(raiz).querySelectorAll<HTMLButtonElement>("button")];
+    expect(botoes).toHaveLength(10);
+    expect(botoes.map((b) => b.textContent)).toEqual(CATALOGO.map((item) => item.nome));
+    expect(botoes.filter((b) => b.getAttribute("aria-current") === "true").map((b) => b.textContent)).toEqual([
+      "Replay para quadras",
+    ]);
+    // O coverflow sai da tela, mas os cartões (com o id da âncora) ficam.
+    expect(raiz.querySelector(".catalogo__carrossel")?.hasAttribute("hidden")).toBe(true);
+    expect(cartao(raiz, "replay")).not.toBeNull();
+  });
+
+  it("abas: 'Como funciona' mostra 3 passos; → na aba ativa leva o foco para 'Telas'", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const abas = within(painel).getAllByRole("tab");
+    expect(abas.map((a) => a.textContent)).toEqual([
+      catalogoUi.abas.visaoGeral,
+      catalogoUi.abas.comoFunciona,
+      catalogoUi.abas.telas,
+    ]);
+    expect(abas.map((a) => a.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
+    expect(abas.map((a) => a.tabIndex)).toEqual([0, -1, -1]);
+
+    fireEvent.click(abas[1]!);
+    const visivel = within(painel).getByRole("tabpanel");
+    expect(abas[1]!.getAttribute("aria-selected")).toBe("true");
+    expect(abas[1]!.getAttribute("aria-controls")).toBe(visivel.id);
+    expect(visivel.getAttribute("aria-labelledby")).toBe(abas[1]!.id);
+    const passos = within(visivel).getAllByRole("listitem");
+    expect(passos).toHaveLength(3);
+    expect(passos[0]!.textContent).toContain(porSlug("replay").painel.comoFunciona[0].titulo);
+
+    abas[1]!.focus();
+    fireEvent.keyDown(abas[1]!, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(abas[2]);
+    expect(abas[2]!.getAttribute("aria-selected")).toBe("true");
+    // Telas: uma por vez, com as setas para passar.
+    expect(within(painel).getByRole("tabpanel").querySelectorAll(".catalogo__tela:not([hidden])")).toHaveLength(1);
+    expect(within(painel).getByRole("button", { name: catalogoUi.proximaTela })).toBeTruthy();
+    // A seta nas abas não troca de produto; Home e End também andam nelas.
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    fireEvent.keyDown(abas[2]!, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(abas[0]);
+    fireEvent.keyDown(abas[0]!, { key: "End" });
+    expect(document.activeElement).toBe(abas[2]);
+    fireEvent.keyDown(abas[2]!, { key: "Home" });
+    expect(document.activeElement).toBe(abas[0]);
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+  });
+
+  it("→ com o foco no X troca para o Rota de Vendas e a live region anuncia '2 de 10: Rota de Vendas'", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const fechar = within(painel).getByRole("button", { name: catalogoUi.fechar });
+
+    fechar.focus();
+    fireEvent.keyDown(fechar, { key: "ArrowRight" });
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+    expect(anuncio(raiz)).toBe("2 de 10: Rota de Vendas");
+    expect(window.location.hash).toBe("#rota-de-vendas");
+    // O foco fica no X, que não sai do painel.
+    expect(document.activeElement).toBe(fechar);
+    expect(fita(raiz).querySelector('button[aria-current="true"]')?.textContent).toBe("Rota de Vendas");
+
+    // As setas ‹ › do painel também trocam; com Alt (voltar do navegador), não.
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.anterior }));
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    fireEvent.keyDown(fechar, { key: "ArrowLeft", altKey: true });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    fireEvent.keyDown(fechar, { key: "ArrowLeft" });
+    expect(tituloPainel(raiz)).toBe("Contador de fluxo para lojas");
+  });
+
+  it("→ com o foco no <video> do painel não troca de produto", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    fireEvent.click(within(painel).getByRole("button", { name: "Assistir ao vídeo: Replay para quadras (52 s)" }));
+    const video = painel.querySelector<HTMLVideoElement>("video.catalogo__video")!;
+    expect(document.activeElement).toBe(video);
+
+    fireEvent.keyDown(video, { key: "ArrowRight" });
+    fireEvent.keyDown(video, { key: "ArrowLeft" });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    // Nem o dedo arrastando a barra do vídeo.
+    fireEvent.pointerDown(video, { clientX: 300, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerUp(video, { clientX: 100, clientY: 100, pointerType: "touch" });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+  });
+
+  it("→ com o foco na pílula do filtro não troca de produto", () => {
+    const { raiz } = montar();
+    abrir(raiz);
+    const pilula = screen.getByRole("button", { name: catalogoUi.filtros.todos });
+
+    pilula.focus();
+    fireEvent.keyDown(pilula, { key: "ArrowRight" });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+    // Um campo de texto dentro do painel (Review Focus 2) também fica de fora.
+    const campo = document.createElement("input");
+    raiz.querySelector(".catalogo__painel")!.append(campo);
+    fireEvent.keyDown(campo, { key: "ArrowRight" });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+  });
+
+  it("o dedo no painel troca de produto com a regra do coverflow", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const alvo = painel.querySelector<HTMLElement>(".catalogo__painel-cabeca")!;
+
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerUp(alvo, { clientX: 270, clientY: 300, pointerType: "touch" });
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch" });
+    expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+  });
+
+  it("miniatura do Fleet troca o painel para o Fleet sem fechar", () => {
+    const { raiz } = montar();
+    abrir(raiz);
+
+    const fleet = within(fita(raiz)).getByRole("button", { name: "Fleet Analytics BI" });
+    fireEvent.click(fleet);
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(tituloPainel(raiz)).toBe("Fleet Analytics BI");
+    expect(fleet.getAttribute("aria-current")).toBe("true");
+    expect(anuncio(raiz)).toBe("3 de 10: Fleet Analytics BI");
+    expect(window.history.pushState).toHaveBeenCalledTimes(1);
+    expect(window.location.hash).toBe("#fleet-analytics-bi");
+  });
+
+  it("Esc fecha, data-estado='fechado' e o foco volta ao cartão do replay", () => {
+    const { raiz } = montar();
+    abrir(raiz);
+
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(raiz.querySelector(".catalogo__painel")).toBeNull();
+    expect(raiz.querySelector(".catalogo__carrossel")?.hasAttribute("hidden")).toBe(false);
+    expect(document.activeElement).toBe(cartao(raiz, "replay"));
+    expect(window.history.back).toHaveBeenCalledTimes(1);
+    // O navegador conclui o back() (aqui de mentira): popstate em "/".
+    act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    expect(raiz.dataset.estado).toBe("fechado");
+
+    // O X faz o mesmo; depois de trocar, o cartão de origem é o do centro.
+    const painel = abrir(raiz);
+    expect(window.history.pushState).toHaveBeenCalledTimes(2);
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.proximo }));
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.fechar }));
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(centro(raiz)).toBe("rota-de-vendas");
+    expect(document.activeElement).toBe(cartao(raiz, "rota-de-vendas"));
+    // Fechado, o Esc não faz mais nada.
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(window.history.back).toHaveBeenCalledTimes(2);
+  });
+
+  it("abrir e apertar Esc no mesmo tick deixa fechado, com history.back chamado 1 vez e nenhum .catalogo__painel", () => {
+    const { raiz } = montar();
+    const ver = screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" });
+
+    fireEvent.click(ver);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(raiz.querySelector(".catalogo__painel")).toBeNull();
+    expect(raiz.querySelector(".catalogo__fita")).toBeNull();
+    expect(window.history.pushState).toHaveBeenCalledTimes(1);
+    expect(window.history.back).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(cartao(raiz, "replay"));
+  });
+
+  it("dois cliques rápidos em 'Ver detalhes' fazem 1 pushState só", () => {
+    const { raiz } = montar();
+    const ver = screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" });
+
+    // No mesmo lote (antes do render) e logo depois dele.
+    act(() => {
+      ver.click();
+      ver.click();
+    });
+    fireEvent.click(ver);
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(raiz.querySelectorAll(".catalogo__painel")).toHaveLength(1);
+    expect(window.history.pushState).toHaveBeenCalledTimes(1);
+  });
+
+  it("a seção mantém as mesmas classes de altura nos dois estados (data-estado muda, .catalogo__corpo é o mesmo nó)", () => {
+    const { raiz } = montar();
+    const corpo = raiz.querySelector<HTMLElement>(".catalogo__corpo")!;
+    const classes = corpo.className;
+
+    const painel = abrir(raiz);
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(raiz.querySelector(".catalogo__corpo")).toBe(corpo);
+    expect(corpo.className).toBe(classes);
+    expect(corpo.contains(painel)).toBe(true);
+    expect(corpo.contains(fita(raiz))).toBe(true);
+
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.fechar }));
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(raiz.querySelector(".catalogo__corpo")).toBe(corpo);
+    expect(corpo.className).toBe(classes);
+  });
+
+  it("vídeo só depois do clique em 'Assistir ao vídeo: Replay para quadras (52 s)'; tocar pausa um <video> de fora", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    expect(raiz.querySelector("video")).toBeNull();
+
+    fireEvent.click(within(painel).getByRole("button", { name: "Assistir ao vídeo: Replay para quadras (52 s)" }));
+    const video = painel.querySelector<HTMLVideoElement>("video.catalogo__video")!;
+    expect(video).not.toBeNull();
+    expect(video.controls).toBe(true);
+    expect(video.autoplay).toBe(true);
+    expect(video.getAttribute("preload")).toBe("metadata");
+    expect(video.getAttribute("aria-label")).toBe(porSlug("replay").painel.video!.accessibleName);
+    expect(video.querySelector("source")?.getAttribute("src")).toBe("/video/replay.mp4");
+    expect(document.activeElement).toBe(video);
+
+    // Um vídeo por vez: o de fora (o hero, por exemplo) pausa.
+    const fora = document.createElement("video");
+    document.body.append(fora);
+    Object.defineProperty(fora, "paused", { configurable: true, value: false });
+    const pausar = vi.spyOn(fora, "pause").mockImplementation(() => {});
+    video.dispatchEvent(new Event("play"));
+    expect(pausar).toHaveBeenCalledTimes(1);
+    fora.remove();
+  });
+
+  it("item fictício abre sem VideoDemo, com a arte grande", () => {
+    const { raiz } = montar();
+    const placar = porSlug("placar-conectado");
+    fireEvent.click(screen.getByRole("button", { name: `Ir para ${placar.nome}` }));
+    const painel = abrir(raiz, placar.nome);
+
+    expect(tituloPainel(raiz)).toBe(placar.nome);
+    expect(within(painel).queryByRole("button", { name: /Assistir/ })).toBeNull();
+    const arte = within(painel).getByRole("img", { name: placar.arte.alt });
+    expect(arte.getAttribute("src")).toBe(`${placar.arte.base}.jpg`);
+    // As miniaturas da fita são decorativas: o nome está no botão.
+    for (const img of fita(raiz).querySelectorAll("img")) expect(img.getAttribute("alt")).toBe("");
+  });
+
+  it("axe sem violações no estado aberto", async () => {
+    const { container, raiz } = montar();
+    abrir(raiz);
+    expect((await axe.run(container)).violations).toEqual([]);
+
+    fireEvent.click(screen.getByRole("tab", { name: catalogoUi.abas.telas }));
+    expect((await axe.run(container)).violations).toEqual([]);
   });
 });
 
