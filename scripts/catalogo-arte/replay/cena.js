@@ -12,10 +12,12 @@
 
   // ---------------- mundo ----------------
   const MUNDO = {
-    cerca: { z: 0, passo: 5.0, fio: 0.19 },                    // tela de losango de 5 cm, fio de 1,9 mm
+    cerca: { z: 0, passo: 3.6, fio: 0.17, var: 0.14 },         // tela de losango de 3,6 cm (lado), fio de 1,7 mm, ±14% fio a fio
     poste: { x: 0, z: -3.3, r: 3.0 },                          // tubo de 6 cm, do lado da quadra
-    caixa: { x: 0, y: 113.5, z: -9.0, rot: 0, w: 9.6, d: 4.6, h: 13, r: 1.25 },   // y: base; frente para -z
-    chapa: { w: 4.6, y0: 108.6, y1: 131.4, z: -6.45, d: 0.5 }, // chapa de fixação atrás da caixa
+    // a caixa e a chapa ficam um pouco à direita do eixo do poste, o quanto a paralaxe da câmera (~20° de lado) as
+    // empurra para a esquerda: assim, na imagem, as duas ficam centradas no tubo e as abraçadeiras saem dos dois lados
+    caixa: { x: 1.97, y: 113.5, z: -9.0, rot: 0, w: 9.6, d: 4.6, h: 13, r: 1.25 },   // y: base; frente para -z
+    chapa: { x: 1.09, w: 4.6, y0: 108.6, y1: 131.4, z: -6.45, d: 0.5 }, // chapa de fixação atrás da caixa
     abracadeiras: [109.6, 129.0],                              // duas cintas inox em volta do poste
     // a quadra vizinha: society de 15 x 25 m, girada 6° e comprida para longe, com o alambrado dela e o gol do
     // fundo. Coordenadas locais: u na largura (0 no meio), w no comprimento (0 na linha de perto, a 6 m da tela)
@@ -39,7 +41,8 @@
   for (const R of MUNDO.refletores) if (R.loc) { R.pos = VZ.W(R.loc[0], R.loc[2], R.loc[1]); R.alvo = VZ.W(R.alvo[0], R.alvo[1]); }
   // câmera retrato 800 x 1200: a caixa a ~1/3 da altura, quase de frente (como no hero, ~20° de lado)
   const CAM = { W: 800, H: 1200, pos: [23, 121, -70], target: [0, 120, -9], F: 1200, shiftY: -180,
-    fundoBlur: 4.5, fundoExp: 0.86, fundoExpPiso: 0.96, faixaPiso: [0.28, 0.34, 0.54, 0.62], telaPiso: 0.2, posteSombra: [0.5, 0.57, 0.72], vig: 0.9, vigR: [0.18, 0.7], vigC: [0.5, 0.34], bottomFade: [0.5, 0.78, 1.0, 0.38, 0.62], bloom: 0.18, grain: 5, grainBaixo: [0.6, 6.5], ledK: 0.85, nevoa: 1 };
+    fundoBlur: 4.5, fundoExp: 0.86, fundoExpPiso: 0.96, faixaPiso: [0.28, 0.34, 0.54, 0.62], telaPiso: 0.2, posteSombra: [0.5, 0.57, 0.72], vig: 0.9, vigR: [0.18, 0.7], vigC: [0.5, 0.34], bottomFade: [0.5, 0.78, 1.0, 0.38, 0.62], bloom: 0.18, grain: 5, grainBaixo: [0.6, 6.5], ledK: 0.85, nevoa: 1,
+    bancoR: 13, fachoMax: 0.45, linhaDir: 0.6, poca: [0.3, 160, 300], face: 8, realce: 0.07, contato: 0.45 };
 
   function prepLuz(o) {
     LUZ.ceuDir = norm([0, 1, 0.3]);    // céu de hora azul por cima (cena externa)
@@ -89,7 +92,8 @@
         const t = -pos[1] / d[1], x = pos[0] + d[0] * t, z = pos[2] + d[2] * t; dist = t * dl;
         const p = [x, 0, z];
         const [u, w] = VZ.L(x, z), naQuadra = Math.abs(u) < hw && w > 0 && w < V.L;
-        let alb = naQuadra ? (naLinha(u, w) ? faixa : piso) : z > 0 && w < 0 && Math.abs(u) < hw + 400 ? asfalto : terra;
+        // à direita da caixa a linha fica a ~60% (o filete que corria até a borda puxava o olho para fora do objeto)
+        let alb = naQuadra ? (naLinha(u, w) ? mix(piso, faixa, 1 - (1 - (o.linhaDir != null ? o.linhaDir : 0.6)) * K.sstep(540, 650, sx)) : piso) : z > 0 && w < 0 && Math.abs(u) < hw + 400 ? asfalto : terra;
         col = comLuzes(fundoL, () => luz(alb, p, [0, 1, 0], { amb: 1, wk: 1 }));
         // brilho acetinado dos refletores no piso (o reflexo alonga para a câmera)
         if (alb !== terra) {
@@ -129,32 +133,50 @@
       path(ctx, [G(-g.w / 2, 0), G(-g.w / 2, g.h), G(g.w / 2, g.h), G(g.w / 2, 0)], false); ctx.stroke(); }
   }
 
-  // névoa dos refletores: halos, fachos que descem e a faixa de névoa sobre o piso iluminado
+  // o banco de refletores fora de foco: uma caixa escura com 2 ou 3 lâmpadas lado a lado (nada de disco solto, que
+  // lê como lua), do mesmo tamanho na imagem para todos (meia largura o.bancoR, ~13 px), com um halo contido
+  function banco(ctx, cam, R, h, o) {
+    const rb = (o.bancoR || 13) * (R.longe ? 0.92 : 1), n = R.longe ? 2 : 3, hb = rb * 0.62, cv = layer(cam.W, cam.H), cc = cv.getContext('2d');
+    const [x, y] = h;
+    cc.beginPath(); cc.roundRect ? cc.roundRect(x - rb - 2, y - hb / 2 - 2, 2 * rb + 4, hb + 4, 2) : cc.rect(x - rb - 2, y - hb / 2 - 2, 2 * rb + 4, hb + 4);
+    cc.fillStyle = rgba(mix(C.n800, C.n900, 0.4), 0.85); cc.fill();
+    cc.globalCompositeOperation = 'lighter';
+    const lr = rb / n * 0.95, cor = mix(C.floodW, C.lampW, 0.25);
+    for (let i = 0; i < n; i++) { const lx = x + (i - (n - 1) / 2) * (2 * rb / n), g = cc.createRadialGradient(lx, y, 0, lx, y, lr);
+      g.addColorStop(0, rgba(cor, 0.95)); g.addColorStop(0.6, rgba(cor, 0.75)); g.addColorStop(1, rgba(cor, 0)); cc.fillStyle = g; cc.beginPath(); cc.arc(lx, y, lr, 0, 7); cc.fill(); }
+    ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.filter = `blur(${o.bancoBlur || 2.4}px)`; ctx.drawImage(cv, 0, 0); ctx.restore();
+    // halo contido em volta do banco (em largura, como a fileira de lâmpadas)
+    ctx.save(); ctx.translate(x, y); ctx.scale(rb * 3.2, rb * 2.1);
+    ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.floodW, C.n300, 0.3), 0.2 * (o.nevoa != null ? o.nevoa : 1))], [0.4, rgba(mix(C.floodW, C.n300, 0.5), 0.05)], [1, rgba(C.n300, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore();
+  }
+  // o poste fino e escuro do banco, desfocado como o fundo; some na névoa para baixo (os de longe, mais cedo)
+  function posteBanco(ctx, cam, R, h, o) {
+    const pe = cam.P([R.pos[0], 0, R.pos[2]]), w = Math.max(2, cam.S(R.pos) * 16), y0 = h[1] + 3, y1 = R.longe ? h[1] + (pe[1] - h[1]) * 0.55 : pe[1];
+    const a = R.longe ? 0.32 : 0.5, cor = mix(C.n900, C.n800, 0.4);
+    ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'blur(2px)';
+    ctx.fillStyle = lin(ctx, [0, y0], [0, y1], [[0, rgba(cor, a)], [0.6, rgba(cor, a * 0.7)], [1, rgba(cor, 0)]]);
+    ctx.fillRect(h[0] - w / 2 + (pe[0] - h[0]) * 0.5, y0, w, y1 - y0); ctx.restore();
+  }
+  // névoa dos refletores: véu, cone de névoa e o banco de lâmpadas; a faixa de névoa sobre o piso iluminado
   function nevoa(ctx, cam, o) {
     const P = cam.P, k = o.nevoa != null ? o.nevoa : 1; if (k <= 0) return;
     ctx.save(); ctx.globalCompositeOperation = 'screen';
-    const fk = o.facho != null ? o.facho : 1;
+    const fk = o.facho != null ? o.facho : 1, yMax = (o.fachoMax || 0.45) * cam.H, cinza = mix(C.n300, C.floodW, 0.35);
     for (const R of MUNDO.refletores) {
       const h = P(R.pos); if (h[2] <= 0) continue;
       const s = cam.S(R.pos), noQuadro = h[0] > -60 && h[0] < cam.W + 60 && h[1] > -60 && h[1] < cam.H;
-      // facho: um cone leve da cabeça até o piso, desfocado (mais forte nos que se veem)
-      const g0 = P(R.alvo), ax = norm(sub(R.alvo, R.pos)), side = norm(K.cross(ax, sub(R.pos, cam.pos)));   // largura de frente para a câmera
-      const a1 = P(add(R.pos, mul(side, 40))), a2 = P(add(R.pos, mul(side, -40)));
-      const b1 = P(add(R.alvo, mul(side, 420))), b2 = P(add(R.alvo, mul(side, -420)));
-      if ([g0, a1, a2, b1, b2].every(q => q[2] > 0)) {
-        const fa = (noQuadro ? 0.16 : 0.05) * k * fk;
-        const cv = layer(cam.W, cam.H), cc = cv.getContext('2d');
-        path(cc, [a1, a2, b2, b1]); cc.fillStyle = lin(cc, h, g0, [[0, rgba(C.floodW, fa)], [0.55, rgba(C.floodW, fa * 0.45)], [1, rgba(C.floodW, 0)]]); cc.fill();
-        ctx.filter = `blur(${Math.round(Math.max(6, s * (noQuadro ? 70 : 200)))}px)`; ctx.drawImage(cv, 0, 0); ctx.filter = 'none';
-      }
-      // halo largo na névoa
-      glow(ctx, h, Math.max(60, s * 1500), mix(C.floodW, C.n300, 0.6), 0.05 * k);
-      if (noQuadro) {
-        // a cabeça fora de foco: disco com o núcleo contido, halo de ~3,5x o raio e a névoa em volta
-        const r = Math.max(6, s * 78);
-        glow(ctx, h, r * 3.6, mix(C.floodW, C.n300, 0.3), 0.15 * k);
-        disco(ctx, h, r, mix(C.floodW, C.lampW, 0.3), 0.38);
-      } else glow(ctx, h, Math.max(18, s * 420), mix(C.floodW, C.n300, 0.25), 0.08 * k);
+      // o véu de luz no ar em volta do banco (o céu deixa de ser uniforme perto dos refletores)
+      glow(ctx, h, Math.max(90, s * 1500), mix(C.floodW, C.n300, 0.6), 0.06 * k);
+      if (!noQuadro) { glow(ctx, h, Math.max(18, s * 420), mix(C.floodW, C.n300, 0.25), 0.08 * k); continue; }
+      posteBanco(ctx, cam, R, h, o);
+      // cone de névoa sob o banco, abrindo para a quadra: azul-acinzentado, tênue, e some antes de 45% da altura
+      { const cv = layer(cam.W, cam.H), cc = cv.getContext('2d'), rb = o.bancoR || 13, ab = (R.longe ? 0.08 : 0.10) * k * fk;
+        const yb = Math.min(yMax, h[1] + (R.longe ? 210 : 260)), ab2 = (yb - h[1]) * (R.longe ? 0.42 : 0.55);
+        const dx = (P(R.alvo)[0] - h[0]) * 0.25;   // o cone pende um pouco para onde o refletor aponta
+        path(cc, [[h[0] - rb, h[1] + 4], [h[0] + rb, h[1] + 4], [h[0] + dx + ab2, yb], [h[0] + dx - ab2, yb]]);
+        cc.fillStyle = lin(cc, [0, h[1]], [0, yb], [[0, rgba(cinza, ab)], [0.55, rgba(cinza, ab * 0.6)], [1, rgba(cinza, 0)]]); cc.fill();
+        ctx.filter = 'blur(14px)'; ctx.drawImage(cv, 0, 0); ctx.filter = 'none'; }
+      banco(ctx, cam, R, h, o);
     }
     // brilho da névoa atrás da caixa: o ar sobre a quadra vizinha, iluminado
     { const c = P([-500, 160, 2600]); if (c[2] > 0) { ctx.save(); ctx.translate(c[0], c[1]); ctx.scale(cam.W * 0.62, cam.H * 0.2);
@@ -178,24 +200,27 @@
     const nF = norm([0.15, 0.55, -0.82]);
     const F0 = o._fundo, Wf = cam.W, Hf = cam.H;
     const contraluz = q => { if (!F0) return 0; const x = clamp(Math.round(q[0]), 0, Wf - 1), y = clamp(Math.round(q[1]), 0, Hf - 1), i = (y * Wf + x) * 4; const Yb = (0.299 * F0[i] + 0.587 * F0[i + 1] + 0.114 * F0[i + 2]) / 255; return Math.pow(Yb, 1.8); };
-    const corEm = (p, q) => add(comLuzes(soChave(), () => luz(alb, p, nF, { amb: 0.26, wk: 0.35, lk: 0.42 })), mul(mix(C.n300, C.floodW, 0.4), 0.95 * contraluz(q)));
+    const corEm = (p, q) => add(comLuzes(soChave(), () => luz(alb, p, nF, { amb: 0.26, wk: 0.35, lk: 0.42 })), mul(mix(C.n300, C.floodW, 0.4), (o.contraluz || 1.1) * contraluz(q)));
     const passoSeg = 2.5;
     for (const sg of [1, -1]) {
       // linhas y = sg * x + c, c em passos de s
       const cMin = Math.floor((y0 - Math.max(sg * x0, sg * x1)) / s) - 1, cMax = Math.ceil((y1 - Math.min(sg * x0, sg * x1)) / s) + 1;
       for (let c = cMin; c <= cMax; c++) {
         const cc = c * s + (sg > 0 ? 0 : s / 2);
+        // fio a fio, a espessura e a opacidade variam de leve (e devagar ao longo do fio): arame, não régua
+        const Rf = rng(1009 + c * 2 + (sg > 0 ? 0 : 1)), vw = 1 + (M.var || 0) * (2 * Rf() - 1), va = 1 - (M.var || 0) * 1.3 * Rf(), fase = Rf() * 6.28;
         for (let x = x0; x < x1; x += passoSeg) {
           const a = [x, sg * x + cc, zc], b = [x + passoSeg, sg * (x + passoSeg) + cc, zc];
           if ((a[1] < y0 && b[1] < y0) || (a[1] > y1 && b[1] > y1)) continue;
           const m = mul(add(a, b), 0.5), pa = P(a), pb = P(b);
-          fx.strokeStyle = rgba(corEm(m, P(m))); fx.lineWidth = Math.max(1, cam.S(m) * M.fio);
+          const ond = 1 + (M.var || 0) * 0.5 * Math.sin(fase + x / 23);
+          fx.strokeStyle = rgba(corEm(m, P(m)), clamp(va * ond, 0, 1)); fx.lineWidth = Math.max(1, cam.S(m) * M.fio * vw * ond);
           fx.beginPath(); fx.moveTo(pa[0], pa[1]); fx.lineTo(pb[0], pb[1]); fx.stroke();
         }
       }
     }
     // trama: nos cruzamentos alternados, o fio de +45° passa por cima (com uma sombra fina dos dois lados)
-    { const c1a = Math.floor((y0 - x1) / s) - 1, c1b = Math.ceil((y1 - x0) / s) + 1, c2a = Math.floor((y0 + x0) / s) - 1, c2b = Math.ceil((y1 + x1) / s) + 1, h = 0.75;
+    { const c1a = Math.floor((y0 - x1) / s) - 1, c1b = Math.ceil((y1 - x0) / s) + 1, c2a = Math.floor((y0 + x0) / s) - 1, c2b = Math.ceil((y1 + x1) / s) + 1, h = 0.75 * M.passo / 5;
       for (let c1 = c1a; c1 <= c1b; c1++) for (let c2 = c2a; c2 <= c2b; c2++) {
         if ((c1 + c2) % 2) continue;
         const x = ((c2 - c1) * s + s / 2) / 2, y = x + c1 * s; if (x < x0 || x > x1 || y < y0 || y > y1) continue;
@@ -247,8 +272,8 @@
       ctx.beginPath(); up.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.strokeStyle = rgba(C.n200, 0.22); ctx.lineWidth = 1; ctx.stroke();
     }
     // chapa atrás da caixa (aparece acima e abaixo dela)
-    const fr = frameOf({ x: b.x, z: Ch.z, rot: b.rot });
-    const cor = (yy, n) => comLuzes(soChave(), () => luz([40, 48, 60], [b.x, yy, Ch.z], n, { amb: 0.9, lk: 0.9 }));
+    const fr = frameOf({ x: Ch.x, z: Ch.z, rot: b.rot });
+    const cor = (yy, n) => comLuzes(soChave(), () => luz([40, 48, 60], [Ch.x, yy, Ch.z], n, { amb: 0.9, lk: 0.9 }));
     const face = [[-Ch.w / 2, Ch.y1], [Ch.w / 2, Ch.y1], [Ch.w / 2, Ch.y0], [-Ch.w / 2, Ch.y0]].map(([u, y]) => P(fr(u, y, -Ch.d / 2)));
     const lado = [[Ch.w / 2, Ch.y1, -Ch.d / 2], [Ch.w / 2, Ch.y1, Ch.d / 2], [Ch.w / 2, Ch.y0, Ch.d / 2], [Ch.w / 2, Ch.y0, -Ch.d / 2]].map(([u, y, v]) => P(fr(u, y, v)));
     path(ctx, lado); ctx.fillStyle = rgba(mix(cor(120, [1, 0, 0]), C.black, 0.2)); ctx.fill();
@@ -260,13 +285,15 @@
     for (const y of [Ch.y0 + 1.6, Ch.y1 - 1.6]) { discT(ctx, cam, fr(0, y, -Ch.d / 2 - 0.05), [0.42, 0, 0], [0, 0.42, 0]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = rgba(C.black, 0.85); ctx.fill(); ctx.beginPath(); ctx.arc(-0.2, -0.2, 0.45, 0, 7); ctx.fillStyle = rgba(C.n300, 0.35); ctx.fill(); ID(ctx); }
   }
   // sombra da caixa e da chapa no poste e na tela (luz da chave), só onde há fio ou tubo
-  function sombraCaixa(ctx, cam) {
+  function sombraCaixa(ctx, cam, o) {
     const b = MUNDO.caixa, L = MUNDO.chave.pos, fr = frameOf(b), P = cam.P, zs = -3.0;
     const pts = []; for (const [u, hh] of rrect(b.w, b.h, b.r, 3)) for (const v of [-b.d / 2, b.d / 2]) pts.push(fr(u, hh + b.h / 2, v));
     const proj = p => { const d = norm(sub(p, L)), t = (zs - p[2]) / d[2]; return P(add(p, mul(d, t))); };
     const sh = layer(cam.W, cam.H), s = sh.getContext('2d'), k = cam.S([b.x, b.y, zs]);
     s.filter = `blur(${Math.round(k * 0.45)}px)`; s.fillStyle = 'rgba(0,0,0,0.7)'; path(s, hull(pts.map(proj))); s.fill();
     s.filter = `blur(${Math.round(k * 1.6)}px)`; s.fillStyle = 'rgba(0,0,0,0.35)'; path(s, hull(pts.map(p => P([p[0], p[1], zs])))); s.fill();
+    // sombra de contato curta no poste, embaixo e à direita da caixa (a chave vem de cima, à esquerda)
+    if (o && o.contato) { s.filter = `blur(${Math.max(2, Math.round(k * 0.3))}px)`; s.fillStyle = `rgba(0,0,0,${o.contato})`; path(s, hull(pts.map(p => P([p[0] + 0.7, p[1] - 0.9, zs])))); s.fill(); }
     ctx.save(); ctx.globalCompositeOperation = 'source-atop'; ctx.drawImage(sh, 0, 0); ctx.restore();
   }
 
@@ -292,7 +319,12 @@
     const fTL = light(bodyA, at(-b.w / 2, b.h / 2, -hd), fn), fBR = light(bodyA, at(b.w / 2, -b.h / 2, -hd), fn);
     path(ctx, front);
     // a chave vem de cima, à esquerda e de trás da câmera: mais clara no canto de cima à esquerda, ~20% mais escura embaixo à direita
-    ctx.fillStyle = lin(ctx, P(at(-b.w / 2, b.h / 2, -hd)), P(at(b.w / 2, -b.h / 2, -hd)), [[0, rgba(mix(mul(fTL, 1.14), C.lampW, 0.03))], [0.45, rgba(mul(fTL, 0.98))], [1, rgba(mul(fBR, 0.76))]]); ctx.fill();
+    const fv = [o.face || 0, o.face || 0, (o.face || 0) * 1.1];   // a face sobe ~7 de valor: o meio-tom mais claro do quadro
+    ctx.fillStyle = lin(ctx, P(at(-b.w / 2, b.h / 2, -hd)), P(at(b.w / 2, -b.h / 2, -hd)), [[0, rgba(add(mix(mul(fTL, 1.14), C.lampW, 0.03), fv))], [0.45, rgba(add(mul(fTL, 0.98), fv))], [1, rgba(add(mul(fBR, 0.76), fv))]]); ctx.fill();
+    // realce fraco de luz neutra no canto de cima à esquerda (o refletor da esquerda, alto)
+    if (o.realce) { const q = P(at(-b.w / 2 + 0.6, b.h / 2 - 0.6, -hd)), rr = cam.S(at(0, 0, -hd)) * 5.5; ctx.save(); path(ctx, front); ctx.clip();
+      const g = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], rr); g.addColorStop(0, rgba(C.floodW, o.realce)); g.addColorStop(0.5, rgba(C.floodW, o.realce * 0.3)); g.addColorStop(1, rgba(C.floodW, 0));
+      ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = g; ctx.fillRect(q[0] - rr, q[1] - rr, 2 * rr, 2 * rr); ctx.restore(); }
     // chanfro suave no contorno da frente
     ctx.save(); path(ctx, front); ctx.lineWidth = Math.max(1, cam.S(at(0, 0, -hd)) * 0.2);
     ctx.strokeStyle = lin(ctx, P(at(-b.w / 2, b.h / 2, -hd)), P(at(b.w / 2, -b.h / 2, -hd)), [[0, rgba(mix(C.n300, C.n400, 0.5), 0.45)], [0.45, rgba(C.n500, 0.18)], [1, rgba(C.n500, 0.04)]]);
@@ -359,11 +391,15 @@
       pc.fillRect(0, 0, cam.W, cam.H); ctx.drawImage(pl, 0, 0);
     }
     nevoa(ctx, cam, o);
+    // em volta da caixa o fundo cai ~18%: a caixa vira o meio-tom mais claro do quadro (raio ~150 px, depois some)
+    if (o.poca) { const c = cam.P([MUNDO.caixa.x, MUNDO.caixa.y + MUNDO.caixa.h / 2, MUNDO.caixa.z]), [a, r0, r1] = o.poca;
+      ctx.save(); ctx.translate(c[0], c[1]); ctx.scale(r1, r1 * 1.1);
+      ctx.fillStyle = radial(ctx, [[0, rgba(C.edge, a)], [r0 / r1, rgba(C.edge, a * 0.85)], [1, rgba(C.edge, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore(); }
     if (o.so === 'fundo') return { cam };   // depuração: só o fundo (com ?so=fundo&fundoBlur=0)
     { const fb = layer(cam.W, cam.H), fc = fb.getContext('2d'); fc.filter = 'blur(10px)'; fc.drawImage(ctx.canvas, 0, 0); o._fundo = fc.getImageData(0, 0, cam.W, cam.H).data; }
     // 2. alambrado, poste e fixação (com a sombra da caixa)
     const nr = layer(cam.W, cam.H), nx = nr.getContext('2d');
-    alambrado(nx, cam, o); const pinfo = poste(nx, cam, o); fixacao(nx, cam, o, pinfo); sombraCaixa(nx, cam);
+    alambrado(nx, cam, o); const pinfo = poste(nx, cam, o); fixacao(nx, cam, o, pinfo); sombraCaixa(nx, cam, o);
     ctx.drawImage(nr, 0, 0);
     // 3. caixa e LED
     const info = caixa(ctx, cam, o); led(ctx, cam, info, o.ledK);
@@ -374,7 +410,7 @@
   // pontos do objeto principal (a caixa), para a sonda de enquadramento
   function objeto() { const b = MUNDO.caixa, fr = frameOf(b), r = []; for (const u of [-b.w / 2, b.w / 2]) for (const v of [-b.d / 2, b.d / 2]) for (const hh of [0, b.h]) r.push(fr(u, hh, v)); return r; }
   // pontos de referência para a sonda de geometria
-  function referencias() { const r = { caixa: [0, 120, -9] }; MUNDO.refletores.forEach((R, i) => { r['refletor' + i] = R.pos; }); r.horizonte = [CAM.pos[0], CAM.pos[1], 1e6]; return r; }
+  function referencias() { const r = { caixa: [MUNDO.caixa.x, 120, MUNDO.caixa.z], poste: [MUNDO.poste.x, 120, MUNDO.poste.z] }; MUNDO.refletores.forEach((R, i) => { r['refletor' + i] = R.pos; }); r.horizonte = [CAM.pos[0], CAM.pos[1], 1e6]; return r; }
   G.CENA = { nome: 'replay', render, CAM, MUNDO, objeto, referencias };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.CENA;
