@@ -68,7 +68,11 @@ export function FitaMiniaturas({ itens, ativo, animar, aoEscolher }: FitaMiniatu
                 draggable={false}
               />
             </picture>
-            <span className="catalogo__miniatura-nome">{item.nome}</span>
+            {/* O degradê e o respiro ficam na caixa de fora; o corte em 2
+                linhas, na de dentro, sem padding (senão a 3ª linha aparece). */}
+            <span className="catalogo__miniatura-nome">
+              <span className="catalogo__miniatura-texto">{item.nome}</span>
+            </span>
           </motion.button>
         );
       })}

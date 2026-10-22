@@ -996,8 +996,38 @@ describe("catálogo: estado aberto", () => {
     expect(within(painel).queryByRole("button", { name: /Assistir/ })).toBeNull();
     const arte = within(painel).getByRole("img", { name: placar.arte.alt });
     expect(arte.getAttribute("src")).toBe(`${placar.arte.base}.jpg`);
+    // A arte não é tela: sem a luz do vídeo embaixo (MASTER §5.4).
+    expect(arte.closest(".catalogo__painel-midia")?.classList.contains("catalogo__painel-midia--arte")).toBe(true);
     // As miniaturas da fita são decorativas: o nome está no botão.
     for (const img of fita(raiz).querySelectorAll("img")) expect(img.getAttribute("alt")).toBe("");
+  });
+
+  it("o vídeo leva a luz de tela; o 'Assistir' fica num canto, à direita só onde o pôster pede", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz, "Replay para quadras");
+    const midia = painel.querySelector(".catalogo__painel-midia");
+    expect(midia?.classList.contains("catalogo__painel-midia--arte")).toBe(false);
+    const playReplay = within(painel).getByRole("button", { name: /^Assistir ao vídeo: Replay para quadras/ });
+    expect(playReplay.querySelector(".video-demo__icone")?.classList.contains("video-demo__icone--direita")).toBe(false);
+
+    // O Fleet tem o "167 veículos" desenhado embaixo à esquerda do pôster.
+    const fleet = porSlug("fleet-analytics-bi");
+    fireEvent.click(within(fita(raiz)).getByRole("button", { name: fleet.nome }));
+    expect(tituloPainel(raiz)).toBe(fleet.nome);
+    // Pelo botão do Fleet (o conteúdo do Replay pode ainda estar saindo); o
+    // nome acessível não muda.
+    const playFleet = within(raiz).getByRole("button", { name: /^Assistir ao vídeo: Fleet Analytics BI/ });
+    expect(playFleet.querySelector(".video-demo__icone")?.classList.contains("video-demo__icone--direita")).toBe(true);
+  });
+
+  it("o nome da miniatura fica numa caixa de 2 linhas sem padding, dentro do degradê", () => {
+    const { raiz } = montar();
+    abrir(raiz);
+    for (const botao of fita(raiz).querySelectorAll("button")) {
+      const texto = botao.querySelector(".catalogo__miniatura-nome > .catalogo__miniatura-texto");
+      expect(texto?.textContent).toBeTruthy();
+      expect(botao.textContent?.trim()).toBe(texto?.textContent);
+    }
   });
 
   it("axe sem violações no estado aberto", async () => {
@@ -1370,6 +1400,48 @@ describe("catálogo: CSS (foco nos laterais, cores forçadas e altura sem JS)", 
     const semJs = regra('.catalogo[data-js="false"] .catalogo__corpo');
     expect(semJs.i).toBeGreaterThan(-1);
     expect(semJs.corpo).toContain(`min-height: ${altura};`);
+  });
+
+  // §4 (exceção do celular): o painel que rola por dentro mostra uma pista
+  // na borda de baixo, que segue a rolagem e some no fim; sem rolagem, a
+  // linha do tempo fica inativa e vale a opacidade 0 de base.
+  it("pista de rolagem do painel: camada colada embaixo, sem clique, opacidade pela rolagem", () => {
+    const pista = regra(".catalogo__painel-interior::after").corpo;
+    expect(pista).toMatch(/position: sticky;/);
+    expect(pista).toMatch(/bottom: 0;/);
+    expect(pista).toMatch(/pointer-events: none;/);
+    expect(pista).toMatch(/opacity: 0;/);
+    expect(pista).toMatch(/linear-gradient\(to bottom, transparent, var\(--color-navy-900\)/);
+    // Não ocupa lugar: a margem desconta a altura e o gap do flex.
+    expect(pista).toMatch(/margin-top: calc\(-1 \* \(var\(--space-3\) \+ var\(--pista-altura\)\)\);/);
+    const comTimeline = secao.slice(secao.indexOf("@supports (animation-timeline: scroll()) {"));
+    expect(comTimeline).toMatch(/^@supports \(animation-timeline: scroll\(\)\) \{\s+\.catalogo__painel-interior::after \{\s+animation: catalogo-pista linear both;\s+animation-timeline: scroll\(nearest block\);/);
+    expect(secao).toMatch(/@keyframes catalogo-pista \{\s+0%,\s+92% \{\s+opacity: 1;\s+\}\s+100% \{\s+opacity: 0;/);
+    expect(secao).toContain("@supports not (animation-timeline: scroll()) {");
+    // O foco não fica sob a pista.
+    expect(regra(".catalogo__painel-interior").corpo).toMatch(/scroll-padding-block-end: var\(--pista-altura\);/);
+    // Cores forçadas: o degradê vai para o Canvas (sem isto, ele sairia).
+    const forcado = secao.slice(secao.lastIndexOf("@media (forced-colors: active) {"));
+    expect(forcado).toMatch(/\.catalogo__painel-interior::after \{\s+forced-color-adjust: none;\s+background: linear-gradient\(to bottom, transparent, Canvas 90%\);/);
+  });
+
+  // MASTER §4 e §10: nada de caixa-alta espacejada nos rótulos do tipo.
+  it("os rótulos do tipo (cartão, painel e menu) sem caixa-alta nem espacejamento aberto", () => {
+    const tipo = regra(".catalogo__tipo").corpo;
+    expect(tipo).not.toBe("");
+    expect(tipo).not.toMatch(/text-transform|letter-spacing/);
+    for (const m of css.matchAll(/\.topbar__produtos-tipo \{([^}]*)\}/g)) {
+      expect(m[1]).not.toMatch(/text-transform|letter-spacing/);
+    }
+  });
+
+  // §5.4: a luz de tela é do vídeo; a arte dos inventados não a leva.
+  it("a mídia de arte do painel sem a luz de tela", () => {
+    // A regra de fora das media queries (no começo da linha).
+    const i = secao.indexOf("\n.catalogo__painel-midia {");
+    expect(i).toBeGreaterThan(-1);
+    expect(secao.slice(i, secao.indexOf("}", i))).toMatch(/box-shadow: var\(--shadow-screen\);/);
+    expect(regra(".catalogo__painel-midia--arte").corpo).toMatch(/box-shadow: none;/);
   });
 
   // §8.7: com `forced-color-adjust: none` nas abas, a cor do autor fica. A

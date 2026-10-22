@@ -48,7 +48,13 @@ export function VideoDemo({ video, playLabel, sizes, className }: VideoDemoProps
       ) : (
         <button type="button" className="video-demo__play" onClick={() => setTocando(true)} aria-label={playLabel}>
           <Image src={video.poster} alt="" fill sizes={sizes} unoptimized />
-          <span className="video-demo__icone" aria-hidden="true">
+          {/* Num canto, fora do texto desenhado no pôster (MASTER §8.8). */}
+          <span
+            className={
+              video.playCorner === "bottom-right" ? "video-demo__icone video-demo__icone--direita" : "video-demo__icone"
+            }
+            aria-hidden="true"
+          >
             <svg width="20" height="20" viewBox="0 0 20 20" focusable="false">
               <path d="M6 3.5v13l10.5-6.5L6 3.5Z" fill="currentColor" />
             </svg>

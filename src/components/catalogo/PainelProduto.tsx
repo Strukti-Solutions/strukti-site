@@ -351,7 +351,8 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
                   hidden={aba !== "visaoGeral"}
                 >
                   <div className="catalogo__painel-coluna">
-                    <div className="catalogo__painel-midia">
+                    {/* Só o vídeo leva a luz de tela (§5.4); a arte dos inventados, não. */}
+                    <div className={video ? "catalogo__painel-midia" : "catalogo__painel-midia catalogo__painel-midia--arte"}>
                       {video ? (
                         <VideoDemo
                           video={video}

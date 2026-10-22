@@ -113,11 +113,14 @@
 // motion nas trocas do coverflow (com um controle positivo: ao abrir, a
 // amostragem tem de ver o crescimento); Tab até um ±2 com opacidade 1 e
 // contorno; o popover "Produtos ▾" dentro da janela a 1200 px (no topo, na
-// cápsula e com a fonte raiz a 125%); o menu da barra abrindo o Fleet (1440
+// cápsula e com a fonte raiz a 125%), com mais espaço entre os itens do que
+// entre as linhas de um item; o menu da barra abrindo o Fleet (1440
 // e 360, pelo Menu); o toque de verdade a 360 (o dedo para o lado troca,
 // para cima rola, e o Enter depois do deslize abre); cores forçadas (setas,
 // X e o contorno do ativo na fita ≥ 3:1); o 1.4.12 a 320 px (tudo da
-// Visão geral alcançável, sem rolagem para o lado); e o texto do cartão do
+// Visão geral alcançável, sem rolagem para o lado); a pista de rolagem do
+// painel a 390×844 (visível no topo de cada painel que rola, some no fim;
+// a 1440×900 e 1280×800, sem rolagem, não aparece); e o texto do cartão do
 // centro nos 10 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão,
 // cabe sem rolar, com a etiqueta e o selo abaixo do esmaecimento, sobre o
 // véu opaco; com o espaçamento do 1.4.12 e com a fonte raiz a 200%, a caixa
@@ -274,6 +277,8 @@ const CAT_TEXTO_SIZES = [
   { width: 390, height: 844 },
   { width: 1440, height: 900 },
 ];
+// Onde o painel rola por dentro e a pista de rolagem tem de aparecer (§4).
+const CAT_PISTA_SIZE = { width: 390, height: 844 };
 // Onde a Visão geral precisa caber sem rolar (§4, emenda de 22/10).
 const CAT_FIT_SIZES = [
   { width: 1440, height: 900 },
@@ -1842,6 +1847,8 @@ const CAT_STATE_EXPR = `(() => {
     seguinte: r ? r.top : null,
     seguinteDoc: r ? r.top + scrollY : null,
     interior: interior ? { sh: interior.scrollHeight, ch: interior.clientHeight } : null,
+    // A pista de rolagem (o ::after do interior, §4): a opacidade agora.
+    pista: interior ? Number(getComputedStyle(interior, "::after").opacity) : null,
     fitaAltura: fita ? fita.getBoundingClientRect().height : null,
     focoNoCentro: !!centro && !!a && centro.contains(a),
     focoNoVideo: !!a && a.matches(".catalogo__video"),
@@ -2365,6 +2372,7 @@ async function catFitPass(cdp, ctx) {
     if (s.aba !== "Visão geral") ctx.fail(`Visão geral: no produto ${i} ("${s.painel}"), a aba selecionada é "${s.aba}"`);
     if (!s.interior) ctx.fail(`Visão geral: no produto ${i}, sem o painel (.catalogo__painel-interior)`);
     else if (s.interior.sh > s.interior.ch + 1) rolam.push(`"${s.painel}" (${s.interior.sh}px em ${s.interior.ch}px)`);
+    else if (s.pista > 0.01) ctx.fail(`Visão geral: "${s.painel}" cabe sem rolar, mas a pista de rolagem aparece (opacidade ${s.pista})`);
     fita = s.fitaAltura;
   }
   if (rolam.length > 0) ctx.fail(`Visão geral: rola dentro do painel em ${rolam.join(", ")}; ela tem de caber sem rolar a partir de 1280×800 (§4)`);
@@ -2380,6 +2388,71 @@ async function catFitPass(cdp, ctx) {
   ctx.log(
     `Visão geral: ${CAT_TOTAL - rolam.length} de ${CAT_TOTAL} cabem sem rolar; fita de ${fita?.toFixed(1)}px; topo da seção seguinte ${[...new Set(resumo)].join(" / ")}${rolam.length ? ` (${alturas})` : ""}`,
   );
+}
+
+// A camada da pista de rolagem e onde o painel está na tela.
+const CAT_PISTA_EXPR = `(() => {
+  const interior = document.querySelector(${JSON.stringify(CAT_PAINEL_SELECTOR)} + " .catalogo__painel-interior");
+  if (!interior) return null;
+  const p = getComputedStyle(interior, "::after");
+  const r = interior.getBoundingClientRect();
+  return {
+    nome: document.querySelector(".catalogo__painel-nome")?.textContent.trim() ?? "",
+    sh: interior.scrollHeight, ch: interior.clientHeight, topo: interior.scrollTop,
+    content: p.content, position: p.position, opacidade: Number(p.opacity), altura: parseFloat(p.height), fundo: p.backgroundImage,
+    naTela: r.top >= 0 && r.bottom <= innerHeight,
+  };
+})()`;
+
+/**
+ * A pista de rolagem do painel (§4, exceção do celular): onde o painel rola
+ * por dentro, a borda de baixo esmaece enquanto há mais a rolar e a pista
+ * some no fim. Confere a regra (::after colado embaixo, com degradê) e a
+ * opacidade no topo e no fim da rolagem, nos 3 reais (que têm vídeo e texto)
+ * e num inventado.
+ */
+async function catPistaPass(cdp, ctx) {
+  if (!(await catLoad(cdp, ctx, "pista de rolagem"))) return;
+  await catClick(cdp, CAT_VER_SELECTOR);
+  await catWait(cdp, catAberto);
+  await sleep(1200);
+  const notas = [];
+  let conferidos = 0;
+  for (const n of [1, 2, 3, 4]) {
+    if (n > 1) {
+      await catClick(cdp, catMiniatura(n));
+      await sleep(700);
+    }
+    await evalValue(cdp, `document.querySelector(${JSON.stringify(CAT_PAINEL_SELECTOR)} + " .catalogo__painel-interior").scrollTop = 0`);
+    await sleep(200);
+    const topo = await evalValue(cdp, CAT_PISTA_EXPR);
+    if (!topo) {
+      ctx.fail(`pista de rolagem: no produto ${n}, sem o painel (.catalogo__painel-interior)`);
+      continue;
+    }
+    if (topo.content === "none" || topo.position !== "sticky" || !(topo.altura > 0) || !topo.fundo.includes("gradient")) {
+      ctx.fail(`pista de rolagem: em "${topo.nome}", a regra do ::after não está lá (content ${topo.content}, position ${topo.position}, altura ${topo.altura}, fundo ${topo.fundo.slice(0, 40)})`);
+      continue;
+    }
+    if (!topo.naTela) ctx.fail(`pista de rolagem: em "${topo.nome}", o painel não está inteiro na tela para conferir`);
+    if (topo.sh <= topo.ch + 1) {
+      if (topo.opacidade > 0.01) ctx.fail(`pista de rolagem: "${topo.nome}" cabe sem rolar, mas a pista aparece (opacidade ${topo.opacidade})`);
+      notas.push(`"${topo.nome}" cabe, sem pista`);
+      continue;
+    }
+    conferidos++;
+    if (topo.opacidade < 0.99) {
+      ctx.fail(`pista de rolagem: "${topo.nome}" rola (${topo.sh}px em ${topo.ch}px), mas no topo a pista não aparece (opacidade ${topo.opacidade})`);
+    }
+    await evalValue(cdp, `(() => { const el = document.querySelector(${JSON.stringify(CAT_PAINEL_SELECTOR)} + " .catalogo__painel-interior"); el.scrollTop = el.scrollHeight; })()`);
+    await sleep(200);
+    const fim = await evalValue(cdp, CAT_PISTA_EXPR);
+    if (fim.opacidade > 0.01) ctx.fail(`pista de rolagem: em "${fim.nome}", no fim da rolagem (${fim.topo}px) a pista continua (opacidade ${fim.opacidade})`);
+    notas.push(`"${topo.nome}" ${topo.sh}/${topo.ch}px: ${topo.opacidade} no topo, ${fim.opacidade} no fim`);
+  }
+  // Controle: a 390 o painel rola (§4); sem nenhum que role, a passada não conferiu nada.
+  if (conferidos === 0) ctx.fail("pista de rolagem: nenhum painel rolou a 390×844; a passada não conferiu a pista");
+  ctx.log(`pista de rolagem: ${notas.join("; ")}`);
 }
 
 /**
@@ -2467,14 +2540,38 @@ async function catMotionPass(cdp, ctx) {
 }
 
 // Onde o popover "Produtos ▾" aberto ficou na janela.
+// E, em cada coluna, as linhas de texto de cada item: o menor espaço entre
+// dois itens tem de ser maior que o maior espaço entre as linhas de um item
+// (senão um item de 2 linhas se mistura com o seguinte).
 const CAT_POPOVER_EXPR = `(() => {
   const menu = document.querySelector(".topbar__produtos-menu");
   if (!menu || menu.hidden) return null;
   const r = menu.getBoundingClientRect();
-  return { left: Math.round(r.left), right: Math.round(r.right), top: Math.round(r.top), bottom: Math.round(r.bottom), cw: document.documentElement.clientWidth, vh: innerHeight, scrolled: document.querySelector(".topbar")?.dataset.scrolled ?? null, rem: parseFloat(getComputedStyle(document.documentElement).fontSize) };
+  let entreItens = Infinity, entreLinhas = 0, quebrados = 0;
+  for (const lista of menu.querySelectorAll(".topbar__produtos-lista")) {
+    const itens = [...lista.querySelectorAll("a")].map((a) => {
+      const range = document.createRange();
+      range.selectNodeContents(a);
+      // Uma caixa por linha (as de mesma altura juntas).
+      const linhas = [];
+      for (const q of range.getClientRects()) {
+        const l = linhas.find((x) => Math.abs(x.top - q.top) < 2);
+        if (l) l.bottom = Math.max(l.bottom, q.bottom);
+        else linhas.push({ top: q.top, bottom: q.bottom });
+      }
+      return linhas.sort((x, y) => x.top - y.top);
+    });
+    itens.forEach((linhas, i) => {
+      if (linhas.length > 1) quebrados++;
+      for (let k = 1; k < linhas.length; k++) entreLinhas = Math.max(entreLinhas, linhas[k].top - linhas[k - 1].bottom);
+      const prox = itens[i + 1];
+      if (prox && prox.length && linhas.length) entreItens = Math.min(entreItens, prox[0].top - linhas.at(-1).bottom);
+    });
+  }
+  return { left: Math.round(r.left), right: Math.round(r.right), top: Math.round(r.top), bottom: Math.round(r.bottom), cw: document.documentElement.clientWidth, vh: innerHeight, scrolled: document.querySelector(".topbar")?.dataset.scrolled ?? null, rem: parseFloat(getComputedStyle(document.documentElement).fontSize), entreItens: Math.round(entreItens * 10) / 10, entreLinhas: Math.round(entreLinhas * 10) / 10, quebrados };
 })()`;
 
-/** O popover do "Produtos ▾" fica dentro da janela a 1200 px: no topo, na cápsula (rolado) e com fonte maior. */
+/** O popover do "Produtos ▾" fica dentro da janela (1200 e 1440 px: no topo, na cápsula, com fonte maior) e os itens não se misturam. */
 async function catPopoverPass(cdp, ctx) {
   await setReducedMotion(cdp, false);
   const notes = [];
@@ -2507,7 +2604,10 @@ async function catPopoverPass(cdp, ctx) {
     }
     if (scroll && r.scrolled !== "true") ctx.fail(`popover ${what}: a barra não virou cápsula (data-scrolled=${r.scrolled})`);
     if (r.left < 0 || r.right > r.cw) ctx.fail(`popover ${what}: a lista sai da janela (x ${r.left}–${r.right}, janela ${r.cw}px)`);
-    notes.push(`${what}: x ${r.left}–${r.right} de ${r.cw}`);
+    if (r.quebrados > 0 && !(r.entreItens > r.entreLinhas)) {
+      ctx.fail(`popover ${what}: ${r.quebrados} item(ns) em 2 linhas e o espaço entre itens (${r.entreItens}px) não passa o entre linhas (${r.entreLinhas}px); os itens se misturam`);
+    }
+    notes.push(`${what}: x ${r.left}–${r.right} de ${r.cw}, ${r.quebrados ? `${r.quebrados} em 2 linhas, entre itens ${r.entreItens}px > entre linhas ${r.entreLinhas}px` : `itens numa linha, ${r.entreItens}px entre eles`}`);
   }
   ctx.log(`popover "Produtos ▾": ${notes.join("; ")}`);
 }
@@ -3201,6 +3301,8 @@ try {
         { width: 1440, height: 900, what: "movimento", run: (ctx) => catMotionPass(cdp, ctx) },
         { width: 1440, height: 900, what: "Tab até o ±2", run: (ctx) => catTabSidePass(cdp, ctx) },
         { width: 1200, height: 900, what: "popover", run: (ctx) => catPopoverPass(cdp, ctx) },
+        { width: 1440, height: 900, what: "popover", run: (ctx) => catPopoverPass(cdp, ctx) },
+        { ...CAT_PISTA_SIZE, what: "pista de rolagem", run: (ctx) => catPistaPass(cdp, ctx) },
         { width: 1440, height: 900, what: "menu da barra", run: (ctx) => catBarMenuPass(cdp, ctx) },
         { width: 360, height: 740, what: "menu da barra", run: (ctx) => catBarMenuPass(cdp, ctx) },
         { width: 360, height: 740, what: "toque", run: (ctx) => catTouchPass(cdp, ctx) },
@@ -3429,7 +3531,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
-    "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
+    "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado e ela não cobre o hero.",

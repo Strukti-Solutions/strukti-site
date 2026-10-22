@@ -923,14 +923,15 @@ video:focus-visible {
   display: none;
 }
 
+/* O nome do grupo: sem caixa-alta nem espacejamento (MASTER §4); a
+   hierarquia vem do peso, do tamanho e da cor, menor e mais apagado que os
+   produtos. */
 .topbar__produtos-tipo {
   margin: var(--space-2) 0 0;
   padding: 0 var(--gutter) 0 calc(var(--gutter) + var(--space-4));
   color: var(--color-navy-300);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .topbar__produtos-lista {
@@ -1092,12 +1093,17 @@ video:focus-visible {
     position: absolute;
     top: calc(100% + 12px);
     left: 50%;
-    /* Larguras fixas: dentro da caixa estreita do botão, o encolher-para-
-       caber esmagaria colunas flexíveis. */
+    /* Largura pelo conteúdo (max-content), não pela caixa estreita do
+       botão, onde o encolher-para-caber esmagaria as colunas. Cada coluna
+       tem no mínimo 12,5rem e cresce até o nome mais longo caber numa linha
+       (os da coluna Hardware quebravam em 2 e se misturavam); com a janela
+       estreita, a fonte maior ou o espaçamento do 1.4.12, o teto de largura
+       faz os nomes quebrarem de novo, e o espaço entre itens os separa. */
     display: grid;
-    grid-auto-columns: 12.5rem;
+    grid-auto-columns: minmax(12.5rem, max-content);
     grid-auto-flow: column;
     width: max-content;
+    max-width: calc(100vw - 2 * var(--space-5));
     gap: var(--space-5);
     max-height: calc(100dvh - var(--topbar-height) - var(--space-6));
     padding: var(--space-4) var(--space-5);
@@ -1116,9 +1122,17 @@ video:focus-visible {
     padding: 0;
   }
 
+  /* Um item de 2 linhas não se mistura com o seguinte: a entrelinha fica
+     curta (1,3) e entre os itens há 8 px a mais, além da folga dos 44 px. */
+  .topbar__produtos-lista {
+    display: grid;
+    gap: var(--space-2);
+  }
+
   .topbar__produtos-lista a {
     padding: 0;
     font-size: 0.9375rem;
+    line-height: 1.3;
   }
 
   .topbar__produtos-lista a:focus-visible {
@@ -2081,12 +2095,12 @@ video:focus-visible {
   gap: var(--space-2);
 }
 
+/* A etiqueta do tipo: sem caixa-alta nem espacejamento (MASTER §4); se
+   distingue pela cor e pelo peso. */
 .catalogo__tipo {
   color: var(--color-cyan-300);
   font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .catalogo__nome {
@@ -2275,6 +2289,60 @@ video:focus-visible {
   min-height: 0;
   padding: var(--space-4) var(--space-5);
   overflow: hidden auto;
+  /* O Tab não deixa o foco sob a pista, na borda de baixo. */
+  scroll-padding-block-end: var(--pista-altura);
+  --pista-altura: 40px;
+}
+
+/* Pista de rolagem (§4, exceção): quando o painel rola por dentro, a borda
+   de baixo esmaece para a cor do painel, sinal de que há mais conteúdo; no
+   fim da rolagem, ela some. É uma camada colada embaixo (sticky), que não
+   ocupa lugar (a margem negativa desconta a altura e o gap) nem recebe o
+   clique. A opacidade segue a rolagem (animation-timeline): sem rolagem, a
+   linha do tempo fica inativa e vale o 0 de base. Não anima com o tempo, então
+   é igual com movimento reduzido. */
+.catalogo__painel-interior::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  flex: none;
+  height: var(--pista-altura);
+  margin-top: calc(-1 * (var(--space-3) + var(--pista-altura)));
+  background: linear-gradient(to bottom, transparent, var(--color-navy-900) 90%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .catalogo__painel-interior::after {
+    animation: catalogo-pista linear both;
+    animation-timeline: scroll(nearest block);
+  }
+}
+
+@keyframes catalogo-pista {
+  0%,
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Sem animation-timeline (Firefox): a camada fica sempre, mas no lugar do
+   padding de baixo, que ela substitui: no fim da rolagem cobre só o vazio. */
+@supports not (animation-timeline: scroll()) {
+  .catalogo__painel-interior {
+    padding-bottom: 0;
+    --pista-altura: var(--space-4);
+  }
+
+  .catalogo__painel-interior::after {
+    margin-top: calc(-1 * var(--space-3));
+    opacity: 1;
+  }
 }
 
 .catalogo__painel-cabeca {
@@ -2432,6 +2500,12 @@ video:focus-visible {
   box-shadow: var(--shadow-screen);
 }
 
+/* A arte dos inventados não é tela: sem a luz embaixo, que sem vídeo e sem
+   legenda parecia uma segunda caixa (§5.4). */
+.catalogo__painel-midia--arte {
+  box-shadow: none;
+}
+
 .catalogo__painel-arte {
   display: block;
   width: 100%;
@@ -2479,6 +2553,7 @@ video:focus-visible {
   width: 100%;
   height: 100%;
   background-color: #000000;
+  container-type: inline-size;
 }
 
 .video-demo__play {
@@ -2500,19 +2575,56 @@ video:focus-visible {
   object-fit: cover;
 }
 
+/* O "Assistir" fica num canto de baixo (à esquerda, ou à direita com
+   `playCorner`), fora do texto desenhado no pôster. O contorno branco separa
+   o botão de qualquer pôster: o electric-700 sozinho fica abaixo de 3:1 sobre
+   o escuro (1.4.11). O alvo é o pôster inteiro (o botão), não o ícone. No
+   Rota de Vendas, embaixo das etiquetas Clientes, Pedidos e Rotas sobram
+   só 30% da altura do pôster: o ícone tem 36 px, a 6 px da borda, no pôster
+   pequeno (270 a 318 px de largura no painel), e 56 px, a 16 px da borda,
+   a partir de 440 px (abaixo disso, os 56 px encostariam nas etiquetas). */
 .video-demo__icone {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  bottom: 6px;
+  left: 6px;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #ffffff;
   border-radius: var(--radius-2);
   background-color: var(--color-electric-700);
   color: #ffffff;
-  transform: translate(-50%, -50%);
   transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.video-demo__icone--direita {
+  right: 6px;
+  left: auto;
+}
+
+.video-demo__icone svg {
+  width: 16px;
+  height: 16px;
+}
+
+@container (min-width: 440px) {
+  .video-demo__icone {
+    bottom: var(--space-4);
+    left: var(--space-4);
+    width: 56px;
+    height: 56px;
+  }
+
+  .video-demo__icone--direita {
+    right: var(--space-4);
+    left: auto;
+  }
+
+  .video-demo__icone svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .video-demo__play:hover .video-demo__icone {
@@ -2606,11 +2718,20 @@ video:focus-visible {
 .catalogo__miniatura-nome {
   position: absolute;
   inset: auto 0 0;
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
   padding: 14px 3px 4px;
   border-radius: 0 0 var(--radius-2) var(--radius-2);
   background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.82) 60%, rgb(8 18 29 / 0) 100%);
+}
+
+/* Exatamente 2 linhas: o corte é na caixa sem padding, e a altura máxima
+   casa com a entrelinha (a 3ª linha não aparece embaixo da reticência). A
+   entrelinha de 1,25 deixa os descendentes da 2ª linha inteiros. */
+.catalogo__miniatura-texto {
+  display: -webkit-box;
+  max-height: calc(2 * 1lh);
+  overflow: hidden;
+  line-height: 1.25;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -2886,6 +3007,13 @@ video:focus-visible {
 
   .catalogo__miniatura[aria-current="true"] .catalogo__miniatura-arte {
     outline-color: Highlight;
+  }
+
+  /* A pista de rolagem esmaece para o Canvas, que é o fundo do painel aqui
+     (sem isto, o degradê sairia, e a pista com ele). */
+  .catalogo__painel-interior::after {
+    forced-color-adjust: none;
+    background: linear-gradient(to bottom, transparent, Canvas 90%);
   }
 }
 

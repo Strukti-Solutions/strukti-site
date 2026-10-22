@@ -42,6 +42,11 @@ export interface Project {
     description: string;
     /** Duração no nome do "Assistir" (catalogoUi.assistir). */
     durationLabel?: string;
+    /**
+     * Canto do pôster onde fica o botão "Assistir", longe do texto desenhado
+     * no pôster (MASTER §8.8). Sem o campo, embaixo à esquerda.
+     */
+    playCorner?: "bottom-left" | "bottom-right";
   };
   /** Destaques aprovados (v2.0); os benefícios do Rota de Vendas no catálogo partem deles. */
   highlights?: readonly { lead: string; rest: string }[];
@@ -102,6 +107,8 @@ const PROJECTS: readonly Project[] = [
       poster: "/video/fleet-analytics-bi.jpg",
       accessibleName: "Vídeo de demonstração do Fleet Analytics BI",
       durationLabel: "53 s",
+      // Embaixo à esquerda, o pôster tem o "167 veículos" desenhado.
+      playCorner: "bottom-right",
       caption: "Vídeo de demonstração, só com música.",
       description:
         'Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.',
