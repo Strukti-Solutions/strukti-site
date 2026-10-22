@@ -174,7 +174,9 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
   };
 
   // Abas (APG, ativação automática): ← → dão a volta, Home e End vão às pontas.
+  // Com Alt/Ctrl/Meta, ← → são o voltar e o avançar do navegador (§3.4).
   const onKeyDownAba = (e: KeyboardEvent<HTMLButtonElement>, indice: number) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
     const destinos: Record<string, number> = {
       ArrowRight: (indice + 1) % ABAS.length,
       ArrowLeft: (indice - 1 + ABAS.length) % ABAS.length,

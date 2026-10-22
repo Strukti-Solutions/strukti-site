@@ -511,6 +511,23 @@ describe("catálogo: estado aberto", () => {
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
   });
 
+  it("Alt/Ctrl/Meta+← → nas abas não trocam de aba nem chamam preventDefault (voltar e avançar do navegador)", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const abas = within(painel).getAllByRole("tab");
+    abas[0]!.focus();
+
+    for (const modificador of [{ altKey: true }, { ctrlKey: true }, { metaKey: true }]) {
+      for (const key of ["ArrowLeft", "ArrowRight"]) {
+        // fireEvent devolve false quando alguém chamou preventDefault.
+        expect(fireEvent.keyDown(abas[0]!, { key, ...modificador }), `${key} ${JSON.stringify(modificador)}`).toBe(true);
+        expect(document.activeElement).toBe(abas[0]);
+        expect(abas.map((a) => a.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
+      }
+    }
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+  });
+
   it("→ com o foco no X troca para o Rota de Vendas e a live region anuncia '2 de 10: Rota de Vendas'", () => {
     const { raiz } = montar();
     const painel = abrir(raiz);
