@@ -1737,6 +1737,537 @@ video:focus-visible {
 }
 
 /* ------------------------------------------------------------------ */
+/* 11b. Catálogo de produtos (MASTER §8.8)                             */
+/* ------------------------------------------------------------------ */
+/*
+ * Spec 2026-10-16 (§3.1, §4, §8). Estados na raiz `.catalogo`:
+ * - data-js="false" no servidor e no 1º render do cliente: sem JS, uma
+ *   fileira com rolagem para o lado e o <details> de cada cartão (§8.5);
+ * - data-js="true" depois de montar: o coverflow. A posição de cada cartão
+ *   vem no data-pos (-2 a 2, ou "oculto"), e a CSS faz o resto;
+ * - data-estado="fechado|aberto": a caixa (.catalogo__corpo) tem a mesma
+ *   altura nos dois (§4), para nada abaixo da seção se mexer.
+ */
+
+/* Os laterais passam das bordas do conteúdo (no celular, os ±1 aparecem
+   pelas pontas); sem rolagem para o lado na página. */
+.catalogo-secao {
+  overflow-x: clip;
+}
+
+.catalogo {
+  position: relative;
+}
+
+.catalogo__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.catalogo[data-js="true"] .catalogo__corpo {
+  height: clamp(600px, 80svh, 860px);
+}
+
+/* Filtro por tipo (§3.3): pílulas com alvo de 44 px. */
+.catalogo__filtro {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.catalogo__filtro button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalogo__filtro button:hover {
+  background-color: var(--outline-hover);
+}
+
+.catalogo__filtro button[aria-pressed="true"] {
+  border-color: var(--color-electric-700);
+  background-color: var(--color-electric-700);
+  color: #ffffff;
+}
+
+/* Região do carrossel: o palco (com as setas) e as bolinhas embaixo. */
+.catalogo__carrossel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.catalogo__cena {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* O palco mede a si mesmo (cqh/cqw) para dimensionar o cartão do centro.
+   pan-y: o dedo na vertical rola a página (Review Focus 1). */
+.catalogo__palco {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  perspective: 1400px;
+  touch-action: pan-y;
+}
+
+/* Cartão do centro 2:3: 86% da altura do palco no computador e ~70% da
+   largura no celular (105cqw = 70% × 1,5), o que for menor. */
+.catalogo[data-js="true"] .catalogo__cartao {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: min(86cqh, 105cqw);
+  aspect-ratio: 2 / 3;
+  translate: -50% -50%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="0"] {
+  z-index: 3;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="1"] {
+  z-index: 2;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  transform: translateX(86%) scale(0.84) rotateY(-24deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="-1"] {
+  z-index: 2;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  transform: translateX(-86%) scale(0.84) rotateY(24deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="2"] {
+  z-index: 1;
+  opacity: 0.38;
+  filter: brightness(0.55) blur(1px);
+  transform: translateX(155%) scale(0.68) rotateY(-38deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="-2"] {
+  z-index: 1;
+  opacity: 0.38;
+  filter: brightness(0.55) blur(1px);
+  transform: translateX(-155%) scale(0.68) rotateY(38deg);
+}
+
+/* Do ±3 em diante (o inert e o aria-hidden vêm do JS). */
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="oculto"] {
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.5);
+}
+
+/* Celular: o ±2 também some (o inert vem do JS, pelo matchMedia). */
+@media (max-width: 767.98px) {
+  .catalogo[data-js="true"] .catalogo__cartao:is([data-pos="2"], [data-pos="-2"]) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* Troca no coverflow (§7): 800 ms; com movimento reduzido, instantânea. */
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo[data-js="true"] .catalogo__cartao {
+    transition:
+      transform 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      opacity 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      filter 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      visibility 800ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+}
+
+.catalogo__superficie {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-900);
+  box-shadow: var(--shadow-float);
+}
+
+.catalogo[data-js="true"] .catalogo__superficie {
+  height: 100%;
+}
+
+.catalogo__arte {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hover (Q9): só um contorno leve; não abre nem centraliza. */
+.catalogo[data-js="true"] .catalogo__cartao:hover .catalogo__superficie {
+  box-shadow:
+    0 0 0 1px var(--color-cyan-400),
+    var(--shadow-float);
+}
+
+/* O texto fica na metade de baixo, sobre um degradê escuro (§3.1). */
+.catalogo__info {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5) var(--space-5);
+  background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.8) 55%, rgb(8 18 29 / 0) 100%);
+}
+
+.catalogo__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.catalogo__tipo {
+  color: var(--color-cyan-300);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.catalogo__nome {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.625rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.catalogo__frase {
+  margin: 0;
+  color: var(--color-navy-100);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.catalogo__ver {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
+/* Laterais (Q38): só a arte e o nome pequeno. */
+.catalogo[data-js="true"] .catalogo__cartao:not([data-pos="0"]) :is(.catalogo__meta, .catalogo__frase) {
+  display: none;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao:not([data-pos="0"]) .catalogo__nome {
+  font-size: 1rem;
+}
+
+/* Com JS, o painel é outro (o <details> é o de quem está sem JS). */
+.catalogo[data-js="true"] .catalogo__ficha {
+  display: none;
+}
+
+/* Setas ‹ ›, nas laterais do palco, e bolinhas: alvos de 44 px. */
+.catalogo__seta {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background-color: rgb(8 18 29 / 0.72);
+  color: #ffffff;
+  translate: 0 -50%;
+  cursor: pointer;
+}
+
+.catalogo__seta:hover {
+  background-color: var(--color-navy-700);
+}
+
+.catalogo__seta--anterior {
+  left: 0;
+}
+
+.catalogo__seta--proxima {
+  right: 0;
+}
+
+@media (min-width: 768px) {
+  .catalogo__seta {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* As bolinhas têm 44 px quando cabem; com muitos itens numa tela estreita,
+   encolhem até 24 px de largura (WCAG 2.5.8), sem quebrar a linha. */
+.catalogo__bolinhas {
+  display: flex;
+  justify-content: center;
+}
+
+.catalogo__bolinhas button {
+  display: grid;
+  flex: 0 1 44px;
+  place-items: center;
+  min-width: 24px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.catalogo__bolinhas button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--color-navy-400);
+}
+
+/* A ativa, alongada. */
+.catalogo__bolinhas button[aria-current="true"]::before {
+  width: 22px;
+  background-color: var(--color-cyan-400);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__bolinhas button::before {
+    transition:
+      width var(--duration-base) var(--ease-standard),
+      background-color var(--duration-base) var(--ease-standard);
+  }
+}
+
+/* Telas muito baixas (paisagem de celular, zoom, 1.4.12): a acessibilidade
+   vence a altura constante (§4); a seção cresce. */
+@media (max-height: 34em) {
+  .catalogo[data-js="true"] .catalogo__corpo {
+    height: auto;
+  }
+
+  .catalogo[data-js="true"] .catalogo__cena {
+    flex: none;
+    height: clamp(18rem, 85svh, 26rem);
+  }
+}
+
+/* Sem JS (§8.5): fileira com rolagem para o lado e scroll-snap, sem 3D; os
+   controles que dependem de JS ficam escondidos. */
+.catalogo[data-js="false"] .catalogo__cena {
+  flex: none;
+}
+
+.catalogo[data-js="false"] .catalogo__palco {
+  position: static;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  container-type: normal;
+  perspective: none;
+}
+
+.catalogo[data-js="false"] .catalogo__cartao {
+  flex: 0 0 min(80%, 300px);
+  scroll-snap-align: start;
+}
+
+.catalogo[data-js="false"] :is(.catalogo__filtro, .catalogo__seta, .catalogo__bolinhas, .catalogo__ver) {
+  display: none;
+}
+
+/* O conteúdo do produto (§3.2): no <details> sem JS e, depois, no painel. */
+.catalogo__ficha summary {
+  width: fit-content;
+  padding-block: 10px;
+  color: var(--link);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalogo__ficha summary:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__ficha-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+.catalogo__visao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.catalogo__subtitulo {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 640;
+}
+
+.catalogo__para-quem,
+.catalogo__site {
+  margin: 0;
+}
+
+.catalogo__beneficios {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.catalogo__saber-mais {
+  align-self: flex-start;
+}
+
+.catalogo__passos {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.catalogo__passo-titulo {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.catalogo__passo-texto {
+  margin: var(--space-1) 0 0;
+}
+
+.catalogo__telas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.catalogo__telas-lista {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.catalogo__tela {
+  flex: 0 0 auto;
+}
+
+.catalogo__tela[hidden] {
+  display: none;
+}
+
+.catalogo__tela--celular img {
+  width: 120px;
+  height: auto;
+}
+
+.catalogo__tela--navegador img {
+  width: 240px;
+  height: auto;
+}
+
+.catalogo__telas-setas {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.catalogo__tela-seta {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Cores forçadas (§8.7), como no conserto A11Y-2 do hero: setas, pílulas e
+   bolinhas nas cores de sistema do botão, foco e ativo em Highlight, e o
+   contorno do cartão do centro em CanvasText. */
+@media (forced-colors: active) {
+  .catalogo__seta,
+  .catalogo__seta:hover,
+  .catalogo__tela-seta,
+  .catalogo__filtro button,
+  .catalogo__filtro button:hover {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  .catalogo__filtro button[aria-pressed="true"] {
+    border-color: Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .catalogo__bolinhas button {
+    forced-color-adjust: none;
+  }
+
+  .catalogo__bolinhas button::before {
+    background-color: ButtonText;
+  }
+
+  .catalogo__bolinhas button[aria-current="true"]::before {
+    background-color: Highlight;
+  }
+
+  .catalogo :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .catalogo[data-js="true"] .catalogo__cartao[data-pos="0"] .catalogo__superficie {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* 12. Diagnóstico e formulário (MASTER §8.6, §8.7)                    */
 /* ------------------------------------------------------------------ */
 .diag {

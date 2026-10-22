@@ -467,12 +467,22 @@ export const CATALOGO: readonly ItemCatalogo[] = [
  * negócio; spec §3 e §8). `{i}`, `{n}` e `{nome}` são preenchidos pelo site.
  */
 export const catalogoUi = {
-  rotuloCarrossel: "Produtos",
+  // Não "Produtos" (§8.1): a seção #produtos já é a região com esse nome, e
+  // duas regiões com o mesmo nome confundem a lista de regiões do leitor.
+  rotuloCarrossel: "Catálogo de produtos",
   roledescCarrossel: "carrossel",
   roledescProduto: "produto",
   posicao: "{i} de {n}: {nome}",
   verDetalhes: "Ver detalhes",
   saberMais: "Quero saber mais",
+  /**
+   * Fim do nome acessível de "Ver detalhes" e "Quero saber mais", em texto
+   * visualmente oculto: são 10 de cada no HTML, e o nome diz de qual produto
+   * cada um é (WCAG 2.4.4/2.4.9).
+   */
+  verDetalhesDe: "de {nome}",
+  saberMaisSobre: "sobre {nome}",
+  rotuloFiltro: "Filtrar por tipo",
   fechar: "Fechar",
   anterior: "Produto anterior",
   proximo: "Próximo produto",
