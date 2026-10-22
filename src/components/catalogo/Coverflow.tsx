@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { motion } from "motion/react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { CartaoProduto } from "./CartaoProduto";
@@ -19,6 +19,39 @@ const DESLIZE_PROPORCAO = 1.5;
 export function passoDoDeslize(dx: number, dy: number): -1 | 1 | null {
   if (Math.abs(dx) < DESLIZE_MINIMO || Math.abs(dx) <= DESLIZE_PROPORCAO * Math.abs(dy)) return null;
   return dx < 0 ? 1 : -1;
+}
+
+/**
+ * O clique que o próprio arrasto gera não vale (soltar o mouse sobre um
+ * cartão o centralizaria ou abriria). Só esse: o mouse manda o clique logo
+ * depois do `pointerup`, na mesma tarefa, e a marca cai na tarefa seguinte.
+ * O dedo não gera clique depois de deslizar; uma marca que sobrasse
+ * engoliria o próximo Enter/espaço ou a ativação pelo leitor de tela, que
+ * chegam como clique sem `pointerdown` antes. O painel usa o mesmo.
+ */
+export function useCliqueDoArrasto() {
+  const arrastouRef = useRef(false);
+  const tarefaRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(tarefaRef.current), []);
+
+  /** Chame no `pointerup` do gesto que trocou de produto. */
+  const marcarArrasto = useCallback(() => {
+    arrastouRef.current = true;
+    clearTimeout(tarefaRef.current);
+    tarefaRef.current = setTimeout(() => {
+      arrastouRef.current = false;
+    }, 0);
+  }, []);
+
+  const onClickCapture = useCallback((e: MouseEvent<HTMLElement>) => {
+    if (!arrastouRef.current) return;
+    arrastouRef.current = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  return { marcarArrasto, onClickCapture };
 }
 
 /** "3 de 10: Rota de Vendas" (§8.1), no rótulo do cartão e na live region. */
@@ -53,9 +86,13 @@ interface CoverflowProps {
    * no DOM, com o `id` da âncora (§3.4) e o cartão de origem para o foco.
    */
   escondido?: boolean;
-  aoCentralizar: (slug: string) => void;
-  aoPasso: (delta: -1 | 1) => void;
-  aoIrPara: (posicao: "inicio" | "fim") => void;
+  /**
+   * As trocas levam `focoSegue` quando vieram do teclado num cartão: o foco
+   * vai ao novo centro, e o leitor de tela já lê o grupo dele (§8.4).
+   */
+  aoCentralizar: (slug: string, focoSegue?: boolean) => void;
+  aoPasso: (delta: -1 | 1, focoSegue?: boolean) => void;
+  aoIrPara: (posicao: "inicio" | "fim", focoSegue?: boolean) => void;
   aoAbrir: () => void;
 }
 
@@ -87,8 +124,7 @@ export function Coverflow({
   // que tinha o foco pode ter saído do centro, e a CSS o esconde).
   const focarCentroRef = useRef(false);
   const inicioRef = useRef<{ x: number; y: number } | null>(null);
-  // O último gesto trocou de produto: o clique que vem depois não vale.
-  const arrastouRef = useRef(false);
+  const { marcarArrasto, onClickCapture } = useCliqueDoArrasto();
 
   useEffect(() => {
     if (!focarCentroRef.current) return;
@@ -103,16 +139,17 @@ export function Coverflow({
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // Alt+← é o voltar do navegador; com modificador, a tecla não é nossa.
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const focoSegue = dentroDeCartao(e.target);
     const acoes: Record<string, () => void> = {
-      ArrowLeft: () => aoPasso(-1),
-      ArrowRight: () => aoPasso(1),
-      Home: () => aoIrPara("inicio"),
-      End: () => aoIrPara("fim"),
+      ArrowLeft: () => aoPasso(-1, focoSegue),
+      ArrowRight: () => aoPasso(1, focoSegue),
+      Home: () => aoIrPara("inicio", focoSegue),
+      End: () => aoIrPara("fim", focoSegue),
     };
     const acao = acoes[e.key];
     if (!acao) return;
     e.preventDefault();
-    focarCentroRef.current = dentroDeCartao(e.target);
+    focarCentroRef.current = focoSegue;
     acao();
   };
 
@@ -122,11 +159,10 @@ export function Coverflow({
       return;
     }
     focarCentroRef.current = origem === "teclado";
-    aoCentralizar(item.slug);
+    aoCentralizar(item.slug, origem === "teclado");
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    arrastouRef.current = false;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     inicioRef.current = { x: e.clientX, y: e.clientY };
   };
@@ -137,16 +173,9 @@ export function Coverflow({
     if (!inicio || total <= 1) return;
     const passo = passoDoDeslize(e.clientX - inicio.x, e.clientY - inicio.y);
     if (passo === null) return;
-    arrastouRef.current = true;
+    marcarArrasto();
     focarCentroRef.current = false;
     aoPasso(passo);
-  };
-
-  const onClickCapture = (e: MouseEvent<HTMLDivElement>) => {
-    if (!arrastouRef.current) return;
-    arrastouRef.current = false;
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   const navegar = (acao: () => void) => () => {

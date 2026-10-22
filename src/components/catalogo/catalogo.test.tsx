@@ -55,6 +55,8 @@ const posicoes = (raiz: HTMLElement) => cartoes(raiz).map((c) => c.dataset.pos);
 const centro = (raiz: HTMLElement) => raiz.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.id;
 const anuncio = (raiz: HTMLElement) => raiz.querySelector('[aria-live="polite"]')?.textContent ?? "";
 const cartao = (raiz: HTMLElement, slug: string) => raiz.querySelector<HTMLElement>(`#${slug}`)!;
+/** Espera a tarefa seguinte: o clique que um arrasto do mouse gera já teria chegado. */
+const proximaTarefa = () => act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
 /** O conteúdo do painel do produto atual; o do anterior, saindo, fica `aria-hidden`. */
 const CONTEUDO_ATUAL = ".catalogo__painel-conteudo:not([aria-hidden])";
 
@@ -263,6 +265,43 @@ describe("catálogo: estado fechado", () => {
     expect(raiz.dataset.estado).toBe("fechado");
   });
 
+  it("depois de deslizar o dedo (que não gera clique), o Enter no 'Ver detalhes' do novo centro abre", async () => {
+    const { raiz } = montar();
+    const palco = raiz.querySelector<HTMLElement>(".catalogo__palco")!;
+
+    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerUp(palco, { clientX: 180, clientY: 110, pointerType: "touch" });
+    expect(centro(raiz)).toBe("rota-de-vendas");
+    await proximaTarefa();
+
+    // O Enter (ou o leitor de tela) gera um clique sem pointerdown antes.
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Rota de Vendas" }));
+    expect(raiz.dataset.estado).toBe("aberto");
+  });
+
+  it("troca pelo teclado num cartão: o foco segue o novo centro e a live region não repete o anúncio; a seta 'Próximo produto' anuncia", () => {
+    const { raiz } = montar();
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(anuncio(raiz)).toBe("2 de 10: Rota de Vendas");
+
+    // Enter num lateral: quem fala é o leitor, ao chegar ao grupo do novo centro.
+    const fleet = cartao(raiz, "fleet-analytics-bi");
+    fleet.focus();
+    fireEvent.keyDown(fleet, { key: "Enter" });
+    const verFleet = screen.getByRole("button", { name: "Ver detalhes de Fleet Analytics BI" });
+    expect(document.activeElement).toBe(verFleet);
+    expect(anuncio(raiz)).toBe("");
+
+    // → com o foco no "Ver detalhes": o foco também segue o novo centro.
+    fireEvent.keyDown(verFleet, { key: "ArrowRight" });
+    expect(centro(raiz)).toBe("placar-conectado");
+    expect(document.activeElement?.closest(".catalogo__cartao")?.id).toBe("placar-conectado");
+    expect(anuncio(raiz)).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(anuncio(raiz)).toBe(`5 de 10: ${porSlug("agenda-de-quadras").nome}`);
+  });
+
   it("os ocultos têm inert e aria-hidden; os botões dos laterais não estão na ordem de Tab", () => {
     const { raiz } = montar();
 
@@ -456,6 +495,23 @@ describe("catálogo: estado aberto", () => {
     fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
     fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch" });
     expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+  });
+
+  it("depois de deslizar o dedo no painel (sem clique), o Enter no X fecha", async () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const alvo = painel.querySelector<HTMLElement>(".catalogo__painel-cabeca")!;
+
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch" });
+    expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+    await proximaTarefa();
+
+    const fechar = within(raiz.querySelector<HTMLElement>(".catalogo__painel")!).getByRole("button", {
+      name: catalogoUi.fechar,
+    });
+    fireEvent.click(fechar);
+    expect(raiz.dataset.estado).toBe("fechado");
   });
 
   it("arrastar o mouse sobre o texto do painel (selecionar) não troca de produto nem engole o clique", () => {

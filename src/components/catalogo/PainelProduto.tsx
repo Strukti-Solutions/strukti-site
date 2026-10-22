@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
-  type MouseEvent,
   type PointerEvent,
   type ReactNode,
   type Ref,
@@ -17,7 +16,7 @@ import { landingContent } from "@/content/landing";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { VideoDemo } from "@/components/ui/VideoDemo";
 import { Chevron, PassosProduto, TelasProduto, VisaoGeralTexto } from "./ConteudoProduto";
-import { passoDoDeslize } from "./Coverflow";
+import { passoDoDeslize, useCliqueDoArrasto } from "./Coverflow";
 import {
   CARTAO_PAINEL,
   CONTEUDO_APOS_CRESCER,
@@ -129,7 +128,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
   const inicioRef = useRef<{ x: number; y: number } | null>(null);
-  const arrastouRef = useRef(false);
+  const { marcarArrasto, onClickCapture } = useCliqueDoArrasto();
   // A troca veio daqui (teclado ou dedo): se o foco estava num controle que
   // saiu com o produto anterior (o "Assistir", por exemplo), ele volta ao título.
   const trocouAquiRef = useRef(false);
@@ -194,7 +193,6 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
   // contrário dos cartões, o painel é cheio de texto: arrastar o mouse aqui
   // é selecionar uma frase, não trocar de produto.
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
-    arrastouRef.current = false;
     inicioRef.current = null;
     if (e.pointerType === "mouse") return;
     if (e.target instanceof Element && e.target.closest(ARRASTO_DO_CONTROLE)) return;
@@ -207,16 +205,8 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
     if (!inicio || !varios) return;
     const passo = passoDoDeslize(e.clientX - inicio.x, e.clientY - inicio.y);
     if (passo === null) return;
-    arrastouRef.current = true;
+    marcarArrasto();
     trocar(passo);
-  };
-
-  // O clique que o navegador manda depois do arrasto não vale.
-  const onClickCapture = (e: MouseEvent<HTMLElement>) => {
-    if (!arrastouRef.current) return;
-    arrastouRef.current = false;
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   const idAba = (chave: Aba) => `${id}-aba-${chave}`;

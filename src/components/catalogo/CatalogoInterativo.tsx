@@ -48,6 +48,9 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   const [esperandoEntrada, setEsperandoEntrada] = useState(false);
   const entradaDecididaRef = useRef(false);
   // A live region nasce vazia e só fala depois da 1ª troca feita aqui (§8.4).
+  // Uma vez só: quando o foco segue o novo centro (teclado num cartão), quem
+  // fala é o leitor, ao chegar ao grupo "N de M: Nome", e ela fica vazia
+  // nessa troca (esvaziar não é anunciado; a troca seguinte fala de novo).
   const [anunciar, setAnunciar] = useState(false);
   // Fechou pelo X ou pelo Esc: o foco volta ao cartão de origem (§8.3).
   const focarCartaoRef = useRef(false);
@@ -106,8 +109,8 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   }, []);
 
   const navegar = useCallback(
-    (evento: EventoCatalogo) => {
-      setAnunciar(true);
+    (evento: EventoCatalogo, focoSegue = false) => {
+      setAnunciar(!focoSegue);
       despachar(evento);
     },
     [despachar],
@@ -168,9 +171,9 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
           naTela={naTela}
           esperandoEntrada={esperandoEntrada}
           escondido={aberto}
-          aoCentralizar={(slug) => navegar({ tipo: "centralizar", slug })}
-          aoPasso={(delta) => navegar({ tipo: "passo", delta })}
-          aoIrPara={(posicao) => navegar({ tipo: "irPara", posicao })}
+          aoCentralizar={(slug, focoSegue) => navegar({ tipo: "centralizar", slug }, focoSegue)}
+          aoPasso={(delta, focoSegue) => navegar({ tipo: "passo", delta }, focoSegue)}
+          aoIrPara={(posicao, focoSegue) => navegar({ tipo: "irPara", posicao }, focoSegue)}
           aoAbrir={() => despachar({ tipo: "abrir" })}
         />
         {aberto && (
