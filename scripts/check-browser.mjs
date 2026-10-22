@@ -2401,14 +2401,42 @@ const CAT_PISTA_EXPR = `(() => {
     sh: interior.scrollHeight, ch: interior.clientHeight, topo: interior.scrollTop,
     content: p.content, position: p.position, opacidade: Number(p.opacity), altura: parseFloat(p.height), fundo: p.backgroundImage,
     naTela: r.top >= 0 && r.bottom <= innerHeight,
+    // A borda de baixo visível do painel: o lado de dentro da borda da
+    // superfície (o interior passa por baixo dela), ou o fim do interior.
+    borda: (() => {
+      const sup = interior.parentElement?.querySelector(":scope > .catalogo__painel-superficie");
+      const fim = r.top + interior.clientTop + interior.clientHeight;
+      if (!sup) return fim;
+      return Math.min(fim, sup.getBoundingClientRect().bottom - parseFloat(getComputedStyle(sup).borderBottomWidth));
+    })(),
   };
 })()`;
 
 /**
+ * A caixa do ::after do interior (a pista), pelo DevTools: o pseudo-elemento
+ * não tem getBoundingClientRect. Devolve o topo e o fundo na tela, ou null.
+ */
+async function catPistaCaixa(cdp) {
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeId } = await cdp.send("DOM.querySelector", {
+    nodeId: root.nodeId,
+    selector: `${CAT_PAINEL_SELECTOR} .catalogo__painel-interior`,
+  });
+  if (!nodeId) return null;
+  const { node } = await cdp.send("DOM.describeNode", { nodeId, depth: 1 });
+  const after = (node.pseudoElements ?? []).find((p) => p.pseudoType === "after");
+  if (!after) return null;
+  const { model } = await cdp.send("DOM.getBoxModel", { backendNodeId: after.backendNodeId });
+  const ys = model.border.filter((_, i) => i % 2 === 1);
+  return { topo: Math.min(...ys), fundo: Math.max(...ys) };
+}
+
+/**
  * A pista de rolagem do painel (§4, exceção do celular): onde o painel rola
  * por dentro, a borda de baixo esmaece enquanto há mais a rolar e a pista
- * some no fim. Confere a regra (::after colado embaixo, com degradê) e a
- * opacidade no topo e no fim da rolagem, nos 3 reais (que têm vídeo e texto)
+ * some no fim. Confere a regra (::after colado embaixo, com degradê), que a
+ * pista encosta na borda de baixo visível do painel (±1 px) e a opacidade no
+ * topo e no fim da rolagem, nos 3 reais (que têm vídeo e texto)
  * e num inventado.
  */
 async function catPistaPass(cdp, ctx) {
@@ -2444,11 +2472,20 @@ async function catPistaPass(cdp, ctx) {
     if (topo.opacidade < 0.99) {
       ctx.fail(`pista de rolagem: "${topo.nome}" rola (${topo.sh}px em ${topo.ch}px), mas no topo a pista não aparece (opacidade ${topo.opacidade})`);
     }
+    // Colada na borda de baixo visível: o sticky do Chromium prende na borda
+    // do conteúdo, sem o padding; sem o desconto, a pista para acima da borda
+    // e o texto aparece de novo embaixo dela.
+    const caixa = await catPistaCaixa(cdp);
+    if (!caixa) ctx.fail(`pista de rolagem: em "${topo.nome}", o DevTools não achou a caixa do ::after`);
+    else if (Math.abs(caixa.fundo - topo.borda) > 1) {
+      ctx.fail(`pista de rolagem: em "${topo.nome}", a pista termina em ${caixa.fundo.toFixed(1)}px, mas a borda de baixo do painel está em ${topo.borda.toFixed(1)}px (tem de encostar, ±1 px)`);
+    }
     await evalValue(cdp, `(() => { const el = document.querySelector(${JSON.stringify(CAT_PAINEL_SELECTOR)} + " .catalogo__painel-interior"); el.scrollTop = el.scrollHeight; })()`);
     await sleep(200);
     const fim = await evalValue(cdp, CAT_PISTA_EXPR);
     if (fim.opacidade > 0.01) ctx.fail(`pista de rolagem: em "${fim.nome}", no fim da rolagem (${fim.topo}px) a pista continua (opacidade ${fim.opacidade})`);
-    notas.push(`"${topo.nome}" ${topo.sh}/${topo.ch}px: ${topo.opacidade} no topo, ${fim.opacidade} no fim`);
+    const folga = caixa ? ` (fundo da pista a ${(topo.borda - caixa.fundo).toFixed(1)}px da borda)` : "";
+    notas.push(`"${topo.nome}" ${topo.sh}/${topo.ch}px: ${topo.opacidade} no topo${folga}, ${fim.opacidade} no fim`);
   }
   // Controle: a 390 o painel rola (§4); sem nenhum que role, a passada não conferiu nada.
   if (conferidos === 0) ctx.fail("pista de rolagem: nenhum painel rolou a 390×844; a passada não conferiu a pista");

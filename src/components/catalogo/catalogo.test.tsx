@@ -1408,21 +1408,30 @@ describe("catálogo: CSS (foco nos laterais, cores forçadas e altura sem JS)", 
   it("pista de rolagem do painel: camada colada embaixo, sem clique, opacidade pela rolagem", () => {
     const pista = regra(".catalogo__painel-interior::after").corpo;
     expect(pista).toMatch(/position: sticky;/);
-    expect(pista).toMatch(/bottom: 0;/);
+    // Colada na borda visível: o sticky prende na borda do conteúdo, e o
+    // bottom negativo desconta o padding de baixo (menos o 1 px da borda).
+    expect(pista).toMatch(/bottom: calc\(1px - var\(--painel-pb\)\);/);
+    expect(regra(".catalogo__painel-interior").corpo).toMatch(/padding: var\(--space-4\) var\(--space-5\) var\(--painel-pb\);/);
     expect(pista).toMatch(/pointer-events: none;/);
     expect(pista).toMatch(/opacity: 0;/);
-    expect(pista).toMatch(/linear-gradient\(to bottom, transparent, var\(--color-navy-900\)/);
+    // Leve (até 0,15) e só escura nos últimos 8 px: o texto inteiro fica legível.
+    expect(pista).toMatch(/linear-gradient\(\s*to bottom,\s*rgb\(14 28 43 \/ 0\),\s*rgb\(14 28 43 \/ 0\.15\) calc\(100% - 8px\),\s*var\(--color-navy-900\)\s*\)/);
     // Não ocupa lugar: a margem desconta a altura e o gap do flex.
     expect(pista).toMatch(/margin-top: calc\(-1 \* \(var\(--space-3\) \+ var\(--pista-altura\)\)\);/);
     const comTimeline = secao.slice(secao.indexOf("@supports (animation-timeline: scroll()) {"));
     expect(comTimeline).toMatch(/^@supports \(animation-timeline: scroll\(\)\) \{\s+\.catalogo__painel-interior::after \{\s+animation: catalogo-pista linear both;\s+animation-timeline: scroll\(nearest block\);/);
     expect(secao).toMatch(/@keyframes catalogo-pista \{\s+0%,\s+92% \{\s+opacity: 1;\s+\}\s+100% \{\s+opacity: 0;/);
     expect(secao).toContain("@supports not (animation-timeline: scroll()) {");
+    // Sem timeline, a pista toma o lugar do padding de baixo.
+    const semTimeline = secao.slice(secao.indexOf("@supports not (animation-timeline: scroll()) {"));
+    expect(semTimeline).toMatch(/^@supports not \(animation-timeline: scroll\(\)\) \{\s+\.catalogo__painel-interior \{\s+--painel-pb: 0px;/);
     // O foco não fica sob a pista.
     expect(regra(".catalogo__painel-interior").corpo).toMatch(/scroll-padding-block-end: var\(--pista-altura\);/);
     // Cores forçadas: o degradê vai para o Canvas (sem isto, ele sairia).
     const forcado = secao.slice(secao.lastIndexOf("@media (forced-colors: active) {"));
-    expect(forcado).toMatch(/\.catalogo__painel-interior::after \{\s+forced-color-adjust: none;\s+background: linear-gradient\(to bottom, transparent, Canvas 90%\);/);
+    expect(forcado).toMatch(
+      /\.catalogo__painel-interior::after \{\s+forced-color-adjust: none;\s+background: linear-gradient\(\s*to bottom,\s*transparent,\s*color-mix\(in srgb, Canvas 15%, transparent\) calc\(100% - 8px\),\s*Canvas\s*\);/,
+    );
   });
 
   // MASTER §4 e §10: nada de caixa-alta espacejada nos rótulos do tipo.

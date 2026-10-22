@@ -2287,28 +2287,40 @@ video:focus-visible {
   flex-direction: column;
   gap: var(--space-3);
   min-height: 0;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4) var(--space-5) var(--painel-pb);
   overflow: hidden auto;
   /* O Tab não deixa o foco sob a pista, na borda de baixo. */
   scroll-padding-block-end: var(--pista-altura);
-  --pista-altura: 40px;
+  --painel-pb: var(--space-4);
+  --pista-altura: 24px;
 }
 
 /* Pista de rolagem (§4, exceção): quando o painel rola por dentro, a borda
    de baixo esmaece para a cor do painel, sinal de que há mais conteúdo; no
    fim da rolagem, ela some. É uma camada colada embaixo (sticky), que não
    ocupa lugar (a margem negativa desconta a altura e o gap) nem recebe o
-   clique. A opacidade segue a rolagem (animation-timeline): sem rolagem, a
-   linha do tempo fica inativa e vale o 0 de base. Não anima com o tempo, então
-   é igual com movimento reduzido. */
+   clique. O sticky do Chromium prende na borda do conteúdo, sem o padding de
+   baixo: o bottom negativo desconta o padding e cola a pista na borda visível
+   do painel, por dentro do 1 px da borda da superfície (o interior passa por
+   baixo dela, e a pista opaca a apagaria). O degradê é quase todo leve (até
+   0,15: o texto inteiro na tela fica acima de 4,5:1, mesmo o navy-300) e só
+   escurece de fato nos últimos 8 px, onde a linha já está cortada pela
+   borda. A opacidade segue a rolagem
+   (animation-timeline): sem rolagem, a linha do tempo fica inativa e vale o
+   0 de base. Não anima com o tempo, então é igual com movimento reduzido. */
 .catalogo__painel-interior::after {
   content: "";
   position: sticky;
-  bottom: 0;
+  bottom: calc(1px - var(--painel-pb));
   flex: none;
   height: var(--pista-altura);
   margin-top: calc(-1 * (var(--space-3) + var(--pista-altura)));
-  background: linear-gradient(to bottom, transparent, var(--color-navy-900) 90%);
+  background: linear-gradient(
+    to bottom,
+    rgb(14 28 43 / 0),
+    rgb(14 28 43 / 0.15) calc(100% - 8px),
+    var(--color-navy-900)
+  );
   opacity: 0;
   pointer-events: none;
 }
@@ -2335,7 +2347,7 @@ video:focus-visible {
    padding de baixo, que ela substitui: no fim da rolagem cobre só o vazio. */
 @supports not (animation-timeline: scroll()) {
   .catalogo__painel-interior {
-    padding-bottom: 0;
+    --painel-pb: 0px;
     --pista-altura: var(--space-4);
   }
 
@@ -2719,17 +2731,23 @@ video:focus-visible {
   position: absolute;
   inset: auto 0 0;
   display: block;
-  padding: 14px 3px 4px;
+  padding: 14px 0 4px;
   border-radius: 0 0 var(--radius-2) var(--radius-2);
   background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.82) 60%, rgb(8 18 29 / 0) 100%);
 }
 
-/* Exatamente 2 linhas: o corte é na caixa sem padding, e a altura máxima
-   casa com a entrelinha (a 3ª linha não aparece embaixo da reticência). A
-   entrelinha de 1,25 deixa os descendentes da 2ª linha inteiros. */
+/* Exatamente 2 linhas: o corte é na caixa sem padding em cima e embaixo, e a
+   altura máxima casa com a entrelinha (a 3ª linha não aparece embaixo da
+   reticência). A entrelinha de 1,25 deixa os descendentes da 2ª linha
+   inteiros. O padding dos lados fica aqui, e não no nome, para a reticência
+   caber na caixa do corte: o Chromium centra a 2ª linha sem contar a
+   reticência (11 px) e a põe depois, então ela passa da borda do texto em até
+   metade da largura dela (5,5 px). Os 6 px ficam à direita: a largura do
+   texto (58 px, as mesmas quebras de antes) e os três pontos inteiros. */
 .catalogo__miniatura-texto {
   display: -webkit-box;
   max-height: calc(2 * 1lh);
+  padding-inline: 0 6px;
   overflow: hidden;
   line-height: 1.25;
   -webkit-box-orient: vertical;
@@ -3010,10 +3028,15 @@ video:focus-visible {
   }
 
   /* A pista de rolagem esmaece para o Canvas, que é o fundo do painel aqui
-     (sem isto, o degradê sairia, e a pista com ele). */
+     (sem isto, o degradê sairia, e a pista com ele), com o mesmo perfil. */
   .catalogo__painel-interior::after {
     forced-color-adjust: none;
-    background: linear-gradient(to bottom, transparent, Canvas 90%);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, Canvas 15%, transparent) calc(100% - 8px),
+      Canvas
+    );
   }
 }
 
