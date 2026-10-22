@@ -69,6 +69,13 @@ export function passoDoDeslize(dx: number, dy: number): -1 | 1 | null {
   return dx < 0 ? 1 : -1;
 }
 
+/** Onde e com que ponteiro começou um gesto (o coverflow e o painel). */
+export interface InicioGesto {
+  x: number;
+  y: number;
+  id: number;
+}
+
 /**
  * O clique que o próprio arrasto gera não vale (soltar o mouse sobre um
  * cartão o centralizaria ou abriria). Só esse: o mouse manda o clique logo
@@ -171,7 +178,7 @@ export function Coverflow({
   // A troca veio do teclado num cartão: o foco segue o novo centro (o botão
   // que tinha o foco pode ter saído do centro, e a CSS o esconde).
   const focarCentroRef = useRef(false);
-  const inicioRef = useRef<{ x: number; y: number } | null>(null);
+  const inicioRef = useRef<InicioGesto | null>(null);
   const { marcarArrasto, onClickCapture } = useCliqueDoArrasto();
   const palcoRef = useRef<HTMLDivElement>(null);
   const alcanceDoTab = useAlcanceDoTab(palcoRef);
@@ -213,14 +220,21 @@ export function Coverflow({
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    // Um 2º dedo (a pinça, que é do navegador) desfaz o gesto.
+    if (!e.isPrimary) {
+      inicioRef.current = null;
+      return;
+    }
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    inicioRef.current = { x: e.clientX, y: e.clientY };
+    inicioRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
   };
 
   const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const inicio = inicioRef.current;
+    // Só vale o mesmo ponteiro que começou o gesto.
+    if (!inicio || inicio.id !== e.pointerId) return;
     inicioRef.current = null;
-    if (!inicio || total <= 1) return;
+    if (total <= 1) return;
     const passo = passoDoDeslize(e.clientX - inicio.x, e.clientY - inicio.y);
     if (passo === null) return;
     marcarArrasto();

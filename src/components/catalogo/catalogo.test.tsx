@@ -260,37 +260,76 @@ describe("catálogo: estado fechado", () => {
   it("deslizar o dedo 120 px para a esquerda troca; 30 px na horizontal com 200 px na vertical não troca", () => {
     const { raiz } = montar();
     const palco = raiz.querySelector<HTMLElement>(".catalogo__palco")!;
+    // O navegador marca o 1º dedo (e o mouse) com isPrimary; o jsdom, não.
 
     // Gesto vertical (a página rola): não troca.
-    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(palco, { clientX: 270, clientY: 300, pointerType: "touch" });
+    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(palco, { clientX: 270, clientY: 300, pointerType: "touch", isPrimary: true });
     expect(centro(raiz)).toBe("replay");
 
     // Curto demais (|dx| < 40): não troca.
-    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(palco, { clientX: 270, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(palco, { clientX: 270, clientY: 100, pointerType: "touch", isPrimary: true });
     expect(centro(raiz)).toBe("replay");
 
     // Para a esquerda: o próximo.
-    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(palco, { clientX: 180, clientY: 110, pointerType: "touch" });
+    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(palco, { clientX: 180, clientY: 110, pointerType: "touch", isPrimary: true });
     expect(centro(raiz)).toBe("rota-de-vendas");
 
     // Para a direita: o anterior; o clique que o navegador manda depois do
     // arrasto não abre nem centraliza o cartão de baixo.
-    fireEvent.pointerDown(palco, { clientX: 100, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(palco, { clientX: 220, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerDown(palco, { clientX: 100, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(palco, { clientX: 220, clientY: 100, pointerType: "touch", isPrimary: true });
     fireEvent.click(cartao(raiz, "replay"));
     expect(centro(raiz)).toBe("replay");
     expect(raiz.dataset.estado).toBe("fechado");
+  });
+
+  it("dois dedos (pinça) no palco não trocam o centro; o pointerup de outro dedo não vale", () => {
+    const { raiz } = montar();
+    const palco = raiz.querySelector<HTMLElement>(".catalogo__palco")!;
+    const dedo = (pointerId: number, isPrimary: boolean, clientX: number) => ({
+      pointerId,
+      isPrimary,
+      clientX,
+      clientY: 100,
+      pointerType: "touch",
+    });
+
+    // Dedo 1 em 150, dedo 2 em 250; os dedos se afastam e o 1 sai em 80.
+    fireEvent.pointerDown(palco, dedo(1, true, 150));
+    fireEvent.pointerDown(palco, dedo(2, false, 250));
+    fireEvent.pointerUp(palco, dedo(1, true, 80));
+    fireEvent.pointerUp(palco, dedo(2, false, 320));
+    expect(centro(raiz)).toBe("replay");
+
+    // Um dedo só, mas o pointerup que chega é de outro ponteiro: não vale.
+    fireEvent.pointerDown(palco, dedo(3, true, 300));
+    fireEvent.pointerUp(palco, dedo(4, true, 120));
+    expect(centro(raiz)).toBe("replay");
+
+    // O gesto de um dedo continua trocando.
+    fireEvent.pointerDown(palco, dedo(5, true, 300));
+    fireEvent.pointerUp(palco, dedo(5, true, 180));
+    expect(centro(raiz)).toBe("rota-de-vendas");
+  });
+
+  it("o palco e o painel deixam a pinça com o navegador (touch-action: pan-y pinch-zoom)", () => {
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
+    for (const seletor of [".catalogo__palco", ".catalogo__painel"]) {
+      const i = css.indexOf(`\n${seletor} {`);
+      expect(i, seletor).toBeGreaterThan(-1);
+      expect(css.slice(i, css.indexOf("}", i)), seletor).toMatch(/touch-action: pan-y pinch-zoom;/);
+    }
   });
 
   it("depois de deslizar o dedo (que não gera clique), o Enter no 'Ver detalhes' do novo centro abre", async () => {
     const { raiz } = montar();
     const palco = raiz.querySelector<HTMLElement>(".catalogo__palco")!;
 
-    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(palco, { clientX: 180, clientY: 110, pointerType: "touch" });
+    fireEvent.pointerDown(palco, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(palco, { clientX: 180, clientY: 110, pointerType: "touch", isPrimary: true });
     expect(centro(raiz)).toBe("rota-de-vendas");
     await proximaTarefa();
 
@@ -583,8 +622,8 @@ describe("catálogo: estado aberto", () => {
     fireEvent.keyDown(video, { key: "ArrowLeft" });
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
     // Nem o dedo arrastando a barra do vídeo.
-    fireEvent.pointerDown(video, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(video, { clientX: 100, clientY: 100, pointerType: "touch" });
+    fireEvent.pointerDown(video, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(video, { clientX: 100, clientY: 100, pointerType: "touch", isPrimary: true });
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
   });
 
@@ -608,13 +647,36 @@ describe("catálogo: estado aberto", () => {
     const painel = abrir(raiz);
     const alvo = painel.querySelector<HTMLElement>(".catalogo__painel-cabeca")!;
 
-    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(alvo, { clientX: 270, clientY: 300, pointerType: "touch" });
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(alvo, { clientX: 270, clientY: 300, pointerType: "touch", isPrimary: true });
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
 
-    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch" });
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch", isPrimary: true });
     expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+  });
+
+  it("dois dedos (pinça) no painel não trocam de produto", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const alvo = painel.querySelector<HTMLElement>(".catalogo__painel-cabeca")!;
+    const dedo = (pointerId: number, isPrimary: boolean, clientX: number) => ({
+      pointerId,
+      isPrimary,
+      clientX,
+      clientY: 100,
+      pointerType: "touch",
+    });
+
+    fireEvent.pointerDown(alvo, dedo(1, true, 150));
+    fireEvent.pointerDown(alvo, dedo(2, false, 250));
+    fireEvent.pointerUp(alvo, dedo(1, true, 80));
+    fireEvent.pointerUp(alvo, dedo(2, false, 320));
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
+
+    fireEvent.pointerDown(alvo, dedo(3, true, 300));
+    fireEvent.pointerUp(alvo, dedo(4, true, 120));
+    expect(tituloPainel(raiz)).toBe("Replay para quadras");
   });
 
   it("depois de deslizar o dedo no painel (sem clique), o Enter no X fecha", async () => {
@@ -622,8 +684,8 @@ describe("catálogo: estado aberto", () => {
     const painel = abrir(raiz);
     const alvo = painel.querySelector<HTMLElement>(".catalogo__painel-cabeca")!;
 
-    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch" });
-    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch" });
+    fireEvent.pointerDown(alvo, { clientX: 300, clientY: 100, pointerType: "touch", isPrimary: true });
+    fireEvent.pointerUp(alvo, { clientX: 180, clientY: 110, pointerType: "touch", isPrimary: true });
     expect(tituloPainel(raiz)).toBe("Rota de Vendas");
     await proximaTarefa();
 
@@ -639,8 +701,8 @@ describe("catálogo: estado aberto", () => {
     const painel = abrir(raiz);
     const texto = painel.querySelector<HTMLElement>(".catalogo__para-quem")!;
 
-    fireEvent.pointerDown(texto, { clientX: 300, clientY: 100, pointerType: "mouse", button: 0 });
-    fireEvent.pointerUp(texto, { clientX: 100, clientY: 104, pointerType: "mouse", button: 0 });
+    fireEvent.pointerDown(texto, { clientX: 300, clientY: 100, pointerType: "mouse", button: 0, isPrimary: true });
+    fireEvent.pointerUp(texto, { clientX: 100, clientY: 104, pointerType: "mouse", button: 0, isPrimary: true });
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
     // O clique que vem depois da seleção chega ao destino.
     fireEvent.click(within(painel).getByRole("tab", { name: catalogoUi.abas.comoFunciona }));

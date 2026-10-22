@@ -16,7 +16,7 @@ import { landingContent } from "@/content/landing";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { VideoDemo } from "@/components/ui/VideoDemo";
 import { Chevron, PassosProduto, TelasProduto, VisaoGeralTexto } from "./ConteudoProduto";
-import { passoDoDeslize, useCliqueDoArrasto } from "./Coverflow";
+import { passoDoDeslize, useCliqueDoArrasto, type InicioGesto } from "./Coverflow";
 import {
   CARTAO_PAINEL,
   CONTEUDO_APOS_CRESCER,
@@ -127,7 +127,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
   const painelRef = useRef<HTMLElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
-  const inicioRef = useRef<{ x: number; y: number } | null>(null);
+  const inicioRef = useRef<InicioGesto | null>(null);
   const { marcarArrasto, onClickCapture } = useCliqueDoArrasto();
   // A troca veio daqui (teclado ou dedo): se o foco estava num controle que
   // saiu com o produto anterior (o "Assistir", por exemplo), ele volta ao título.
@@ -194,17 +194,20 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
   // Só o dedo (e a caneta) troca de produto pelo arrasto (§3, Q22). Ao
   // contrário dos cartões, o painel é cheio de texto: arrastar o mouse aqui
   // é selecionar uma frase, não trocar de produto.
+  // Um 2º dedo (a pinça, que é do navegador) desfaz o gesto, e só vale o
+  // pointerup do mesmo ponteiro que o começou.
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
     inicioRef.current = null;
-    if (e.pointerType === "mouse") return;
+    if (!e.isPrimary || e.pointerType === "mouse") return;
     if (e.target instanceof Element && e.target.closest(ARRASTO_DO_CONTROLE)) return;
-    inicioRef.current = { x: e.clientX, y: e.clientY };
+    inicioRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
   };
 
   const onPointerUp = (e: PointerEvent<HTMLElement>) => {
     const inicio = inicioRef.current;
+    if (!inicio || inicio.id !== e.pointerId) return;
     inicioRef.current = null;
-    if (!inicio || !varios) return;
+    if (!varios) return;
     const passo = passoDoDeslize(e.clientX - inicio.x, e.clientY - inicio.y);
     if (passo === null) return;
     marcarArrasto();

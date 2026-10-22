@@ -1910,13 +1910,14 @@ video:focus-visible {
 }
 
 /* O palco mede a si mesmo (cqh/cqw) para dimensionar o cartão do centro.
-   pan-y: o dedo na vertical rola a página (Review Focus 1). */
+   pan-y: o dedo na vertical rola a página (Review Focus 1); pinch-zoom: a
+   pinça amplia a página (o navegador cuida dela e manda pointercancel). */
 .catalogo__palco {
   position: absolute;
   inset: 0;
   container-type: size;
   perspective: 1400px;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 
 /* Cartão do centro 2:3: 86% da altura do palco no computador e ~70% da
@@ -2194,8 +2195,9 @@ video:focus-visible {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  /* O dedo na vertical rola o painel ou a página (Review Focus 1). */
-  touch-action: pan-y;
+  /* O dedo na vertical rola o painel ou a página (Review Focus 1); a pinça
+     amplia a página. */
+  touch-action: pan-y pinch-zoom;
 }
 
 /* A superfície (fundo, borda e sombra) numa camada própria: é ela que cresce
