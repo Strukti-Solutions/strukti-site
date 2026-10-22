@@ -860,11 +860,18 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     const camadas = () => [...fundo.querySelectorAll<HTMLImageElement>("img")];
     const visivel = () => fundo.querySelector<HTMLImageElement>('img[data-visivel="true"]')?.getAttribute("src");
 
+    /** O jsdom não carrega imagens: o teste avisa que a camada nova carregou. */
+    const carregar = (src: string) =>
+      fireEvent.load(camadas().find((img) => img.getAttribute("src") === src && img.dataset.visivel === "false")!);
+
     // Decorativo e fora da árvore de acessibilidade.
     expect(fundo.getAttribute("aria-hidden")).toBe("true");
     expect(visivel()).toBe("/catalogo/replay/cartao-480.jpg");
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    // A arte nova só aparece depois de carregar (sem esmaecer para o navy).
+    expect(visivel()).toBe("/catalogo/replay/cartao-480.jpg");
+    carregar("/catalogo/rota-de-vendas/cartao-480.jpg");
     expect(visivel()).toBe("/catalogo/rota-de-vendas/cartao-480.jpg");
     // Duas camadas: a nova por cima, a anterior saindo (crossfade).
     expect(camadas().map((img) => img.getAttribute("src")).sort()).toEqual([
@@ -877,12 +884,41 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     }
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    carregar("/catalogo/fleet-analytics-bi/cartao-480.jpg");
     expect(visivel()).toBe("/catalogo/fleet-analytics-bi/cartao-480.jpg");
     expect(camadas()).toHaveLength(2);
     // Com o painel aberto, o fundo segue o produto do painel.
     fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Fleet Analytics BI" }));
     fireEvent.click(within(fita(raiz)).getByRole("button", { name: porSlug("placar-conectado").nome }));
+    carregar("/catalogo/placar-conectado/cartao-480.jpg");
     expect(visivel()).toBe("/catalogo/placar-conectado/cartao-480.jpg");
+  });
+
+  it("FundoAmbiente monta as duas camadas desde o 1º render: a 1ª troca também é um crossfade", () => {
+    const { raiz } = montar();
+    const fundo = raiz.querySelector<HTMLElement>(".catalogo__fundo")!;
+    const camadas = () => [...fundo.querySelectorAll<HTMLImageElement>("img")];
+
+    // A camada de trás já existe, apagada: ao trocar, ela vai de 0 a 1 (com
+    // transição), em vez de nascer já visível (corte seco).
+    expect(camadas()).toHaveLength(2);
+    expect(camadas().map((img) => img.dataset.visivel)).toEqual(["true", "false"]);
+    const [frente, tras] = camadas() as [HTMLImageElement, HTMLImageElement];
+
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    // Os mesmos dois elementos: nenhuma camada nova entra no DOM na troca.
+    expect(camadas()).toEqual([frente, tras]);
+    expect(tras.getAttribute("src")).toBe("/catalogo/rota-de-vendas/cartao-480.jpg");
+    expect(tras.dataset.visivel).toBe("false");
+    fireEvent.load(tras);
+    expect(tras.dataset.visivel).toBe("true");
+    expect(frente.dataset.visivel).toBe("false");
+
+    // Voltar ao produto anterior: a camada já tem a arte carregada, aparece direto.
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.anterior }));
+    expect(frente.getAttribute("src")).toBe("/catalogo/replay/cartao-480.jpg");
+    expect(frente.dataset.visivel).toBe("true");
+    expect(tras.dataset.visivel).toBe("false");
   });
 
   it("abrir o painel com o loop tocando o pausa (1 vídeo por vez)", () => {
