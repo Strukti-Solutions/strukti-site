@@ -22,6 +22,15 @@ export function isUserVideoPlaying() {
 }
 
 /**
+ * Há algum outro `<video>` tocando agora, com ou sem `controls` (o do hero
+ * inclusive)? Para um vídeo decorativo, como o loop do cartão do catálogo,
+ * que não começa por cima de nenhum: tocar pausaria o outro.
+ */
+export function isAnyOtherVideoPlaying(self: HTMLVideoElement) {
+  return Array.from(document.querySelectorAll("video")).some((video) => video !== self && !video.paused);
+}
+
+/**
  * Para `useSyncExternalStore`: avisa sempre que algum `<video>` da página
  * começa ou para de tocar, para quem lê `isUserVideoPlaying()` reavaliar
  * (nem "play" nem "pause" borbulham, por isso a captura no documento).

@@ -1162,6 +1162,19 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     expect(play).not.toHaveBeenCalled();
   });
 
+  it("com o vídeo do hero (sem controls) tocando, o loop não começa e o hero segue tocando (§9)", () => {
+    const hero = document.createElement("video");
+    hero.muted = true;
+    Object.defineProperty(hero, "paused", { configurable: true, value: false });
+    document.body.append(hero);
+
+    const { raiz } = montar();
+    naTela();
+    expect(loopDe(raiz, "replay")).not.toBeNull();
+    expect(play).not.toHaveBeenCalled();
+    expect(pause.mock.contexts).not.toContain(hero);
+  });
+
   it("FundoAmbiente usa /catalogo/<centro>/cartao-480.jpg e troca ao centralizar outro", () => {
     const { raiz } = montar();
     const fundo = raiz.querySelector<HTMLElement>(".catalogo__fundo")!;
