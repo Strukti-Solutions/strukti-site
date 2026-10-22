@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import axe from "axe-core";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -175,6 +176,22 @@ describe("menu Produtos", () => {
     expect(screen.getByRole("link", { name: "Contato" }).getAttribute("href")).toBe("#contato");
     expect(screen.queryByRole("link", { name: "Replay" })).toBeNull();
     expect(screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "#replay")).toEqual([]);
+  });
+
+  it("sem JS, a barra tem o link 'Produtos' para #produtos (HTML do servidor); depois de montar, vira o botão do menu", () => {
+    const servidor = document.createElement("div");
+    servidor.innerHTML = renderToString(<TopBar />);
+    const navServidor = servidor.querySelector("nav")!;
+    const link = navServidor.querySelector<HTMLAnchorElement>('a[href="#produtos"]');
+    expect(link?.textContent).toBe(produtos.label);
+    expect(navServidor.querySelector("button.topbar__produtos")).toBeNull();
+
+    render(<TopBar />);
+    const nav = screen.getByRole("navigation", { name: "Principal" });
+    const botao = getProdutos();
+    expect(botao.classList.contains("topbar__produtos")).toBe(true);
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(nav.querySelector('a[href="#produtos"]')).toBeNull();
   });
 
   it("clicar em 'Produtos' abre 3 grupos (Hardware, Aplicativos, Sites) com os 10 links #slug", () => {

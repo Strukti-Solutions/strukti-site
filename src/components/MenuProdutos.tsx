@@ -30,12 +30,21 @@ const ROTULO = landingContent.header.nav.find((item) => item.href === "#produtos
  * Fecha com Esc (devolvendo o foco ao botão), com clique fora, quando o foco
  * sai dele e ao escolher um produto; nesse caso `aoEscolher` fecha também o
  * painel do Menu do celular.
+ *
+ * Sem JS, o botão não abriria nada: o servidor (e o 1º render do cliente,
+ * para a hidratação não divergir) traz um link "Produtos" para #produtos, que
+ * vira o botão depois de montar, como o `data-js` do catálogo.
  */
 export function MenuProdutos({ ativo, aoEscolher }: { ativo: boolean; aoEscolher: () => void }) {
   const [aberto, setAberto] = useState(false);
+  const [js, setJs] = useState(false);
   const raizRef = useRef<HTMLDivElement>(null);
   const botaoRef = useRef<HTMLButtonElement>(null);
   const listaId = useId();
+
+  useEffect(() => {
+    setJs(true);
+  }, []);
 
   useEffect(() => {
     if (!aberto) return;
@@ -76,18 +85,24 @@ export function MenuProdutos({ ativo, aoEscolher }: { ativo: boolean; aoEscolher
 
   return (
     <div ref={raizRef} className="topbar__produtos-raiz" onBlur={fecharQuandoFocoSai}>
-      <button
-        ref={botaoRef}
-        type="button"
-        className="topbar__produtos"
-        aria-expanded={aberto}
-        aria-controls={listaId}
-        aria-current={ativo ? "true" : undefined}
-        onClick={() => setAberto((valor) => !valor)}
-      >
-        {ROTULO}
-        <span className="topbar__produtos-seta" aria-hidden="true" />
-      </button>
+      {js ? (
+        <button
+          ref={botaoRef}
+          type="button"
+          className="topbar__produtos"
+          aria-expanded={aberto}
+          aria-controls={listaId}
+          aria-current={ativo ? "true" : undefined}
+          onClick={() => setAberto((valor) => !valor)}
+        >
+          {ROTULO}
+          <span className="topbar__produtos-seta" aria-hidden="true" />
+        </button>
+      ) : (
+        <a href="#produtos" className="topbar__produtos" aria-current={ativo ? "true" : undefined}>
+          {ROTULO}
+        </a>
+      )}
 
       <div id={listaId} className="topbar__produtos-menu" hidden={!aberto}>
         {GRUPOS.map((grupo) => {

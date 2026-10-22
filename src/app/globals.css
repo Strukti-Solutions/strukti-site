@@ -865,7 +865,8 @@ video:focus-visible {
  * Menu "Produtos ▾" (spec do catálogo, 2026-10-16, §3.5; MenuProdutos.tsx).
  * No painel, o botão é uma linha como os links, e a lista abre logo abaixo
  * como sublista, recuada e com os grupos por tipo. A partir de 75em, a mesma
- * lista vira um popover abaixo do botão (mais embaixo).
+ * lista vira um popover abaixo do botão (mais embaixo). Sem JS, no lugar do
+ * botão fica um link para #produtos, com o mesmo visual (sem o sublinhado).
  */
 .topbar__produtos {
   display: flex;
@@ -882,6 +883,7 @@ video:focus-visible {
   font-size: 1.125rem;
   font-weight: 600;
   text-align: start;
+  text-decoration-line: none;
   text-underline-offset: 6px;
   cursor: pointer;
 }
