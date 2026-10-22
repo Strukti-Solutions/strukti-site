@@ -401,7 +401,7 @@ Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seçã
 - **`nome`:** `produtos.replay.name` ("Replay para quadras"), por referência.
 - **`frase` (nova):** Para quadras de aluguel: o jogador aperta um botão na beira da quadra e leva o lance no celular.
 - **`painel.video`:** o vídeo do replay (`produtos.replay.video`), por referência.
-- **`painel.paraQuem` ("Para quem é"):** Donos de quadras de aluguel, de society, areia ou futsal, que querem dar ao jogador mais um motivo para voltar.
+- **`painel.paraQuem` ("Para quem é"):** Donos de quadras de aluguel que querem dar ao jogador mais um motivo para voltar.
 - **`painel.beneficios`:**
   - Salva os últimos 30 segundos, na hora em que o jogador aperta.
   - O lance chega no celular, pronto para baixar e compartilhar.

@@ -111,8 +111,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     ),
     painel: {
       video: REPLAY.video,
-      paraQuem:
-        "Donos de quadras de aluguel, de society, areia ou futsal, que querem dar ao jogador mais um motivo para voltar.",
+      paraQuem: "Donos de quadras de aluguel que querem dar ao jogador mais um motivo para voltar.",
       beneficios: [
         "Salva os últimos 30 segundos, na hora em que o jogador aperta.",
         "O lance chega no celular, pronto para baixar e compartilhar.",
