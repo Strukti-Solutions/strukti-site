@@ -380,15 +380,13 @@ Selo: **Piloto gratuito** (`piloto`).
 
 ### Textos de interface dos cartões
 
-**`aplicativos.grid.playLabel` (nome acessível do botão de reproduzir nos cartões de aplicativo):** Assistir ao vídeo: {nome} ({duração})
+Os cartões da parede da v2.2 não existem mais: a microcopy do catálogo (seção "Textos de interface do catálogo (`catalogoUi`)", mais abaixo) toma o lugar deles. Dos três textos antigos, dois continuam em uso, agora no painel do produto, e um saiu:
 
-**`aplicativos.grid.showMore` (botão, quando houver mais de 6 cartões):** Mostrar mais projetos
+**`aplicativos.grid.playLabel` (nome acessível do botão de reproduzir do vídeo no painel):** Assistir ao vídeo: {nome} ({duração})
 
-**`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo, nos 3 cartões):** Ler a descrição do vídeo
+**`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo, no painel):** Ler a descrição do vídeo
 
-*Nota (v2.2): o `playLabel` ganha a duração, como o do replay; `{duração}` vem de um campo novo do projeto (por exemplo, `video.durationLabel`: "22 s" e "53 s", medidos com ffprobe em 13/10: 21,6 s e 52,6 s). Os outros dois textos não mudam (v1.5). Com 3 cartões, o "Mostrar mais projetos" não aparece. [proposta]*
-
-*Nota (v2.2): saem `aplicativos.title` ("Aplicativos sob medida") e `aplicativos.intro`, porque a seção Aplicativos deixa de existir (o "sob medida" e o diagnóstico foram para `produtos.intro`). As chaves `aplicativos.*` que ficam podem mudar de lugar no código; o texto é o mesmo. [proposta]*
+*Nota (22/10/2026): saiu o `aplicativos.grid.showMore` ("Mostrar mais projetos"), do botão que revelava mais de 6 cartões: o catálogo navega pelo coverflow, pelas bolinhas e pela fita, sem "mostrar mais". A chave ainda existe em `src/content/landing.ts` sem uso. [texto antigo, aprovado na v2.2]*
 
 ### Catálogo (proposta — aguardando aprovação)
 
@@ -471,7 +469,7 @@ Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seçã
 
 #### Textos de interface do catálogo (`catalogoUi`)
 
-- **`rotuloCarrossel` (nome da região do carrossel):** Produtos
+- **`rotuloCarrossel` (nome da região do carrossel):** Catálogo de produtos
 - **`roledescCarrossel` / `roledescProduto` (o que o leitor de tela diz que é cada coisa):** carrossel / produto
 - **`posicao` (nome de cada cartão e anúncio da troca):** {i} de {n}: {nome}
 - **`verDetalhes` (botão do cartão do centro):** Ver detalhes
@@ -485,6 +483,8 @@ Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seçã
 - **`telaAnterior` / `proximaTela` (setas das telas):** Tela anterior / Próxima tela
 - **`filtros` (pílulas):** Todos · Hardware · Aplicativos · Sites
 - **`tipos` (etiqueta do tipo no cartão):** Hardware · Aplicativo · Site
+
+*Nota (22/10/2026): o rótulo do carrossel é "Catálogo de produtos" e não "Produtos", porque "Produtos" já nomeia a seção (`section#produtos`) e o rótulo de cada região da página tem de ser único para o leitor de tela. Cada cartão é um `<div role="group">` com o nome `posicao`.*
 
 *Nota: `{i}`, `{n}` e `{nome}` o site preenche sozinho. Os selos de fase são os de sempre (`statusLabels`); os fictícios usam "Em desenvolvimento".*
 

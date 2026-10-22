@@ -38,7 +38,7 @@
 | Superfície | Token | Hex | Onde |
 |---|---|---|---|
 | Espaço | `--color-navy-950` | `#08121D` | Barra do topo, hero, Produtos (`#produtos`, em palcos), rodapé |
-| Noite | `--color-navy-900` | `#0E1C2B` | Aplicativos (`#aplicativos`, em palcos); moldura do hero "video", dentro da margem de espaço, abaixo da barra |
+| Noite | `--color-navy-900` | `#0E1C2B` | Painel e superfícies do catálogo (§8.8); moldura do hero "video", dentro da margem de espaço, abaixo da barra |
 | Papel | `--color-navy-50` | `#F1F5F8` | Chamada geral (`#sob-medida`), Como trabalhamos, Equipe, Contato (`#contato`), Dúvidas |
 | Branco | `--color-white` | `#FFFFFF` | Peças elevadas sobre o papel: blocos, formulário, acordeão |
 
@@ -64,8 +64,7 @@
 Barra do topo ........ espaço
 Hero ................. espaço    quadro que cresce com a rolagem (§9.8; ou o
                                  produto em tela inteira do "estudio", §9.7)
-Produtos ............. espaço    palcos de hardware (#produtos)
-Aplicativos .......... noite     palcos com a tela do app (#aplicativos)
+Produtos ............. espaço    catálogo em coverflow, com painel e fita (§8.8, #produtos)
 Chamada geral ........ papel     outros problemas (#sob-medida)
 Como trabalhamos ..... papel     régua
 Equipe ............... papel     régua
@@ -194,6 +193,12 @@ calculadas pela fórmula de luminância relativa da WCAG.
 | **Hero "expansao"** (exceção da §9.8: texto sobre a mídia, sem véu de 0,86): título navy-50 sobre o pixel mais claro permitido na faixa do título, depois do tom do fundo e da sombra do quadro (luminância ≤ 0,162, cerca de `#707070`; o limite exato de 4,5:1 é 0,1629) | ≥ 4,5 | 4,5 ✅ (condição da mídia) |
 | **Hero "expansao":** linha de apoio e dica navy-100 sobre o pixel mais claro permitido na faixa delas (luminância ≤ 0,136, cerca de `#676767`; o limite exato é 0,1368) | ≥ 4,5 | 4,5 ✅ (condição da mídia) |
 | **Hero "expansao":** conteúdo depois do palco, sobre o espaço sólido: branco / navy-200 | 18,84 / 11,73 | 4,5 ✅ |
+| **Catálogo (§8.8), cartão do centro a 1440×900, arte provisória:** etiqueta do tipo cyan-300, nome branco e frase navy-100 sobre o pixel mais claro de cada linha, depois do degradê (pior dos 10 itens) | 9,67 | 4,5 ✅ (provisória) |
+| **Catálogo, cartão do centro a 360×740, arte provisória:** etiqueta do tipo cyan-300 sobre o pixel mais claro, no topo do cartão (pior dos 10 itens; nome e frase passam) | 2,16 (3,60 a 3,98 em 5 itens) | 4,5 ❌ **aberto** |
+
+**Como medir o texto do cartão do centro sobre o degradê** (catálogo, §8.8). O texto fica sobre a arte, que muda a cada item, então a medida é pelo **pior pixel**, não por uma cor de fundo: (1) a geometria vem do navegador (`getBoundingClientRect` da superfície, da caixa `.catalogo__info` e de cada linha, em frações da superfície do cartão do centro) a 1440×900 e a 360×740; (2) o degradê do `.catalogo__info` (`rgb(8 18 29)` com 0,94 embaixo, 0,8 a 55% e 0 no topo da caixa) é composto sobre `cartao.jpg` de cada item; (3) em cada retângulo de texto, pega-se o pixel mais claro; (4) calcula-se a razão da WCAG contra a cor do texto (cyan-300 `#5FE3E8`, branco, navy-100 `#DFE7EF`). O script `scripts/catalogo-arte/medir-contraste.mjs` faz os passos 2 a 4 (sai com código 1 se algum par ficar abaixo de 4,5:1). O botão "Ver detalhes" tem fundo próprio (botão primário, branco sobre electric-700, 5,48:1 acima). **Medido em 22/10/2026 com a arte provisória** (degradê da cor do tipo para o navy); **a medida se repete com a arte final** (e a geometria, se o layout do cartão mudar).
+
+*Achado aberto da medida (22/10/2026):* a 1440×900 tudo passa (≥ 9,67:1). A 360×740 o cartão do centro mede só ~214×320 px e o bloco de texto (~380 px) é mais alto que ele: a caixa do degradê passa do topo do cartão e a etiqueta do tipo cai no topo da arte, onde o degradê quase não cobre (alfa ~0,30), então a razão cai para 2,16 a 3,98:1 com a arte provisória. Nome e frase passam. É defeito do código do catálogo (o texto não cabe no cartão pequeno), não da arte; precisa de correção (por exemplo, esconder a frase ou reduzir o texto no cartão pequeno, ou escurecer o topo) antes de a arte final entrar.
 
 Decorativos (sem exigência): junta navy-100 sobre branco 1,25; junta da
 barra do topo navy-800 sobre espaço 1,24 (e sobre a noite, 1,13); ponto do i
@@ -322,7 +327,7 @@ A profundidade vem da cor da superfície e da junta, **não de sombra**.
 | 0 | plano | Quase tudo |
 | 1 | `--surface-raised` (branco no papel, navy-800 no escuro) | Blocos, formulário, cartões de Produtos e dos aplicativos |
 | 2 | `0 12px 32px -12px rgb(8 18 29 / 0.45)` (sombra tingida de marinho) | Só o que flutua: o botão flutuante do WhatsApp |
-| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` (`--shadow-screen`) | A tela dos aplicativos dentro do palco (§8.8, §8.13). A luz em volta dos produtos é a do palco (§8.13) |
+| Luz | `0 40px 80px -40px rgb(1 102 210 / 0.45)` (`--shadow-screen`) | A tela do app dentro do palco (§8.13) e o vídeo do painel do catálogo (§8.8). A luz em volta dos produtos é a do palco (§8.13) |
 
 Proibido: sombra cinza genérica (`rgba(0,0,0,.1)`) sob cada cartão;
 glassmorphism (desfoque de fundo) em cartões. O cabeçalho é sólido, sem
@@ -389,12 +394,14 @@ destaque do portfólio em que era usado.
 - `Reveal` vai no **grupo** (cabeçalho de seção, uma parede inteira), não
   em cada parágrafo. Paredes usam o escalonamento existente, com no máximo
   60 ms entre blocos.
-- Fora do hero, nada se move sem uma ação de quem visita.
+- Fora do hero, nada se move sem uma ação de quem visita (no catálogo, o loop de 5 s do cartão é a resposta a chegar ao centro, ao mouse ou ao foco, e o carrossel nunca gira sozinho).
   Hover não muda o tamanho de caixa (só `transform`, cor e sublinhado).
 - `prefers-reduced-motion`: as regras da ADR-004 valem para tudo (CSS
   `motion-reduce:` ou portão de montagem; nunca ramificar a árvore React).
   No hero, o visual congela num quadro (buraco negro com `paused`) ou fica
   o estático.
+
+**Catálogo de produtos** (§8.8): o carrossel **não gira sozinho** (nada gira sozinho em lugar nenhum da página). O vídeo do painel só toca no clique. O loop da arte do cartão toca **uma vez, por 5 s** (cabe no limite de 5 s do WCAG 2.2.2), quando o cartão chega ao centro ou recebe o mouse ou o foco, e para no quadro inicial; nunca com movimento reduzido. Durações: troca do coverflow 800 ms, cartão → painel 600 ms, troca de produto 350 ms, fundo ambiente 1000 ms, todas com `cubic-bezier(.25,1,.5,1)` (tabela na §8.8). Com movimento reduzido tudo é instantâneo, sem mudar a árvore (ADR-004).
 
 Animação guiada pela rolagem só existe no hero em uso (`siteConfig.heroVariant`): o giro do "estudio" (§9.7), com a rolagem nativa e o fundo preso por `position: sticky`, ou a expansão do "expansao" (§9.8). No resto da página continuam as entradas suaves (Reveal).
 
@@ -547,7 +554,7 @@ começa a margem de espaço da moldura do hero.
 ### 8.4 Parede de blocos (legado: sem uso desde a v3)
 
 A seção Problemas, que usava esta composição, saiu na home v3. A parede
-(§5.5) continua na grade dos aplicativos (§8.8) e na Equipe (§8.9). Se uma
+(§5.5) continua na Equipe (§8.9). Se uma
 seção nova voltar a usá-la: bloco em `--surface-raised` (`.block`,
 `padding: 28px 28px 32px`; 20 px no celular), H3 e texto em `--text-muted`,
 sem ícone no topo e sem número quando os itens não são uma sequência.
@@ -585,79 +592,85 @@ para a futura página do replay.
 - Sucesso: bloco com borda esquerda de 4 px `#11793F`, título e texto
   aprovados e o botão do WhatsApp.
 
-### 8.8 Aplicativos (grade de vídeos)
+### 8.8 Catálogo de produtos (coverflow, painel e fita)
 
-Superfície **noite** (`#aplicativos`). Vai de 1 a N aplicativos sem mudar o
-layout. Componente `ProjectGrid` (`src/components/sections/ProjectGrid.tsx`).
+Superfície **espaço** (`section#produtos`, `.catalogo-secao`). Substitui a parede de 3 cartões com vídeo da v2.2 (`Produtos`, `ProjectGrid` e a CSS `.project-card*` saíram). Spec: `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`; decisão: ADR-011. Componentes em `src/components/catalogo/`, a seção em `src/components/sections/Catalogo.tsx`, os dados em `src/content/catalogo.ts`.
 
-**Dados:** a lista `landingContent.aplicativos.projects`
-(`src/content/landing.ts`), com o texto aprovado:
+**Dados:** `CATALOGO` (10 itens, `ItemCatalogo`), com `slug`, `tipo` (hardware, aplicativo, site), `nome`, `frase`, `fase` (selo da §8.14), `ficticio?: true`, `arte`, `painel` (vídeo, "Para quem é", benefícios, 3 passos, 3 telas), `siteUrl` e `interesse`. Os 3 reais vêm primeiro (Replay, Rota de Vendas, Fleet Analytics BI), depois os 7 fictícios alternando o tipo. A microcopy fica em `catalogoUi`.
 
-```ts
-interface Project {
-  slug: string;            // "rota-de-vendas"
-  name: string;            // "Rota de Vendas"
-  summary: string;         // 1 frase, para o cartão da grade
-  videoTitle: string;      // fica nos dados, fora da grade
-  video: {
-    src: string;           // vídeo de lançamento feito com /brag
-    poster: string;
-    accessibleName: string;// nome acessível do <video>
-    caption: string;       // legenda visível abaixo do vídeo
-    description: string;   // descrição completa (abre num <details>)
-  };
-  highlights?: readonly { lead: string; rest: string }[]; // fica nos dados, fora da grade
-  platforms: readonly string[]; // ["Android", "Windows"]
-  status?: ProductStatus;  // selo do cartão (§8.14)
-}
-```
+**Estados** (na raiz `.catalogo`): `data-js="false|true"` e `data-estado="fechado|aberto"`. Sem JS (o HTML do servidor e o 1º render do cliente), os 10 produtos estão no HTML: uma fileira com rolagem para o lado e `scroll-snap`, sem 3D, e o conteúdo de cada painel num `<details>`. Depois de montar, `data-js="true"` liga o coverflow.
 
-**Layout** (sem destaque e sem título próprio da grade):
+**Coverflow (fechado):**
+- Cartão 2:3. Altura do centro: `min(86cqh, 105cqw)` (cerca de 86% do palco no computador; ~70% da largura no celular). Perspectiva de 1400 px no palco.
+- Posições (`data-pos`, deslocamento em largura de cartão):
 
-```
-H2 + texto de entrada (.section-head)
-┌ GRADE: parede, junta navy-950 ──────────────────────────┐
-│ [palco: pôster 16:9]  [palco: pôster 16:9]  …           │
-│ selo                  selo                              │
-│ nome (H3)             nome                              │
-│ resumo                resumo                            │
-│ [Android] [Windows]  (etiquetas)                        │
-│ legenda, "Ler a descrição do vídeo"                     │
-└─────────────────────────────────────────────────────────┘
-botão primário "Diagnóstico gratuito" (marca o assunto "Aplicativo" no formulário)
-```
+| `data-pos` | `translateX` | Escala | `rotateY` | Opacidade | Brilho |
+|---|---|---|---|---|---|
+| 0 (centro) | 0 | 1 | 0 | 1 | 1 |
+| ±1 | ±86% | 0,84 | ∓24° | 0,65 | 0,75 |
+| ±2 | ±155% | 0,68 | ∓38° | 0,38 | 0,55 e desfoque de 1 px |
+| `oculto` (±3 em diante) | — | 0,5 | — | 0 | — (`inert`, `aria-hidden`) |
 
-- A grade vem logo abaixo do H2 da seção, e o nome de cada aplicativo é H3.
-  Nada de grade vazia, "em breve" ou cartão fictício.
-- A parede **nunca deixa coluna vazia**; o layout segue o tanto de cartões:
-  - **1 cartão:** o **cartão largo** (`.project-card--wide`). A partir de
-    1024 px, pôster nas colunas 1–7 e texto nas 8–12 (máx. 30rem), o pôster
-    centrado na altura do texto; o player toca no lugar do pôster. Abaixo de
-    1024, empilha como os outros cartões. Sem isso, o cartão único virava
-    um pôster de 1200 px.
-  - **2 cartões (hoje):** duas colunas a partir de 768 px (`.wall--2`).
-  - **3 ou mais:** 1 coluna (< 768), 2 (768–1023) ou 3 (≥ 1024)
-    (`.wall--3`).
-- **Mais de 6:** mostra 6 e um botão de contorno "Mostrar mais projetos",
-  que revela os demais sem mudar de página e leva o foco ao primeiro cartão
-  revelado.
-- Textos de interface aprovados em `docs/landing-copy.md` v2.0
-  (`landingContent.aplicativos.grid`).
-- **Cartão:** `--surface-raised` (navy-800). Em cima, o **palco** (§8.13),
-  com a tela do app no lugar do objeto (`--radius-2` e a sombra Luz, §5.4):
-  o pôster 16:9 (carregamento
-  preguiçoso) e, sobre ele, o botão de reproduzir (56 px, `--radius-2`,
-  electric-700 com triângulo branco, nome acessível "Assistir ao vídeo:
-  {nome}"). Embaixo, o **selo** de status (§8.14; hoje, "Piloto gratuito"
-  no Rota de Vendas e "Em uso" no Fleet Analytics BI), o nome, o resumo, as
-  etiquetas de plataforma (14 px, borda de 1 px navy-600, `--radius-1`;
-  nada de "A · B · C" com pontos), a legenda e a descrição do vídeo.
-- **Vídeo:** o `<video>` só existe depois do clique: o pôster dá lugar a um
-  `<video controls>` no mesmo lugar, dentro do palco, já tocando (há gesto
-  de quem visita), e o foco vai para o vídeo. Nada toca antes do clique. Só
-  um vídeo toca por vez na página. Legenda e descrição em texto sempre
-  presentes (os vídeos do /brag só têm música). Vídeo novo com narração
-  entra com legenda `.vtt`.
+- Celular (< 768 px): o ±2 também some.
+- Circular, sem duplicar cartão: 1 item é só o centro e sem setas; 2 itens, centro e um lateral; 3, centro e ±1. O clique num lateral o traz para o centro; o clique no centro, ou em "Ver detalhes", abre o painel.
+- O centro mostra etiqueta do tipo, selo de fase, nome, frase e "Ver detalhes", sobre um degradê escuro na metade de baixo (`rgb(8 18 29)` com 0,94 embaixo, 0,8 a 55% e 0 no topo). Os laterais mostram só a arte e o nome.
+- Controles: setas ‹ › nas laterais do palco (44 px; 48 px a partir de 768), bolinhas embaixo (a ativa alongada, em ciano), filtro por tipo acima (Todos · Hardware · Aplicativos · Sites, `aria-pressed`, pílulas de 44 px) e uma região `aria-live="polite"` com "3 de 10: Nome".
+- **Fundo ambiente:** a arte do centro de 480 px (desenhada a 64 px e ampliada 24×, desfocada em 4 px), sob uma camada `rgb(8 18 29 / 0,85)`, com máscara radial; duas camadas em crossfade de 1000 ms. Decorativo: some sem JS e em cores forçadas.
+
+**Painel (aberto):** o cartão do centro **vira** o painel (elemento compartilhado, `layoutId`), e os outros descem e viram a **fita** de miniaturas (64×86 px; a fita mede cerca de 98 px, cascata de 40 ms).
+- Cabeçalho: nome (h3, recebe o foco ao abrir), etiqueta do tipo, selo de fase, link do site (só se houver) e o X.
+- Abas (padrão APG, `tablist`): Visão geral · Como funciona · Telas.
+  - Visão geral: à esquerda o vídeo 16:9 (`VideoDemo`: pôster com "Assistir" e a duração, `<video controls>` só depois do clique, legenda e descrição em texto) ou, nos fictícios, a arte; à direita "Para quem é", 3–4 benefícios e "Quero saber mais" (`InterestLink`, sem WhatsApp).
+  - Como funciona: 3 passos numerados.
+  - Telas: 3 telas ilustrativas, uma por vez, com moldura de celular ou de navegador e setas.
+- Fita: `aria-current="true"` no ativo, com contorno elétrico de 2 px. Trocar de produto (miniatura, ‹ ›, ← →, dedo) faz um deslize curto (350 ms) e **substitui** a entrada do histórico.
+- Link direto e histórico: o `id` do cartão é o slug (`#replay`...). Abrir por clique cria uma entrada; fechar por X ou Esc faz `history.back()` se a abertura criou entrada, e só tira a âncora se a pessoa chegou pelo link; o voltar do navegador fecha. Uma âncora de outra seção com o painel aberto fecha sem `history.back()`; um `#slug` desconhecido é ignorado.
+
+**Altura constante (a regra principal):** a caixa `.catalogo__corpo` (filtro, palco e bolinhas; ou filtro, painel e fita) tem `height: clamp(600px, 80svh, 860px)` nos dois estados, para nada abaixo da seção se mexer ao abrir, fechar ou trocar (CLS 0). Sem JS, a caixa tem esse valor como `min-height`, para não crescer ao montar. O `check:browser` mede o topo da seção seguinte, na tela e no documento, fechado, aberto, trocando, com o filtro e fechado de novo (≤ 0,5 px).
+
+**Exceção documentada: o painel rola por dentro** (emenda de 22/10 à §4 da spec; **aguardando a decisão do dono**). Abaixo de 768 px de largura, o vídeo e o texto da Visão geral empilham e não cabem na altura da seção (a 390×844, cerca de 755 px de conteúdo para ~420 px de painel), e em alturas de tela abaixo de ~800 px (a 1366×768 só o texto já passa ~20 px). Nesses casos a seção **mantém a altura** e o `.catalogo__painel-interior` rola por dentro (a fita e o que vem abaixo não se mexem). A partir de 1280×800 a Visão geral cabe sem rolar: a mídia tem um teto de altura que acompanha a seção (`(clamp(600px, 80svh, 860px) − 442px) × 16/9`). Encolher o vídeo ou recolher o texto no celular foi descartado (vídeo pequeno demais; o "Quero saber mais" ficaria escondido). Há ainda a exceção de acessibilidade (WCAG 1.4.10 e 1.4.12): em alturas até 34em (paisagem de celular, zoom de 200–400%), a caixa vira `height: auto` e a seção cresce. O `check:browser` confere a Visão geral dos 10 itens sem rolar a 1440×900 e 1280×800, e a altura constante a 360×740.
+
+**Movimento** (curva `cubic-bezier(.25,1,.5,1)`; durações em `src/components/catalogo/movimento.ts` e na CSS; ver também a §6):
+
+| Movimento | Duração |
+|---|---|
+| Troca no coverflow (posição, escala, rotação, opacidade) | 800 ms, só CSS |
+| Texto do centro (sobe e aparece) | 500 ms |
+| Cartão → painel e cartões → fita | 600 ms (fita em cascata de 40 ms) |
+| Conteúdo do painel depois de crescer | 250 ms (atraso de 600 ms) |
+| Troca de produto com o painel aberto | 350 ms |
+| Fundo ambiente (crossfade) | 1000 ms |
+| Entrada da seção | 70 ms entre cartões |
+
+- Com movimento reduzido: troca instantânea, sem entrada em sequência e sem loop; a disposição 3D parada fica (não é movimento). Uma árvore React só (ADR-004): a redução vai por CSS `@media (prefers-reduced-motion)` ou pelo `useCanAnimate()` (só durações e valores).
+- A troca do coverflow é CSS; o `motion` só anima a superfície compartilhada, e o `check:browser` confere que o centro e os ±1 não ganham escala do motion numa troca.
+
+**Acessibilidade:**
+- O carrossel é uma região com `aria-roledescription="carrossel"` e rótulo **"Catálogo de produtos"** (não "Produtos", que é o nome da `section#produtos`: o rótulo do landmark é único). Cada cartão é um `<div role="group">` (o ARIA in HTML não permite `group` em `<article>`) com `aria-roledescription="produto"` e rótulo "3 de 10: Rota de Vendas". Setas ("Produto anterior", "Próximo produto") e bolinhas ("Ir para {nome}") com nome.
+- Teclado fechado: ← → e Home/End só com o foco dentro do carrossel; Enter/espaço abre o centro e centraliza um lateral. Aberto: ← → trocam de produto **só com o foco no painel fora das abas, do vídeo e de campos**; nas abas trocam de aba, e no `<video controls>` fazem o que o vídeo faz. Esc fecha e devolve o foco ao cartão do centro.
+- **Ordem de Tab dos laterais** (mudou na Task 10): um lateral só entra no Tab se o centro dele cai no palco, fora das setas (que ficam por cima). Abaixo de 768 px os laterais nunca entram; a 1440×900 o ±2 entra; a 1024–1279 px (com ~900 px de altura) o ±2 sai, e num tablet em pé o ±1 sai. Nada ganha `inert` por isso: clique, dedo, setas, bolinhas e ← → continuam. A regra usa os mesmos 0,86 e 1,55 da CSS (`CENTRO_DOS_LATERAIS` em `Coverflow.tsx`): mudou a geometria, mude os dois.
+- Foco visível com contorno sólido de 3 px; o lateral focado fica com opacidade 1 e sem filtro. Alvos de 44 px (setas, miniaturas, pílulas, abas, X). As **bolinhas** têm 44 px quando cabem e **encolhem até 24 px de largura** em telas estreitas (WCAG 2.5.8), sem quebrar a linha.
+- Cores forçadas: setas, X, pílulas e bolinhas em cores de sistema; foco e ativo em `Highlight`; contorno do centro em `CanvasText`; o fundo ambiente some. Medido: ≥ 3:1.
+- Sem JS: tudo no HTML do servidor (ver "Estados"). Na barra do topo, sem JS, a barra larga mostra um link "Produtos" para `#produtos` (Task 8b); com JS, o botão "Produtos ▾" (disclosure, `aria-expanded`).
+
+**Ganchos estáveis** (o `check:browser` e os testes dependem destes nomes; não renomear): `section#produtos .catalogo` (`data-js`, `data-estado`), `.catalogo__corpo`, `.catalogo__cartao` (`id` = slug, `data-pos`), `.catalogo__seta--anterior` e `--proxima`, `.catalogo__bolinhas button`, `.catalogo__filtro button[aria-pressed]`, `.catalogo__painel`, `.catalogo__fita button[aria-current]`, `.catalogo__loop` (o `<video>` do loop do cartão), `.catalogo__video` (o `<video>` do painel), `.topbar__produtos` e `.topbar__produtos-menu a[href^="#"]`. A etapa do catálogo do `check:browser` usa também `.catalogo__fechar` (o X), `.catalogo__painel-seta--proxima` (o › do painel), `.catalogo__painel-nome`, `.catalogo__palco`, `.catalogo__ficha` e `.catalogo__painel-interior`: tratados como estáveis também.
+
+**Contrato da mídia** (`public/catalogo/<slug>/`, spec §6.1; conferido por `src/content/catalogo.assets.test.ts`):
+
+| Arquivo | Formato | Orçamento | Quem tem |
+|---|---|---|---|
+| `cartao.avif` / `cartao.jpg` | 800×1200 (2:3) | ≤ 120 KB / ≤ 200 KB | todos |
+| `cartao-480.avif` / `cartao-480.jpg` | 480×720 | ≤ 45 KB / ≤ 70 KB | todos (miniaturas, celular, fundo ambiente) |
+| `cartao-loop.webm` / `cartao-loop.mp4` | 600×900, 25 fps, **5 s** | ≤ 600 KB cada | os 3 reais |
+| `tela-1.svg` … `tela-3.svg` | celular 360×720 ou navegador 960×600 | pequeno | todos |
+
+Hoje os arquivos são **provisórios** (`LEIA-PROVISORIO.txt`); a arte final os substitui com os mesmos nomes, sem mexer no código, e então a medida de contraste da §3.4 se repete. Só mídia local (CSP, ADR-008). Nada de texto na imagem; metade de baixo calma e escura (é onde fica o texto); leitura clara na miniatura de 64 px. O quadro 0 do loop é igual ao `cartao.jpg`, e o último volta ao 0.
+
+**Vídeo:** no máximo **um** vídeo tocando na página (`videoCoordination`), contando o hero, o loop do cartão e o vídeo do painel. O vídeo do painel só toca no clique (`preload="none"`, sem `autoplay`). O loop do cartão (`.catalogo__loop`) toca **uma vez, por 5 s**, quando o cartão chega ao centro ou recebe o mouse ou o foco, e **para no quadro inicial** (sem o atributo `loop`); nunca com movimento reduzido.
+
+**Itens fictícios:** os 7 itens inventados levam `ficticio: true` e o selo "Em desenvolvimento", **sem** o marcador `[A PREENCHER` (o `check:placeholders` só pode falhar nos 6 que já existiam). Para achar e trocar: procurar `ficticio: true` em `src/content/catalogo.ts`. As telas são ilustrativas (o `alt` diz) até chegarem as capturas reais.
+
+Regras do vídeo herdadas da grade da v2.2 e que continuam no painel: nada toca antes do clique; o `<video controls>` aparece no lugar do pôster já tocando e recebe o foco; só um vídeo toca por vez; legenda e descrição em texto ficam sempre presentes (os vídeos do /brag só têm música; vídeo novo com narração entra com legenda `.vtt`). O botão de reproduzir tem 56 px, `--radius-2`, electric-700 com triângulo branco e nome acessível "Assistir ao vídeo: {nome} ({duração})".
 
 ### 8.9 Equipe
 

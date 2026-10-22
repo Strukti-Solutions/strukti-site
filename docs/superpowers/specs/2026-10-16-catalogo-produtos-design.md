@@ -1,7 +1,7 @@
 # Catálogo de produtos ("segundo ato") — spec
 
-**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41), **ainda não implementada**.
-**Branch:** `feat/catalogo-produtos`, empilhado em `feat/hero-expansao` (PR #8 ainda aberto). O PR deste trabalho aponta para `feat/hero-expansao`; quando o #8 entrar, muda o destino para `homologacao`.
+**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41); implementada no branch `feat/catalogo-produtos` (decisões de 22/10 anotadas nas seções 4, 3.5 e 8).
+**Branch:** `feat/catalogo-produtos`, criado a partir de `main`. O PR #8 já entrou; o PR deste trabalho aponta para `homologacao`.
 **Referência de formato:** um "3D coverflow carousel" do 21st.dev mostrado pelo dono. É só referência visual: o componente não declara licença, então nenhum código dele entra (ADR-005), e três comportamentos dele ficam de fora de propósito: girar sozinho, capturar as setas do teclado na página inteira e carregar imagens de CDN externa (CSP, ADR-008).
 
 ---
@@ -121,6 +121,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
   - Fecha com Esc, com clique fora ou ao escolher um item.
   - O botão recebe `aria-current` quando o catálogo está na faixa da barra, como hoje.
 - **Celular:** no painel do Menu, "Produtos" vira uma sublista expansível com os mesmos grupos.
+- **Sem JS (decisão de 22/10, Task 8b):** na barra larga, "Produtos" é um link para `#produtos` (o botão de divulgação precisa de JS para abrir). Com JS, vira o botão "Produtos ▾".
 - A cápsula ao rolar e o resto da barra ficam como estão.
 
 ### 3.6 "Quero saber mais"
@@ -254,8 +255,8 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
 ## 8. Acessibilidade
 
 1. **Carrossel** no padrão APG:
-   - região com `aria-roledescription="carrossel"` e rótulo "Produtos";
-   - cada cartão é um `group` com `aria-roledescription="produto"` e rótulo "3 de 10: Rota de Vendas";
+   - região com `aria-roledescription="carrossel"` e rótulo "Catálogo de produtos" (e não "Produtos", que é o nome da `section#produtos` e repetiria o landmark: os rótulos de região têm de ser únicos);
+   - cada cartão é um `<div role="group">` (decisão de 22/10: o ARIA in HTML não permite `role="group"` em `<article>`) com `aria-roledescription="produto"` e rótulo "3 de 10: Rota de Vendas";
    - os escondidos (±3 em diante) ficam `inert`;
    - setas ‹ › com nome ("Produto anterior" e "Próximo produto");
    - bolinhas com nome ("Ir para Rota de Vendas").
@@ -273,7 +274,8 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
    - 1.4.3: contraste do texto sobre a arte (medir como no hero, MASTER §3.4);
    - 1.4.10 e 1.4.12: ver a §4;
    - 2.4.7: foco visível em cartões, setas, miniaturas e abas;
-   - 2.5.5: alvos de no mínimo 44 px (setas, miniaturas e pílulas).
+   - 2.5.5: alvos de no mínimo 44 px (setas, miniaturas e pílulas);
+   - 2.5.8: as bolinhas de paginação têm 44 px de largura quando cabem e, com muitos itens numa tela estreita, encolhem até **24 px** (o mínimo do 2.5.8), sem quebrar a linha (decisão de 22/10; os 44 px ficam para setas, miniaturas e pílulas).
 7. **Cores forçadas:** setas, contornos e ícones visíveis, como no conserto A11Y-2 do hero.
 
 ## 9. Técnico
