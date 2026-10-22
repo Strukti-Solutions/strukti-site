@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { motion } from "motion/react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { CartaoProduto } from "./CartaoProduto";
 import { Chevron } from "./ConteudoProduto";
@@ -38,6 +39,15 @@ interface CoverflowProps {
   largo: boolean;
   /** Slug do centro inicial, cuja arte carrega sem `lazy`. */
   prioritario: string;
+  /** `useCanAnimate()` do catálogo: sem ele, tudo instantâneo (ADR-004). */
+  animar: boolean;
+  /** A seção está na tela: o loop do centro só toca assim. */
+  naTela: boolean;
+  /**
+   * A seção montou abaixo da dobra: os cartões esperam escondidos e entram
+   * em sequência na 1ª vez que ela aparece (`whileInView`, §7).
+   */
+  esperandoEntrada: boolean;
   /**
    * Painel aberto: o carrossel sai da tela (`hidden`), mas os cartões ficam
    * no DOM, com o `id` da âncora (§3.4) e o cartão de origem para o foco.
@@ -61,6 +71,9 @@ export function Coverflow({
   js,
   largo,
   prioritario,
+  animar,
+  naTela,
+  esperandoEntrada,
   escondido = false,
   aoCentralizar,
   aoPasso,
@@ -161,8 +174,14 @@ export function Coverflow({
             <Chevron sentido={-1} />
           </button>
         )}
-        <div
+        {/* A entrada da seção começa aqui e desce, por variantes, até o
+            invólucro de cada cartão (`.catalogo__entrada`). */}
+        <motion.div
           className="catalogo__palco"
+          initial={false}
+          animate={esperandoEntrada && animar ? "escondida" : "visivel"}
+          whileInView={esperandoEntrada && animar ? "visivel" : undefined}
+          viewport={{ once: true, amount: 0.35 }}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerCancel={() => {
@@ -183,12 +202,17 @@ export function Coverflow({
                 js={js}
                 oculto={pos === "oculto" || (!largo && Math.abs(d) === 2)}
                 prioridade={item.slug === prioritario}
+                // Da esquerda para a direita na tela; os ocultos, sem espera.
+                ordem={pos === "oculto" ? 0 : d + 2}
+                animar={animar}
+                naTela={naTela}
+                painelAberto={escondido}
                 botaoRef={centro ? botaoCentroRef : undefined}
                 aoAtivar={(origem) => ativar(item, centro, origem)}
               />
             );
           })}
-        </div>
+        </motion.div>
         {total > 1 && (
           <button
             type="button"

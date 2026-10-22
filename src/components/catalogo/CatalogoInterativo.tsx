@@ -2,16 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ItemCatalogo } from "@/content/catalogo";
+import { useCanAnimate } from "@/lib/motion";
 import { pauseOtherVideos } from "@/lib/videoCoordination";
 import { Coverflow, textoPosicao } from "./Coverflow";
 import type { EventoCatalogo } from "./estado";
 import { FiltroTipo } from "./FiltroTipo";
 import { FitaMiniaturas } from "./FitaMiniaturas";
+import { FundoAmbiente } from "./FundoAmbiente";
 import { PainelProduto } from "./PainelProduto";
 import { slugDaUrl, useCatalogo } from "./useCatalogo";
 
 /** A partir daqui os ±2 aparecem (§3.1); abaixo, a CSS os esconde e eles ficam `inert`. */
 const LARGO_QUERY = "(min-width: 768px)";
+/** Quanto da seção precisa estar na tela para o loop do centro tocar. */
+const NA_TELA_LIMIAR = 0.35;
 
 /**
  * Raiz cliente do catálogo (spec 2026-10-16, §3): filtro, palco (o coverflow
@@ -20,6 +24,10 @@ const LARGO_QUERY = "(min-width: 768px)";
  * na hidratação) e "true" depois de montar: só aí a CSS liga o coverflow.
  * Sem JS, fica a fileira com rolagem para o lado e o `<details>` de cada
  * cartão (§8.5).
+ *
+ * O movimento (§7) vem do `useCanAnimate()` daqui, montado antes do painel
+ * e da fita: com movimento reduzido, as mesmas peças, com transições
+ * instantâneas, sem loop e sem entrada em sequência (ADR-004).
  */
 export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }) {
   // O hook rola até o topo da seção (§3.4): o `<section>` em volta, que é do
@@ -33,6 +41,12 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   const { estado, visiveis, despachar } = useCatalogo(itens, secaoRef);
   const [js, setJs] = useState(false);
   const [largo, setLargo] = useState(true);
+  const animar = useCanAnimate();
+  // Fora da tela, o loop do centro não carrega nem toca: tocar pausaria o
+  // vídeo do hero (um vídeo por vez).
+  const [naTela, setNaTela] = useState(false);
+  const [esperandoEntrada, setEsperandoEntrada] = useState(false);
+  const entradaDecididaRef = useRef(false);
   // A live region nasce vazia e só fala depois da 1ª troca feita aqui (§8.4).
   const [anunciar, setAnunciar] = useState(false);
   // Fechou pelo X ou pelo Esc: o foco volta ao cartão de origem (§8.3).
@@ -52,6 +66,34 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
     query.addEventListener("change", sincronizar);
     return () => query.removeEventListener("change", sincronizar);
   }, []);
+
+  useEffect(() => {
+    const raiz = raizNoRef.current;
+    if (!raiz) return;
+    if (typeof IntersectionObserver !== "function") {
+      setNaTela(true);
+      return;
+    }
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        const ultima = entradas[entradas.length - 1];
+        if (ultima) setNaTela(ultima.isIntersecting);
+      },
+      { threshold: NA_TELA_LIMIAR },
+    );
+    observador.observe(raiz);
+    return () => observador.disconnect();
+  }, []);
+
+  // A entrada em sequência (§7) só quando a seção monta abaixo da dobra (o
+  // caso comum, vindo do hero): quem chega com ela já na tela (um link
+  // direto) não vê os cartões sumirem para entrar de novo. Decide uma vez.
+  useEffect(() => {
+    const raiz = raizNoRef.current;
+    if (!animar || !raiz || entradaDecididaRef.current) return;
+    entradaDecididaRef.current = true;
+    if (raiz.getBoundingClientRect().top > window.innerHeight) setEsperandoEntrada(true);
+  }, [animar]);
 
   // Só um vídeo toca por vez na página (MASTER §8.8): o do painel, o do hero
   // e os loops dos cartões. "play" não borbulha: ouvir na captura.
@@ -113,6 +155,7 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
 
   return (
     <div ref={raizRef} className="catalogo" data-js={js ? "true" : "false"} data-estado={aberto ? "aberto" : "fechado"}>
+      {itemAtivo && <FundoAmbiente src={`${itemAtivo.arte.base}-480.jpg`} />}
       <div className="catalogo__corpo">
         <FiltroTipo filtro={estado.filtro} aoFiltrar={(filtro) => navegar({ tipo: "filtrar", filtro })} />
         <Coverflow
@@ -121,6 +164,9 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
           js={js}
           largo={largo}
           prioritario={itens[0]?.slug ?? ""}
+          animar={animar}
+          naTela={naTela}
+          esperandoEntrada={esperandoEntrada}
           escondido={aberto}
           aoCentralizar={(slug) => navegar({ tipo: "centralizar", slug })}
           aoPasso={(delta) => navegar({ tipo: "passo", delta })}
@@ -133,12 +179,14 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
               item={itemAtivo}
               posicao={{ indice: indiceAtivo, total: visiveis.length }}
               direcao={estado.direcao}
+              animar={animar}
               aoFechar={fechar}
               aoPasso={(delta) => navegar({ tipo: "passo", delta })}
             />
             <FitaMiniaturas
               itens={visiveis}
               ativo={estado.ativo}
+              animar={animar}
               aoEscolher={(slug) => navegar({ tipo: "centralizar", slug })}
             />
           </>

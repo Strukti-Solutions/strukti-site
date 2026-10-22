@@ -1755,8 +1755,57 @@ video:focus-visible {
   overflow-x: clip;
 }
 
+/* O fundo ambiente fica atrás do resto do catálogo, sem sair dele. */
 .catalogo {
   position: relative;
+  isolation: isolate;
+}
+
+/* Fundo ambiente (§3.1, Q39, §7): a arte do centro desenhada pequena (64 px),
+   ampliada pelo transform e desfocada (desfoque barato), sob uma camada navy
+   forte; as bordas somem no fundo da seção. Duas camadas em crossfade de 1 s.
+   Decorativo: sem JS e em cores forçadas, sai. Não sobe além do catálogo,
+   para não cobrir o título da seção. */
+.catalogo__fundo {
+  position: absolute;
+  inset: 0 -12%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
+}
+
+.catalogo__fundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgb(8 18 29 / 0.85);
+}
+
+.catalogo__fundo-camada {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  max-width: none;
+  height: 96px;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translate(-50%, -50%) scale(24);
+}
+
+.catalogo__fundo-camada[data-visivel="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__fundo-camada {
+    transition: opacity 1000ms ease;
+  }
+}
+
+.catalogo[data-js="false"] .catalogo__fundo {
+  display: none;
 }
 
 .catalogo__corpo {
@@ -1917,16 +1966,24 @@ video:focus-visible {
   box-shadow: var(--shadow-float);
 }
 
-.catalogo[data-js="true"] .catalogo__superficie {
+/* A entrada da seção anima este invólucro (o cartão já tem o transform do
+   data-pos); a superfície ocupa o cartão inteiro. */
+.catalogo[data-js="true"] :is(.catalogo__entrada, .catalogo__superficie) {
   height: 100%;
 }
 
-.catalogo__arte {
+.catalogo__arte,
+.catalogo__loop {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* O loop de 5 s (§6.2) cobre a arte; o quadro 0 é igual a ela. */
+.catalogo__loop {
+  pointer-events: none;
 }
 
 /* Hover (Q9): só um contorno leve; não abre nem centraliza. */
@@ -2086,19 +2143,38 @@ video:focus-visible {
 }
 
 .catalogo__painel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  /* O dedo na vertical rola o painel ou a página (Review Focus 1). */
+  touch-action: pan-y;
+}
+
+/* A superfície (fundo, borda e sombra) numa camada própria: é ela que cresce
+   do cartão do centro ao abrir (layoutId, §7), sem esticar o texto. */
+.catalogo__painel-superficie {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-navy-700);
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-900);
+  box-shadow: var(--shadow-float);
+}
+
+/* O conteúdo, sobre a superfície; é aqui que o painel rola por dentro (§4).
+   Também é a referência do conteúdo que sai na troca (popLayout), e o
+   deslize dele não cria rolagem para o lado. */
+.catalogo__painel-interior {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: var(--space-3);
   min-height: 0;
   padding: var(--space-4) var(--space-5);
-  overflow-y: auto;
-  border: 1px solid var(--color-navy-700);
-  border-radius: var(--radius-3);
-  background-color: var(--color-navy-900);
-  box-shadow: var(--shadow-float);
-  /* O dedo na vertical rola o painel ou a página (Review Focus 1). */
-  touch-action: pan-y;
+  overflow: hidden auto;
 }
 
 .catalogo__painel-cabeca {
@@ -2196,7 +2272,7 @@ video:focus-visible {
 
 /* Celular: as três abas numa linha só. */
 @media (max-width: 767.98px) {
-  .catalogo__painel {
+  .catalogo__painel-interior {
     padding-inline: var(--space-4);
   }
 
@@ -2372,12 +2448,14 @@ video:focus-visible {
    um degradê escuro na parte de baixo da arte, como nos cartões. As margens
    automáticas centram poucos itens sem cortar os muitos; o padding deixa o
    contorno de foco inteiro (a rolagem corta o que passa da borda). */
+/* Na entrada, as miniaturas descem de cima (§7): o que passa da borda de
+   cima não vira rolagem. */
 .catalogo__fita {
   display: flex;
   flex: none;
   gap: var(--space-2);
   padding: 6px;
-  overflow-x: auto;
+  overflow: auto hidden;
   scrollbar-width: thin;
 }
 
@@ -2681,8 +2759,12 @@ video:focus-visible {
   /* Painel aberto: a borda do painel, a aba ativa e a miniatura ativa. A
      ativa e a com o mouse entram aqui também: fora do bloco, as regras delas
      (0,2,0) pintariam o texto de branco sobre o Canvas. */
-  .catalogo__painel {
+  .catalogo__painel-superficie {
     border-color: CanvasText;
+  }
+
+  .catalogo__fundo {
+    display: none;
   }
 
   .catalogo__aba,

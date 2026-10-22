@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import axe from "axe-core";
 import { CATALOGO, catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { landingContent } from "@/content/landing";
 import { onInterestSelected } from "@/lib/interest";
+import { REDUCED_MOTION_QUERY } from "@/lib/motion";
 import { Catalogo } from "@/components/sections/Catalogo";
 import { CatalogoInterativo } from "./CatalogoInterativo";
 
@@ -54,6 +55,8 @@ const posicoes = (raiz: HTMLElement) => cartoes(raiz).map((c) => c.dataset.pos);
 const centro = (raiz: HTMLElement) => raiz.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.id;
 const anuncio = (raiz: HTMLElement) => raiz.querySelector('[aria-live="polite"]')?.textContent ?? "";
 const cartao = (raiz: HTMLElement, slug: string) => raiz.querySelector<HTMLElement>(`#${slug}`)!;
+/** O conteúdo do painel do produto atual; o do anterior, saindo, fica `aria-hidden`. */
+const CONTEUDO_ATUAL = ".catalogo__painel-conteudo:not([aria-hidden])";
 
 describe("catálogo: HTML do servidor", () => {
   it("HTML do servidor (renderToString): 10 cartões (group) com os ids da §5.2, o conteúdo dos painéis (para quem é, os 3 passos de cada um) e nenhum <video>", () => {
@@ -512,19 +515,20 @@ describe("catálogo: estado aberto", () => {
     const { raiz } = montar();
     const painel = abrir(raiz);
     const { video } = porSlug("replay").painel;
-    const visao = painel.querySelector<HTMLElement>(".catalogo__aba-conteudo--visao")!;
+    // A Visão geral do produto atual (a do anterior pode estar saindo, Task 7).
+    const visao = () => painel.querySelector<HTMLElement>(`${CONTEUDO_ATUAL} .catalogo__aba-conteudo--visao`)!;
 
-    expect(within(visao).getByText(video!.caption)).toBeTruthy();
-    const resumo = within(visao).getByText(landingContent.aplicativos.videoDescriptionLinkLabel);
+    expect(within(visao()).getByText(video!.caption)).toBeTruthy();
+    const resumo = within(visao()).getByText(landingContent.aplicativos.videoDescriptionLinkLabel);
     expect(resumo.tagName).toBe("SUMMARY");
     expect(resumo.closest("details")?.textContent).toContain(video!.description);
 
     // Troca de produto: a legenda e a descrição acompanham o vídeo novo.
     fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.proximo }));
-    expect(within(visao).getByText(porSlug("rota-de-vendas").painel.video!.caption)).toBeTruthy();
+    expect(within(visao()).getByText(porSlug("rota-de-vendas").painel.video!.caption)).toBeTruthy();
     // Os inventados não têm vídeo: nem legenda nem descrição.
     fireEvent.click(within(fita(raiz)).getByRole("button", { name: porSlug("placar-conectado").nome }));
-    expect(within(visao).queryByText(landingContent.aplicativos.videoDescriptionLinkLabel)).toBeNull();
+    expect(within(visao()).queryByText(landingContent.aplicativos.videoDescriptionLinkLabel)).toBeNull();
   });
 
   it("miniatura do Fleet troca o painel para o Fleet sem fechar", () => {
@@ -661,6 +665,264 @@ describe("catálogo: estado aberto", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: catalogoUi.abas.telas }));
     expect((await axe.run(container)).violations).toEqual([]);
+  });
+});
+
+// Task 7 (§3.1, §7, §9): o loop de 5 s do cartão, o fundo ambiente e a troca
+// animada do conteúdo do painel. O jsdom não toca vídeo: `play` e `pause` são
+// de mentira, e o IntersectionObserver é um falso que o teste aciona.
+describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
+  let observadores: ObservadorFalso[] = [];
+
+  class ObservadorFalso {
+    alvos = new Set<Element>();
+    constructor(public aviso: IntersectionObserverCallback) {
+      observadores.push(this);
+    }
+    observe(alvo: Element) {
+      this.alvos.add(alvo);
+    }
+    unobserve(alvo: Element) {
+      this.alvos.delete(alvo);
+    }
+    disconnect() {
+      this.alvos.clear();
+    }
+    takeRecords() {
+      return [];
+    }
+  }
+
+  /** A seção entra (ou sai) da tela: avisa todos os observadores. */
+  const naTela = (visivel = true) =>
+    act(() => {
+      for (const obs of observadores) {
+        const entradas = [...obs.alvos].map(
+          (target) => ({ target, isIntersecting: visivel, intersectionRatio: visivel ? 1 : 0 }) as IntersectionObserverEntry,
+        );
+        if (entradas.length) obs.aviso(entradas, obs as unknown as IntersectionObserver);
+      }
+    });
+
+  let play: ReturnType<typeof vi.fn>;
+  let pause: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    observadores = [];
+    vi.stubGlobal("IntersectionObserver", ObservadorFalso);
+    play = vi.fn(() => Promise.resolve());
+    pause = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(play as never);
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(pause as never);
+    vi.spyOn(window.history, "back").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Desmonta antes de o afterEach do arquivo desfazer os falsos de play/pause.
+    cleanup();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    document.querySelectorAll("body > video").forEach((v) => v.remove());
+  });
+
+  const loopDe = (raiz: HTMLElement, slug: string) =>
+    cartao(raiz, slug).querySelector<HTMLVideoElement>("video.catalogo__loop");
+  const fita = (raiz: HTMLElement) => raiz.querySelector<HTMLElement>(".catalogo__fita")!;
+
+  it("o centro inicial do replay renderiza .catalogo__loop com preload='none' e sem atributo loop; os laterais não", () => {
+    const { raiz } = montar();
+    // Fora da tela, nada carrega nem toca (e o vídeo do hero segue tocando).
+    expect(raiz.querySelector("video")).toBeNull();
+
+    naTela();
+    const loop = loopDe(raiz, "replay")!;
+    expect(loop).not.toBeNull();
+    expect(loop.getAttribute("preload")).toBe("none");
+    expect(loop.hasAttribute("loop")).toBe(false);
+    expect(loop.hasAttribute("controls")).toBe(false);
+    expect(loop.hasAttribute("playsinline")).toBe(true);
+    expect(loop.muted).toBe(true);
+    expect(loop.getAttribute("poster")).toBe("/catalogo/replay/cartao.jpg");
+    expect([...loop.querySelectorAll("source")].map((s) => [s.getAttribute("src"), s.getAttribute("type")])).toEqual([
+      ["/catalogo/replay/cartao-loop.webm", "video/webm"],
+      ["/catalogo/replay/cartao-loop.mp4", "video/mp4"],
+    ]);
+    // Decorativo, como a arte: fora da árvore de acessibilidade.
+    expect(loop.getAttribute("aria-hidden")).toBe("true");
+    expect(raiz.querySelectorAll("video.catalogo__loop")).toHaveLength(1);
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(play.mock.contexts[0]).toBe(loop);
+
+    // Os laterais têm loop (Rota e Fleet), mas só tocam com o mouse ou o foco.
+    expect(loopDe(raiz, "rota-de-vendas")).toBeNull();
+    expect(loopDe(raiz, "fleet-analytics-bi")).toBeNull();
+    fireEvent.mouseEnter(cartao(raiz, "rota-de-vendas"));
+    expect(loopDe(raiz, "rota-de-vendas")).not.toBeNull();
+    fireEvent.mouseLeave(cartao(raiz, "rota-de-vendas"));
+    expect(loopDe(raiz, "rota-de-vendas")).toBeNull();
+    act(() => cartao(raiz, "fleet-analytics-bi").focus());
+    expect(loopDe(raiz, "fleet-analytics-bi")).not.toBeNull();
+    act(() => cartao(raiz, "fleet-analytics-bi").blur());
+    expect(loopDe(raiz, "fleet-analytics-bi")).toBeNull();
+
+    // Centralizar outro leva o loop junto; os inventados não têm loop.
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(loopDe(raiz, "rota-de-vendas")).not.toBeNull();
+    expect(loopDe(raiz, "replay")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ir para Placar conectado para quadras" }));
+    expect(raiz.querySelector('.catalogo__cartao[data-pos="0"] video')).toBeNull();
+  });
+
+  it("o loop pausa e volta a currentTime 0 aos 5 s", () => {
+    vi.useFakeTimers();
+    const { raiz } = montar();
+    naTela();
+    const loop = loopDe(raiz, "replay")!;
+
+    // Os 5 s contam de quando o vídeo começa a se mexer (o `playing`).
+    act(() => {
+      loop.dispatchEvent(new Event("playing"));
+    });
+    loop.currentTime = 3.2;
+    act(() => vi.advanceTimersByTime(4999));
+    expect(pause).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(pause.mock.contexts[0]).toBe(loop);
+    expect(loop.currentTime).toBe(0);
+    // Uma vez só: não volta a tocar sozinho.
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(pause).toHaveBeenCalledTimes(1);
+  });
+
+  it("o loop que termina antes dos 5 s (ended) também para no quadro 0", () => {
+    vi.useFakeTimers();
+    const { raiz } = montar();
+    naTela();
+    const loop = loopDe(raiz, "replay")!;
+
+    act(() => {
+      loop.dispatchEvent(new Event("playing"));
+    });
+    loop.currentTime = 4.96;
+    act(() => {
+      loop.dispatchEvent(new Event("ended"));
+    });
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(loop.currentTime).toBe(0);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(1);
+  });
+
+  it("com reduced motion não existe .catalogo__loop", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((media: string) => ({
+        matches: media === REDUCED_MOTION_QUERY,
+        media,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      })),
+    );
+    const { raiz } = montar();
+    naTela();
+    fireEvent.mouseEnter(cartao(raiz, "rota-de-vendas"));
+
+    expect(raiz.querySelector(".catalogo__loop")).toBeNull();
+    expect(play).not.toHaveBeenCalled();
+    // A mesma árvore (ADR-004): o fundo e os cartões estão lá, sem entrada escondida.
+    expect(raiz.querySelector(".catalogo__fundo")).not.toBeNull();
+    const entradas = [...raiz.querySelectorAll<HTMLElement>(".catalogo__entrada")];
+    expect(entradas).toHaveLength(10);
+    for (const entrada of entradas) expect(entrada.style.opacity).not.toBe("0");
+  });
+
+  it("com um <video controls> tocando, o loop não chama play()", () => {
+    const daPessoa = document.createElement("video");
+    daPessoa.controls = true;
+    Object.defineProperty(daPessoa, "paused", { configurable: true, value: false });
+    document.body.append(daPessoa);
+
+    const { raiz } = montar();
+    naTela();
+    expect(loopDe(raiz, "replay")).not.toBeNull();
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("FundoAmbiente usa /catalogo/<centro>/cartao-480.jpg e troca ao centralizar outro", () => {
+    const { raiz } = montar();
+    const fundo = raiz.querySelector<HTMLElement>(".catalogo__fundo")!;
+    const camadas = () => [...fundo.querySelectorAll<HTMLImageElement>("img")];
+    const visivel = () => fundo.querySelector<HTMLImageElement>('img[data-visivel="true"]')?.getAttribute("src");
+
+    // Decorativo e fora da árvore de acessibilidade.
+    expect(fundo.getAttribute("aria-hidden")).toBe("true");
+    expect(visivel()).toBe("/catalogo/replay/cartao-480.jpg");
+
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(visivel()).toBe("/catalogo/rota-de-vendas/cartao-480.jpg");
+    // Duas camadas: a nova por cima, a anterior saindo (crossfade).
+    expect(camadas().map((img) => img.getAttribute("src")).sort()).toEqual([
+      "/catalogo/replay/cartao-480.jpg",
+      "/catalogo/rota-de-vendas/cartao-480.jpg",
+    ]);
+    for (const img of camadas()) {
+      expect(img.getAttribute("alt")).toBe("");
+      expect(img.getAttribute("aria-hidden")).toBe("true");
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(visivel()).toBe("/catalogo/fleet-analytics-bi/cartao-480.jpg");
+    expect(camadas()).toHaveLength(2);
+    // Com o painel aberto, o fundo segue o produto do painel.
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Fleet Analytics BI" }));
+    fireEvent.click(within(fita(raiz)).getByRole("button", { name: porSlug("placar-conectado").nome }));
+    expect(visivel()).toBe("/catalogo/placar-conectado/cartao-480.jpg");
+  });
+
+  it("abrir o painel com o loop tocando o pausa (1 vídeo por vez)", () => {
+    const { raiz } = montar();
+    naTela();
+    const loop = loopDe(raiz, "replay")!;
+    Object.defineProperty(loop, "paused", { configurable: true, value: false });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(pause.mock.contexts).toContain(loop);
+    // O coverflow escondido não carrega loop nenhum enquanto o painel está aberto.
+    expect(raiz.querySelector("video")).toBeNull();
+  });
+
+  it("trocar com o painel aberto: o conteúdo que sai fica inert e aria-hidden, sem id repetido", () => {
+    const { raiz } = montar();
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
+    const painel = raiz.querySelector<HTMLElement>(".catalogo__painel")!;
+    expect(painel.querySelector(CONTEUDO_ATUAL)?.getAttribute("data-direcao")).toBe("0");
+
+    fireEvent.click(within(painel).getByRole("button", { name: catalogoUi.proximo }));
+    const conteudos = [...painel.querySelectorAll<HTMLElement>(".catalogo__painel-conteudo")];
+    // O do replay ainda está saindo (350 ms), por baixo do novo.
+    expect(conteudos).toHaveLength(2);
+    const atual = painel.querySelector<HTMLElement>(CONTEUDO_ATUAL)!;
+    expect(conteudos.filter((c) => !c.hasAttribute("aria-hidden"))).toEqual([atual]);
+    expect(atual.getAttribute("data-direcao")).toBe("1");
+    expect(atual.textContent).toContain(porSlug("rota-de-vendas").painel.paraQuem);
+    for (const saindo of conteudos.filter((c) => c !== atual)) {
+      expect(saindo.hasAttribute("inert")).toBe(true);
+      expect(saindo.getAttribute("aria-hidden")).toBe("true");
+      expect(saindo.querySelector("[id]")).toBeNull();
+    }
+    // As abas apontam para os painéis do produto atual.
+    for (const aba of within(painel).getAllByRole("tab")) {
+      expect(atual.querySelector(`#${CSS.escape(aba.getAttribute("aria-controls")!)}`)).not.toBeNull();
+    }
+    const ids = [...document.querySelectorAll("[id]")].map((el) => el.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
