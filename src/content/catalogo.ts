@@ -3,7 +3,7 @@
  * coverflow e do painel, e a microcopy de interface (`catalogoUi`).
  *
  * Os 3 produtos reais reaproveitam por referência o que já está aprovado em
- * `landingContent` (nome, vídeo e, no Rota de Vendas, a frase), sem duplicar.
+ * `landingContent` (nome, vídeo, a fase dos aplicativos e, no Rota de Vendas, a frase), sem duplicar.
  * Os textos novos deles (frase do replay e do Fleet, para quem é, benefícios e
  * como funciona) são PROPOSTA — aguardando aprovação do Thiago
  * (docs/landing-copy.md, "Catálogo"), e só usam fatos que já estão no site:
@@ -143,7 +143,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     tipo: "aplicativo",
     nome: ROTA.name,
     frase: ROTA.summary,
-    fase: "piloto",
+    fase: ROTA.status,
     arte: arte(
       "rota-de-vendas",
       "Um celular com a rota do Rota de Vendas no suporte do painel de um carro parado, com a cidade desfocada no para-brisa.",
@@ -189,7 +189,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     nome: FLEET.name,
     // O resumo da v2.2 (137 caracteres) passa do limite da §5.3.
     frase: "Para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, no mesmo lugar.",
-    fase: "emUso",
+    fase: FLEET.status,
     arte: arte(
       "fleet-analytics-bi",
       "O painel do Fleet Analytics BI num monitor de um escritório escuro, com o mapa da frota e a janela para a cidade.",

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CATALOGO, catalogoUi, type ItemCatalogo } from "./catalogo";
 import { landingContent } from "./landing";
 
@@ -84,6 +84,30 @@ describe("CATALOGO (spec §5)", () => {
 
   it("as fases dos reais são piloto, piloto e emUso", () => {
     expect(REAIS.map((slug) => porSlug(slug).fase)).toEqual(["piloto", "piloto", "emUso"]);
+  });
+
+  it("a fase dos aplicativos reais vem do status do projeto em landingContent (uma fonte só)", async () => {
+    // O Rota de Vendas sai do piloto em landing.ts: o selo do catálogo acompanha.
+    vi.resetModules();
+    vi.doMock("./landing", async (importOriginal) => {
+      const original = await importOriginal<typeof import("./landing")>();
+      const projects = original.landingContent.aplicativos.projects.map((p) =>
+        p.slug === "rota-de-vendas" ? { ...p, status: "emUso" as const } : p.slug === "fleet-analytics-bi" ? { ...p, status: "piloto" as const } : p,
+      );
+      return {
+        ...original,
+        landingContent: { ...original.landingContent, aplicativos: { ...original.landingContent.aplicativos, projects } },
+      };
+    });
+    try {
+      const { CATALOGO: outro } = await import("./catalogo");
+      const fase = (slug: string) => outro.find((i) => i.slug === slug)?.fase;
+      expect(fase("rota-de-vendas")).toBe("emUso");
+      expect(fase("fleet-analytics-bi")).toBe("piloto");
+    } finally {
+      vi.doUnmock("./landing");
+      vi.resetModules();
+    }
   });
 
   it("os reais reaproveitam nome e vídeo do landingContent (mesma referência); a frase só no Rota de Vendas", () => {

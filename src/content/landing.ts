@@ -54,7 +54,7 @@ export interface Project {
   highlights?: readonly { lead: string; rest: string }[];
   platforms: readonly string[];
   /** Selo de fase do projeto (rótulo em `landingContent.statusLabels`). */
-  status?: ProductStatus;
+  status: ProductStatus;
 }
 
 const PROJECTS: readonly Project[] = [
