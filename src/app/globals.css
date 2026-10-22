@@ -1870,6 +1870,15 @@ video:focus-visible {
   transform: translateX(-155%) scale(0.68) rotateY(38deg);
 }
 
+/* Os laterais são paradas de Tab, e o contorno de foco é desenhado no próprio
+   cartão: com a opacidade e o filtro do ±1/±2, o anel sairia apagado e
+   borrado (2.4.7, 1.4.11; vale também em cores forçadas). Mesma
+   especificidade das regras acima: vence por vir depois. */
+.catalogo[data-js="true"] .catalogo__cartao:focus-visible {
+  opacity: 1;
+  filter: none;
+}
+
 /* Do ±3 em diante (o inert e o aria-hidden vêm do JS). */
 .catalogo[data-js="true"] .catalogo__cartao[data-pos="oculto"] {
   z-index: 0;

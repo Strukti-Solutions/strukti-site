@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
@@ -296,5 +298,34 @@ describe("catálogo: estado fechado", () => {
     expect(handler).toHaveBeenLastCalledWith("outro");
     expect(handler).toHaveBeenCalledTimes(2);
     parar();
+  });
+});
+
+// §8.6 (2.4.7) e 1.4.11: os laterais são paradas de Tab, e o contorno de foco
+// é desenhado no próprio cartão. Se o cartão focado mantiver a opacidade e o
+// filtro do ±1/±2, o anel sai apagado e borrado (no ±2, ~1,6:1 contra o fundo).
+describe("catálogo: foco visível nos laterais (CSS)", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
+  const inicio = css.indexOf("/* 11b. Catálogo de produtos");
+  const fim = css.indexOf("/* 12. Diagnóstico e formulário");
+  const secao = css.slice(inicio, fim);
+  const regra = (seletor: string) => {
+    const i = secao.indexOf(`${seletor} {`);
+    return { i, corpo: i < 0 ? "" : secao.slice(i, secao.indexOf("}", i)) };
+  };
+
+  it("o cartão focado volta a opacidade 1 e sem filtro, depois das regras do ±1/±2", () => {
+    expect(inicio).toBeGreaterThan(-1);
+    expect(fim).toBeGreaterThan(inicio);
+    const foco = regra('.catalogo[data-js="true"] .catalogo__cartao:focus-visible');
+    expect(foco.i).toBeGreaterThan(-1);
+    expect(foco.corpo).toMatch(/opacity: 1;/);
+    expect(foco.corpo).toMatch(/filter: none;/);
+    // Mesma especificidade (0,4,0) que as regras de data-pos: vence pela ordem.
+    for (const pos of ["1", "-1", "2", "-2"]) {
+      const lateral = regra(`.catalogo[data-js="true"] .catalogo__cartao[data-pos="${pos}"]`);
+      expect(lateral.i).toBeGreaterThan(-1);
+      expect(foco.i).toBeGreaterThan(lateral.i);
+    }
   });
 });
