@@ -150,11 +150,30 @@ describe("catálogo: estado fechado", () => {
   });
 
   it("clicar no cartão do centro ou em 'Ver detalhes' abre (Q9)", () => {
+    vi.spyOn(window.history, "back").mockImplementation(() => {});
     const { raiz } = montar();
+    const fecharPainel = () => {
+      fireEvent.click(screen.getByRole("button", { name: catalogoUi.fechar }));
+      act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+      expect(raiz.dataset.estado).toBe("fechado");
+    };
 
-    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
+    // O nome (h3) do centro.
+    fireEvent.click(cartao(raiz, "replay").querySelector("h3")!);
     expect(raiz.dataset.estado).toBe("aberto");
     expect(window.history.pushState).toHaveBeenCalledTimes(1);
+    fecharPainel();
+
+    // A arte do centro.
+    fireEvent.click(cartao(raiz, "replay").querySelector(".catalogo__arte")!);
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(window.history.pushState).toHaveBeenCalledTimes(2);
+    fecharPainel();
+
+    // O botão "Ver detalhes".
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(window.history.pushState).toHaveBeenCalledTimes(3);
   });
 
   it("← → e Home/End trocam só com o foco dentro do carrossel; keydown no body não troca", () => {
