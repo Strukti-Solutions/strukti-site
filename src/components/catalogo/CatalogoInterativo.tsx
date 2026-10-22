@@ -121,11 +121,19 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
     despachar({ tipo: "fechar" });
   }, [despachar]);
 
-  // Esc fecha, com o ouvinte no documento só enquanto o painel está aberto.
+  // Esc fecha (§8.3), com o ouvinte no documento só enquanto o painel está
+  // aberto, e só o Esc do catálogo: com o foco dentro dele ou perdido no
+  // body (o voltar do navegador, por exemplo). O Esc do Menu da barra, de um
+  // campo do formulário ou de qualquer outro lugar da página não é nosso:
+  // fecharia o produto fora da tela e o history.back() tiraria a pessoa de
+  // onde ela está.
   useEffect(() => {
     if (!estado.aberto) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) fechar();
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const foco = document.activeElement;
+      if (foco && foco !== document.body && !raizNoRef.current?.contains(foco)) return;
+      fechar();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);

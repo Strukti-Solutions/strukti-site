@@ -96,8 +96,14 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   useEffect(() => {
     if (!open) return;
 
+    // O Esc é só do Menu enquanto ele está aberto: na captura do document,
+    // com stopPropagation, ele não chega a quem ouve depois (o painel de um
+    // produto do catálogo, que fecharia junto). A lista "Produtos ▾", que
+    // fica por dentro do Menu, ouve antes, na captura da janela, e para o
+    // 1º Esc nela.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      event.stopPropagation();
       setOpen(false);
       toggleRef.current?.focus();
     };
@@ -109,11 +115,11 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       if (wide?.matches) setOpen(false);
     };
 
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown);
     wide?.addEventListener("change", onWide);
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("pointerdown", onPointerDown);
       wide?.removeEventListener("change", onWide);
     };

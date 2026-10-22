@@ -49,7 +49,7 @@ export function MenuProdutos({ ativo, aoEscolher }: { ativo: boolean; aoEscolher
   useEffect(() => {
     if (!aberto) return;
 
-    // Na captura da janela, antes do Esc do painel do Menu (que ouve no
+    // Na captura da janela, antes do Esc do painel do Menu (que ouve na captura do
     // document): com os dois abertos, o 1º Esc fecha só esta lista, que está
     // por dentro, e o 2º fecha o painel.
     const onKeyDown = (event: KeyboardEvent) => {

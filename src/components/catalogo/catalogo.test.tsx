@@ -9,6 +9,7 @@ import { landingContent } from "@/content/landing";
 import { onInterestSelected } from "@/lib/interest";
 import { REDUCED_MOTION_QUERY } from "@/lib/motion";
 import { Catalogo } from "@/components/sections/Catalogo";
+import { TopBar } from "@/components/TopBar";
 import { CatalogoInterativo } from "./CatalogoInterativo";
 
 // Ids da §5.2, na ordem do catálogo (escritos à mão, para pegar uma troca).
@@ -745,6 +746,52 @@ describe("catálogo: estado aberto", () => {
     // Fechado, o Esc não faz mais nada.
     fireEvent.keyDown(document.body, { key: "Escape" });
     expect(window.history.back).toHaveBeenCalledTimes(2);
+  });
+
+  it("Esc com o foco fora do catálogo (um botão, um campo do formulário) não fecha o painel nem chama history.back", () => {
+    const { raiz } = montar();
+    abrir(raiz);
+    const fora = document.createElement("button");
+    const campo = document.createElement("input");
+    document.body.append(fora, campo);
+    try {
+      for (const alvo of [fora, campo]) {
+        act(() => alvo.focus());
+        fireEvent.keyDown(alvo, { key: "Escape" });
+        expect(raiz.dataset.estado).toBe("aberto");
+        expect(window.history.back).not.toHaveBeenCalled();
+      }
+      // Com o foco perdido (no body), o Esc ainda fecha.
+      act(() => (document.activeElement as HTMLElement | null)?.blur());
+      expect(document.activeElement).toBe(document.body);
+      fireEvent.keyDown(document.body, { key: "Escape" });
+      expect(raiz.dataset.estado).toBe("fechado");
+      expect(window.history.back).toHaveBeenCalledTimes(1);
+    } finally {
+      fora.remove();
+      campo.remove();
+    }
+  });
+
+  it("com o painel do produto e o Menu da barra abertos, o 1º Esc fecha só o Menu; o 2º, o painel", () => {
+    const { raiz } = montar();
+    render(<TopBar />);
+    abrir(raiz);
+    const toggle = screen.getByRole("button", { name: landingContent.header.menuButton });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+
+    act(() => toggle.focus());
+    fireEvent.keyDown(toggle, { key: "Escape" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(raiz.dataset.estado).toBe("aberto");
+    expect(window.history.back).not.toHaveBeenCalled();
+
+    // De volta ao painel, o Esc fecha o produto.
+    act(() => raiz.querySelector<HTMLElement>(".catalogo__painel h3")!.focus());
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(raiz.dataset.estado).toBe("fechado");
+    expect(window.history.back).toHaveBeenCalledTimes(1);
   });
 
   it("abrir e apertar Esc no mesmo tick deixa fechado, com history.back chamado 1 vez e nenhum .catalogo__painel", () => {
