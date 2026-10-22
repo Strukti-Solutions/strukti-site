@@ -135,12 +135,15 @@
     v.addColorStop(0, rgba(C.edge, 0)); v.addColorStop(0.5, rgba(C.edge, vig * 0.35)); v.addColorStop(1, rgba(C.edge, vig));
     ctx.fillStyle = v; ctx.fillRect(-vx - 0.1, -vy - 0.1, 1.2, 1.2); ctx.restore();
     if (o.bottomFade) { const [y0, y1, y2, a1, a2] = o.bottomFade; ctx.fillStyle = lin(ctx, [0, y0 * H], [0, y2 * H], [[0, rgba(C.edge, 0)], [(y1 - y0) / (y2 - y0), rgba(C.edge, a1)], [1, rgba(C.edge, a2)]]); ctx.fillRect(0, y0 * H, W, H - y0 * H); }
-    if (!o.noGrain) addGrain(ctx, W, H, o.grain || 5, 42);
+    if (!o.noGrain) addGrain(ctx, W, H, o.grain || 5, 42, o.grainBaixo);
   }
-  // grão estático (mesma semente do hero): o loop compõe passes com o mesmo grão, então ele não "ferve"
-  function addGrain(ctx, W, H, amt, seed) {
+  // grão estático (mesma semente do hero): o loop compõe passes com o mesmo grão, então ele não "ferve".
+  // baixo = [y (fração da altura), amplitude]: abaixo de y o grão sobe para a amplitude dada (rampa de ±5%),
+  // para sobreviver ao JPG na metade escura; acima, os números sorteados e o grão são os mesmos.
+  function addGrain(ctx, W, H, amt, seed, baixo) {
     const img = ctx.getImageData(0, 0, W, H), d = img.data; const R = rng(seed);
-    for (let i = 0; i < d.length; i += 4) { const n = (R() + R() - 1) * amt; d[i] += n; d[i + 1] += n; d[i + 2] += n * 1.1; }
+    const amp = new Float32Array(H); for (let y = 0; y < H; y++) amp[y] = baixo ? amt + (baixo[1] - amt) * sstep(baixo[0] - 0.05, baixo[0] + 0.05, y / H) : amt;
+    for (let i = 0; i < d.length; i += 4) { const a = amp[(i >> 2) / W | 0], n = (R() + R() - 1) * a; d[i] += n; d[i + 1] += n; d[i + 2] += n * 1.1; }
     ctx.putImageData(img, 0, 0);
   }
 

@@ -39,14 +39,17 @@ também fora.
     (os cantos caem para o navy), esmaecimento da metade de baixo
     (`bottomFade`, onde fica o texto do cartão do centro) e o grão estático do
     hero (amplitude 5, semente 42; o mesmo em todos os passes, então não ferve
-    no loop).
+    no loop). `grainBaixo: [y, amplitude]` sobe o grão abaixo da fração `y` da
+    altura (mesmos números sorteados), para ele sobreviver ao JPG na metade
+    escura; o Replay usa `[0.6, 6.5]`.
 - `shot.sh <html[?consulta]> <png> <l> <a>`: o `shot.sh` do hero, com os
   caminhos relativos à pasta atual. Um Edge por vez, flags de pouca memória, e
   no fim fecha só os processos com o perfil `kit/prof`.
 - `stills.sh <png> <pasta> [crf] [q] [crf-480] [q-480]`: `cartao.avif/.jpg` e
   `cartao-480.avif/.jpg` (o 480 reduzido do 800 com lanczos). AVIF de 8 bits
   com crf 11, como no hero (acima de 12 o grão some e o céu fica liso, com
-  faixas). Confere o orçamento da §6.1 e sai com 1 se estourar.
+  faixas). JPG em q 2 (o padrão): no q 3 o grão da metade escura some.
+  Confere o orçamento da §6.1 e sai com 1 se estourar.
 - `encode.sh <master.mkv> <pasta> <crf-mp4> <crf-webm>`: o loop dos 3 reais
   (600 × 900, 25 fps, 125 quadros), `cartao-loop.mp4` e `.webm`, até 600 KB
   cada. É usado na Task A5.

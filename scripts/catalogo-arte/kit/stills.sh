@@ -2,8 +2,9 @@
 # uso: stills.sh <cartao.png 800x1200> <pasta de saída> [crf-avif-800] [q-jpg-800] [crf-avif-480] [q-jpg-480]
 # Gera cartao.avif/.jpg (800x1200) e cartao-480.avif/.jpg (480x720, reduzido do 800 com lanczos), como os
 # stills do hero: AVIF de 8 bits (yuv420p, faixa cheia, bt709). O hero usou crf 11 (acima de 12 o grão some
-# e o céu fica liso, com faixas). Confere o orçamento da spec 2026-10-16 §6.1 e sai com 1 se estourar.
-IN="$1"; O="$2"; CA=${3:-11}; QJ=${4:-3}; CA4=${5:-$CA}; QJ4=${6:-$QJ}
+# e o céu fica liso, com faixas). JPG em q 2: no q 3 o grão da metade escura some (desvio de alta frequência
+# 2,0 no PNG -> 0,5 no JPG). Confere o orçamento da spec 2026-10-16 §6.1 e sai com 1 se estourar.
+IN="$1"; O="$2"; CA=${3:-11}; QJ=${4:-2}; CA4=${5:-$CA}; QJ4=${6:-$QJ}
 [ -f "$IN" ] || { echo "png inexistente: $IN" >&2; exit 1; }
 mkdir -p "$O"
 AVF="scale=out_color_matrix=bt709:out_range=pc,format=yuv420p"
