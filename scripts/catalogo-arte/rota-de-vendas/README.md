@@ -17,25 +17,27 @@ placa, marca ou cliente real.
 
 O topo do painel é o plano y = 0; o celular fica em x = 0, z = 0 (z para o
 para-brisa) e a rua, 95 cm abaixo do painel. A câmera fica 6 cm à esquerda e
-1,2 cm acima do centro do aparelho, 42 cm atrás dele (F 1080): o ponto de fuga da
+praticamente na altura do centro do aparelho, 42 cm atrás dele (F 1080): o ponto de fuga da
 rua cai atrás do aparelho (x ~31%), e as duas fileiras de postes levam o olho
 para ele.
 
 | Camada | O que é |
 |---|---|
 | Cidade (passe por pixel, desfocado em 7 px, 92% da exposição) | A rua vista do carro parado junto ao meio-fio da direita: fachadas dos dois lados (planos x = −14,5 m e x = 6,2 m) em quarteirões sorteados com cruzamentos, janelas acesas nas cores da cidade do hero (navy-300, elétrico-300, navy-100; fileiras inteiras apagadas às vezes), poucas lojas no térreo, baixas e neutras; o asfalto com a faixa tracejada e o reflexo alongado dos postes; o céu de hora azul do kit e, ao longe, uma linha baixa de prédios; névoa de distância |
-| Bokeh | As luminárias dos postes (de 30 em 30 m, alternadas nos dois lados), discos quase do mesmo tamanho (`bokeh` 22 px, um pouco maiores perto), mais até 15 janelas do mesmo sorteio do passe por pixel; um véu de ar iluminado em volta das luminárias mais perto |
-| Vidro | A serigrafia do pé do para-brisa (faixa preta até 2 cm e pontos que diminuem até 4,5 cm), um véu leve e a faixa um pouco mais clara do reflexo do painel no pé do vidro |
-| Painel (passe por pixel) | Plástico escuro (albedo 34/38/47): a grade do desembaçador perto do vidro e a fresta escura no pé dele, o brilho rasante perto do vidro, a borda de perto em arco (mais longe nos lados) que arredonda para baixo e pega um fio de luz, e a face do painel no escuro (é a metade do texto); a poça da chave em volta do suporte e a luz fraca da tela à frente do aparelho |
+| Bokeh | As luminárias dos postes (de 30 em 30 m, alternadas nos dois lados; a fileira da direita começa em 54 m), metade sódio fraco (255/210/160) e metade LED neutro-frio, tamanho variado em ±25% (`bokeh` 22 px, um pouco maiores perto) e "olho de gato" perto das bordas; mais até 15 janelas do mesmo sorteio do passe por pixel; um véu de ar iluminado em volta das luminárias mais perto. Acima de ~27% da altura as luminárias caem para `ceuBokeh` (45%) da exposição: nenhum disco no céu passa do brilho da tela na miniatura |
+| Vidro | O pé do para-brisa abraça o carro (`abraco` 40 cm: nos lados chega mais perto da câmera), então a linha do vidro com o painel é uma curva, mais alta no centro. A serigrafia: faixa preta até 2 cm e um degradê contínuo até ~4 cm, com uma só fileira de pontos maiores e macios na transição (desfocada em 1 px); um véu leve; o reflexo do painel no pé do vidro (a faixa de painel logo abaixo, espelhada, `reflexo` 0,3) |
+| Moldura (no plano da imagem, desfocada em 2,5 px) | A coluna A do motorista: uma faixa escura do topo (a ~31% da largura) até a borda esquerda a ~37% da altura, com o fio de luz do céu na aresta e, além dela, uma fresta do vidro lateral com película; o teto, uma curva escura no topo (6% no centro); e o retrovisor interno pendurado a ~2/3 da largura, em contraluz, com o contorno aceso pelo céu. A câmera colada no aparelho deixaria tudo isso fora do quadro; entra como silhueta perto da câmera, fora de foco |
+| Painel (passe por pixel) | Plástico escuro (albedo 35/37/42): a grade do desembaçador perto do vidro e a fresta escura no pé dele, o brilho rasante perto do vidro e um fio que sobe em curva onde o painel encontra o para-brisa; a borda de perto (a 25 cm da base do aparelho, abaixo de 85% do quadro, no esmaecimento) arredonda para baixo com um fio fraco; a poça quente da chave em volta do suporte e a luz fraca da tela à frente do aparelho. A faixa de 55–80% é um degradê só |
 | Sombras | O aparelho e o suporte projetados no painel pela chave (para a direita), mais o contato da ventosa |
-| Suporte | Ventosa (tronco de cone de 7,2 cm), braço de 1,9 cm inclinado da ventosa até a junta atrás do centro do aparelho, anel de aperto; duas garras laterais e dois pés embaixo, com o lábio sobre a borda da frente |
-| Celular | 15,2 × 7,3 × 0,85 cm, de pé, girado 7° para a câmera: borda de alumínio escuro mais clara em cima (pega o céu), vidro preto, filete claro no contorno e na aresta de cima; a tela do hero, com o fundo do mapa 45% mais perto do navy-800 (`telaFundo`: a tela é a luz mais forte do quadro e precisa ler a 64 px) e um halo elétrico fraco em volta (`halo` 0,05) |
-| Acabamento (kit) | Bloom leve, vinheta elíptica até o navy, esmaecimento da metade de baixo e o grão estático do hero (amplitude 5; 6,5 abaixo de 60% da altura, `grainBaixo`) |
+| Suporte | Ventosa (tronco de cone de 7,2 cm), braço de 1,9 cm inclinado da ventosa até a junta atrás do centro do aparelho, anel de aperto com chanfro; o lábio de borracha mais claro na borda de contato, o brilho da chave no ombro do cone e o aro de cima aceso; duas garras laterais e dois pés embaixo (1,5 cm acima do pé do vidro na tela: não tangenciam a linha), com o lábio sobre a borda da frente |
+| Celular | 15,2 × 7,3 × 0,85 cm, de pé, girado 7° para a câmera: borda de alumínio escuro mais clara em cima (pega o céu), vidro preto, filete claro no contorno e na aresta de cima; a tela do hero, com o fundo do mapa 45% mais perto do navy-800 (`telaFundo`: a tela é a luz mais forte do quadro e precisa ler a 64 px) e um halo elétrico fraco em volta (`halo` 0,05); o traço da rota em 0,22 (o do hero é 0,16; `rota`), +1,5 px para ler a 64 px |
+| Acabamento (kit) | Bloom leve, vinheta elíptica até o navy (mais fraca, 0,65: a moldura do para-brisa já escurece os cantos de cima), esmaecimento da metade de baixo e o grão estático do hero (amplitude 5; 6,5 abaixo de 60% da altura, `grainBaixo`) |
 
 A luz é a do kit: ambiente de hora azul, a luz do céu entrando pelo para-brisa
 (de frente e de cima, como a janela do hero), os postes da rua (só na cidade) e
-a chave, um poste de fora visto pela janela do motorista, alto à esquerda, um
-branco neutro-quente (55% do abajur do hero), em poça em volta do aparelho.
+a chave, um poste de fora visto pela janela do motorista, alto à esquerda, em
+poça em volta do aparelho: quente (sódio fraco, ~255/217/173), o contraponto do
+abajur do hero contra a hora azul; no centro da poça R ≈ G.
 
 ## Fazer
 
@@ -59,21 +61,22 @@ orçamento.
 (`docs/superpowers/plans/2026-10-22-catalogo-arte.md`); o loop de 5 s (a cidade
 levemente à deriva no para-brisa), a A5.
 
-## Medidas (22/10/2026, rodada 2)
+## Medidas (22/10/2026, ajuste da rodada 1 da crítica)
 
 | Sonda | Medida | Critério |
 |---|---|---|
-| Celular no quadro (x0 x1 y0 y1) | 25,5 74,4 30,2 45,9 (%) | entre 15% e 60% da altura |
-| Metade de baixo, p50 / p90 / p99 (Y) | 20,3 / 33,3 / 39,7 | p90 ≤ 60 |
-| Cantos 5% (Y) | 20,2 / 14,7 / 9,8 / 9,8 | ≤ 25,5 (navy-900) |
-| Y médio por faixa de 10% | 23 27 33 36 29 27 27 23 10 9 | — |
+| Celular no quadro (x0 x1 y0 y1) | 25,5 74,4 26,9 42,6 (%) | entre 15% e 60% da altura |
+| Metade de baixo, p50 / p90 / p99 (Y) | 17,6 / 35,1 / 44,0 | p90 ≤ 60 (a crítica pediu ≤ 40) |
+| Cantos 5% (Y) | 15,0 / 13,7 / 12,6 / 12,7 | ≤ 25,5 (navy-900) |
+| Y médio por faixa de 10% | 17 24 29 36 27 32 26 16 14 13 | — |
+| Miniatura 64 × 96 (`scale=64:96:flags=area`): ponto mais claro da metade de cima fora do celular / da tela | 77 / 114 (67%) | ≤ 85% (antes: 123 / 110) |
 
 | Arquivo | Bytes | Orçamento (§6.1) |
 |---|---|---|
-| `cartao.avif` (crf 10) | 91 447 | 120 000 |
-| `cartao.jpg` (q 2) | 89 175 | 200 000 |
-| `cartao-480.avif` (crf 6) | 24 831 | 45 000 |
-| `cartao-480.jpg` (q 2) | 19 893 | 70 000 |
+| `cartao.avif` (crf 10) | 90 151 | 120 000 |
+| `cartao.jpg` (q 2) | 89 717 | 200 000 |
+| `cartao-480.avif` (crf 6) | 23 845 | 45 000 |
+| `cartao-480.jpg` (q 2) | 19 992 | 70 000 |
 
 O render é determinístico (o mesmo PNG a cada vez), o que o loop da A5 usa: o
 quadro 0 dele é este cartão.

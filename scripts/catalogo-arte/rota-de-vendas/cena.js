@@ -5,8 +5,9 @@
    Nada inventado: nenhuma rua, placa, marca ou cliente real.
    Unidades: cm. x à direita, y para cima, z para a frente (para o para-brisa). O topo do painel é o plano y = 0;
    o celular fica em x = 0, z = 0; a rua lá fora fica 95 cm abaixo do painel.
-   Camadas: cidade (por pixel, desfocada) -> bokeh e vidro -> painel (por pixel) e sombras -> suporte -> celular ->
-   garras do suporte -> acabamento do kit. */
+   Camadas: cidade (por pixel, desfocada) -> bokeh e vidro -> reflexo do painel no vidro -> moldura do para-brisa (coluna A,
+   teto e retrovisor, no plano da imagem) -> painel (por pixel) e sombras -> suporte -> celular -> garras do suporte ->
+   acabamento do kit. */
 (function (G) {
   'use strict';
   const K = (typeof module !== 'undefined' && typeof require !== 'undefined') ? require('../kit/cena.js') : G.KIT;
@@ -14,21 +15,27 @@
 
   // ---------------- mundo ----------------
   const MUNDO = {
-    painel: { zBase: 52, zBorda: -13, curva: 9, raio: 3.5, alb: [34, 38, 47] },   // topo do painel, do pé do para-brisa até a borda arredondada (mais longe nos lados)
-    // o celular em paisagem, de pé no suporte, virado de leve para a câmera (y: a base do aparelho)
-    celular: { x: 0, y: 5.6, z: 0, rot: -7, w: 15.2, h: 7.3, d: 0.85, r: 1.05 },
+    // topo do painel, do pé do para-brisa (que abraça o carro: mais perto da câmera nos lados, `abraco`) até a borda
+    // arredondada de perto, que fica abaixo de 85% do quadro (as faixas dela cruzavam o texto do cartão)
+    painel: { zBase: 52, abraco: 40, zBorda: -25, curva: 9, raio: 3.5, alb: [35, 37, 42] },
+    // o celular em paisagem, de pé no suporte, virado de leve para a câmera (y: a base do aparelho); 1,5 cm acima do pé
+    // do para-brisa na tela, para as garras de baixo não tangenciarem a linha do vidro
+    celular: { x: 0, y: 7.1, z: 0, rot: -7, w: 15.2, h: 7.3, d: 0.85, r: 1.05 },
     suporte: { braco: 0.95, ventosa: 3.6, ventosaTopo: 1.7, ventosaH: 2.0, base: [0, 6.5], junta: 1.3 },  // ventosa no painel, braço inclinado até a junta atrás do aparelho
     // a rua: o carro parado junto ao meio-fio da direita; fachadas dos dois lados, postes nas calçadas
     rua: { y: -95, xE: -1450, xD: 620, meioFio: [-1160, 330], faixa: -415, z0: 250 },
-    postes: { altura: 760, braco: 150, passo: 3000, zE: 900, zD: 2400, zMax: 30000 },
-    // a luz que cai no painel e no aparelho: um poste de fora, pela janela do motorista, alto à esquerda
-    chave: { pos: [-230, 125, 25], k: 0.85 }
+    // (a fileira da direita começa em 54 m: a luminária de 24 m ficava sozinha no céu, acima do aparelho, e lia como lua)
+    postes: { altura: 760, braco: 150, passo: 3000, zE: 900, zD: 5400, zMax: 30000 },
+    // a luz que cai no painel e no aparelho: um poste de fora, pela janela do motorista, alto à esquerda; quente
+    // (sódio fraco, ~255/217/173), o contraponto do abajur do hero contra a hora azul
+    chave: { pos: [-230, 125, 25], k: 1.1, cor: [1.0, 0.85, 0.68] }
   };
   // câmera retrato 800 x 1200: um pouco à esquerda e acima do celular; o ponto de fuga da rua fica atrás dele
   const CAM = { W: 800, H: 1200, pos: [-6, 10.4, -42], target: [0, 9.25, 0], F: 1080, shiftY: -144,
     cidadeBlur: 7, cidadeExp: 0.92, bokeh: 22, janelas: 14, vidro: 1, serigrafia: 1, brilhoTela: 0.07, grade: 1, quina: 1,
-    vig: 0.9, vigR: [0.2, 0.74], vigC: [0.5, 0.36], bottomFade: [0.5, 0.74, 1.0, 0.36, 0.62], bloom: 0.2, grain: 5, grainBaixo: [0.6, 6.5],
-    tela: 1, telaLuz: 0.5, telaFundo: 0.45, halo: 0.05 };
+    vig: 0.65, vigR: [0.2, 0.74], vigC: [0.5, 0.36], bottomFade: [0.5, 0.74, 1.0, 0.36, 0.62], bloom: 0.2, grain: 5, grainBaixo: [0.6, 6.5],
+    tela: 1, telaLuz: 0.5, telaFundo: 0.45, halo: 0.05, rota: 0.22,
+    moldura: 1, molduraBlur: 2.5, reflexo: 0.3, ceuBokeh: 0.45 };
 
   // ---------------- luzes ----------------
   const corPoste = mix(FLD, LMP, 0.5);
@@ -47,7 +54,7 @@
     const pts = [];
     for (const p of POSTES) if (p.cabeca[2] < 16000) pts.push({ pos: p.cabeca, cor: corPoste, k: 1.0, alcance: 700, eixo: [0, -1, 0], cone: [0.2, 0.75], grupo: 'rua' });
     // a chave: uma poça em volta do celular, que cai para perto da câmera (fora dela, 15% da força)
-    pts.push({ pos: MUNDO.chave.pos, cor: mix(FLD, LMP, 0.55), k: MUNDO.chave.k, alcance: 1e7, grupo: 'chave',
+    pts.push({ pos: MUNDO.chave.pos, cor: MUNDO.chave.cor, k: MUNDO.chave.k, alcance: 1e7, grupo: 'chave',
       mascara: p => 0.15 + 0.85 * Math.exp(-Math.pow((p[0] + 2) / 38, 2) - Math.pow((p[2] - (p[2] < 0 ? 0 : 4)) / (p[2] < 0 ? 16 : 30), 2)) });
     // a tela acesa: uma luz elétrica fraca, só para a frente do aparelho
     const ph = MUNDO.celular, fr = frameOf(ph), t = ph.rot * Math.PI / 180, nrm = [Math.sin(t), 0, -Math.cos(t)];
@@ -66,7 +73,7 @@
     while (z < 42000) { const l = 1300 + R() * 3200, top = 800 + Math.pow(R(), 1.6) * (o_alt || 4600); out.push([z, z + l, top]); z += l + (R() < 0.33 ? 1300 : 90 + R() * 160); }
     return out;
   }
-  const QE = quarteiroes(31, 4200), QD = quarteiroes(57, 5200);
+  const QE = quarteiroes(31, 4200), QD = quarteiroes(57, 2600);   // os da direita, mais baixos: o céu aparece atrás do retrovisor
   const pickJanela = t => t < 0.6 ? C.n300 : t < 0.9 ? C.e300 : C.n100;   // as cores das janelas da cidade do hero
   function janela(lado, fi, ci, zi) {
     // acesa? (fileiras inteiras apagadas às vezes, como no hero)
@@ -133,17 +140,30 @@
       const a = cam.P(p.base), b = cam.P(p.cabeca), c = cam.P([p.base[0], p.cabeca[1], p.base[2]]); if (a[2] <= 0) continue;
       const w = Math.max(1, cam.S(p.base) * 14);
       ctx.strokeStyle = rgba(mix(C.n900, C.n800, 0.3), 0.85); ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-      ctx.fillStyle = rgba(mix(corPoste.map(v => v * 255), C.white, 0.2), 0.9); ctx.beginPath(); ctx.ellipse(b[0], b[1] + w * 0.6, w * 2.2, w * 0.9, 0, 0, 7); ctx.fill();
+      const ceuK = o.ceuBokeh + (1 - o.ceuBokeh) * sstep(cam.H * 0.2, cam.H * 0.34, b[1]);   // no céu, mais fracas (como o bokeh)
+      ctx.fillStyle = rgba(mix(corPoste.map(v => v * 255), C.white, 0.2), 0.9 * ceuK); ctx.beginPath(); ctx.ellipse(b[0], b[1] + w * 0.6, w * 2.2, w * 0.9, 0, 0, 7); ctx.fill();
     }
   }
-  // o bokeh: as luminárias dos postes (discos do mesmo tamanho, um pouco maiores perto) e algumas janelas
+  // disco de bokeh com o "olho de gato" da lente: perto das bordas do quadro o disco é cortado por um círculo deslocado
+  // para o centro e vira uma amêndoa deitada na tangente
+  function discoOlho(ctx, cam, p, r, col, A) {
+    const dx = p[0] - cam.W / 2, dy = p[1] - cam.H * 0.4, d = Math.hypot(dx, dy) || 1, k = 1.1 * Math.pow(clamp(d / (cam.W * 0.62), 0, 1), 2.2);
+    if (k < 0.04) return disco(ctx, p, r, col, A);
+    ctx.save(); ctx.beginPath(); ctx.arc(p[0] - dx / d * r * k, p[1] - dy / d * r * k, r, 0, 7); ctx.clip(); disco(ctx, p, r, col, A); ctx.restore();
+  }
+  // as luminárias da rua: metade sódio fraco, metade LED neutro-frio (a cidade do hero também mistura tons)
+  const SODIO = [255, 210, 160], LED = mix(C.floodW, C.n300, 0.3);
+  // o bokeh: as luminárias dos postes (tamanho variado em ±25%, um pouco maiores perto) e algumas janelas.
+  // No céu (acima de ~27% da altura) as luminárias caem para `ceuBokeh` da exposição: nenhum disco isolado ali
+  // pode passar do brilho da tela na miniatura
   function bokeh(ctx, cam, o) {
     const dc = layer(cam.W, cam.H), dx = dc.getContext('2d'), Rr = MUNDO.rua, R = rng(808);
-    for (const p of POSTES) {
-      const q = cam.P(p.cabeca); if (q[2] <= 0 || q[0] < -60 || q[0] > cam.W + 60 || q[1] < -60) continue;
-      const dist = len(sub(p.cabeca, cam.pos)), perto = clamp(1 - dist / 12000, 0, 1);
-      disco(dx, q, o.bokeh * (0.8 + 0.45 * perto), mix(corPoste.map(v => v * 255), C.n300, 0.25), (0.16 + 0.26 * perto));
-    }
+    POSTES.forEach((p, ip) => {
+      const q = cam.P(p.cabeca); if (q[2] <= 0 || q[0] < -60 || q[0] > cam.W + 60 || q[1] < -60) return;
+      const dist = len(sub(p.cabeca, cam.pos)), perto = clamp(1 - dist / 12000, 0, 1), sodio = h3(ip, 3, 9) < 0.5;
+      const ceuK = o.ceuBokeh + (1 - o.ceuBokeh) * sstep(cam.H * 0.2, cam.H * 0.34, q[1]);
+      discoOlho(dx, cam, q, o.bokeh * (0.8 + 0.45 * perto) * (0.75 + 0.5 * h3(ip, 7, 2)), sodio ? SODIO : LED, (0.13 + 0.2 * perto) * ceuK * (sodio ? 0.8 : 1));
+    });
     // janelas: as mesmas do passe por pixel (mesmo sorteio), poucas viram disco
     let n = 0;
     for (const [lado, xf, Q] of [[-1, Rr.xE, QE], [1, Rr.xD, QD]]) for (const q of Q) {
@@ -152,37 +172,95 @@
         const j = janela(lado, fi, ci, Math.floor(q[0])); if (!j || h3(ci, fi, 404 + lado) > 0.16) continue;
         const pw = [xf, Rr.y + (fi + 0.56) * 330, (ci + 0.5) * 280], s = cam.P(pw);
         if (s[2] <= 0 || s[0] < -30 || s[0] > cam.W + 30 || s[1] < -30 || s[1] > cam.H * 0.55) continue;
-        disco(dx, s, o.bokeh * (0.55 + R() * 0.45), j.cor, 0.1 + R() * 0.12); n++;
+        const ceuK = o.ceuBokeh + (1 - o.ceuBokeh) * sstep(cam.H * 0.2, cam.H * 0.34, s[1]);
+        discoOlho(dx, cam, s, o.bokeh * (0.55 + R() * 0.45), j.cor, (0.1 + R() * 0.12) * ceuK); n++;
         if (n > (o.janelas || 14)) break;
       }
     }
     ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.filter = 'blur(2px)'; ctx.drawImage(dc, 0, 0); ctx.restore();
     // o ar iluminado em volta das luminárias mais perto
     ctx.save(); ctx.globalCompositeOperation = 'screen';
-    for (const p of POSTES) { const q = cam.P(p.cabeca); if (q[2] <= 0) continue; const dist = len(sub(p.cabeca, cam.pos)); if (dist > 9000) continue;
-      glow(ctx, q, o.bokeh * 4.5, mix(C.floodW, C.n300, 0.5), 0.07 * (1 - dist / 9000)); }
+    POSTES.forEach((p, ip) => { const q = cam.P(p.cabeca); if (q[2] <= 0) return; const dist = len(sub(p.cabeca, cam.pos)); if (dist > 9000) return;
+      glow(ctx, q, o.bokeh * 4.5, mix(h3(ip, 3, 9) < 0.5 ? SODIO : C.floodW, C.n300, 0.5), 0.07 * (1 - dist / 9000)); });
     ctx.restore();
   }
 
   // ---------------- o para-brisa: a serigrafia do pé do vidro, o véu e o reflexo do painel no vidro ----------------
-  function linhaPainel(cam) { const pb = MUNDO.painel.zBase; return cam.P([0, 0, pb])[1]; }   // a altura (px) do pé do para-brisa no centro
+  // o pé do para-brisa visto de cima: o vidro abraça o carro, então nos lados ele chega mais perto da câmera
+  const zPe = x => MUNDO.painel.zBase - MUNDO.painel.abraco * Math.pow((x + 3) / 60, 2);
+  function linhaPainel(cam) { return cam.P([0, 0, zPe(0)])[1]; }   // a altura (px) do pé do para-brisa no centro (o ponto mais alto da curva)
   function vidro(ctx, cam, o) {
     const P = cam.P, yb = linhaPainel(cam);
     if (o.serigrafia) {
-      // a faixa preta pontilhada no pé do vidro (por dentro): sólida até 2 cm e depois pontos que diminuem até 4,5 cm
-      const zb = MUNDO.painel.zBase, tg = Math.tan(28 * Math.PI / 180), G = (x, hh) => P([x, hh, zb - hh / tg]);
-      const fx = layer(cam.W, cam.H), fc = fx.getContext('2d'), cor = rgba(mix(C.black, C.n950, 0.5), 0.94);
-      fc.fillStyle = cor; path(fc, [G(-90, -0.5), G(90, -0.5), G(90, 2), G(-90, 2)]); fc.fill();
-      for (let hh = 2.2; hh < 4.6; hh += 0.36) { const k = 1 - (hh - 2.2) / 2.4; for (let x = -90; x < 90; x += 0.36) {
-        const q = G(x + ((hh * 2.78) % 2 < 1 ? 0.18 : 0), hh), r = cam.S([x, hh, zb]) * 0.16 * Math.sqrt(k); if (q[0] < -4 || q[0] > cam.W + 4 || r < 0.25) continue;
-        fc.beginPath(); fc.arc(q[0], q[1], r, 0, 7); fc.fill(); } }
-      ctx.drawImage(fx, 0, 0);
+      // a faixa preta do pé do vidro (por dentro): sólida até 2 cm e depois um degradê contínuo até ~4 cm, com uma
+      // única fileira de pontos maiores e macios na transição (a retícula inteira virava moiré e mancha no AVIF)
+      const tg = Math.tan(28 * Math.PI / 180), G = (x, hh) => P([x, hh, zPe(x) - hh / tg]);
+      const fx = layer(cam.W, cam.H), fc = fx.getContext('2d'), base = mix(C.black, C.n950, 0.5), xs = [];
+      for (let x = -50; x <= 50; x += 2) xs.push(x);   // (nos lados, o pé abraçado chega atrás da câmera)
+      const faixa = (h0, h1) => path(fc, xs.map(x => G(x, h0)).concat(xs.slice().reverse().map(x => G(x, h1))));
+      fc.fillStyle = rgba(base, 0.94); faixa(-0.5, 2); fc.fill();
+      for (let hh = 2; hh < 4.2; hh += 0.1) { fc.fillStyle = rgba(base, 0.94 * 0.7 * Math.pow(1 - sstep(2, 4.2, hh + 0.05), 1.4)); faixa(hh, hh + 0.1); fc.fill(); }
+      fc.fillStyle = rgba(base, 0.55);
+      for (let x = -50; x < 50; x += 0.75) { const q = G(x, 2.45), r = cam.S([x, 2.45, zPe(x)]) * 0.2; if (q[0] < -4 || q[0] > cam.W + 4) continue; fc.beginPath(); fc.arc(q[0], q[1], r, 0, 7); fc.fill(); }
+      ctx.save(); ctx.filter = 'blur(1px)'; ctx.drawImage(fx, 0, 0); ctx.restore();
     }
-    if (o.vidro) {
-      // o vidro tira um pouco do contraste e, perto do pé, reflete o painel (uma faixa um pouco mais clara)
-      ctx.fillStyle = rgba(mix(C.n700, C.n600, 0.3), 0.06 * o.vidro); ctx.fillRect(0, 0, cam.W, yb);
-      ctx.fillStyle = lin(ctx, [0, yb - 70], [0, yb], [[0, rgba(C.n500, 0)], [1, rgba(mix(C.n500, C.n400, 0.3), 0.1 * o.vidro)]]); ctx.fillRect(0, yb - 70, cam.W, 70);
-    }
+    if (o.vidro) { ctx.fillStyle = rgba(mix(C.n700, C.n600, 0.3), 0.06 * o.vidro); ctx.fillRect(0, 0, cam.W, cam.H); }   // o vidro tira um pouco do contraste
+  }
+  // o reflexo do painel no pé do vidro: a faixa de painel logo abaixo do pé, espelhada para cima, fraca e um pouco
+  // borrada (a poça quente e a grade aparecem no vidro, como à noite num carro)
+  function reflexoPainel(ctx, cam, o, pl) {
+    if (!(o.reflexo > 0)) return;
+    const yb = Math.round(linhaPainel(cam)), hR = 110, rf = layer(cam.W, cam.H), rc = rf.getContext('2d');
+    rc.save(); rc.translate(0, 2 * yb); rc.scale(1, -1); rc.drawImage(pl, 0, yb, cam.W, hR, 0, yb, cam.W, hR); rc.restore();
+    rc.globalCompositeOperation = 'destination-in';
+    rc.fillStyle = lin(rc, [0, yb - hR], [0, yb], [[0, 'rgba(0,0,0,0)'], [0.7, 'rgba(0,0,0,0.6)'], [1, 'rgba(0,0,0,1)']]); rc.fillRect(0, yb - hR, cam.W, hR);
+    ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = o.reflexo; ctx.filter = 'blur(2px)'; ctx.drawImage(rf, 0, 0); ctx.restore();
+  }
+
+  // ---------------- a moldura do para-brisa: coluna A, teto e retrovisor (perto da câmera, fora de foco) ----------------
+  // Desenhada no plano da imagem: a câmera está colada no aparelho e um enquadramento fiel deixaria a coluna e o teto
+  // fora do quadro; aqui eles entram como silhuetas em contraluz, desfocadas, como numa foto feita do banco.
+  function moldura(ctx, cam, o) {
+    if (!o.moldura) return;
+    const { W } = cam, ml = layer(cam.W, cam.H), m = ml.getContext('2d');
+    const escuro = mix(C.black, C.n950, 0.55), trim = mix(C.n950, C.n900, 0.6), fio = mix(C.n400, C.n300, 0.3);
+    // a borda de baixo do teto (cai no centro, a 6% da altura, e sobe para os lados); a aresta de dentro da coluna A
+    // (do topo, a ~31% da largura, até a borda esquerda a ~37% da altura) e a de fora (até a borda esquerda a ~16%)
+    const teto = x => 72 - 42 * Math.pow((x - 470) / 520, 2);
+    const colA = y => 250 - 260 * (y + 10) / 450, colB = y => 92 - 102 * (y + 10) / 200;
+    const xs = []; for (let x = 280; x <= W + 10; x += 10) xs.push([x, teto(x)]);
+    const quina = [[colA(130), 130], [212, 62], [280, teto(280)]];
+    const contorno = () => { m.beginPath(); m.moveTo(-20, 450); m.lineTo(quina[0][0], quina[0][1]); m.quadraticCurveTo(quina[1][0], quina[1][1], quina[2][0], quina[2][1]); xs.forEach(p => m.lineTo(p[0], p[1])); m.lineTo(W + 20, -20); m.lineTo(-20, -20); m.closePath(); };
+    // a serigrafia continua pelas bordas do vidro: uma sombra larga e macia do lado de dentro
+    m.save(); m.filter = 'blur(10px)'; contorno(); m.lineWidth = 40; m.strokeStyle = rgba(escuro, 0.5); m.stroke(); m.restore();
+    // a coluna e o teto: forro escuro, um pouco mais claro perto da aresta (é arredondado), mais escuro para fora
+    contorno(); m.fillStyle = rgba(escuro); m.fill();
+    m.save(); contorno(); m.clip();
+    { const y = 200, x = colA(y), nx = -0.866, ny = -0.5;
+      m.fillStyle = lin(m, [x, y], [x + nx * 130, y + ny * 130], [[0, rgba(trim)], [0.3, rgba(mix(trim, escuro, 0.5))], [1, rgba(escuro)]]); m.fillRect(-20, -20, 340, 480); }
+    m.fillStyle = lin(m, [0, 70], [0, 0], [[0, rgba(trim)], [0.5, rgba(mix(trim, escuro, 0.7))], [1, rgba(escuro)]]); m.fillRect(200, -20, W, 100);
+    // além da coluna, uma fresta do vidro lateral (com película: só um azul fundo, mais claro embaixo)
+    path(m, [[-20, 30], [colB(30), 30], [colB(205), 205], [-20, 215]]);
+    m.fillStyle = lin(m, [0, 30], [0, 210], [[0, rgba(mix(C.n900, C.n950, 0.4))], [1, rgba(mix(C.n800, C.n900, 0.4))]]); m.fill();
+    m.restore();
+    // os fios de luz do céu: na aresta da coluna (o mais forte), na do teto e, fraco, na aresta de fora da coluna
+    m.save(); m.lineCap = 'round';
+    m.beginPath(); m.moveTo(colA(450), 450); m.lineTo(quina[0][0], quina[0][1]); m.quadraticCurveTo(quina[1][0], quina[1][1], quina[2][0], quina[2][1]);
+    m.strokeStyle = lin(m, [0, 450], [280, 60], [[0, rgba(fio, 0.1)], [0.3, rgba(fio, 0.62)], [0.85, rgba(fio, 0.5)], [1, rgba(fio, 0.18)]]); m.lineWidth = 2.8; m.stroke();
+    m.beginPath(); xs.forEach((p, i) => i ? m.lineTo(p[0], p[1] + 1) : m.moveTo(p[0], p[1] + 1)); m.strokeStyle = rgba(fio, 0.26); m.lineWidth = 1.8; m.stroke();
+    m.beginPath(); m.moveTo(colB(30), 30); m.lineTo(colB(205), 205); m.strokeStyle = rgba(fio, 0.14); m.lineWidth = 1.6; m.stroke();
+    m.restore();
+    // o retrovisor interno: haste presa ao teto e o corpo em contraluz, girado para o motorista, a ~2/3 da largura;
+    // o contorno todo pega a luz do céu atrás dele (mais na borda de baixo)
+    { const cx = 530, cy = 128, rw = 224, rh = 68, rot = -5 * Math.PI / 180;
+      m.fillStyle = rgba(escuro); m.beginPath(); m.moveTo(cx - 14, teto(cx) - 2); m.lineTo(cx + 14, teto(cx) - 2); m.lineTo(cx + 8, cy - rh / 2 + 4); m.lineTo(cx - 8, cy - rh / 2 + 4); m.closePath(); m.fill();
+      m.save(); m.translate(cx, cy); m.rotate(rot);
+      const corpo = () => { m.beginPath(); m.roundRect(-rw / 2, -rh / 2, rw, rh, [20, 20, 30, 30]); };
+      corpo(); m.fillStyle = lin(m, [0, -rh / 2], [0, rh / 2], [[0, rgba(escuro)], [0.65, rgba(mix(escuro, trim, 0.5))], [1, rgba(trim)]]); m.fill();
+      corpo(); m.strokeStyle = lin(m, [0, -rh / 2], [0, rh / 2], [[0, rgba(fio, 0.16)], [0.6, rgba(fio, 0.2)], [1, rgba(fio, 0.5)]]); m.lineWidth = 2; m.stroke();
+      m.restore(); }
+    // tudo isso está a um palmo da câmera: fora de foco
+    ctx.save(); ctx.filter = `blur(${o.molduraBlur}px)`; ctx.drawImage(ml, 0, 0); ctx.restore();
   }
 
   // ---------------- o painel (por pixel) ----------------
@@ -194,7 +272,7 @@
     const borda = x => Pn.zBorda + Pn.curva * Math.pow(x / 60, 2), rr = Pn.raio;
     for (let sy = y0; sy < H; sy++) for (let sx = 0; sx < W; sx++) {
       const d = cam.ray(sx + 0.5, sy + 0.5); if (d[1] >= 0) continue;
-      const t = -pos[1] / d[1], x = pos[0] + d[0] * t, z = pos[2] + d[2] * t; if (z > Pn.zBase) continue;
+      const t = -pos[1] / d[1], x = pos[0] + d[0] * t, z = pos[2] + d[2] * t, zp = zPe(x); if (z > zp) continue;
       let p = [x, 0, z], n = [0, 1, 0], alb = Pn.alb, face = 0;
       const zb = borda(x);
       if (z < zb) {
@@ -204,14 +282,16 @@
         else { n = [0, 0.1, -1]; p = [pos[0] + d[0] * tf, yf, zb - rr]; face = 1; }
       }
       // a grade do desembaçador, perto do vidro
-      if (o.grade && !face && z > Pn.zBase - 13 && z < Pn.zBase - 4 && Math.abs(x) < 42) alb = ((z % 1.5) + 1.5) % 1.5 < 0.6 ? mul(alb, 0.45) : mul(alb, 1.08);
+      if (o.grade && !face && z > zp - 13 && z < zp - 4 && Math.abs(x) < 42) alb = (((z - zp) % 1.5) + 1.5) % 1.5 < 0.6 ? mul(alb, 0.45) : mul(alb, 1.08);
       let col = comLuzes(luzes, () => luz(alb, p, norm(n), { amb: face ? 0.32 : 0.55, wk: 0.5 }));
-      // brilho rasante do plástico perto do vidro (reflete o céu)
-      if (!face) col = add(col, mul(mix(C.n600, C.n500, 0.4), 0.16 * sstep(Pn.zBase - 30, Pn.zBase - 2, z)));
-      // a quina arredondada pega um fio de luz do para-brisa (mais forte no meio, some nos lados)
-      if (!face && z < zb + 1.2) { const k = Math.exp(-Math.pow((z < zb ? (zb - p[2]) / (rr * 0.45) : (z - zb) / 1.2), 2)) * Math.exp(-Math.pow((x + 2) / 55, 2)); col = add(col, mul(mix(C.n500, C.n400, 0.4), 0.22 * k * (o.quina != null ? o.quina : 1))); }
+      // brilho rasante do plástico perto do vidro (reflete o céu); sobe em curva no pé do vidro, onde o painel
+      // arredonda para encontrar o para-brisa
+      if (!face) col = add(col, mul(mix(C.n600, C.n500, 0.4), 0.16 * sstep(zp - 30, zp - 2, z) + 0.2 * Math.exp(-Math.pow((zp - 2.6 - z) / 1.1, 2))));
+      // a quina arredondada pega um fio de luz do para-brisa (mais forte no meio, some nos lados); fraca: fica embaixo,
+      // no esmaecimento
+      if (!face && z < zb + 1.2) { const k = Math.exp(-Math.pow((z < zb ? (zb - p[2]) / (rr * 0.45) : (z - zb) / 1.2), 2)) * Math.exp(-Math.pow((x + 2) / 55, 2)); col = add(col, mul(mix(C.n500, C.n400, 0.4), 0.11 * k * (o.quina != null ? o.quina : 1))); }
       // a fresta escura no pé do para-brisa
-      if (z > Pn.zBase - 1.6) col = mul(col, 0.35);
+      if (z > zp - 1.6) col = mul(col, 0.35);
       const i = (sy * W + sx) * 4; D[i] = col[0]; D[i + 1] = col[1]; D[i + 2] = col[2]; D[i + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
@@ -260,8 +340,17 @@
       const cE = L(plast, [c[0] - s.ventosa, 0.8, c[2] - 1], norm([-0.7, 0.45, -0.55]), { amb: 0.6, wk: 0.4 }), cD = L(plast, [c[0] + s.ventosa, 0.8, c[2] - 1], norm([0.7, 0.45, -0.55]), { amb: 0.6, wk: 0.4 });
       path(ctx, hull(bot.concat(top))); ctx.fillStyle = lin(ctx, P([c[0] - s.ventosa, 1, c[2]]), P([c[0] + s.ventosa, 1, c[2]]), [[0, rgba(cE)], [0.45, rgba(L(plast, [c[0], 1, c[2] - s.ventosa], nC, { amb: 0.6, wk: 0.4 }))], [1, rgba(mul(cD, 0.75))]]); ctx.fill();
       path(ctx, top); ctx.fillStyle = rgba(L(plast, [c[0], s.ventosaH, c[2]], [0, 1, 0], { amb: 0.6, wk: 0.6 })); ctx.fill();
-      // o lábio de borracha na borda de baixo pega a luz da frente
-      ctx.strokeStyle = rgba(C.n400, 0.16); ctx.lineWidth = 1; ctx.beginPath(); bot.slice(6, 19).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); }
+      // o lábio de borracha na borda de contato (a metade da frente da elipse de baixo): mais claro, com espessura
+      { const fr2 = []; for (let i = 24; i <= 48; i++) { const a = i / 48 * Math.PI * 2; fr2.push([a, P([c[0] + s.ventosa * Math.cos(a), 0, c[2] + s.ventosa * Math.sin(a)]), P([c[0] + (s.ventosa - 0.35) * Math.cos(a), 0.3, c[2] + (s.ventosa - 0.35) * Math.sin(a)])]); }
+        ctx.beginPath(); fr2.forEach(([, b], i) => i ? ctx.lineTo(b[0], b[1]) : ctx.moveTo(b[0], b[1])); fr2.slice().reverse().forEach(([, , t]) => ctx.lineTo(t[0], t[1])); ctx.closePath();
+        ctx.fillStyle = rgba(mix(L([40, 43, 48], [c[0], 0.15, c[2] - s.ventosa], norm([0, 0.6, -1]), { amb: 0.7, wk: 0.6 }), C.n400, 0.12)); ctx.fill();
+        ctx.beginPath(); fr2.forEach(([, , t], i) => i ? ctx.lineTo(t[0], t[1]) : ctx.moveTo(t[0], t[1])); ctx.strokeStyle = rgba(C.n300, 0.12); ctx.lineWidth = 0.8; ctx.stroke(); }
+      // o brilho especular da chave no ombro do cone (a chave vem da esquerda, alta e quente)
+      { const sp = []; for (let i = 0; i <= 10; i++) { const a = (200 + i * 5.5) * Math.PI / 180; sp.push(P([c[0] + (s.ventosaTopo + 0.35) * Math.cos(a), s.ventosaH - 0.25, c[2] + (s.ventosaTopo + 0.35) * Math.sin(a)])); }
+        ctx.save(); ctx.filter = 'blur(0.6px)'; ctx.beginPath(); sp.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        ctx.strokeStyle = lin(ctx, sp[0], sp[sp.length - 1], [[0, rgba(C.lampW, 0)], [0.4, rgba(C.lampW, 0.3)], [1, rgba(C.lampW, 0)]]); ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.stroke(); ctx.restore(); }
+      // o aro de cima: um chanfro que pega o céu
+      ctx.beginPath(); top.slice(24).concat([top[0]]).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.strokeStyle = rgba(C.n400, 0.22); ctx.lineWidth = 1; ctx.stroke(); }
     // o braço: um tubo da ventosa até a junta atrás do aparelho, inclinado para a câmera (sombreado de lado)
     { const a = g.topo, b = g.junta, ax = norm(sub(b, a)), sd = [1, 0, 0], w = s.braco;
       const q = [P(add(a, mul(sd, -w))), P(add(a, mul(sd, w))), P(add(b, mul(sd, w))), P(add(b, mul(sd, -w)))];
@@ -270,7 +359,12 @@
       // o anel de aperto, no pé do braço
       const r0 = add(a, mul(ax, 0.3)), r1 = add(a, mul(ax, 1.5)), w2 = w * 1.45;
       path(ctx, [P(add(r0, [-w2, 0, 0])), P(add(r0, [w2, 0, 0])), P(add(r1, [w2, 0, 0])), P(add(r1, [-w2, 0, 0]))]);
-      ctx.fillStyle = lin(ctx, P(add(r0, [-w2, 0, 0])), P(add(r0, [w2, 0, 0])), [[0, rgba(L(plast, r0, norm([-0.6, 0.2, -0.8]), { amb: 0.6 }))], [1, rgba(mul(L(plast, r0, norm([0.6, 0.2, -0.8]), { amb: 0.6 }), 0.7))]]); ctx.fill(); }
+      ctx.fillStyle = lin(ctx, P(add(r0, [-w2, 0, 0])), P(add(r0, [w2, 0, 0])), [[0, rgba(L(plast, r0, norm([-0.6, 0.2, -0.8]), { amb: 0.6 }))], [1, rgba(mul(L(plast, r0, norm([0.6, 0.2, -0.8]), { amb: 0.6 }), 0.7))]]); ctx.fill();
+      // o chanfro do anel: fio claro na aresta de cima, sombra na de baixo, e o fio da chave no lado esquerdo do braço
+      const seg2 = (p0, p1, cor, wd) => { const u = P(p0), v = P(p1); ctx.beginPath(); ctx.moveTo(u[0], u[1]); ctx.lineTo(v[0], v[1]); ctx.strokeStyle = cor; ctx.lineWidth = wd; ctx.stroke(); };
+      seg2(add(r1, [-w2 * 0.9, 0, 0]), add(r1, [w2 * 0.9, 0, 0]), lin(ctx, P(add(r1, [-w2, 0, 0])), P(add(r1, [w2, 0, 0])), [[0, rgba(C.n300, 0.32)], [1, rgba(C.n400, 0.06)]]), 1.1);
+      seg2(add(r0, [-w2 * 0.9, 0, 0]), add(r0, [w2 * 0.9, 0, 0]), rgba(C.black, 0.5), 1.2);
+      seg2(add(add(r1, mul(ax, 0.2)), [-w * 0.8, 0, 0]), add(b, [-w * 0.8, 0, 0]), rgba(mix(C.lampW, C.n300, 0.5), 0.16), 1); }
   }
   // garras: as duas laterais (com o lábio sobre a borda da frente) e os dois pés de baixo
   function garras(ctx, cam, o) {
@@ -327,8 +421,9 @@
     const RT = [[-5.5, 2], [-3, 2], [-3, -1], [0, -1], [0, -2], [3, -2], [3, 0], [4.3, 0]].map(([i, j]) => G2(i, j));
     const routePath = () => { ctx.beginPath(); ctx.moveTo(RT[0][0], RT[0][1]); for (let i = 1; i < RT.length - 1; i++) ctx.arcTo(RT[i][0], RT[i][1], RT[i + 1][0], RT[i + 1][1], 0.32); ctx.lineTo(RT[RT.length - 1][0], RT[RT.length - 1][1]); };
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    routePath(); ctx.strokeStyle = rgba(C.c400, 0.12); ctx.lineWidth = 0.42; ctx.stroke();
-    routePath(); const gr = ctx.createLinearGradient(RT[0][0], RT[0][1], RT[RT.length - 1][0], RT[RT.length - 1][1]); gr.addColorStop(0, rgba(C.e500, 0.9)); gr.addColorStop(1, rgba(C.c400, 0.85)); ctx.strokeStyle = gr; ctx.lineWidth = 0.16; ctx.stroke();
+    // a rota: o traço do hero (0,16) engrossado para `rota` (0,22 ~ +1,5 px), para ler na miniatura de 64 px
+    routePath(); ctx.strokeStyle = rgba(C.c400, 0.12); ctx.lineWidth = 0.42 + (o.rota - 0.16) * 1.5; ctx.stroke();
+    routePath(); const gr = ctx.createLinearGradient(RT[0][0], RT[0][1], RT[RT.length - 1][0], RT[RT.length - 1][1]); gr.addColorStop(0, rgba(C.e500, 0.9)); gr.addColorStop(1, rgba(C.c400, 0.85)); ctx.strokeStyle = gr; ctx.lineWidth = o.rota; ctx.stroke();
     const stops = [[-4.3, 2], [-3, 0.4], [-1.4, -1], [1.6, -2], [4.3, 0]].map(([i, j]) => G2(i, j));
     stops.forEach((p, k) => {
       const last = k === stops.length - 1;
@@ -360,8 +455,10 @@
     bokeh(ctx, cam, o);
     if (o.so === 'cidade') return { cam };
     vidro(ctx, cam, o);
-    // 2. o painel, com as sombras
+    // 2. o painel, com as sombras (e o reflexo dele no pé do vidro); a moldura do para-brisa por cima do vidro
     const pl = layer(cam.W, cam.H), pc = pl.getContext('2d'); painel(pc, cam, o); sombras(pc, cam, o); brilhoTela(pc, cam, o);
+    reflexoPainel(ctx, cam, o, pl);
+    moldura(ctx, cam, o);
     ctx.drawImage(pl, 0, 0);
     // 3. o suporte, o celular e as garras
     suporte(ctx, cam, o); celular(ctx, cam, o); garras(ctx, cam, o);
