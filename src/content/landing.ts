@@ -16,8 +16,6 @@
 
 const WHATSAPP_GENERAL_MESSAGE =
   "Olá! Vim pelo site da Strukti Soluções e quero conversar com vocês.";
-const WHATSAPP_REPLAY_MESSAGE =
-  "Olá! Vim pelo site da Strukti Soluções e quero o piloto gratuito do replay na minha quadra.\nCidade:\nQuantas quadras:";
 
 /**
  * Fase de um produto, mostrada no selo (spec §3.4). O texto de cada selo
@@ -26,33 +24,27 @@ const WHATSAPP_REPLAY_MESSAGE =
 export type ProductStatus = "piloto" | "desenvolvimento" | "emUso" | "emBreve";
 
 /**
- * Um aplicativo da grade de vídeos (`aplicativos.projects`, MASTER §8.8).
- * Vídeos novos são os de lançamento feitos com /brag. `videoTitle` e
- * `highlights` não aparecem na grade; ficam nos dados, como manda a v2.0.
+ * Um aplicativo real (`aplicativos.projects`), de onde o catálogo de
+ * produtos (src/content/catalogo.ts) tira por referência o nome, a fase, o
+ * vídeo e, no Rota de Vendas, a frase. Vídeos novos são os de lançamento
+ * feitos com /brag.
  */
 export interface Project {
   slug: string;
   name: string;
-  /** Uma frase, para o cartão da grade. */
+  /** Uma frase sobre o aplicativo (no catálogo, a do cartão do Rota de Vendas). */
   summary: string;
-  /** Título do vídeo (fora da grade). */
-  videoTitle: string;
   video: {
     src: string;
     poster: string;
     accessibleName: string;
     caption: string;
     description: string;
-    /** Duração no nome do botão de reproduzir (v2.2). */
+    /** Duração no nome do "Assistir" (catalogoUi.assistir). */
     durationLabel?: string;
   };
-  /** Selo "Ilustração do conceito" ao lado do selo de fase (só o replay). */
-  illustrationBadge?: string;
-  /** O botão do cartão (v2.2): WhatsApp do replay ou formulário com "Aplicativo sob medida". */
-  cta?: { label: string; kind: "whatsapp-replay" | "interest-aplicativo" };
-  /** Lista de destaques (fora da grade). */
+  /** Destaques aprovados (v2.0); os benefícios do Rota de Vendas no catálogo partem deles. */
   highlights?: readonly { lead: string; rest: string }[];
-  platforms: readonly string[];
   /** Selo de fase do projeto (rótulo em `landingContent.statusLabels`). */
   status: ProductStatus;
 }
@@ -62,8 +54,6 @@ const PROJECTS: readonly Project[] = [
     slug: "rota-de-vendas",
     name: "Rota de Vendas",
     summary: "Para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.",
-    cta: { label: "Pedir diagnóstico gratuito", kind: "interest-aplicativo" },
-    videoTitle: "Veja o Rota de Vendas",
     video: {
       src: "/video/brag.mp4",
       poster: "/video/brag.jpg",
@@ -100,7 +90,6 @@ const PROJECTS: readonly Project[] = [
         rest: "O mesmo aplicativo no Android do vendedor e no Windows do escritório.",
       },
     ],
-    platforms: ["Android", "Windows"],
     status: "piloto",
   },
   {
@@ -108,8 +97,6 @@ const PROJECTS: readonly Project[] = [
     name: "Fleet Analytics BI",
     summary:
       "Para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, com custos, abastecimentos e viagens no mesmo lugar.",
-    cta: { label: "Pedir diagnóstico gratuito", kind: "interest-aplicativo" },
-    videoTitle: "Veja o Fleet Analytics BI",
     video: {
       src: "/video/fleet-analytics-bi.mp4",
       poster: "/video/fleet-analytics-bi.jpg",
@@ -119,7 +106,6 @@ const PROJECTS: readonly Project[] = [
       description:
         'Um contador sobe até 1.504 pontos de telemetria: 1 veículo, 1 dia. Aparece o Fleet Analytics BI, com o endereço ifanalitico.com.br e a frase "Transforme dados brutos do rastreador em inteligência operacional". Os menus se abrem: 38 telas em 7 módulos, "do rastreador ao reboque". Depois, cada tela vem com um número em destaque: 167 veículos acompanhados em tempo real; 450 km rodados, separados em autorizado, tolerância e proibido; 20,9% de eficiência por veículo, comparando o tempo ligado com o produtivo; um relatório por veículo com 9 análises; nota de risco 34 de 100; 37 trajetos em um dia, com 264,4 km e R$ 132,21 de custo; 71 alertas de abastecimento com consumo fora do padrão; e o replay de uma viagem de 231 km no mapa, com 10 paradas e máxima de 101 km/h. No módulo de reboque, com 696 chamados, aparecem o despacho, com o mapa dos guinchos; os chamados, com seguradora, origem e destino; a vistoria digital, com avarias, checklist, fotos e assinaturas; o lucro por atendimento; e o faturamento. No fim: "Da telemetria ao reboque. Uma plataforma." Placas, nomes e endereços aparecem borrados.',
     },
-    platforms: ["Web", "Celular"],
     status: "emUso",
   },
 ];
@@ -156,7 +142,6 @@ const HERO_EXPANSAO_TITLE_LINES = ["Tecnologia que trabalha", "em silêncio"] as
 export const landingContent = {
   whatsappMessages: {
     general: WHATSAPP_GENERAL_MESSAGE,
-    replay: WHATSAPP_REPLAY_MESSAGE,
   },
 
   statusLabels: {
@@ -207,16 +192,12 @@ export const landingContent = {
       "O selo de cada produto diz em que fase ele está. Os aplicativos são feitos sob medida, e o primeiro passo é um diagnóstico gratuito, sem compromisso.",
     replay: {
       name: "Replay para quadras",
-      oneLiner:
-        "Para quadras de aluguel: o jogador aperta um botão na beira da quadra, leva o lance no celular e ganha mais um motivo para voltar.",
       illustrationBadge: "Ilustração do conceito",
-      cta: "Quero o piloto na minha quadra",
       // Animação feita em código (projeto strukti-video), no lugar do pôster 3D.
       video: {
         src: "/video/replay.mp4",
         poster: "/video/replay.jpg",
         accessibleName: "Vídeo de demonstração do replay para quadras",
-        playLabel: "Assistir ao vídeo: Replay para quadras",
         durationLabel: "52 s",
         caption:
           "Animação que ilustra o conceito, só com música. A arena, os jogadores e as telas do celular são fictícios.",
@@ -225,7 +206,6 @@ export const landingContent = {
       },
       // Endereço do site próprio do replay: null até existir (o link some).
       siteUrl: null as string | null,
-      siteLinkLabel: "Ver o site do replay",
     },
   },
 
@@ -233,12 +213,7 @@ export const landingContent = {
     title: "Aplicativos sob medida",
     intro:
       "Para a empresa que ainda controla pedidos, rotas ou relatórios na planilha, no papel e no WhatsApp: construímos o aplicativo do jeito que ela já trabalha, ligado ao que ela já usa. O primeiro passo é o diagnóstico gratuito: uma conversa sobre a rotina da empresa, com um resumo por escrito do que vale a pena fazer. Sem compromisso de contratar.",
-    cta: "Pedir diagnóstico gratuito",
     projects: PROJECTS,
-    grid: {
-      showMore: "Mostrar mais projetos",
-      playLabel: "Assistir ao vídeo: {nome} ({duração})",
-    },
     videoDescriptionLinkLabel: "Ler a descrição do vídeo",
   },
 
@@ -474,7 +449,7 @@ export const landingContent = {
     ],
     grupoDecide: ["Fotos da equipe. A página funciona com as iniciais; o grupo decide se publica sem fotos."],
     naoBloqueiam: [
-      'Endereço do site próprio do replay (produtos.replay.siteUrl). Enquanto não existir, o link "Ver o site do replay" fica escondido.',
+      'Endereço do site próprio do replay (produtos.replay.siteUrl). Enquanto não existir, o link "Ver o site" do painel do replay no catálogo fica escondido.',
     ],
   },
 

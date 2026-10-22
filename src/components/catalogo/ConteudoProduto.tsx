@@ -16,7 +16,7 @@ type VideoProduto = NonNullable<ItemCatalogo["painel"]["video"]>;
 
 /** "Assistir ao vídeo: Replay para quadras (52 s)": o "Assistir" do painel e o link da ficha. */
 export function rotuloAssistir(item: ItemCatalogo, duracao: string | undefined) {
-  return landingContent.aplicativos.grid.playLabel
+  return catalogoUi.assistir
     .replace("{nome}", item.nome)
     .replace(" ({duração})", duracao ? ` (${duracao})` : "");
 }

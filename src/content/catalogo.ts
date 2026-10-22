@@ -482,6 +482,8 @@ export const catalogoUi = {
   posicao: "{i} de {n}: {nome}",
   /** A posição na descrição do título do painel, que já diz o nome. */
   posicaoCurta: "{i} de {n}",
+  /** O "Assistir" do vídeo no painel e o link para ele na ficha sem JS. */
+  assistir: "Assistir ao vídeo: {nome} ({duração})",
   verDetalhes: "Ver detalhes",
   saberMais: "Quero saber mais",
   /**

@@ -1060,7 +1060,7 @@ async function setReducedMotion(cdp, reduce) {
 }
 
 /**
- * Garante que o vídeo de um cartão da grade está tocando: clica o botão
+ * Garante que o vídeo do painel do catálogo está tocando: clica o botão
  * "Assistir" (o vídeo nasce já em autoplay) e espera — clicar no vídeo de
  * novo pausaria o autoplay, já que o clique alterna. Reforça com `play()`
  * sob o mesmo gesto se precisar.

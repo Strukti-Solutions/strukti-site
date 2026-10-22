@@ -125,8 +125,7 @@ describe("CATALOGO (spec §5)", () => {
     expect(rotaItem.frase).toBe(rota.summary);
     expect(fleetItem.nome).toBe(fleet.name);
     expect(fleetItem.painel.video).toBe(fleet.video);
-    // As frases atuais do replay (130) e do Fleet (137) passam do limite da §5.3.
-    expect(replayItem.frase).not.toBe(landingContent.produtos.replay.oneLiner);
+    // O resumo do Fleet (137 caracteres) passa do limite da §5.3.
     expect(fleetItem.frase).not.toBe(fleet.summary);
   });
 

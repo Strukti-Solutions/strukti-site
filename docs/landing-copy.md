@@ -134,6 +134,8 @@ Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithM
 > Cidade:
 > Quantas quadras:
 
+*Nota (22/10/2026): saiu do código com o botão do cartão da v2.2 (o catálogo não tem WhatsApp no painel, spec do catálogo Q5). O texto fica aqui para o site próprio do replay.*
+
 *Nota: no código, a mensagem é uma string só, com `\n` entre as linhas e nada depois dos dois-pontos: `"Olá! Vim pelo site da Strukti Soluções e quero o piloto gratuito do replay na minha quadra.\nCidade:\nQuantas quadras:"`. O `encodeURIComponent` transforma cada `\n` em `%0A`. A pessoa completa a cidade e o número de quadras antes de enviar; se mandar sem completar, a equipe pergunta. Usada só no botão do cartão do replay. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20o%20piloto%20gratuito%20do%20replay%20na%20minha%20quadra.%0ACidade%3A%0AQuantas%20quadras%3A`*
 
 *Nota (v2.2): antes (v2.0), "Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra." [decidido 13/10, itens 3 e 11]*
@@ -382,11 +384,13 @@ Selo: **Piloto gratuito** (`piloto`).
 
 Os cartões da parede da v2.2 não existem mais: a microcopy do catálogo (seção "Textos de interface do catálogo (`catalogoUi`)", mais abaixo) toma o lugar deles. Dos três textos antigos, dois continuam em uso, agora no painel do produto, e um saiu:
 
-**`aplicativos.grid.playLabel` (nome acessível do botão de reproduzir do vídeo no painel):** Assistir ao vídeo: {nome} ({duração})
+**`catalogoUi.assistir` (nome acessível do botão de reproduzir do vídeo no painel e texto do link para o vídeo na ficha sem JS; antes `aplicativos.grid.playLabel`):** Assistir ao vídeo: {nome} ({duração})
 
 **`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo, no painel):** Ler a descrição do vídeo
 
-*Nota (22/10/2026): saiu o `aplicativos.grid.showMore` ("Mostrar mais projetos"), do botão que revelava mais de 6 cartões: o catálogo navega pelo coverflow, pelas bolinhas e pela fita, sem "mostrar mais". A chave ainda existe em `src/content/landing.ts` sem uso. [texto antigo, aprovado na v2.2]*
+*Nota (22/10/2026): saiu o `aplicativos.grid.showMore` ("Mostrar mais projetos"), do botão que revelava mais de 6 cartões: o catálogo navega pelo coverflow, pelas bolinhas e pela fita, sem "mostrar mais". A chave saiu de `src/content/landing.ts`. [texto antigo, aprovado na v2.2]*
+
+*Nota (22/10/2026): também saíram do código, sem uso desde que o catálogo tomou o lugar da parede, as chaves `produtos.replay.oneLiner`, `produtos.replay.cta`, `produtos.replay.siteLinkLabel` (o painel usa `catalogoUi.siteLink`, "Ver o site"), `whatsappMessages.replay`, `aplicativos.cta` e, nos aplicativos, `videoTitle` e `platforms`. Os textos ficam neste documento como registro (e para o site do replay e as páginas dos produtos).*
 
 ### Catálogo (proposta — aguardando aprovação)
 
@@ -888,7 +892,7 @@ O Thiago decide:
 
 Não bloqueiam a publicação:
 
-9. Páginas próprias dos produtos. Enquanto não existirem, os links da barra do topo rolam até os cartões e o link "Ver o site do replay" fica escondido.
+9. Páginas próprias dos produtos. Enquanto não existirem, os links da barra do topo rolam até os cartões e o link "Ver o site" do painel do replay fica escondido.
 10. CNPJ no rodapé, quando houver.
 
 *Nota (v2.2): saem da landing, e passam para a futura página do replay, as pendências 4 a 9 da v2.1: as condições do piloto, o que acontece com os lances se o Wi-Fi cair, o tempo de instalação, a imagem de compartilhamento nova, o nome da quadra no clipe e o resumo por escrito do diagnóstico no replay. Dos dados pedidos ao Thiago na PROPOSTA.md §4, a landing agora só precisa dos itens acima.*
