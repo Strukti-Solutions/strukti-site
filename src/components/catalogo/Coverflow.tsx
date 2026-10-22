@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type RefObject,
+} from "react";
 import { motion } from "motion/react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { CartaoProduto } from "./CartaoProduto";
@@ -10,6 +19,45 @@ import { deslocamento } from "./estado";
 /** Gesto que troca (Review Focus 1): claramente horizontal e de pelo menos 40 px. */
 const DESLIZE_MINIMO = 40;
 const DESLIZE_PROPORCAO = 1.5;
+
+/**
+ * Onde fica o centro do ±1 e do ±2, em larguras de cartão a partir do centro
+ * do palco: o `translateX` de cada `data-pos` na CSS (86% e 155%, §3.1). A
+ * escala e o giro são em torno do centro do cartão e não o mudam de lugar.
+ */
+const CENTRO_DOS_LATERAIS = [0.86, 1.55] as const;
+
+/**
+ * Até que distância do centro (1 = só o ±1, 2 = os dois) um lateral fica na
+ * ordem de Tab: só se o centro dele cai no palco, longe das setas, que ficam
+ * por cima. Mais longe, focado, ele ficaria sob a seta ou fora da tela
+ * (2.4.11); o teclado tem as setas, as bolinhas e ← →. Medido pelo tamanho
+ * do cartão na tela (o palco o calcula pela altura e pela largura) a cada
+ * mudança de tamanho do palco. Sem medida (antes de montar, ou sem
+ * ResizeObserver), os dois.
+ */
+function useAlcanceDoTab(palcoRef: RefObject<HTMLElement | null>) {
+  const [alcance, setAlcance] = useState<number>(CENTRO_DOS_LATERAIS.length);
+
+  useEffect(() => {
+    const palco = palcoRef.current;
+    if (!palco || typeof ResizeObserver !== "function") return;
+    const medir = () => {
+      const cartao = palco.querySelector<HTMLElement>('.catalogo__cartao[data-pos="0"]')?.offsetWidth ?? 0;
+      const seta = palco.parentElement?.querySelector<HTMLElement>(".catalogo__seta")?.offsetWidth ?? 0;
+      // Escondido (o painel aberto): sem caixa, nada a medir.
+      if (cartao === 0) return;
+      const livre = palco.clientWidth / 2 - seta;
+      setAlcance(CENTRO_DOS_LATERAIS.filter((centro) => centro * cartao <= livre).length);
+    };
+    const observador = new ResizeObserver(medir);
+    observador.observe(palco);
+    medir();
+    return () => observador.disconnect();
+  }, [palcoRef]);
+
+  return alcance;
+}
 
 /**
  * Passo de um gesto do dedo ou do mouse (dx, dy em px), ou `null` quando não
@@ -125,6 +173,8 @@ export function Coverflow({
   const focarCentroRef = useRef(false);
   const inicioRef = useRef<{ x: number; y: number } | null>(null);
   const { marcarArrasto, onClickCapture } = useCliqueDoArrasto();
+  const palcoRef = useRef<HTMLDivElement>(null);
+  const alcanceDoTab = useAlcanceDoTab(palcoRef);
 
   useEffect(() => {
     if (!focarCentroRef.current) return;
@@ -206,6 +256,7 @@ export function Coverflow({
         {/* A entrada da seção começa aqui e desce, por variantes, até o
             invólucro de cada cartão (`.catalogo__entrada`). */}
         <motion.div
+          ref={palcoRef}
           className="catalogo__palco"
           initial={false}
           animate={esperandoEntrada && animar ? "escondida" : "visivel"}
@@ -230,6 +281,10 @@ export function Coverflow({
                 rotulo={textoPosicao(indice, total, item.nome)}
                 js={js}
                 oculto={pos === "oculto" || (!largo && Math.abs(d) === 2)}
+                // No celular, o ±1 só aparece pela ponta; e, em qualquer
+                // largura, o lateral cujo centro cairia sob as setas fica
+                // fora do Tab (useAlcanceDoTab). O clique e o dedo continuam.
+                naOrdemDeTab={largo && Math.abs(d) <= alcanceDoTab}
                 prioridade={item.slug === prioritario}
                 // Da esquerda para a direita na tela; os ocultos, sem espera.
                 ordem={pos === "oculto" ? 0 : d + 2}

@@ -58,6 +58,12 @@ interface CartaoProdutoProps {
   js: boolean;
   /** Fora do coverflow agora: `inert` e `aria-hidden` (só com JS). */
   oculto: boolean;
+  /**
+   * Lateral na ordem de Tab: a partir de 768 px e com o centro dele no
+   * palco, longe das setas (Coverflow). Fora disso, só pelo clique, pelo
+   * dedo e pelas setas.
+   */
+  naOrdemDeTab: boolean;
   /** O centro inicial: a arte carrega sem `loading="lazy"` (§9). */
   prioridade: boolean;
   /** A vez na entrada da seção, da esquerda para a direita (0 a 4). */
@@ -88,6 +94,7 @@ export function CartaoProduto({
   rotulo,
   js,
   oculto,
+  naOrdemDeTab,
   prioridade,
   ordem,
   animar,
@@ -136,9 +143,10 @@ export function CartaoProduto({
       aria-label={rotulo}
       inert={fora}
       aria-hidden={fora ? true : undefined}
-      // Com JS, o lateral entra no Tab (Enter o centraliza); o do centro só
-      // recebe foco por programação, e o Tab vai para o "Ver detalhes" dele.
-      tabIndex={js && !fora ? (centro ? -1 : 0) : undefined}
+      // Com JS, o lateral entra no Tab (Enter o centraliza), menos onde
+      // ficaria fora da tela ou sob as setas; o do centro só recebe foco por
+      // programação, e o Tab vai para o "Ver detalhes" dele.
+      tabIndex={js && !fora ? (centro || !naOrdemDeTab ? -1 : 0) : undefined}
       onClick={onClick}
       onKeyDown={onKeyDown}
       onMouseEnter={() => setComMouse(true)}

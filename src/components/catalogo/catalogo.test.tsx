@@ -319,6 +319,89 @@ describe("catálogo: estado fechado", () => {
     expect(within(centroEl).getByRole("button", { name: "Ver detalhes de Replay para quadras" }).tabIndex).toBe(0);
   });
 
+  // Abaixo de 768 px os ±1 só aparecem pelas pontas (§3.1): focado, mais da
+  // metade do cartão fica fora da tela e o resto sob a seta (2.4.11). O
+  // teclado tem as setas e as bolinhas; o dedo e o clique continuam valendo.
+  it("abaixo de 768 px: os ±1 saem da ordem de Tab (o clique ainda centraliza) e os ±2 ficam inert", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((media: string) => ({
+        matches: false,
+        media,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      })),
+    );
+    try {
+      const { raiz } = montar();
+
+      for (const c of cartoes(raiz)) {
+        const pos = c.dataset.pos;
+        if (pos === "1" || pos === "-1") {
+          expect(c.tabIndex, c.id).toBe(-1);
+          expect(c.hasAttribute("inert"), c.id).toBe(false);
+        }
+        if (pos === "2" || pos === "-2") expect(c.hasAttribute("inert"), c.id).toBe(true);
+      }
+      fireEvent.click(cartao(raiz, "rota-de-vendas"));
+      expect(centro(raiz)).toBe("rota-de-vendas");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // check:browser (Tab a 1024 e 1200 px): o centro do ±2 focado caía sob a
+  // seta "Próximo" (que fica acima do palco) ou fora da tela. Um lateral só
+  // entra no Tab se o centro dele (deslocado 0,86 ou 1,55 largura de cartão,
+  // §3.1) fica no palco, longe das setas; o resto do teclado continua.
+  it("um lateral só fica na ordem de Tab se o centro dele cabe no palco, fora das setas", () => {
+    let medir: () => void = () => {};
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          medir = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    let palcoLargura = 1105;
+    const offsetWidth = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.matches('.catalogo__cartao[data-pos="0"]')) return 348;
+      return this.matches(".catalogo__seta") ? 48 : 0;
+    });
+    const clientWidth = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.matches(".catalogo__palco") ? palcoLargura : 0;
+    });
+    try {
+      const { raiz } = montar();
+      act(() => medir());
+      // 1105 / 2 − 48 = 504,5: o ±1 (0,86 × 348 = 299) cabe, o ±2 (1,55 × 348 = 539) não.
+      const tabPorPos = () => Object.fromEntries(cartoes(raiz).filter((c) => c.dataset.pos !== "oculto").map((c) => [c.dataset.pos, c.tabIndex]));
+      expect(tabPorPos()).toEqual({ "0": -1, "1": 0, "-1": 0, "2": -1, "-2": -1 });
+
+      palcoLargura = 1200; // 552 px para cada lado: o ±2 cabe.
+      act(() => medir());
+      expect(tabPorPos()).toEqual({ "0": -1, "1": 0, "-1": 0, "2": 0, "-2": 0 });
+
+      palcoLargura = 680; // 340 − 48 = 292 px: nem o ±1 (299) cabe.
+      act(() => medir());
+      expect(tabPorPos()).toEqual({ "0": -1, "1": -1, "-1": -1, "2": -1, "-2": -1 });
+      // Fora do Tab, mas não inert: o clique ainda centraliza.
+      fireEvent.click(cartao(raiz, "rota-de-vendas"));
+      expect(centro(raiz)).toBe("rota-de-vendas");
+    } finally {
+      offsetWidth.mockRestore();
+      clientWidth.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("axe sem violações no estado fechado", async () => {
     const { container } = montar();
     expect((await axe.run(container)).violations).toEqual([]);
@@ -1021,7 +1104,7 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
 // §8.6 (2.4.7) e 1.4.11: os laterais são paradas de Tab, e o contorno de foco
 // é desenhado no próprio cartão. Se o cartão focado mantiver a opacidade e o
 // filtro do ±1/±2, o anel sai apagado e borrado (no ±2, ~1,6:1 contra o fundo).
-describe("catálogo: foco visível nos laterais (CSS)", () => {
+describe("catálogo: CSS (foco nos laterais, cores forçadas e altura sem JS)", () => {
   const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
   const inicio = css.indexOf("/* 11b. Catálogo de produtos");
   const fim = css.indexOf("/* 12. Diagnóstico e formulário");
@@ -1044,6 +1127,19 @@ describe("catálogo: foco visível nos laterais (CSS)", () => {
       expect(lateral.i).toBeGreaterThan(-1);
       expect(foco.i).toBeGreaterThan(lateral.i);
     }
+  });
+
+
+  // §4 e §9 (CLS 0): sem JS (o HTML do servidor e o 1º render do cliente), a
+  // caixa já tem a altura do coverflow. Antes, ela crescia ~195 px ao montar
+  // (data-js="true"), e o /#contato carregado direto parava ~195 px abaixo
+  // do formulário (check:browser, âncora direta do hero "expansao").
+  it("sem JS, a caixa do catálogo já tem a altura do coverflow (nada abaixo se mexe ao montar)", () => {
+    const altura = /height: (clamp\([^;]+\));/.exec(regra('.catalogo[data-js="true"] .catalogo__corpo').corpo)?.[1];
+    expect(altura).toBeDefined();
+    const semJs = regra('.catalogo[data-js="false"] .catalogo__corpo');
+    expect(semJs.i).toBeGreaterThan(-1);
+    expect(semJs.corpo).toContain(`min-height: ${altura};`);
   });
 
   // §8.7: com `forced-color-adjust: none` nas abas, a cor do autor fica. A
