@@ -137,6 +137,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
 - A seção (título, filtro, palco e bolinhas, ou título, filtro, painel e fita) ocupa **`clamp(600px, 80svh, 860px)`** nos dois estados. Ao abrir, fechar ou trocar, nada abaixo se mexe. O `check:browser` mede o topo da seção seguinte antes e depois.
 - O painel ocupa a altura que sobra, descontados a fita (~110 px) e os espaçamentos. A Visão geral precisa caber nessa altura sem rolagem: daí os limites de texto da §5.3.
 - **Exceção de acessibilidade:** em telas muito baixas (paisagem de celular, zoom de 200–400%, espaçamento de texto 1.4.12), a acessibilidade vence a constância. A seção pode crescer, ou o painel ganha rolagem interna, para todo o conteúdo continuar alcançável (WCAG 1.4.10 e 1.4.12). Documentar na MASTER.
+- **Celular e telas baixas (decisão de 22/10, na Task 6; aguarda o dono):** abaixo de 768 px de largura, o vídeo e o texto da Visão geral empilham e não cabem na altura da seção (a 390×844, ~755 px de conteúdo para ~420 px de painel), mesmo com os limites da §5.3. O mesmo vale para alturas de tela abaixo de ~800 px (a 1366×768, só o texto já passa ~20 px). Nesses casos, a seção mantém a altura e o painel rola por dentro (a fita e o que vem abaixo não se mexem). Encolher o vídeo ou recolher texto no celular foi descartado: o vídeo ficaria pequeno demais para ver e o texto recolhido esconderia o "Quero saber mais". A partir de 1280×800, a Visão geral cabe sem rolar: a mídia tem um teto de altura que acompanha a altura da seção.
 
 ## 5. Conteúdo
 
