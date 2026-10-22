@@ -2,11 +2,11 @@
    cidade de hora azul (spec 2026-10-16 §6.2). É o mesmo mundo do "Fim de expediente" (scripts/hero-expansao/scene.js):
    a mesa de laminado, a janela com montantes e a cidade desfocada (buildCity/cityLayer copiados), o abajur fora do
    quadro e a caneca do hero.
-   A tela não tem texto: o mapa da frota (quadras giradas, veículos, o rastro em ângulos retos do selecionado), três
-   indicadores em anel, a curva de velocidade e as barras de indicadores. Nada inventado: nenhuma placa, cidade,
+   A tela não tem texto: o mapa da frota (quadras giradas, veículos, o rastro em ângulos retos do selecionado), os
+   indicadores (um bloco com barra de progresso e dois anéis), a curva de velocidade e as barras. Nada inventado: nenhuma placa, cidade,
    empresa ou cliente real.
    Unidades: cm. x à direita, y para cima, z para longe (para a janela). O tampo da mesa é o plano y = 0, a parede da
-   janela fica em z = 64 e o vidro em z = 71 (como no hero); o monitor fica em x = 0, z = 40.
+   janela fica em z = 64 e o vidro em z = 71 (como no hero); o monitor fica em x = -2, z = 40.
    Camadas: cidade (direção, desfocada) -> mesa e parede (por pixel, com o buraco da janela) -> montantes e peitoril ->
    reflexo da cidade na mesa -> halo da tela -> sombras e reflexo da tela na mesa -> pé, base e monitor -> caneca ->
    acabamento do kit. */
@@ -22,14 +22,14 @@
     janela: { x0: -160, x1: 160, y0: 0.4, y1: 210, trilho: 1.3, montantes: [[-45, -42], [42, 45]] },
     mesa: { x0: -170, x1: 170, z0: -90, z1: 63, alb: [54, 52, 49] },          // o laminado do hero
     // monitor de 27": painel 62 x 36 cm, virado 18° para a cadeira (fora do quadro, à esquerda); borda fina e queixo
-    monitor: { x: -2, y: 10.5, z: 40, rot: -18, w: 62, h: 36, d: 1.6, r: 0.7, borda: 0.75, queixo: 1.7 },
+    monitor: { x: -2, y: 14, z: 40, rot: -18, w: 62, h: 36, d: 1.6, r: 0.7, borda: 0.75, queixo: 1.7 },
     pe: { w: 5, d: 2.4, recuo: 2.4, base: { w: 25, d: 17, h: 0.9, r: 4, recuo: 1.6 } },
-    caneca: { x: -36, z: 30, r: 4.1, h: 9.2 },   // no fundo da mesa, contra a janela (como no hero)
+    caneca: { x: -29, z: 21, r: 4.1, h: 9.2, alca: -15 },   // na mesa, à esquerda, um palmo à frente do peitoril; a alça aponta para o monitor
     // o abajur do hero, fora do quadro, alto à esquerda: uma poça neutro-quente em volta do pé do monitor
     abajur: { pos: [-80, 92, 2], alvo: [-10, 0, 32], k: 1.0 }
   };
   // câmera retrato 800 x 1200: de pé, um pouco atrás da cadeira; o monitor entre ~17% e ~49% da altura
-  const CAM = { W: 800, H: 1200, pos: [0, 42, -95], target: [0, 26, 40], F: 1150, shiftY: -216,
+  const CAM = { W: 800, H: 1200, pos: [0, 42, -95], target: [0, 26, 40], F: 1150, shiftY: -196,
     cityBlur: 7, bokeh: 16, bokehP: 0.035, discA: 0.12, cityGain: 1, refl: 0.12,
     towers: [[-34, -10, 30, 1], [-10, -5.5, 6.5, 0], [6, 10.5, 8, 0], [10.5, 34, 13, 1]], centre: [-5.5, 6, -2.5],
     telaFundo: 0.45, telaLuz: 2.0, halo: 0.05, reflexoTela: 0.1, pulso: 0, abajurK: 1, caneca: 1,
@@ -224,7 +224,7 @@
     const FROTA = [[-5.5, -3.5, 0], [-3, -5, 0], [-6, 0.5, 1], [-3.5, 5, 0], [-0.5, 3, 0], [2, 4.5, 1], [4.5, 2.5, 0], [5.5, -2.5, 0], [3, -4.5, 1], [0, -3, 0], [6, 5, 0], [-1, 5.5, 0], [-2, 0.5, 0], [6.5, 0, 1]];
     for (const [i, j, mov] of FROTA) {
       const p = G2(i, j), cor = mov ? C.c400 : C.e400;
-      x.fillStyle = radial(x, [[0, rgba(cor, 0.3)], [1, rgba(cor, 0)]], 22); x.save(); x.translate(p[0], p[1]); x.beginPath(); x.arc(0, 0, 22, 0, 7); x.fill(); x.restore();
+      if (mov) { x.fillStyle = radial(x, [[0, rgba(cor, 0.3)], [1, rgba(cor, 0)]], 22); x.save(); x.translate(p[0], p[1]); x.beginPath(); x.arc(0, 0, 22, 0, 7); x.fill(); x.restore(); }   // halo só em quem anda
       x.beginPath(); x.arc(p[0], p[1], 10, 0, 7); x.fillStyle = rgba(C.n100, 0.85); x.fill();
       x.beginPath(); x.arc(p[0], p[1], 6.5, 0, 7); x.fillStyle = rgba(cor); x.fill();
     }
@@ -244,15 +244,21 @@
     x.restore();
     // ---- coluna da direita: indicadores ----
     const CX = MX + MW + 14, CW = TW - 14 - CX;
-    // três indicadores em anel
-    const tw3 = (CW - 24) / 3;
-    [[0.72, C.e400], [0.48, C.c400], [0.86, C.e300]].forEach(([f, cor], k) => {
-      const x0 = CX + k * (tw3 + 12), y0 = MY, hh = 118; rr(x0, y0, tw3, hh, 12, rgba(CARD));
-      const cx = x0 + tw3 / 2, cy = y0 + 50; x.lineCap = 'round';
-      x.beginPath(); x.arc(cx, cy, 27, 0, 7); x.strokeStyle = rgba(C.n800, 0.95); x.lineWidth = 10; x.stroke();
-      x.beginPath(); x.arc(cx, cy, 27, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); x.strokeStyle = rgba(cor); x.lineWidth = 10; x.stroke();
-      rr(x0 + 26, y0 + hh - 24, tw3 - 52, 8, 4, rgba(C.n600, 0.7));
-    });
+    // indicadores: um bloco largo (valor como bloco e barra de progresso) e um cartão com dois anéis de tamanhos
+    // diferentes, a 0,7 (nada de três cartões iguais em fila)
+    { const hh = 118, wa = Math.round(CW * 0.54), x0 = CX, y0 = MY; rr(x0, y0, wa, hh, 12, rgba(CARD));
+      rr(x0 + 22, y0 + 18, 70, 10, 5, rgba(C.n600, 0.7));                     // rótulo
+      rr(x0 + 22, y0 + 40, 104, 26, 7, rgba(C.n400, 0.55));                   // o valor, como bloco
+      rr(x0 + 136, y0 + 48, 40, 12, 6, rgba(C.n600, 0.6));                    // a unidade
+      const bw = wa - 44, f = 0.68; rr(x0 + 22, y0 + hh - 30, bw, 12, 6, rgba(C.n800, 0.95));
+      { const g = x.createLinearGradient(x0 + 22, 0, x0 + 22 + bw * f, 0); g.addColorStop(0, rgba(C.e500, 0.7)); g.addColorStop(1, rgba(C.e400, 0.7)); rr(x0 + 22, y0 + hh - 30, bw * f, 12, 6, g); }
+      const xb = x0 + wa + 12, wb = CW - wa - 12; rr(xb, y0, wb, hh, 12, rgba(CARD)); x.lineCap = 'round';
+      const anel = (cx, cy, r, lw, f, cor) => {
+        x.beginPath(); x.arc(cx, cy, r, 0, 7); x.strokeStyle = rgba(C.n800, 0.95); x.lineWidth = lw; x.stroke();
+        x.beginPath(); x.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); x.strokeStyle = rgba(cor, 0.7); x.lineWidth = lw; x.stroke(); };
+      anel(xb + 58, y0 + hh / 2, 33, 11, 0.72, C.e400);
+      anel(xb + wb - 44, y0 + 44, 18, 7, 0.48, C.e300);
+      rr(xb + wb - 70, y0 + hh - 30, 52, 8, 4, rgba(C.n600, 0.7)); }
     // a curva de velocidade
     { const x0 = CX, y0 = MY + 130, w = CW, h = 240; rr(x0, y0, w, h, 12, rgba(CARD));
       const gx0 = x0 + 22, gx1 = x0 + w - 22, gy0 = y0 + 34, gy1 = y0 + h - 26;
@@ -274,7 +280,10 @@
       seg([bx0 - 6, by1 + 1], [bx1 + 6, by1 + 1], rgba(C.n600, 0.8), 2);
       HB.forEach((f, i) => {
         const bx = bx0 + (bx1 - bx0) * (i + 0.5) / n - bw / 2, bh = byH * f * (1 + (i === 5 ? 0.04 * Math.sin(pulso * Math.PI * 2) : 0)), sel = i === 5;
-        const g = x.createLinearGradient(0, by1 - bh, 0, by1); g.addColorStop(0, rgba(sel ? C.c400 : C.e400, sel ? 1 : 0.9)); g.addColorStop(1, rgba(sel ? C.c600 : C.e700, 0.75));
+        const viz = i === 4 || i === 6, g = x.createLinearGradient(0, by1 - bh, 0, by1);   // a ciano e as vizinhas em cor; as outras em navy claro
+        if (sel) { g.addColorStop(0, rgba(C.c400)); g.addColorStop(1, rgba(C.c600, 0.75)); }
+        else if (viz) { g.addColorStop(0, rgba(C.e400, 0.9)); g.addColorStop(1, rgba(C.e700, 0.75)); }
+        else { g.addColorStop(0, rgba(C.n500, 0.6)); g.addColorStop(1, rgba(C.n600, 0.6)); }
         x.beginPath(); x.roundRect(bx, by1 - bh, bw, bh, [5, 5, 0, 0]); x.fillStyle = g; x.fill();
       });
       rr(x0 + 22, y0 + 12, 90, 10, 5, rgba(C.n600, 0.7)); }
@@ -389,7 +398,7 @@
     const m = MUNDO.caneca, P = cam.P, N = 72;
     const ring = (h, r) => { const a = []; for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2; a.push(P([m.x + r * Math.cos(t), h, m.z + r * Math.sin(t)])); } return a; };
     const alb = [34, 50, 72];
-    const hAng = -140 * Math.PI / 180, hd = [Math.cos(hAng), 0, Math.sin(hAng)];
+    const hAng = m.alca * Math.PI / 180, hd = [Math.cos(hAng), 0, Math.sin(hAng)];
     const hc = [m.x + hd[0] * (m.r + 1.3), m.h * 0.56, m.z + hd[2] * (m.r + 1.3)];
     const handle = () => {
       const pts = []; for (let i = 0; i <= 24; i++) { const a = -Math.PI / 2 + i / 24 * Math.PI; pts.push(P([hc[0] + hd[0] * Math.cos(a) * 1.9 - hd[0] * 0.6, hc[1] + Math.sin(a) * 2.8, hc[2] + hd[2] * Math.cos(a) * 1.9 - hd[2] * 0.6])); }
