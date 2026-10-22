@@ -43,6 +43,12 @@ export interface ItemCatalogo {
   frase: string;
   /** Rótulo em `landingContent.statusLabels`. */
   fase: ProductStatus;
+  /**
+   * Selo "Ilustração do conceito", ao lado do selo de fase no cartão e no
+   * painel: só o replay, cuja arte é um render do conceito (ADR-009: o site
+   * o identifica sempre assim; MASTER §8.14).
+   */
+  seloConceito?: string;
   /** Item inventado (Q28): procurar por isto para trocar. */
   ficticio?: true;
   arte: {
@@ -104,6 +110,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     // A frase do cartão da v2.2 (130 caracteres) passa do limite da §5.3.
     frase: "Para quadras de aluguel: o jogador aperta um botão na beira da quadra e leva o lance no celular.",
     fase: "piloto",
+    seloConceito: REPLAY.illustrationBadge,
     arte: arte(
       "replay",
       "A caixa do botão do replay no alambrado de uma quadra vazia à noite, com névoa dos refletores e o LED ciano aceso.",

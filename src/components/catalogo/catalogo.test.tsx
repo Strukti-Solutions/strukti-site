@@ -141,6 +141,24 @@ describe("catálogo: estado fechado", () => {
     );
   });
 
+  it("o cartão e o painel do replay mostram o selo 'Ilustração do conceito' ao lado do selo de fase (ADR-009); os outros, não", () => {
+    vi.spyOn(window.history, "back").mockImplementation(() => {});
+    const { raiz } = montar();
+    const selo = landingContent.produtos.replay.illustrationBadge;
+
+    const metaReplay = cartao(raiz, "replay").querySelector(".catalogo__meta")!;
+    expect(within(metaReplay as HTMLElement).getByText(selo).className).toBe("selo selo--conceito");
+    for (const slug of IDS.filter((s) => s !== "replay")) {
+      expect(cartao(raiz, slug).textContent, slug).not.toContain(selo);
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
+    const metaPainel = raiz.querySelector<HTMLElement>(".catalogo__painel .catalogo__meta")!;
+    expect(within(metaPainel).getByText(selo).className).toBe("selo selo--conceito");
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(raiz.querySelector(".catalogo__painel .catalogo__meta")?.textContent).not.toContain(selo);
+  });
+
   it("clicar num lateral (data-pos=1) o centraliza; não abre", () => {
     const { raiz } = montar();
 

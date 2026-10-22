@@ -25,10 +25,6 @@ describe("landingContent v2.2", () => {
     expect(JSON.stringify(landingContent)).not.toMatch(/\b4G\b/);
   });
 
-  it("o cartão do replay identifica o vídeo como ilustração do conceito", () => {
-    expect(landingContent.produtos.replay.illustrationBadge).toBe("Ilustração do conceito");
-  });
-
   it("o hero tem as 3 opções da v2.2, e a padrão (heroEstudio) é a B", () => {
     expect(Object.keys(landingContent.heroOpcoes).sort()).toEqual(["a", "b", "c"]);
     const { eyebrow, headline, body } = landingContent.heroEstudio;

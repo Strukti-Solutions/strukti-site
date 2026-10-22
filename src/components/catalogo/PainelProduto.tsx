@@ -266,6 +266,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
             <div className="catalogo__meta">
               <span className="catalogo__tipo">{catalogoUi.tipos[item.tipo]}</span>
               <SeloStatus status={item.fase} />
+              {item.seloConceito && <span className="selo selo--conceito">{item.seloConceito}</span>}
             </div>
             <h3
               ref={tituloRef}

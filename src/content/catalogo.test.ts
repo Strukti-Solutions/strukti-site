@@ -116,6 +116,10 @@ describe("CATALOGO (spec §5)", () => {
     const fleetItem = porSlug("fleet-analytics-bi");
     expect(replayItem.nome).toBe(landingContent.produtos.replay.name);
     expect(replayItem.painel.video).toBe(landingContent.produtos.replay.video);
+    // ADR-009: o replay é sempre identificado como ilustração do conceito.
+    expect(replayItem.seloConceito).toBe(landingContent.produtos.replay.illustrationBadge);
+    expect(replayItem.seloConceito).toBe("Ilustração do conceito");
+    expect(CATALOGO.filter((i) => i.seloConceito).map((i) => i.slug)).toEqual(["replay"]);
     expect(rotaItem.nome).toBe(rota.name);
     expect(rotaItem.painel.video).toBe(rota.video);
     expect(rotaItem.frase).toBe(rota.summary);

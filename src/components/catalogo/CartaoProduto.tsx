@@ -194,6 +194,7 @@ export function CartaoProduto({
             <div className="catalogo__meta">
               <span className="catalogo__tipo">{catalogoUi.tipos[item.tipo]}</span>
               <SeloStatus status={item.fase} />
+              {item.seloConceito && <span className="selo selo--conceito">{item.seloConceito}</span>}
             </div>
             <h3 className="catalogo__nome">{item.nome}</h3>
             <p className="catalogo__frase">{item.frase}</p>
