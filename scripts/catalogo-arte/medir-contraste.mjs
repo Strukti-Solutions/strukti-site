@@ -13,9 +13,16 @@
 // final entrar no lugar dos provisórios.
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import sharp from "sharp";
+import { fileURLToPath } from "node:url";
 
-const RAIZ = new URL("../../public/catalogo/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+// O sharp vem com o next (dependência opcional dele), não do package.json.
+const { default: sharp } = await import("sharp").catch(() => {
+  console.error("medir-contraste precisa do sharp, que vem com o next: rode npm install (sem --omit=optional).");
+  process.exit(2);
+});
+
+// fileURLToPath decodifica %20 e acentos (um clone numa pasta com espaço ou acento).
+const RAIZ = fileURLToPath(new URL("../../public/catalogo/", import.meta.url));
 
 // Frações da superfície do cartão: [esquerda, topo, direita, base].
 const CASOS = {

@@ -159,6 +159,15 @@ const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
 // interacao, separadas por vírgula). Sem a variável, todas. O controle
 // positivo de CSP roda sempre.
 const ETAPAS = process.env.CHECK_BROWSER_ETAPAS?.split(",").map((etapa) => etapa.trim()).filter(Boolean) ?? null;
+const ETAPAS_CONHECIDAS = ["larguras", "hero", "expansao", "catalogo", "interacao"];
+// Um nome errado rodaria zero etapas e terminaria verde: falha antes.
+const desconhecidas = ETAPAS?.filter((etapa) => !ETAPAS_CONHECIDAS.includes(etapa)) ?? [];
+if (desconhecidas.length > 0) {
+  console.error(
+    `CHECK_BROWSER_ETAPAS desconhecida: ${desconhecidas.join(", ")} (use ${ETAPAS_CONHECIDAS.join(", ")}, separadas por vírgula)`,
+  );
+  process.exit(2);
+}
 const roda = (etapa) => !ETAPAS || ETAPAS.includes(etapa);
 // 1199/1200: os dois lados do ponto da barra larga (75em, TB2).
 const WIDTHS = [360, 390, 768, 950, 1024, 1100, 1145, 1199, 1200, 1280, 1440];
