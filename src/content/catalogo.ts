@@ -473,6 +473,8 @@ export const catalogoUi = {
   roledescCarrossel: "carrossel",
   roledescProduto: "produto",
   posicao: "{i} de {n}: {nome}",
+  /** A posição na descrição do título do painel, que já diz o nome. */
+  posicaoCurta: "{i} de {n}",
   verDetalhes: "Ver detalhes",
   saberMais: "Quero saber mais",
   /**

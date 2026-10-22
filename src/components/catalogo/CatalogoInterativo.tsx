@@ -48,9 +48,11 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
   const [esperandoEntrada, setEsperandoEntrada] = useState(false);
   const entradaDecididaRef = useRef(false);
   // A live region nasce vazia e só fala depois da 1ª troca feita aqui (§8.4).
-  // Uma vez só: quando o foco segue o novo centro (teclado num cartão), quem
-  // fala é o leitor, ao chegar ao grupo "N de M: Nome", e ela fica vazia
-  // nessa troca (esvaziar não é anunciado; a troca seguinte fala de novo).
+  // Uma vez só: quando o foco segue o novo centro (teclado num cartão) ou
+  // vai ao título do painel (o conteúdo da aba saiu com o produto), quem
+  // fala é o leitor, ao chegar ao grupo "N de M: Nome" ou ao título, e ela
+  // fica vazia nessa troca (esvaziar não é anunciado; a troca seguinte fala
+  // de novo).
   const [anunciar, setAnunciar] = useState(false);
   // Fechou pelo X ou pelo Esc: o foco volta ao cartão de origem (§8.3).
   const focarCartaoRef = useRef(false);
@@ -192,7 +194,7 @@ export function CatalogoInterativo({ itens }: { itens: readonly ItemCatalogo[] }
               direcao={estado.direcao}
               animar={animar}
               aoFechar={fechar}
-              aoPasso={(delta) => navegar({ tipo: "passo", delta })}
+              aoPasso={(delta, focoSegue) => navegar({ tipo: "passo", delta }, focoSegue)}
             />
             <FitaMiniaturas
               itens={visiveis}

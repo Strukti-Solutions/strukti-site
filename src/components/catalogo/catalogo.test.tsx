@@ -611,6 +611,30 @@ describe("catálogo: estado aberto", () => {
     expect(tituloPainel(raiz)).toBe("Contador de fluxo para lojas");
   });
 
+  it("→ com o foco no conteúdo da aba: o foco vai ao título e a live region não repete o anúncio (§8.4, uma vez só)", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const visao = painel.querySelector<HTMLElement>(`${CONTEUDO_ATUAL} [role="tabpanel"]:not([hidden])`)!;
+
+    act(() => visao.focus());
+    fireEvent.keyDown(visao, { key: "ArrowRight" });
+    expect(tituloPainel(raiz)).toBe("Rota de Vendas");
+    const h3 = raiz.querySelector<HTMLElement>(".catalogo__painel h3")!;
+    expect(document.activeElement).toBe(h3);
+    // Quem fala é o leitor, ao chegar ao título; a posição vai na descrição dele.
+    expect(anuncio(raiz)).toBe("");
+    const descricao = document.getElementById(h3.getAttribute("aria-describedby") ?? "");
+    expect(descricao?.textContent).toBe("2 de 10");
+
+    // Com o foco no X (que fica), a troca seguinte anuncia.
+    const fechar = within(painel).getByRole("button", { name: catalogoUi.fechar });
+    act(() => fechar.focus());
+    fireEvent.keyDown(fechar, { key: "ArrowRight" });
+    expect(tituloPainel(raiz)).toBe("Fleet Analytics BI");
+    expect(document.activeElement).toBe(fechar);
+    expect(anuncio(raiz)).toBe("3 de 10: Fleet Analytics BI");
+  });
+
   it("→ com o foco no <video> do painel não troca de produto", () => {
     const { raiz } = montar();
     const painel = abrir(raiz);

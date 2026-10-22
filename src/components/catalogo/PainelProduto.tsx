@@ -63,7 +63,11 @@ interface PainelProdutoProps {
   /** `useCanAnimate()` do catálogo (montado antes do painel). */
   animar: boolean;
   aoFechar: () => void;
-  aoPasso: (d: -1 | 1) => void;
+  /**
+   * `focoSegue`: o foco estava no conteúdo da aba, que sai com o produto, e
+   * vai para o título; quem fala é o leitor, ao chegar a ele (§8.4).
+   */
+  aoPasso: (d: -1 | 1, focoSegue?: boolean) => void;
 }
 
 /** "Assistir ao vídeo: Replay para quadras (52 s)", como na grade da v2.2. */
@@ -123,6 +127,7 @@ function ConteudoTroca({ direcao, animar, children, ref }: ConteudoTrocaProps) {
 export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPasso }: PainelProdutoProps) {
   const id = useId();
   const idTitulo = `${id}-titulo`;
+  const idPosicao = `${id}-posicao`;
   const [aba, setAba] = useState<Aba>("visaoGeral");
   const painelRef = useRef<HTMLElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -159,9 +164,12 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
     });
   }, [aba, item.slug]);
 
+  // Com o foco no conteúdo da aba (o tabpanel, o "Assistir", o resumo da
+  // descrição), ele sai com o produto e vai ao título (efeito acima): a live
+  // region fica quieta nessa troca, para não anunciar duas vezes (§8.4).
   const trocar = (d: -1 | 1) => {
     trocouAquiRef.current = true;
-    aoPasso(d);
+    aoPasso(d, !!document.activeElement?.closest(".catalogo__painel-conteudo"));
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
@@ -259,9 +267,21 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
               <span className="catalogo__tipo">{catalogoUi.tipos[item.tipo]}</span>
               <SeloStatus status={item.fase} />
             </div>
-            <h3 ref={tituloRef} id={idTitulo} className="catalogo__painel-nome" tabIndex={-1}>
+            <h3
+              ref={tituloRef}
+              id={idTitulo}
+              className="catalogo__painel-nome"
+              tabIndex={-1}
+              aria-describedby={idPosicao}
+            >
               {item.nome}
             </h3>
+            {/* A posição no filtro, lida com o título quando o foco chega a ele. */}
+            <span id={idPosicao} className="visually-hidden">
+              {catalogoUi.posicaoCurta
+                .replace("{i}", String(posicao.indice + 1))
+                .replace("{n}", String(posicao.total))}
+            </span>
           </div>
           <div className="catalogo__painel-acoes">
             {item.siteUrl && (
