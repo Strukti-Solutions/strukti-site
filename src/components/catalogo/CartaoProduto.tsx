@@ -5,7 +5,7 @@ import { motion, type Variants } from "motion/react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { CartaoLoop } from "./CartaoLoop";
-import { PassosProduto, TelasProduto, VisaoGeralTexto } from "./ConteudoProduto";
+import { PassosProduto, TelasProduto, TextoDoVideo, VisaoGeralTexto, rotuloAssistir } from "./ConteudoProduto";
 import {
   CARTAO_PAINEL,
   CASCATA_ENTRADA,
@@ -218,6 +218,16 @@ export function CartaoProduto({
           <span className="visually-hidden">{detalhesDe}</span>
         </summary>
         <div className="catalogo__ficha-corpo">
+          {/* O vídeo, sem JS: um link comum para o arquivo (nenhum <video> no
+              HTML do servidor), com a legenda e a descrição em texto (§8.5). */}
+          {item.painel.video && (
+            <>
+              <p className="catalogo__ficha-video">
+                <a href={item.painel.video.src}>{rotuloAssistir(item, item.painel.video.durationLabel)}</a>
+              </p>
+              <TextoDoVideo video={item.painel.video} />
+            </>
+          )}
           <VisaoGeralTexto item={item} />
           {item.siteUrl && (
             <p className="catalogo__site">

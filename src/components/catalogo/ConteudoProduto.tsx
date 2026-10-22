@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
+import { landingContent } from "@/content/landing";
 import { InterestLink } from "@/components/InterestLink";
 
 /**
@@ -10,6 +11,32 @@ import { InterestLink } from "@/components/InterestLink";
  * está sem JS (§8.5), e nas abas do painel aberto. Por isso nada aqui
  * depende de estado do catálogo.
  */
+
+type VideoProduto = NonNullable<ItemCatalogo["painel"]["video"]>;
+
+/** "Assistir ao vídeo: Replay para quadras (52 s)": o "Assistir" do painel e o link da ficha. */
+export function rotuloAssistir(item: ItemCatalogo, duracao: string | undefined) {
+  return landingContent.aplicativos.grid.playLabel
+    .replace("{nome}", item.nome)
+    .replace(" ({duração})", duracao ? ` (${duracao})` : "");
+}
+
+/**
+ * A alternativa em texto do vídeo (WCAG 1.2.1 e 1.2.3: os vídeos só têm
+ * música): a legenda e a descrição, recolhida num `<details>`. No painel,
+ * abaixo do vídeo; na ficha sem JS, abaixo do link para ele (§8.5).
+ */
+export function TextoDoVideo({ video }: { video: VideoProduto }) {
+  return (
+    <div className="catalogo__video-texto">
+      <p className="caption">{video.caption}</p>
+      <details>
+        <summary>{landingContent.aplicativos.videoDescriptionLinkLabel}</summary>
+        <p>{video.description}</p>
+      </details>
+    </div>
+  );
+}
 
 /** Visão geral (lado do texto): para quem é, benefícios e "Quero saber mais". */
 export function VisaoGeralTexto({ item }: { item: ItemCatalogo }) {

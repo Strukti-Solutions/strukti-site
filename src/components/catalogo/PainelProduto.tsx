@@ -12,10 +12,16 @@ import {
 } from "react";
 import { AnimatePresence, motion, useIsPresent, type Variants } from "motion/react";
 import { catalogoUi, type ItemCatalogo } from "@/content/catalogo";
-import { landingContent } from "@/content/landing";
 import { SeloStatus } from "@/components/ui/SeloStatus";
 import { VideoDemo } from "@/components/ui/VideoDemo";
-import { Chevron, PassosProduto, TelasProduto, VisaoGeralTexto } from "./ConteudoProduto";
+import {
+  Chevron,
+  PassosProduto,
+  TelasProduto,
+  TextoDoVideo,
+  VisaoGeralTexto,
+  rotuloAssistir,
+} from "./ConteudoProduto";
 import { passoDoDeslize, useCliqueDoArrasto, type InicioGesto } from "./Coverflow";
 import {
   CARTAO_PAINEL,
@@ -68,13 +74,6 @@ interface PainelProdutoProps {
    * vai para o título; quem fala é o leitor, ao chegar a ele (§8.4).
    */
   aoPasso: (d: -1 | 1, focoSegue?: boolean) => void;
-}
-
-/** "Assistir ao vídeo: Replay para quadras (52 s)", como na grade da v2.2. */
-function rotuloAssistir(item: ItemCatalogo, duracao: string | undefined) {
-  return landingContent.aplicativos.grid.playLabel
-    .replace("{nome}", item.nome)
-    .replace(" ({duração})", duracao ? ` (${duracao})` : "");
 }
 
 interface ConteudoTrocaProps {
@@ -381,18 +380,8 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
                         </picture>
                       )}
                     </div>
-                    {video && (
-                      // Os vídeos só têm música: a alternativa em texto (WCAG 1.2.1 e
-                      // 1.2.3) é a legenda e a descrição, como na grade da v2.2. Ela
-                      // fica recolhida, para a Visão geral caber na altura (§4).
-                      <div className="catalogo__video-texto">
-                        <p className="caption">{video.caption}</p>
-                        <details>
-                          <summary>{landingContent.aplicativos.videoDescriptionLinkLabel}</summary>
-                          <p>{video.description}</p>
-                        </details>
-                      </div>
-                    )}
+                    {/* A descrição fica recolhida, para a Visão geral caber na altura (§4). */}
+                    {video && <TextoDoVideo video={video} />}
                   </div>
                   <VisaoGeralTexto item={item} />
                 </div>

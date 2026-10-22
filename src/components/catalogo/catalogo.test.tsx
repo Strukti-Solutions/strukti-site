@@ -86,6 +86,22 @@ describe("catálogo: HTML do servidor", () => {
         expect(passos[i]).toContain(passo.titulo);
         expect(passos[i]).toContain(passo.texto);
       });
+      // Os 3 reais: a legenda, a descrição em texto e um link comum para o
+      // vídeo (sem <video>: ele só existe depois do clique, com JS).
+      const { video } = item.painel;
+      const linkVideo = ficha.querySelector<HTMLAnchorElement>(`a[href="${video?.src}"]`);
+      if (video) {
+        expect(ficha.querySelector(".caption")?.textContent, item.slug).toBe(video.caption);
+        const descricao = [...ficha.querySelectorAll("details")].find(
+          (d) => d.querySelector("summary")?.textContent === landingContent.aplicativos.videoDescriptionLinkLabel,
+        );
+        expect(descricao?.textContent, item.slug).toContain(video.description);
+        expect(linkVideo?.textContent, item.slug).toContain(item.nome);
+        expect(linkVideo?.textContent, item.slug).toContain(video.durationLabel);
+      } else {
+        expect(ficha.querySelector(".caption"), item.slug).toBeNull();
+        expect(ficha.textContent, item.slug).not.toContain(landingContent.aplicativos.videoDescriptionLinkLabel);
+      }
       // Sem JS, nada fica escondido do leitor de tela nem fora do Tab.
       expect(artigo.hasAttribute("inert")).toBe(false);
       expect(artigo.hasAttribute("aria-hidden")).toBe(false);
