@@ -2,10 +2,11 @@
 //
 //   node scripts/catalogo-arte/medir-contraste.mjs
 //
-// Para cada item de public/catalogo/, compõe a arte (cartao.jpg) com o
-// degradê escuro do `.catalogo__info` e, em cada linha de texto, pega o pixel
-// MAIS CLARO do retângulo dela (o pior caso) e calcula a razão da WCAG contra
-// a cor do texto. Sai com código 1 se algum par ficar abaixo de 4,5:1.
+// Para cada item de public/catalogo/, compõe a arte (cartao.jpg) com o véu
+// escuro do `.catalogo__info` e, em cada linha de texto (etiqueta do tipo,
+// selo, nome e frase), pega o pixel MAIS CLARO do retângulo dela (o pior
+// caso) e calcula a razão da WCAG contra a cor do texto, a 1440x900, 390x844
+// e 360x740. Sai com código 1 se algum par ficar abaixo de 4,5:1.
 //
 // A geometria vem de uma medida no navegador (getBoundingClientRect do cartão
 // do centro, em frações da superfície). Refaça a medida se o layout do cartão
@@ -24,36 +25,42 @@ const { default: sharp } = await import("sharp").catch(() => {
 // fileURLToPath decodifica %20 e acentos (um clone numa pasta com espaço ou acento).
 const RAIZ = fileURLToPath(new URL("../../public/catalogo/", import.meta.url));
 
-// Frações da superfície do cartão: [esquerda, topo, direita, base].
+// Frações da superfície do cartão: [esquerda, topo, direita, base]. Cada
+// retângulo é a união, nos 10 itens, da caixa daquela linha no cartão do
+// centro (getBoundingClientRect, tamanho de fonte padrão, medido em
+// 22/10/2026): o pior lugar em que ela cai em algum item. O selo só conta
+// os sem fundo próprio ("Em desenvolvimento" e "Ilustração do conceito",
+// texto navy-100); "Piloto gratuito" e "Em uso" têm fundo opaco.
 const CASOS = {
   "1440x900": {
-    info: { topo: 0.4289 },
-    linhas: {
-      tipo: { cor: "#5fe3e8", r: [0.0702, 0.5614, 0.3311, 0.6038] },
-      nome: { cor: "#ffffff", r: [0.0702, 0.6271, 0.9298, 0.6854] },
-      frase: { cor: "#dfe7ef", r: [0.0702, 0.701, 0.9298, 0.8283] },
-    },
+    tipo: { cor: "#5fe3e8", r: [0.0702, 0.4881, 0.3403, 0.6462] },
+    selo: { cor: "#dfe7ef", r: [0.0702, 0.4954, 0.8519, 0.6539] },
+    nome: { cor: "#ffffff", r: [0.0702, 0.5688, 0.9298, 0.7278] },
+    frase: { cor: "#dfe7ef", r: [0.0702, 0.701, 0.9298, 0.8283] },
   },
-  // A 360x740 o texto é mais alto que o cartão (a caixa passa do topo); o
-  // degradê começa acima da borda e só a parte de dentro aparece.
+  "390x844": {
+    tipo: { cor: "#5fe3e8", r: [0.0682, 0.1777, 0.4618, 0.4845] },
+    selo: { cor: "#dfe7ef", r: [0.0682, 0.3462, 0.8117, 0.5514] },
+    nome: { cor: "#ffffff", r: [0.0682, 0.4417, 0.9318, 0.6282] },
+    frase: { cor: "#dfe7ef", r: [0.0682, 0.5839, 0.9318, 0.8067] },
+  },
   "360x740": {
-    info: { topo: -0.1929 },
-    linhas: {
-      tipo: { cor: "#5fe3e8", r: [0.1124, 0.0069, 0.2694, 0.0746] },
-      nome: { cor: "#ffffff", r: [0.1124, 0.217, 0.8876, 0.3607] },
-      frase: { cor: "#dfe7ef", r: [0.1124, 0.3856, 0.8876, 0.7252] },
-    },
+    tipo: { cor: "#5fe3e8", r: [0.0749, 0.0968, 0.5072, 0.3726] },
+    selo: { cor: "#dfe7ef", r: [0.0749, 0.2207, 0.8915, 0.4461] },
+    nome: { cor: "#ffffff", r: [0.0749, 0.3256, 0.9251, 0.5916] },
+    frase: { cor: "#dfe7ef", r: [0.0749, 0.4818, 0.9251, 0.7877] },
   },
 };
 
 const NAVY = [8, 18, 29];
 
-// Degradê do `.catalogo__info`: 0,94 embaixo, 0,8 a 55% e 0 no topo.
-function alfa(y, topoInfo) {
-  const f = 1 - (y - topoInfo) / (1 - topoInfo); // 0 embaixo, 1 no topo da caixa
-  if (f <= 0.55) return 0.94 - 0.14 * (f / 0.55);
-  return Math.max(0, 0.8 * (1 - (f - 0.55) / 0.45));
-}
+// Véu sob o texto. No `.catalogo__info`, o esmaecimento fica só no padding
+// de cima (--info-fade) e a parada de 0,8 está onde o texto começa; dali para
+// baixo o véu vai de 0,8 a 0,94. Todo pixel atrás do texto leva então pelo
+// menos 0,8, e a medida usa esse mínimo (o pior caso). O check:browser
+// ("texto do cartão") confere no navegador que a linha da etiqueta começa
+// abaixo do esmaecimento, nos 10 itens, a 360x740, 390x844 e 1440x900.
+const VEU_MINIMO = 0.8;
 
 const lin = (v) => {
   const c = v / 255;
@@ -73,18 +80,19 @@ const slugs = readdirSync(RAIZ, { withFileTypes: true })
 const L = 200; // largura da amostra; 2:3
 const A = 300;
 const piorPorCaso = {};
+const piorPorLinha = {};
 const falhas = [];
 
 for (const slug of slugs) {
   const { data } = await sharp(join(RAIZ, slug, "cartao.jpg")).resize(L, A).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  for (const [caso, { info, linhas }] of Object.entries(CASOS)) {
+  for (const [caso, linhas] of Object.entries(CASOS)) {
     for (const [nome, { cor, r }] of Object.entries(linhas)) {
       let maisClaro = [0, 0, 0];
       let lMax = -1;
       const y0 = Math.max(0, Math.floor(r[1] * A));
       const y1 = Math.min(A - 1, Math.ceil(r[3] * A));
       for (let y = y0; y <= y1; y++) {
-        const a = alfa(y / A, info.topo);
+        const a = VEU_MINIMO;
         for (let x = Math.floor(r[0] * L); x <= Math.min(L - 1, Math.ceil(r[2] * L)); x++) {
           const i = (y * L + x) * 3;
           const p = [0, 1, 2].map((k) => data[i + k] * (1 - a) + NAVY[k] * a);
@@ -97,12 +105,25 @@ for (const slug of slugs) {
       }
       const q = razao(hex(cor), maisClaro);
       piorPorCaso[caso] = Math.min(piorPorCaso[caso] ?? Infinity, q);
+      const chave = `${caso} ${nome}`;
+      piorPorLinha[chave] = Math.min(piorPorLinha[chave] ?? Infinity, q);
       if (q < 4.5) falhas.push(`${slug} ${caso} ${nome}: ${q.toFixed(2)}`);
     }
   }
 }
 
-for (const [caso, v] of Object.entries(piorPorCaso)) console.log(`${caso}: pior razão ${v.toFixed(2)}:1 em ${slugs.length} itens (exige 4,5:1)`);
+for (const [caso, v] of Object.entries(piorPorCaso)) {
+  const linhas = Object.keys(CASOS[caso])
+    .map((nome) => `${nome} ${piorPorLinha[`${caso} ${nome}`].toFixed(2)}`)
+    .join(", ");
+  console.log(`${caso}: pior razão ${v.toFixed(2)}:1 em ${slugs.length} itens (exige 4,5:1); por linha: ${linhas}`);
+}
+// Com qualquer arte: o pixel mais claro possível (branco) sob o véu mínimo.
+const branco = [0, 1, 2].map((k) => 255 * (1 - VEU_MINIMO) + NAVY[k] * VEU_MINIMO);
+console.log(
+  `qualquer arte (pixel branco sob o véu de ${VEU_MINIMO}): ` +
+    [["etiqueta", "#5fe3e8"], ["selo e frase", "#dfe7ef"], ["nome", "#ffffff"]].map(([n, c]) => `${n} ${razao(hex(c), branco).toFixed(2)}`).join(", "),
+);
 if (falhas.length) {
   console.log(falhas.join("\n"));
   process.exit(1);

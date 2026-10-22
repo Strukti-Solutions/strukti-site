@@ -1346,6 +1346,20 @@ describe("catálogo: CSS (foco nos laterais, cores forçadas e altura sem JS)", 
   });
 
 
+  // 1.4.3 e 1.4.12 (MASTER §3.4): o esmaecimento do texto do cartão fica só
+  // no padding de cima (a parada opaca de 0,8 onde o texto começa), e a caixa
+  // não passa do cartão: o que não couber rola por dentro.
+  it("o texto do cartão: véu opaco desde o início do texto e caixa que não passa do cartão", () => {
+    const info = regra(".catalogo__info").corpo;
+    expect(info).toMatch(/--info-fade: /);
+    expect(info).toMatch(/padding: var\(--info-fade\) /);
+    expect(info).toMatch(/rgb\(8 18 29 \/ 0\.8\) calc\(100% - var\(--info-fade\)\)/);
+    expect(info).toMatch(/max-height: 100%;/);
+    expect(info).toMatch(/overflow: hidden auto;/);
+    // A caixa que rola não herda o touch-action do palco.
+    expect(info).toMatch(/touch-action: pan-y pinch-zoom;/);
+  });
+
   // §4 e §9 (CLS 0): sem JS (o HTML do servidor e o 1º render do cliente), a
   // caixa já tem a altura do coverflow. Antes, ela crescia ~195 px ao montar
   // (data-js="true"), e o /#contato carregado direto parava ~195 px abaixo

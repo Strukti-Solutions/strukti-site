@@ -116,8 +116,13 @@
 // cápsula e com a fonte raiz a 125%); o menu da barra abrindo o Fleet (1440
 // e 360, pelo Menu); o toque de verdade a 360 (o dedo para o lado troca,
 // para cima rola, e o Enter depois do deslize abre); cores forçadas (setas,
-// X e o contorno do ativo na fita ≥ 3:1); e o 1.4.12 a 320 px (tudo da
-// Visão geral alcançável, sem rolagem para o lado).
+// X e o contorno do ativo na fita ≥ 3:1); o 1.4.12 a 320 px (tudo da
+// Visão geral alcançável, sem rolagem para o lado); e o texto do cartão do
+// centro nos 10 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão,
+// cabe sem rolar, com a etiqueta e o selo abaixo do esmaecimento, sobre o
+// véu opaco; com o espaçamento do 1.4.12 e com a fonte raiz a 200%, a caixa
+// não passa do cartão e a etiqueta, o nome e o "Ver detalhes" ficam
+// alcançáveis pela rolagem de dentro dela).
 //
 // Também roda, uma vez, num passo de interação (largura só do celular,
 // onde o menu vira botão, reduced motion desligado): abre o menu do TopBar
@@ -261,6 +266,13 @@ const CAT_LOOP_LIMITE_MS = 5500;
 const CAT_SIZES = [
   { width: 1440, height: 900 },
   { width: 360, height: 740 },
+];
+// O texto do cartão do centro (MASTER §3.4): os dois celulares da medida de
+// contraste e o computador.
+const CAT_TEXTO_SIZES = [
+  { width: 360, height: 740 },
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
 ];
 // Onde a Visão geral precisa caber sem rolar (§4, emenda de 22/10).
 const CAT_FIT_SIZES = [
@@ -2705,6 +2717,87 @@ async function catSpacingPass(cdp, ctx) {
   );
 }
 
+/**
+ * O texto do cartão do centro, nos 10 produtos (WCAG 1.4.3, 1.4.12, 1.4.4):
+ *   - no tamanho padrão (`css` vazio): a caixa .catalogo__info cabe no
+ *     cartão sem rolar, e a linha da etiqueta e dos selos (.catalogo__meta)
+ *     começa dentro da superfície e abaixo do esmaecimento (--info-fade), onde
+ *     o véu já é o opaco (≥ 0,8): é o que a medida da MASTER §3.4 supõe;
+ *   - com o espaçamento do 1.4.12 ou a fonte raiz a 200%: a caixa não passa
+ *     do cartão, e a etiqueta, o nome e o "Ver detalhes" ficam à vista ou
+ *     alcançáveis pela rolagem de dentro dela (nada cortado acima da borda),
+ *     sem rolagem para o lado.
+ */
+async function catTextoCartaoPass(cdp, ctx, { css = "", what }) {
+  if (!(await catLoad(cdp, ctx, what, { reduce: true, center: false }))) return;
+  if (css) {
+    await evalValue(cdp, `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(css)}; document.head.appendChild(s); })()`);
+  }
+  await catCenter(cdp, true);
+  const r = await evalValue(
+    cdp,
+    `(async () => {
+      const raiz = document.querySelector(${JSON.stringify(CAT_SELECTOR)});
+      const bolinhas = [...raiz.querySelectorAll(".catalogo__bolinhas button")];
+      const padrao = ${JSON.stringify(!css)};
+      const quadro = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const problems = [];
+      const itens = [];
+      for (const bolinha of bolinhas) {
+        bolinha.click();
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const c = raiz.querySelector('.catalogo__cartao[data-pos="0"]');
+        const sup = c.querySelector(".catalogo__superficie");
+        const info = c.querySelector(".catalogo__info");
+        const meta = c.querySelector(".catalogo__meta");
+        const s = sup.getBoundingClientRect();
+        const i = info.getBoundingClientRect();
+        const fade = parseFloat(getComputedStyle(info).paddingTop);
+        if (i.top < s.top - 0.5 || i.bottom > s.bottom + 0.5) problems.push(c.id + ": a caixa do texto passa do cartão (" + Math.round(i.top - s.top) + " px do topo)");
+        if (info.scrollWidth > info.clientWidth + 1) problems.push(c.id + ": o texto passa da largura do cartão (" + info.scrollWidth + " px em " + info.clientWidth + ")");
+        if (padrao) {
+          const m = meta.getBoundingClientRect();
+          if (info.scrollHeight > info.clientHeight + 1) problems.push(c.id + ": no tamanho padrão, o texto não cabe no cartão (" + info.scrollHeight + " px em " + info.clientHeight + ")");
+          if (m.top < s.top - 0.5) problems.push(c.id + ": a etiqueta e o selo começam acima do cartão (" + Math.round(m.top - s.top) + " px)");
+          if (m.top < i.top + fade - 1) problems.push(c.id + ": a etiqueta e o selo caem no esmaecimento (" + Math.round(m.top - i.top) + " px do topo da caixa, esmaecimento de " + fade + " px)");
+          itens.push(c.id + " " + info.scrollHeight + "/" + Math.round(s.height));
+        } else {
+          for (const [nome, el] of [["etiqueta", meta], ["nome", c.querySelector(".catalogo__nome")], ["Ver detalhes", c.querySelector(".catalogo__ver")]]) {
+            // Alcançável: dentro do que a caixa rola (nada acima do início
+            // da rolagem nem além do fim, que a superfície cortaria).
+            info.scrollTop = 0;
+            await quadro();
+            const caixa = info.getBoundingClientRect();
+            const b0 = el.getBoundingClientRect();
+            const topo = b0.top - caixa.top;
+            const base = b0.bottom - caixa.top;
+            if (topo < -1 || base > info.scrollHeight + 1 || b0.left < caixa.left - 1 || b0.right > caixa.right + 1) {
+              problems.push(c.id + ": " + nome + " fora do que a caixa rola (y " + Math.round(topo) + "–" + Math.round(base) + " em " + info.scrollHeight + ")");
+              continue;
+            }
+            // E, se cabe na caixa, rolar até ele o deixa inteiro à vista.
+            if (b0.height > caixa.height) continue;
+            el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+            await quadro();
+            const b = el.getBoundingClientRect();
+            const s2 = sup.getBoundingClientRect();
+            if (b.top < s2.top - 1 || b.bottom > s2.bottom + 1 || b.left < s2.left - 1 || b.right > s2.right + 1) {
+              problems.push(c.id + ": " + nome + " fora do cartão mesmo depois de rolar (y " + Math.round(b.top - s2.top) + "–" + Math.round(b.bottom - s2.top) + " em " + Math.round(s2.height) + ")");
+            }
+          }
+          info.scrollTop = 0;
+          itens.push(c.id + " rola " + info.scrollHeight + "/" + info.clientHeight);
+        }
+      }
+      return { problems, itens, total: bolinhas.length };
+    })()`,
+    { awaitPromise: true },
+  );
+  if (r.total !== CAT_TOTAL) ctx.fail(`${what}: ${r.total} bolinhas (esperado ${CAT_TOTAL})`);
+  for (const problem of r.problems) ctx.fail(`${what}: ${problem}`);
+  ctx.log(`${what}: ${r.problems.length === 0 ? "ok nos 10" : `${r.problems.length} problema(s)`} (${r.itens.join(", ")})`);
+}
+
 // Controle positivo da detecção de CSP: uma imagem de origem externa, que a
 // CSP do next.config.ts (img-src 'self' data:) tem que barrar.
 const CSP_CONTROL_HOST = "csp-controle.invalid";
@@ -3113,6 +3206,22 @@ try {
         { width: 360, height: 740, what: "toque", run: (ctx) => catTouchPass(cdp, ctx) },
         { width: 1440, height: 900, what: "cores forçadas", run: (ctx) => catForcedColorsPass(cdp, ctx) },
         { width: 320, height: 640, what: "espaçamento 1.4.12", run: (ctx) => catSpacingPass(cdp, ctx) },
+        ...CAT_TEXTO_SIZES.flatMap(({ width, height }) => [
+          { width, height, what: "texto do cartão", run: (ctx) => catTextoCartaoPass(cdp, ctx, { what: "texto do cartão" }) },
+          {
+            width,
+            height,
+            what: "texto do cartão com 1.4.12",
+            run: (ctx) => catTextoCartaoPass(cdp, ctx, { what: "texto do cartão com 1.4.12", css: TEXT_SPACING_CSS }),
+          },
+          {
+            width,
+            height,
+            what: "texto do cartão com fonte raiz 200%",
+            run: (ctx) =>
+              catTextoCartaoPass(cdp, ctx, { what: "texto do cartão com fonte raiz 200%", css: "html { font-size: 200% !important; }" }),
+          },
+        ]),
       ]) {
         const ctx = catCtx(width, height);
         console.log(`\nCatálogo a ${ctx.size} (${what}):`);
@@ -3320,7 +3429,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
-    "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px. " +
+    "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado e ela não cobre o hero.",

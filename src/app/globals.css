@@ -2040,15 +2040,38 @@ video:focus-visible {
     var(--shadow-float);
 }
 
-/* O texto fica na metade de baixo, sobre um degradê escuro (§3.1). */
+/* O texto fica na metade de baixo, sobre um degradê escuro (§3.1). O
+   esmaecimento mora só no padding de cima (--info-fade): a parada opaca
+   (0,8) fica onde o texto começa, então todo o texto está sobre um véu de
+   pelo menos 0,8, com qualquer arte (WCAG 1.4.3, MASTER §3.4). O degradê
+   acompanha a rolagem (local).
+
+   A caixa nunca passa do cartão (a superfície corta o que sobra): com o
+   espaçamento de texto do 1.4.12 ou uma fonte maior (1.4.4), o texto que
+   não couber rola por dentro, em vez de sumir acima da borda, e as palavras
+   longas quebram em vez de passar da largura. */
 .catalogo__info {
+  --info-fade: var(--space-8);
   position: absolute;
   inset: auto 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-8) var(--space-5) var(--space-5);
-  background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.8) 55%, rgb(8 18 29 / 0) 100%);
+  max-height: 100%;
+  overflow: hidden auto;
+  overflow-wrap: anywhere;
+  /* Uma caixa que rola não herda o touch-action do palco: sem repetir aqui,
+     o dedo para o lado sobre o texto virava rolagem (pointercancel) e não
+     trocava de produto. A rolagem de dentro passa à página no fim. */
+  touch-action: pan-y pinch-zoom;
+  padding: var(--info-fade) var(--space-5) var(--space-5);
+  background: linear-gradient(
+      to top,
+      rgb(8 18 29 / 0.94) 0%,
+      rgb(8 18 29 / 0.8) calc(100% - var(--info-fade)),
+      rgb(8 18 29 / 0) 100%
+    )
+    local;
 }
 
 .catalogo__meta {
@@ -2084,7 +2107,36 @@ video:focus-visible {
 
 .catalogo__ver {
   align-self: flex-start;
+  /* Com fonte maior, o rótulo quebra em vez de passar da largura do cartão. */
+  max-width: 100%;
   margin-top: var(--space-2);
+}
+
+/* Cartão pequeno (o celular, ~214×320 px a 360×740 e ~235×352 a 390×844,
+   ou uma tela baixa): sem isto, o texto do centro passava do cartão já no
+   tamanho padrão. Respiro, entrelinha e frase menores (14 px, o mínimo da
+   MASTER §4), para caber sem rolar; a rolagem por dentro fica para o
+   1.4.12 e a fonte maior. O palco é o contêiner (container-type: size). */
+@container (max-width: 400px) or (max-height: 465px) {
+  .catalogo__info {
+    --info-fade: var(--space-4);
+    gap: var(--space-1);
+    padding-inline: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .catalogo__meta {
+    gap: var(--space-1);
+  }
+
+  .catalogo__frase {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .catalogo__ver {
+    margin-top: 0;
+  }
 }
 
 /* Laterais (Q38): só a arte e o nome pequeno. */
