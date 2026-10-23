@@ -21,12 +21,12 @@ blocos, barras e ícones. Os itens são inventados (`ficticio: true` em
 | Slug | Tipo (acento) | Objeto e ambiente |
 |---|---|---|
 | `placar-conectado` | hardware (ciano) | Placar suspenso por duas hastes diante da janela, girado 10°; dois painéis de LED com a matriz de pontos apagados e 3 × 4 pips (7 e 5 acesos, pontos e não algarismos), as faixas das equipes (elétrico e ciano), os dois pontos e a barra do tempo no meio |
-| `totem-check-in` | hardware (ciano) | Totem de balcão na mesa: base, coluna e a cabeça inclinada 13°; a tela com o check-in confirmado (anel elétrico → ciano com o visto, cartão do aluno) e, embaixo, o leitor com o anel de LED ciano |
-| `contador-de-fluxo` | hardware (ciano) | Porta de vidro de duas folhas na parede, com a cidade atrás; o sensor (34 × 8 × 10 cm) sobre a travessa, com as duas lentes e o LED ciano, o leque de detecção que some antes de ~52% da altura e a linha de contagem tracejada no piso; uma luz de teto lava a parede acima da porta |
-| `agenda-de-quadras` | aplicativo (elétrico) | Celular no suporte de mesa: dias, quadras (ícone de quadra) e a grade de horários (reservados, livres tracejados, os meus em elétrico, o escolhido em ciano) e o botão de reservar |
-| `estoque-oficinas` | aplicativo (elétrico) | Celular encostado numa caixa de papelão fechada (fita e etiqueta lisas): busca, resumo com barra e anel, a lista de peças (porca sextavada) com o nível de cada uma (o baixo em ciano) e o botão de adicionar |
-| `site-clinicas` | site (violeta `#8b7ff0` só no detalhe) | Notebook aberto 20° na mesa, com a caneca do hero atrás: navegador com a página clara esmaecida; marca, botão de agendar, a cruz e o ícone do cartão em violeta |
-| `vitrine-lojas` | site (violeta só no detalhe) | Tablet em paisagem num suporte, com uma sacola de papel com alças atrás: navegador com a faixa de ofertas e a vitrine de 4 produtos; marca, botões e o selo do carrinho em violeta |
+| `totem-check-in` | hardware (ciano) | Totem de chão de pé diante do vidro (que desce até o piso): base, coluna de 90 cm (~2× a altura da tela) e a cabeça inclinada 13°; a tela com o cartão da reserva (avatar, nome, a barra do horário com o bloco elétrico, a quadra) e, embaixo, o leitor com o anel de LED ciano, o único ciano |
+| `contador-de-fluxo` | hardware (ciano) | O sensor (34 × 8 × 10 cm) de perto, sobre a porta de vidro, com as duas lentes, o LED ciano e o leque de detecção que some em ~45% da altura; a cidade no vidro de cima; a porta some num degradê para o navy-950 de ~49% a ~62% (`escurecer`) |
+| `agenda-de-quadras` | aplicativo (elétrico) | Celular no suporte de mesa com chanfro e sombra de contato: dias, quadras (ícone de quadra) e a grade de horários (reservados, livres tracejados, um meu em elétrico cheio e outro em contorno, o escolhido em ciano) e o botão de reservar em navy-600 com fio elétrico |
+| `estoque-oficinas` | aplicativo (elétrico) | Celular encostado num gaveteiro de peças (metal navy, 3 × 2 gavetas de plástico escuro com puxador e etiqueta lisa), com sombra de contato e a sombra dele na frente do gaveteiro: busca, resumo com barra e anel, a lista de peças (porca sextavada) com o nível de cada uma (o baixo em ciano) e o botão de adicionar |
+| `site-clinicas` | site (sem cor própria) | Notebook aberto 20° na mesa, com a caneca do hero atrás: navegador em tema escuro com a lista das especialidades (o marcador ativo é o único ciano), o mapa com o alfinete, o endereço e um único botão elétrico |
+| `vitrine-lojas` | site (sem cor própria) | Tablet em paisagem num suporte, com uma sacola de papel menor, escura e desfocada atrás: navegador em tema escuro com um produto grande e três menores empilhados, só com fotos desfocadas (sem ícone de produto); o botão de comprar é o único elétrico e o selo do carrinho, o único ciano |
 
 O ambiente é o das cenas dos reais: a mesa de laminado do hero sob a janela com
 montantes (os montantes mudam de lugar por slug, para cair fora do objeto), a
@@ -34,10 +34,13 @@ cidade de hora azul desfocada, o abajur neutro-quente fora do quadro à esquerda
 (sombra projetada, sombra mole da janela e contato), a luz da tela acesa e o
 acabamento do kit (bloom 0,2, vinheta 0,85 com raios 0,2–0,7, esmaecimento de
 baixo, grão 5 e 6,5 abaixo de 60%). A porta do contador é a única cena sem a
-mesa: o mesmo céu e cidade atrás do vidro, piso de placas e a luz de teto no
-lugar do abajur. As páginas dos sites são claras para ler "site" na miniatura,
-mas esmaecidas (`telaBrilho`: 26% de navy-950 por cima) para não virar o ponto
-mais claro do quadro.
+mesa: o mesmo céu e cidade atrás do vidro e a luz de teto no lugar do abajur. O
+totem fica no piso, diante do vidro que desce até o chão, com o abajur de pé fora
+do quadro. As páginas dos sites são escuras, como as telas dos apps (fundo navy,
+blocos navy-700, o claro só em duas linhas finas). Os sites não têm cor de tipo:
+a spec §6.2 fixa a paleta da marca (navy, elétrico e ciano só nos detalhes) e a
+MASTER veta o roxo, então o violeta `8b7ff0` do plano saiu na rodada 1 de ajuste.
+Eles se distinguem pela silhueta (notebook e tablet com o navegador).
 
 ## Fazer
 
@@ -63,17 +66,17 @@ grão de 0,33–0,40 no topo (desvio de alta frequência), contra 0,7 no Fleet; 
 crf 5 fica em 0,49–0,70 e o maior 480 AVIF tem 34,5 KB (limite 45). No crf 4 o
 contador já pulava para 42,5 KB.
 
-## Medidas (22/10/2026)
+## Medidas (22/10/2026, depois da rodada 1 de ajuste)
 
 | Slug | Objeto (y0–y1 %) | Baixo p90 | Pior canto (Y) | avif | jpg | 480 avif | 480 jpg |
 |---|---|---|---|---|---|---|---|
-| placar-conectado | 19,5–44,2 | 25,0 | 18,8 | 92 805 | 93 388 | 34 479 | 23 187 |
-| totem-check-in | 16,9–59,1 | 31,1 | 23,3 | 84 527 | 81 741 | 29 499 | 16 890 |
-| contador-de-fluxo | 18,6–22,0 | 25,9 | 14,4 | 79 655 | 74 262 | 26 698 | 12 991 |
-| agenda-de-quadras | 25,8–54,3 | 40,3 | 20,8 | 86 791 | 86 398 | 31 419 | 19 328 |
-| estoque-oficinas | 28,1–58,6 | 34,6 | 18,5 | 85 677 | 85 694 | 30 707 | 19 106 |
-| site-clinicas | 27,9–59,9 | 37,6 | 18,2 | 89 109 | 88 904 | 32 710 | 20 337 |
-| vitrine-lojas | 28,9–54,9 | 36,5 | 18,3 | 88 955 | 88 713 | 33 661 | 20 234 |
+| placar-conectado | 19,5–44,2 | 24,9 | 18,8 | 93 464 | 95 160 | 34 982 | 23 787 |
+| totem-check-in | 16,7–59,1 | 35,9 | 23,2 | 82 212 | 78 011 | 27 749 | 14 644 |
+| contador-de-fluxo | 20,0–27,7 | 20,8 | 14,4 | 79 567 | 72 758 | 25 851 | 12 134 |
+| agenda-de-quadras | 25,8–54,3 | 40,8 | 20,8 | 86 932 | 86 172 | 31 445 | 19 055 |
+| estoque-oficinas | 28,1–58,6 | 36,0 | 18,5 | 86 825 | 87 195 | 31 568 | 20 264 |
+| site-clinicas | 27,9–59,9 | 38,0 | 18,2 | 88 165 | 83 876 | 31 408 | 17 962 |
+| vitrine-lojas | 28,9–54,9 | 37,0 | 18,3 | 86 717 | 82 461 | 31 310 | 16 829 |
 
 Critérios: objeto entre 15% e 60%; p90 da metade de baixo ≤ 60 (0–255);
 cantos ≤ 25,5 (navy-900); orçamento §6.1 (120 / 200 / 45 / 70 KB).

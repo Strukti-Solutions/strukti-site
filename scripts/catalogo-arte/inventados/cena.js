@@ -6,11 +6,12 @@
      totem-check-in     totem de balcão com a tela de check-in e o leitor com o anel ciano
      contador-de-fluxo  o sensor sobre a porta de vidro, com o leque de detecção em ciano
      agenda-de-quadras  celular no suporte de mesa com a grade de horários (elétrico)
-     estoque-oficinas   celular encostado numa caixa de peças, com a lista de estoque (elétrico)
-     site-clinicas      notebook com o navegador do site de clínica (violeta suave só no detalhe)
-     vitrine-lojas      tablet no suporte com o navegador da vitrine e uma sacola (violeta suave só no detalhe)
-   Acento do tipo (plano, Task A4): hardware ciano, aplicativo elétrico, site o violeta suave #8b7ff0 só no detalhe
-   (nunca degradê roxo -> azul de fundo). Nada de texto: as telas são blocos, barras e ícones.
+     estoque-oficinas   celular encostado num gaveteiro de peças, com a lista de estoque (elétrico)
+     site-clinicas      notebook com o navegador do site de clínica (página em tema escuro)
+     vitrine-lojas      tablet no suporte com o navegador da vitrine e uma sacola desfocada (página em tema escuro)
+   Acento: hardware ciano, aplicativo elétrico. Os sites não têm cor própria: a spec (§6.2) fixa a paleta da marca
+   (navy, com elétrico e ciano só nos detalhes) e a MASTER veta o roxo, então o violeta do plano saiu na rodada 1 de
+   ajuste; as páginas usam no máximo um elemento elétrico e um ciano. Nada de texto: as telas são blocos e barras.
    Unidades: cm. x à direita, y para cima, z para longe (para a janela). O plano y = 0 é o tampo da mesa (ou o piso,
    na cena da porta); a parede fica em z = 64 e o vidro em z = 71, como no hero e no Fleet.
    Copiado e adaptado do Fleet (scripts/catalogo-arte/fleet-analytics-bi/cena.js): a cidade (buildCity/cityLayer do
@@ -20,7 +21,6 @@
   'use strict';
   const K = (typeof module !== 'undefined' && typeof require !== 'undefined') ? require('../kit/cena.js') : G.KIT;
   const { C, hx, rgba, mix, clamp, sstep, sub, add, mul, dot, norm, len, rng, LUZ, luz, pontoI, LMP, makeCam, rrect, path, hull, discT, ID, radial, lin, layer, glow, SKY, skyCol } = K;
-  const VIO = hx('#8b7ff0');            // o violeta suave dos sites (só no detalhe)
   const PZ = 64, VZ = 71, RAD = Math.PI / 180;
 
   // ---------------- referencial com giro (rot, em torno de y) e inclinação para trás (tilt, em torno de u) ----------------
@@ -47,14 +47,21 @@
       cam: { pos: [-30, 104, -135], target: [0, 114, 40], F: 960, shiftY: -150, towers: [[-40, -14, 32, 1], [-14, -8, 9, 0], [9, 14, 10, 0], [14, 40, 30, 1]], centre: [-8, 9, -2] },
       abajur: { pos: [-90, 110, 0], alvo: [-5, 0, 34], k: 0.8 },
       placar: { x: 0, y: 100, z: 32, w: 100, h: 46, d: 11, rot: 10 } },
+    // rodada 1 de ajuste: o totem é de chão (a coluna com ~2x a altura da tela), de pé diante do vidro que desce
+    // até o piso; o pé do vidro cai em ~56% do quadro
     'totem-check-in': { tipo: 'hardware',
-      cam: { pos: [-6, 50, -118], target: [0, 36, 28], F: 1000, shiftY: -150 },
-      abajur: { pos: [-95, 105, 4], alvo: [-6, 0, 30], k: 1 },
-      totem: { x: 2, z: 30, rot: -10 } },
+      amb: { sup: { alb: [44, 45, 49], veio: false, piso: true, z0: -400, x0: -400, x1: 400 }, peitoril: true,
+        aberturas: [[-200, 200, 0.4, 330]], barras: [[-96, -93, 0.4, 400], [74, 77, 0.4, 400]], travessas: [], trilho: 1.3 },
+      cam: { pos: [-10, 112, -190], target: [0, 112, 64], F: 860, shiftY: -325 },
+      abajur: { pos: [-120, 175, 10], alvo: [-4, 0, 40], k: 1.15, alcance: 190, piso: true, cone: [0.8, 0.97] },
+      totem: { x: 2, z: 46, rot: -10 } },
     'contador-de-fluxo': { tipo: 'hardware',
       amb: { sup: { alb: [40, 42, 47], veio: false, piso: true, z0: -400, x0: -400, x1: 400 }, peitoril: false,
         aberturas: [[-58, 58, 0, 218]], barras: [[-58, -52, 0, 218], [52, 58, 0, 218], [-4.6, -0.5, 0, 210], [0.5, 4.6, 0, 210]], travessas: [[-58, 58, 210, 218], [-52, 52, 0, 16]], trilho: 0, porta: true, paredeAmb: 1.0 },
-      cam: { pos: [0, 165, -250], target: [0, 176, 64], F: 1250, shiftY: -150, towers: [[-40, -3, 30, 1], [-3, 2, 7, 0], [9, 14, 9, 0], [14, 40, 26, 1]], centre: [2, 9, -1], refl: 0.06, vigR: [0.24, 0.78] },
+      // rodada 1 de ajuste: câmera mais perto e mais baixa (o sensor com ~2,2x a largura), e a porta some num degradê
+      // para o navy-950 a partir de ~49% (puxadores e quadro antes de 60%); a cidade aparece no vidro de cima
+      cam: { pos: [-6, 196, -84], target: [0, 196, 64], F: 1250, shiftY: -40, towers: [[-40, -3, 30, 1], [-3, 2, 7, 0], [9, 14, 9, 0], [14, 40, 26, 1]], centre: [2, 9, -1], refl: 0.06, vigR: [0.24, 0.78], leque: 0.45, linhaPiso: 0, cityGain: 1.5, bokehP: 0.05 },
+      escurecer: [0.49, 0.62, 0.97],
       teto: { pos: [0, 300, 30], alvo: [0, 200, 64], k: 0.7, cone: [0.75, 0.96] },
       sensor: { x: 0, y: 223, z: 58.5, w: 34, h: 8, d: 10 } },
     'agenda-de-quadras': { tipo: 'aplicativo',
@@ -67,7 +74,7 @@
       cam: { pos: [-6, 17, -30], target: [1, 9, 22], F: 1100, shiftY: -150 },
       abajur: { pos: [-62, 72, 2], alvo: [-2, 0, 22], k: 1 },
       celular: { x: -3, z: 12.4, rot: -7, tilt: 19, ui: 'estoque' },
-      caixa: { x: 3.5, z: 25, rot: 10, w: 22, h: 14.5, d: 17 } },
+      gaveteiro: { x: 2.2, z: 24, rot: 8, w: 15.5, h: 17, d: 13 } },
     'site-clinicas': { tipo: 'site',
       cam: { pos: [-8, 36, -52], target: [0, 15, 30], F: 1100, shiftY: -150 },
       abajur: { pos: [-80, 92, 2], alvo: [-8, 0, 28], k: 1 },
@@ -75,7 +82,7 @@
     'vitrine-lojas': { tipo: 'site',
       cam: { pos: [-4, 30, -44], target: [2, 12, 28], F: 1100, shiftY: -150 },
       abajur: { pos: [-80, 90, 2], alvo: [-6, 0, 26], k: 1 },
-      tablet: { x: -2, z: 26, rot: 12, tilt: 17 }, sacola: { x: 21, z: 40, rot: -16 } }
+      tablet: { x: -2, z: 26, rot: 12, tilt: 17 }, sacola: { x: 17, z: 44, rot: -16, k: 0.75, blur: 3 } }
   };
   const SLUGS = Object.keys(ITENS);
 
@@ -86,7 +93,7 @@
     const pontos = []; ABAJUR = null; TELA = null;
     if (it.abajur) {
       const A = it.abajur;
-      ABAJUR = { pos: A.pos, cor: LMP, k: A.k * o.abajurK, alcance: 95, eixo: norm(sub(A.alvo, A.pos)), cone: [0.86, 0.975], mascara: p => p[1] > 0.5 ? 1 : sstep(4, 22, p[2]) };
+      ABAJUR = { pos: A.pos, cor: LMP, k: A.k * o.abajurK, alcance: A.alcance || 95, eixo: norm(sub(A.alvo, A.pos)), cone: A.cone || [0.86, 0.975], mascara: A.piso ? (p => p[1] > 0.5 ? 1 : sstep(-40, 30, p[2])) : (p => p[1] > 0.5 ? 1 : sstep(4, 22, p[2])) };
       pontos.push(ABAJUR);
     }
     if (it.teto) { const T = it.teto; ABAJUR = { pos: T.pos, cor: LMP, k: T.k * o.abajurK, alcance: 160, eixo: norm(sub(T.alvo, T.pos)), cone: T.cone || [0.8, 0.97] }; pontos.push(ABAJUR); }
@@ -250,7 +257,18 @@
       ctx.restore();
     }
   }
-  function poligonoSup(cam, amb) { const sp = amb.sup; return [[sp.x0, 0, Math.max(sp.z0, cam.pos[2] + 5)], [sp.x1, 0, Math.max(sp.z0, cam.pos[2] + 5)], [sp.x1, 0, PZ - 1], [sp.x0, 0, PZ - 1]].map(cam.P); }
+  // o polígono do tampo (ou do piso) na tela, recortado no plano de perto da câmera (rodada 1 de ajuste: com a câmera
+  // girada, um canto ficava atrás dela e o polígono virava, cobrindo o vidro com uma cunha diagonal)
+  function poligonoSup(cam, amb) {
+    const sp = amb.sup, zq = Math.max(sp.z0, cam.pos[2] + 5), q = [[sp.x0, 0, zq], [sp.x1, 0, zq], [sp.x1, 0, PZ - 1], [sp.x0, 0, PZ - 1]];
+    const dz = p => dot(sub(p, cam.pos), cam.f) - 2, out = [];
+    for (let i = 0; i < q.length; i++) {
+      const a = q[i], b = q[(i + 1) % q.length], da = dz(a), db = dz(b);
+      if (da > 0) out.push(a);
+      if ((da > 0) !== (db > 0)) out.push(add(a, mul(sub(b, a), da / (da - db))));
+    }
+    return out.map(cam.P);
+  }
   // reflexo da cidade no laminado (ou no piso), junto do vidro (hero)
   function reflexoCidade(ctx, cam, city, o, amb) {
     const P = cam.P, y0 = Math.min(...amb.aberturas.map(a => a[2])), yS = P([0, y0, VZ])[1];
@@ -369,16 +387,17 @@
     for (let r = 0; r <= 8; r++) { const y = Y0 + r * RH; linha(x, [[60, y], [340, y]], rgba(C.n700, 0.6), 1.2); if (r < 8) rr(x, 20, y + 6, 28, 8, 4, rgba(C.n600, 0.85)); }
     const cols = [[64, 132], [204, 132]];
     const blocos = [[0, 0, 2, 'res'], [0, 2, 1, 'livre'], [0, 3, 2, 'meu'], [0, 5, 1, 'livre'], [0, 6, 2, 'res'],
-      [1, 0, 1, 'livre'], [1, 1, 1, 'res'], [1, 2, 2, 'res'], [1, 4, 1, 'sel'], [1, 5, 2, 'meu'], [1, 7, 1, 'livre']];
+      [1, 0, 1, 'livre'], [1, 1, 1, 'res'], [1, 2, 2, 'res'], [1, 4, 1, 'sel'], [1, 5, 2, 'meu2'], [1, 7, 1, 'livre']];
     for (const [c, r0, n, st] of blocos) {
       const [x0, w] = cols[c], y0 = Y0 + r0 * RH + 5, h = n * RH - 10;
       if (st === 'res') { rr(x, x0, y0, w, h, 10, rgba(C.n700, 0.9)); rr(x, x0 + 12, y0 + 12, w * 0.5, 9, 4.5, rgba(C.n500, 0.8)); rr(x, x0 + 12, y0 + 28, w * 0.32, 7, 3.5, rgba(C.n600, 0.8)); }
       else if (st === 'livre') { x.beginPath(); x.roundRect(x0 + 1, y0 + 1, w - 2, h - 2, 10); x.setLineDash([6, 5]); x.strokeStyle = rgba(C.n600, 0.9); x.lineWidth = 1.6; x.stroke(); x.setLineDash([]); }
       else if (st === 'meu') { const g = x.createLinearGradient(0, y0, 0, y0 + h); g.addColorStop(0, rgba(C.e500, 0.95)); g.addColorStop(1, rgba(C.e700, 0.9)); rr(x, x0, y0, w, h, 10, g); rr(x, x0 + 12, y0 + 12, w * 0.55, 9, 4.5, rgba(C.n50, 0.9)); rr(x, x0 + 12, y0 + 28, w * 0.35, 7, 3.5, rgba(C.n100, 0.6)); }
+      else if (st === 'meu2') { rr(x, x0 + 1, y0 + 1, w - 2, h - 2, 10, rgba(C.e500, 0.1)); x.strokeStyle = rgba(C.e400, 0.85); x.lineWidth = 2; x.stroke(); rr(x, x0 + 12, y0 + 12, w * 0.55, 9, 4.5, rgba(C.e300, 0.75)); rr(x, x0 + 12, y0 + 28, w * 0.35, 7, 3.5, rgba(C.n500, 0.8)); }
       else { rr(x, x0, y0, w, h, 10, rgba(C.c400, 0.14)); x.strokeStyle = rgba(C.c400, 0.95); x.lineWidth = 2.4; x.stroke(); circ(x, x0 + w - 20, y0 + h / 2, 9, rgba(C.c400)); linha(x, [[x0 + w - 24, y0 + h / 2], [x0 + w - 21, y0 + h / 2 + 3], [x0 + w - 15.5, y0 + h / 2 - 3]], rgba(C.n950), 2.2); rr(x, x0 + 12, y0 + h / 2 - 4, w * 0.45, 8, 4, rgba(C.c300, 0.8)); }
     }
-    // o botão de reservar
-    rr(x, 20, 712, 320, 46, 23, rgba(C.e500)); rr(x, 140, 731, 80, 8, 4, rgba(C.n50, 0.9));
+    // o botão de reservar: navy-600 com o fio elétrico (rodada 1 de ajuste: menos elétrico cheio na tela)
+    rr(x, 21, 713, 318, 44, 22, rgba(C.n600)); x.strokeStyle = rgba(C.e400, 0.9); x.lineWidth = 2; x.stroke(); rr(x, 140, 731, 80, 8, 4, rgba(C.n200, 0.85));
   }
   // estoque para oficinas: busca, resumo, a lista de peças com o nível de cada uma e o botão de adicionar
   function uiEstoque(x, W, H) {
@@ -414,97 +433,134 @@
     // o botão de adicionar
     circ(x, 306, 722, 28, rgba(C.e500)); linha(x, [[306, 711], [306, 733]], rgba(C.n50), 4); linha(x, [[295, 722], [317, 722]], rgba(C.n50), 4);
   }
-  // totem: o check-in confirmado (anel com o visto), o cartão do aluno e os passos
+  // totem: o cartão da reserva (avatar, nome, a barra do horário e a quadra) e o botão de confirmar; sem ícone de
+  // "sucesso" e sem ciano na tela (o anel do leitor é o único ciano do totem; rodada 1 de ajuste)
   function uiTotem(x, W, H) {
     const BG = fundoApp(), CARD = mix(BG, C.n700, 0.5);
     x.fillStyle = rgba(BG); x.fillRect(0, 0, W, H);
-    logoStrukti(x, 26, 24, 32); rr(x, 70, 33, 110, 13, 6.5, rgba(C.n300, 0.8)); circ(x, 410, 40, 13, rgba(C.n700));
-    const cx = W / 2, cy = 236;
-    circ(x, cx, cy, 96, rgba(C.c400, 0.07));
-    x.beginPath(); x.arc(cx, cy, 82, 0, 7); x.strokeStyle = rgba(C.n800); x.lineWidth = 15; x.stroke();
-    { const g = x.createLinearGradient(cx - 82, cy - 82, cx + 82, cy + 82); g.addColorStop(0, rgba(C.e500)); g.addColorStop(1, rgba(C.c400)); x.beginPath(); x.arc(cx, cy, 82, 0, 7); x.strokeStyle = g; x.lineWidth = 15; x.stroke(); }
-    linha(x, [[cx - 36, cy + 2], [cx - 10, cy + 28], [cx + 40, cy - 26]], rgba(C.n50, 0.95), 15);
-    rr(x, cx - 96, 360, 192, 17, 8.5, rgba(C.n200, 0.85)); rr(x, cx - 62, 390, 124, 10, 5, rgba(C.n500, 0.8));
-    rr(x, 36, 436, W - 72, 92, 18, rgba(CARD));
-    circ(x, 86, 482, 27, rgba(C.n600)); circ(x, 86, 474, 10, rgba(C.n400, 0.8)); x.beginPath(); x.arc(86, 500, 17, Math.PI * 1.1, Math.PI * 1.9); x.fillStyle = rgba(C.n400, 0.8); x.fill();
-    rr(x, 128, 464, 150, 13, 6.5, rgba(C.n300, 0.8)); rr(x, 128, 488, 94, 9, 4.5, rgba(C.n600, 0.85));
-    rr(x, 300, 467, 92, 30, 15, rgba(C.c400, 0.16)); x.strokeStyle = rgba(C.c400, 0.85); x.lineWidth = 2; x.stroke(); rr(x, 318, 478, 56, 8, 4, rgba(C.c300, 0.8));
-    for (let i = 0; i < 3; i++) circ(x, cx - 22 + i * 22, 566, 6, rgba(i === 1 ? C.e400 : C.n600, 0.9));
+    rr(x, 26, 24, 32, 32, 9, rgba(C.n600)); rr(x, 70, 34, 110, 13, 6.5, rgba(C.n300, 0.8)); circ(x, 410, 40, 13, rgba(C.n700));
+    // o cartão da reserva
+    rr(x, 26, 84, W - 52, 262, 22, rgba(CARD));
+    circ(x, 84, 142, 30, rgba(C.n600)); circ(x, 84, 133, 11, rgba(C.n400, 0.8)); x.beginPath(); x.arc(84, 162, 19, Math.PI * 1.12, Math.PI * 1.88); x.fillStyle = rgba(C.n400, 0.8); x.fill();
+    rr(x, 130, 124, 170, 15, 7.5, rgba(C.n200, 0.85)); rr(x, 130, 150, 104, 10, 5, rgba(C.n600, 0.9));
+    // a barra do horário: a faixa do dia com o bloco reservado no elétrico e as marcas das horas
+    rr(x, 52, 206, 70, 9, 4.5, rgba(C.n500, 0.85));
+    rr(x, 52, 228, W - 104, 28, 14, rgba(C.n800));
+    rr(x, 168, 228, 118, 28, 14, rgba(C.e500));
+    for (let i = 0; i <= 8; i++) rr(x, 56 + i * 41, 266, 3, i % 2 ? 6 : 10, 1.5, rgba(C.n600, 0.9));
+    rr(x, 168, 288, 44, 9, 4.5, rgba(C.n400, 0.85)); rr(x, 242, 288, 44, 9, 4.5, rgba(C.n400, 0.85));
+    // a quadra: um retângulo com a linha do meio e o rótulo
+    x.strokeStyle = rgba(C.n500, 0.9); x.lineWidth = 2.4; x.strokeRect(52, 314, 34, 22); linha(x, [[69, 314], [69, 336]], rgba(C.n500, 0.9), 2.4);
+    rr(x, 100, 320, 120, 10, 5, rgba(C.n500, 0.85));
+    // o botão de confirmar (navy, com o fio claro) e os passos
+    rr(x, 26, 374, W - 52, 58, 29, rgba(C.n700)); x.strokeStyle = rgba(C.n500, 0.9); x.lineWidth = 2; x.stroke(); rr(x, W / 2 - 60, 398, 120, 10, 5, rgba(C.n300, 0.85));
+    for (let i = 0; i < 3; i++) circ(x, W / 2 - 22 + i * 22, 462, 5.5, rgba(i === 1 ? C.n400 : C.n700, 0.95));
   }
-  // navegador (sites): a barra do navegador e a página clara, esmaecida (a tela de noite)
+  // navegador (sites): a barra do navegador e a página em tema escuro, como as telas dos apps (rodada 1 de ajuste):
+  // fundo navy, blocos navy-700, o claro só em duas linhas finas e, no máximo, um elemento elétrico e um ciano por tela
   function cromo(x, W, H, PG) {
     x.fillStyle = rgba(PG); x.fillRect(0, 0, W, H);
-    rr(x, 0, 0, W, 58, 0, rgba(mix(C.n800, C.n900, 0.4)));
-    for (let i = 0; i < 3; i++) circ(x, 28 + i * 22, 29, 7, rgba(C.n600, 0.95));
-    x.beginPath(); x.roundRect(104, 12, 230, 46, [12, 12, 0, 0]); x.fillStyle = rgba(PG); x.fill(); rr(x, 124, 30, 120, 10, 5, rgba(C.n500, 0.8));
-    rr(x, 360, 15, W - 520, 30, 15, rgba(C.n900, 0.85)); circ(x, 382, 30, 6, rgba(C.n500, 0.9)); rr(x, 398, 25, 180, 10, 5, rgba(C.n600, 0.95));
-    for (let i = 0; i < 2; i++) circ(x, W - 100 + i * 34, 30, 9, rgba(C.n700));
+    rr(x, 0, 0, W, 58, 0, rgba(mix(C.n900, C.n950, 0.5)));
+    for (let i = 0; i < 3; i++) circ(x, 28 + i * 22, 29, 7, rgba(C.n700, 0.95));
+    x.beginPath(); x.roundRect(104, 12, 230, 46, [12, 12, 0, 0]); x.fillStyle = rgba(PG); x.fill(); rr(x, 124, 30, 120, 10, 5, rgba(C.n600, 0.9));
+    rr(x, 360, 15, W - 520, 30, 15, rgba(C.n800, 0.9)); circ(x, 382, 30, 6, rgba(C.n600, 0.9)); rr(x, 398, 25, 180, 10, 5, rgba(C.n700, 0.95));
+    for (let i = 0; i < 2; i++) circ(x, W - 100 + i * 34, 30, 9, rgba(C.n800));
   }
-  const PAGINA = () => mix(C.n100, C.n200, 0.5);
+  const PAGINA = () => mix(C.n900, C.n800, 0.35);
+  // mancha mole (a foto desfocada da loja, a sombra do alfinete): elipse cuja borda some
+  function mancha(x, cx, cy, rx, ry, cor, a) {
+    x.save(); x.translate(cx, cy); x.scale(rx, ry);
+    const g = x.createRadialGradient(0, 0, 0, 0, 0, 1); g.addColorStop(0, rgba(cor, a)); g.addColorStop(0.55, rgba(cor, a * 0.6)); g.addColorStop(1, rgba(cor, 0));
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 1, 0, 7); x.fill(); x.restore();
+  }
+  // clínica: a lista das especialidades (linhas com marcador), o mapa com o alfinete e o endereço, e um botão só
   function uiClinica(x, W, H) {
-    const PG = PAGINA(), INK = C.n800, SOFT = mix(C.n200, C.n300, 0.4), CARDB = mix(C.n50, C.n100, 0.3);
+    const PG = PAGINA(), BL = mix(PG, C.n700, 0.6), LN = C.n700, MAPA = mix(PG, C.n800, 0.6);
     cromo(x, W, H, PG);
-    // menu: marca (quadrado violeta), itens e o botão de agendar com o contorno violeta
-    rr(x, 44, 80, 30, 30, 8, rgba(VIO)); rr(x, 86, 89, 120, 12, 6, rgba(C.n600, 0.9));
-    for (let i = 0; i < 4; i++) rr(x, 560 + i * 96, 90, 66, 10, 5, rgba(C.n400, 0.9));
-    rr(x, 1000, 78, 156, 34, 17, rgba(C.n50, 0)); x.strokeStyle = rgba(VIO); x.lineWidth = 2.4; x.stroke(); rr(x, 1034, 91, 88, 8, 4, rgba(VIO, 0.85));
-    // destaque: título, texto, os dois botões e a imagem (a cruz)
-    rr(x, 60, 176, 430, 34, 9, rgba(INK, 0.92)); rr(x, 60, 222, 330, 34, 9, rgba(INK, 0.92));
-    rr(x, 60, 284, 410, 12, 6, rgba(C.n500, 0.85)); rr(x, 60, 306, 370, 12, 6, rgba(C.n500, 0.85)); rr(x, 60, 328, 300, 12, 6, rgba(C.n500, 0.85));
-    rr(x, 60, 380, 196, 50, 25, rgba(VIO)); rr(x, 100, 400, 116, 10, 5, rgba(C.n50, 0.95));
-    rr(x, 272, 380, 176, 50, 25, rgba(PG, 0)); x.strokeStyle = rgba(C.n500); x.lineWidth = 2; x.stroke(); rr(x, 310, 400, 100, 10, 5, rgba(C.n500, 0.9));
-    { const x0 = 590, y0 = 150, w = 560, h = 310; const g = x.createLinearGradient(x0, y0, x0 + w, y0 + h); g.addColorStop(0, rgba(mix(C.n300, C.n400, 0.3))); g.addColorStop(1, rgba(mix(C.n400, C.n500, 0.4))); rr(x, x0, y0, w, h, 24, g);
-      circ(x, x0 + w * 0.62, y0 + h * 0.48, 112, rgba(C.n200, 0.35)); circ(x, x0 + w * 0.62, y0 + h * 0.48, 76, rgba(C.n50, 0.55));
-      const cx = x0 + w * 0.62, cy = y0 + h * 0.48; rr(x, cx - 14, cy - 44, 28, 88, 6, rgba(C.n50, 0.95)); rr(x, cx - 44, cy - 14, 88, 28, 6, rgba(C.n50, 0.95));
-      rr(x, x0 - 34, y0 + h - 70, 250, 84, 16, rgba(CARDB)); circ(x, x0 + 4, y0 + h - 28, 22, rgba(VIO, 0.2));
-      x.strokeStyle = rgba(VIO); x.lineWidth = 2.6; x.strokeRect(x0 - 7, y0 + h - 38, 22, 20); linha(x, [[x0 - 7, y0 + h - 32], [x0 + 15, y0 + h - 32]], rgba(VIO), 2.6);
-      rr(x, x0 + 40, y0 + h - 46, 120, 11, 5.5, rgba(C.n700, 0.9)); rr(x, x0 + 40, y0 + h - 26, 80, 9, 4.5, rgba(C.n400, 0.9)); }
-    // os serviços: três cartões com ícone (cruz, coração, calendário)
-    for (let i = 0; i < 3; i++) { const x0 = 60 + i * 370, y0 = 520;
-      rr(x, x0, y0, 340, 200, 18, rgba(CARDB)); circ(x, x0 + 52, y0 + 54, 28, rgba(i === 0 ? VIO : SOFT, i === 0 ? 0.22 : 0.9));
-      const ic = rgba(i === 0 ? VIO : C.n600), cx = x0 + 52, cy = y0 + 54;
-      if (i === 0) { rr(x, cx - 4, cy - 13, 8, 26, 2, ic); rr(x, cx - 13, cy - 4, 26, 8, 2, ic); }
-      else if (i === 1) { x.beginPath(); x.moveTo(cx, cy + 12); x.bezierCurveTo(cx - 22, cy - 2, cx - 10, cy - 20, cx, cy - 8); x.bezierCurveTo(cx + 10, cy - 20, cx + 22, cy - 2, cx, cy + 12); x.fillStyle = ic; x.fill(); }
-      else { x.strokeStyle = ic; x.lineWidth = 3; x.strokeRect(cx - 12, cy - 10, 24, 22); linha(x, [[cx - 12, cy - 3], [cx + 12, cy - 3]], ic, 3); }
-      rr(x, x0 + 28, y0 + 104, 200, 14, 7, rgba(C.n700, 0.9)); rr(x, x0 + 28, y0 + 132, 270, 10, 5, rgba(C.n400, 0.85)); rr(x, x0 + 28, y0 + 152, 230, 10, 5, rgba(C.n400, 0.85)); }
+    // menu: a marca (um quadro navy com a cruz vazada), o nome (a linha clara 1) e os itens
+    rr(x, 44, 80, 32, 32, 8, rgba(C.n600)); rr(x, 57, 86, 6, 20, 1.5, rgba(PG)); rr(x, 50, 93, 20, 6, 1.5, rgba(PG));
+    rr(x, 88, 90, 118, 12, 6, rgba(C.n200, 0.8));
+    for (let i = 0; i < 4; i++) rr(x, 700 + i * 112, 91, 70, 10, 5, rgba(C.n600, 0.9));
+    linha(x, [[44, 132], [W - 44, 132]], rgba(LN, 0.8), 1.5);
+    // a coluna da esquerda: o título (a linha clara 2 e uma navy), o texto e as especialidades
+    rr(x, 60, 170, 380, 22, 11, rgba(C.n100, 0.78));
+    rr(x, 60, 206, 300, 22, 11, rgba(C.n500, 0.9));
+    rr(x, 60, 248, 420, 10, 5, rgba(C.n600, 0.9)); rr(x, 60, 268, 360, 10, 5, rgba(C.n600, 0.9));
+    const esp = [250, 190, 280, 220, 160];
+    esp.forEach((w, i) => {
+      const y = 318 + i * 62, at = i === 1;
+      if (at) rr(x, 48, y - 6, 512, 54, 12, rgba(mix(PG, C.n700, 0.5)));
+      circ(x, 76, y + 21, 7, rgba(at ? C.c400 : C.n600));   // o marcador; o da linha ativa é o único ciano da tela
+      rr(x, 100, y + 10, w, 12, 6, rgba(at ? C.n300 : C.n500, 0.9)); rr(x, 100, y + 30, w * 0.55, 8, 4, rgba(C.n600, 0.85));
+      linha(x, [[530, y + 14], [538, y + 21], [530, y + 28]], rgba(C.n600), 2.4);
+      if (i < esp.length - 1 && i !== 0 && i !== 1) linha(x, [[100, y + 50], [548, y + 50]], rgba(LN, 0.7), 1.2);
+    });
+    // o único destaque: o botão de agendar, no elétrico (sem verde de mensageiro)
+    rr(x, 60, 652, 250, 54, 27, rgba(C.e500)); rr(x, 110, 675, 150, 9, 4.5, rgba(C.n50, 0.85));
+    rr(x, 334, 674, 150, 10, 5, rgba(C.n600, 0.9));
+    // a coluna da direita: o mapa (quarteirões e uma avenida em diagonal) com o alfinete; o endereço e os horários embaixo
+    { const x0 = 620, y0 = 168, w = 536, h = 380;
+      x.save(); x.beginPath(); x.roundRect(x0, y0, w, h, 20); x.clip();
+      x.fillStyle = rgba(MAPA); x.fillRect(x0, y0, w, h);
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) rr(x, x0 + 14 + i * 92, y0 + 14 + j * 76, 78, 62, 6, rgba(BL, (i * 7 + j * 3) % 5 === 0 ? 0.5 : 0.85));
+      linha(x, [[x0 - 20, y0 + h * 0.9], [x0 + w + 20, y0 + h * 0.18]], rgba(MAPA), 26);
+      linha(x, [[x0 - 20, y0 + h * 0.9], [x0 + w + 20, y0 + h * 0.18]], rgba(C.n600, 0.5), 1.5);
+      x.restore();
+      const px = x0 + w * 0.6, py = y0 + h * 0.42;
+      mancha(x, px, py + 28, 28, 8, C.n950, 0.7);
+      x.beginPath(); x.arc(px, py - 8, 22, Math.PI * 0.8, Math.PI * 0.2); x.lineTo(px, py + 26); x.closePath(); x.fillStyle = rgba(C.n300, 0.85); x.fill();
+      circ(x, px, py - 8, 8, rgba(MAPA));
+      rr(x, x0, y0 + h + 24, w, 132, 20, rgba(BL));
+      x.strokeStyle = rgba(C.n500); x.lineWidth = 2.4; x.beginPath(); x.arc(x0 + 46, y0 + h + 76, 14, 0, 7); x.stroke();
+      linha(x, [[x0 + 46, y0 + h + 68], [x0 + 46, y0 + h + 76], [x0 + 53, y0 + h + 81]], rgba(C.n500), 2.4);
+      rr(x, x0 + 80, y0 + h + 62, 240, 12, 6, rgba(C.n400, 0.9)); rr(x, x0 + 80, y0 + h + 84, 170, 9, 4.5, rgba(C.n600, 0.9));
+      for (let i = 0; i < 3; i++) rr(x, x0 + 360 + i * 54, y0 + h + 62, 40, 30, 8, rgba(mix(PG, C.n700, 0.85)));
+    }
   }
+  // loja: um produto grande à esquerda e três menores empilhados, só com fotos desfocadas (sem ícone de produto)
   function uiLoja(x, W, H) {
-    const PG = PAGINA(), CARDB = mix(C.n50, C.n100, 0.3), IMG = mix(C.n100, C.n200, 0.7);
+    const PG = PAGINA(), BL = mix(PG, C.n700, 0.6), FOTO = mix(PG, C.n800, 0.5);
     cromo(x, W, H, PG);
-    rr(x, 40, 80, 30, 30, 8, rgba(VIO)); rr(x, 82, 89, 104, 12, 6, rgba(C.n600, 0.9));
-    rr(x, 360, 76, 470, 38, 19, rgba(C.n50, 0.7)); x.strokeStyle = rgba(C.n300); x.lineWidth = 1.6; x.stroke(); x.beginPath(); x.arc(386, 95, 7, 0, 7); x.strokeStyle = rgba(C.n500); x.lineWidth = 2.4; x.stroke(); rr(x, 404, 91, 140, 8, 4, rgba(C.n300, 0.95));
-    // a sacola do carrinho, com o selo violeta
-    { const cx = 1130, cy = 96; x.strokeStyle = rgba(C.n700); x.lineWidth = 2.6; x.strokeRect(cx - 14, cy - 8, 28, 22); x.beginPath(); x.arc(cx, cy - 8, 8, Math.PI, 0); x.stroke(); circ(x, cx + 15, cy - 13, 8, rgba(VIO)); }
-    for (let i = 0; i < 3; i++) rr(x, 880 + i * 70, 91, 50, 9, 4.5, rgba(C.n400, 0.9));
-    // a faixa de ofertas: texto, botão e dois produtos
-    { const x0 = 40, y0 = 138, w = W - 80, h = 196; const g = x.createLinearGradient(x0, 0, x0 + w, 0); g.addColorStop(0, rgba(mix(C.n300, C.n400, 0.2))); g.addColorStop(1, rgba(mix(C.n300, C.n200, 0.5))); rr(x, x0, y0, w, h, 22, g);
-      rr(x, 84, 182, 360, 30, 8, rgba(C.n800, 0.9)); rr(x, 84, 224, 270, 12, 6, rgba(C.n600, 0.9)); rr(x, 84, 262, 170, 44, 22, rgba(VIO)); rr(x, 116, 280, 106, 9, 4.5, rgba(C.n50, 0.95));
-      x.beginPath(); x.ellipse(840, 270, 66, 18, 0, 0, 7); x.fillStyle = rgba(C.n500, 0.35); x.fill();
-      x.beginPath(); x.moveTo(800, 270); x.bezierCurveTo(780, 210, 800, 175, 820, 168); x.lineTo(860, 168); x.bezierCurveTo(880, 175, 900, 210, 880, 270); x.closePath(); x.fillStyle = rgba(C.n50, 0.9); x.fill();
-      rr(x, 930, 196, 90, 76, 10, rgba(C.n600, 0.9)); rr(x, 930, 196, 90, 18, [10, 10, 0, 0], rgba(C.n500, 0.9)); }
-    // a vitrine: quatro produtos, cada um com imagem, nome, preço e o botão de pôr no carrinho
-    const forma = (i, cx, cy) => {
-      const cor = rgba(i % 2 ? C.n500 : C.n400, 0.95);
-      if (i === 0) { x.beginPath(); x.moveTo(cx - 26, cy - 34); x.lineTo(cx + 26, cy - 34); x.lineTo(cx + 22, cy + 38); x.lineTo(cx - 22, cy + 38); x.closePath(); x.fillStyle = cor; x.fill(); x.beginPath(); x.arc(cx + 30, cy, 14, -Math.PI / 2, Math.PI / 2); x.strokeStyle = cor; x.lineWidth = 7; x.stroke(); }
-      else if (i === 1) { rr(x, cx - 18, cy - 20, 36, 60, 10, cor); rr(x, cx - 9, cy - 40, 18, 22, 4, cor); }
-      else if (i === 2) { rr(x, cx - 34, cy - 18, 68, 58, 8, cor); x.beginPath(); x.arc(cx, cy - 18, 18, Math.PI, 0); x.strokeStyle = cor; x.lineWidth = 6; x.stroke(); }
-      else { x.beginPath(); x.moveTo(cx - 30, cy + 2); x.lineTo(cx + 30, cy + 2); x.lineTo(cx + 16, cy - 36); x.lineTo(cx - 16, cy - 36); x.closePath(); x.fillStyle = cor; x.fill(); rr(x, cx - 3, cy + 2, 6, 34, 2, cor); rr(x, cx - 22, cy + 34, 44, 7, 3, cor); }
-    };
-    for (let i = 0; i < 4; i++) { const x0 = 40 + i * 286, y0 = 360;
-      rr(x, x0, y0, 262, 330, 18, rgba(CARDB)); rr(x, x0 + 14, y0 + 14, 234, 184, 12, rgba(IMG)); forma(i, x0 + 131, y0 + 106);
-      rr(x, x0 + 18, y0 + 218, 150, 12, 6, rgba(C.n700, 0.9)); rr(x, x0 + 18, y0 + 242, 100, 9, 4.5, rgba(C.n400, 0.9)); rr(x, x0 + 18, y0 + 272, 84, 20, 6, rgba(C.n800, 0.9));
-      const sel = i === 1; circ(x, x0 + 226, y0 + 282, 20, rgba(sel ? VIO : C.n50, sel ? 1 : 0)); if (!sel) { x.strokeStyle = rgba(C.n400); x.lineWidth = 2; x.stroke(); }
-      linha(x, [[x0 + 218, y0 + 282], [x0 + 234, y0 + 282]], rgba(sel ? C.n50 : C.n500), 3); linha(x, [[x0 + 226, y0 + 274], [x0 + 226, y0 + 290]], rgba(sel ? C.n50 : C.n500), 3); }
-    for (let i = 0; i < 4; i++) rr(x, 40 + i * 286, 716, 262, 140, 18, rgba(CARDB));
+    rr(x, 40, 80, 32, 32, 9, rgba(C.n600)); rr(x, 84, 90, 104, 12, 6, rgba(C.n200, 0.8));   // a marca e o nome (a linha clara 1)
+    rr(x, 380, 76, 420, 38, 19, rgba(C.n800, 0.9)); x.beginPath(); x.arc(406, 95, 7, 0, 7); x.strokeStyle = rgba(C.n500); x.lineWidth = 2.4; x.stroke(); rr(x, 424, 91, 140, 8, 4, rgba(C.n700, 0.95));
+    for (let i = 0; i < 3; i++) rr(x, 880 + i * 70, 91, 50, 9, 4.5, rgba(C.n600, 0.9));
+    // o carrinho, com o selo: o único ciano da tela
+    { const cx = 1130, cy = 96; x.strokeStyle = rgba(C.n400); x.lineWidth = 2.6; x.beginPath(); x.roundRect(cx - 13, cy - 7, 26, 21, 4); x.stroke(); x.beginPath(); x.arc(cx, cy - 7, 7, Math.PI, 0); x.stroke(); circ(x, cx + 14, cy - 12, 6.5, rgba(C.c400)); }
+    // o produto grande: a foto desfocada, os pontos da galeria, o nome (a linha clara 2), o preço e o único botão elétrico
+    { const x0 = 40, y0 = 140, w = 600, h = 660;
+      rr(x, x0, y0, w, h, 22, rgba(BL));
+      x.save(); x.beginPath(); x.roundRect(x0 + 16, y0 + 16, w - 32, 430, 16); x.clip();
+      x.fillStyle = rgba(FOTO); x.fillRect(x0, y0, w, 470);
+      mancha(x, x0 + w * 0.5, y0 + 240, 270, 220, C.n700, 0.9);
+      mancha(x, x0 + w * 0.5, y0 + 384, 150, 28, C.n950, 0.7);
+      mancha(x, x0 + w * 0.48, y0 + 250, 90, 140, C.n500, 0.85);
+      mancha(x, x0 + w * 0.45, y0 + 196, 38, 66, C.n400, 0.45);
+      x.restore();
+      for (let i = 0; i < 4; i++) circ(x, x0 + w / 2 - 33 + i * 22, y0 + 426, 4.5, rgba(i === 0 ? C.n400 : C.n600, 0.9));
+      rr(x, x0 + 28, y0 + 478, 300, 16, 8, rgba(C.n100, 0.78)); rr(x, x0 + 28, y0 + 506, 200, 10, 5, rgba(C.n600, 0.9));
+      rr(x, x0 + 28, y0 + 560, 120, 30, 8, rgba(C.n500, 0.8));
+      rr(x, x0 + w - 248, y0 + 548, 220, 52, 26, rgba(C.e500)); rr(x, x0 + w - 188, y0 + 570, 100, 9, 4.5, rgba(C.n50, 0.85));
+    }
+    // os três menores: foto desfocada, nome, preço e o "+" em contorno navy
+    for (let i = 0; i < 3; i++) {
+      const x0 = 664, y0 = 140 + i * 224, w = 496, h = 204, tom = [C.n500, C.n600, C.n500][i];
+      rr(x, x0, y0, w, h, 20, rgba(BL));
+      x.save(); x.beginPath(); x.roundRect(x0 + 14, y0 + 14, 176, 176, 14); x.clip(); x.fillStyle = rgba(FOTO); x.fillRect(x0, y0, 200, h);
+      mancha(x, x0 + 102, y0 + 104, [44, 62, 50][i], [62, 40, 56][i], tom, 0.8); mancha(x, x0 + 102, y0 + 160, 60, 12, C.n950, 0.55); x.restore();
+      rr(x, x0 + 214, y0 + 42, [190, 150, 210][i], 12, 6, rgba(C.n400, 0.9)); rr(x, x0 + 214, y0 + 66, 120, 9, 4.5, rgba(C.n600, 0.9));
+      rr(x, x0 + 214, y0 + 132, 90, 22, 6, rgba(C.n500, 0.75));
+      x.beginPath(); x.arc(x0 + w - 44, y0 + 143, 18, 0, 7); x.strokeStyle = rgba(C.n600); x.lineWidth = 2; x.stroke();
+      linha(x, [[x0 + w - 51, y0 + 143], [x0 + w - 37, y0 + 143]], rgba(C.n500), 2.6); linha(x, [[x0 + w - 44, y0 + 136], [x0 + w - 44, y0 + 150]], rgba(C.n500), 2.6);
+    }
   }
-  const UIS = { agenda: [360, 773, uiAgenda], estoque: [360, 773, uiEstoque], totem: [440, 600, uiTotem], clinica: [1200, 760, uiClinica], loja: [1200, 820, uiLoja] };
+  const UIS = { agenda: [360, 773, uiAgenda], estoque: [360, 773, uiEstoque], totem: [440, 490, uiTotem], clinica: [1200, 760, uiClinica], loja: [1200, 820, uiLoja] };
 
   // ---------------- geometria de cada item ----------------
   // cada montagem devolve: objeto (pontos do objeto principal, para a sonda), sombras (conjuntos de pontos que
   // fazem sombra), tela (centro e normal da tela acesa, para a luz), leds e desenhar(ctx, cam, o).
   const CEL = { w: 7.3, h: 15.2, d: 0.85, r: 1.05 };
   function montaCelular(it) {
-    const c = it.celular, base = it.caixa ? null : { u: [-4.2, 4.2], h: [0, 0.55], v: [-4, 5.5] };
+    const c = it.celular, base = it.gaveteiro ? null : { u: [-4.2, 4.2], h: [0, 0.55], v: [-4, 5.5] };
     const y = base ? 0.8 : 0.2, F = Fr({ x: c.x, y, z: c.z, rot: c.rot, tilt: c.tilt });
     const Fb = Fr({ x: c.x, y: 0, z: c.z + 0.5, rot: c.rot });
     const tela = { c: F.P(0, CEL.h / 2, -CEL.d / 2), n: F.R([0, 0, -1]) };
@@ -512,23 +568,42 @@
     const sombras = [pontosLaje(F, CEL)];
     if (base) sombras.push(pontosCaixa(Fb, base));
     let Fx = null, cx = null;
-    if (it.caixa) { const b = it.caixa; Fx = Fr({ x: b.x, y: 0, z: b.z, rot: b.rot }); cx = { u: [-b.w / 2, b.w / 2], h: [0, b.h], v: [-b.d / 2, b.d / 2] }; sombras.push(pontosCaixa(Fx, cx)); }
+    if (it.gaveteiro) { const b = it.gaveteiro; Fx = Fr({ x: b.x, y: 0, z: b.z, rot: b.rot }); cx = { u: [-b.w / 2, b.w / 2], h: [0, b.h], v: [-b.d / 2, b.d / 2] }; sombras.push(pontosCaixa(Fx, cx)); }
     function desenhar(ctx, cam, o) {
       const plast = [30, 34, 42];
-      if (cx) {   // a caixa de peças: papelão escuro, fita no meio e uma etiqueta lisa (sem texto)
-        const kraft = [74, 64, 52];
-        caixa3d(ctx, cam, Fx, Object.assign({ alb: kraft, aresta: 0.12, esc: 0.86, k: { amb: 1.35 } }, cx));
-        const b = it.caixa, fita = [84, 76, 64];
-        caixa3d(ctx, cam, Fx, { u: [-1.8, 1.8], h: [b.h - 0.02, b.h + 0.06], v: [-b.d / 2 - 0.05, b.d / 2 + 0.05], alb: fita, k: { amb: 1.35 } });
-        caixa3d(ctx, cam, Fx, { u: [-1.8, 1.8], h: [b.h - 3.5, b.h + 0.06], v: [-b.d / 2 - 0.08, -b.d / 2 + 0.02], alb: fita, esc: 0.9, k: { amb: 1.35 } });
-        // a emenda das abas, na tampa
-        { const a = cam.P(Fx.P(-b.w / 2 + 0.3, b.h + 0.07, 0)), z = cam.P(Fx.P(b.w / 2 - 0.3, b.h + 0.07, 0)); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(z[0], z[1]); ctx.strokeStyle = rgba(C.black, 0.35); ctx.lineWidth = 1.2; ctx.stroke(); }
-        caixa3d(ctx, cam, Fx, { u: [4.5, 9], h: [3.5, 6.8], v: [-b.d / 2 - 0.1, -b.d / 2 + 0.02], alb: [86, 88, 92], esc: 0.9 });
+      if (cx) {   // o gaveteiro de peças (rodada 1 de ajuste, no lugar da caixa de papelão): corpo de metal navy e 3 x 2 gavetas de plástico escuro
+        const b = it.gaveteiro, metal = [44, 50, 64];
+        const fc = caixa3d(ctx, cam, Fx, Object.assign({ alb: metal, aresta: 0.3, esc: 0.8, k: { amb: 1.25 } }, cx));
+        const vf = -b.d / 2 - 0.04, Pf = (u, h) => cam.P(Fx.P(u, h, vf)), n = Fx.R([0, 0, -1]);
+        const quad = (u0, u1, h0, h1) => path(ctx, [Pf(u0, h0), Pf(u1, h0), Pf(u1, h1), Pf(u0, h1)]);
+        const gw = (b.w - 1.6 - 0.5) / 2, gh = (b.h - 1.6 - 1.0) / 3;
+        for (let r = 0; r < 3; r++) for (let k = 0; k < 2; k++) {
+          const u0 = -b.w / 2 + 0.8 + k * (gw + 0.5), h0 = 0.8 + r * (gh + 0.5), u1 = u0 + gw, h1 = h0 + gh;
+          const ca = luz([26, 30, 38], Fx.P((u0 + u1) / 2, h1, vf), n, { amb: 1.2 }), cz = luz([26, 30, 38], Fx.P((u0 + u1) / 2, h0, vf), n, { amb: 1.2 });
+          quad(u0, u1, h0, h1); ctx.fillStyle = lin(ctx, Pf(0, h1), Pf(0, h0), [[0, rgba(ca)], [1, rgba(mul(cz, 0.85))]]); ctx.fill();
+          // o puxador (um lábio claro embaixo) e a etiqueta lisa
+          quad(u0 + gw * 0.3, u1 - gw * 0.3, h0 + 0.35, h0 + 0.9); ctx.fillStyle = rgba(luz([70, 78, 92], Fx.P(u0, h0, vf), [0, 1, -0.4])); ctx.fill();
+          quad(u0 + gw * 0.2, u1 - gw * 0.2, h1 - 1.9, h1 - 0.9); ctx.fillStyle = rgba(C.n500, 0.35); ctx.fill();
+          { const a = Pf(u0, h1), z = Pf(u1, h1); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(z[0], z[1]); ctx.strokeStyle = rgba(C.n300, 0.14); ctx.lineWidth = 1; ctx.stroke(); }
+        }
+        // a sombra do celular na frente do gaveteiro (do abajur) e a oclusão onde ele encosta
+        if (ABAJUR && fc.frente) {
+          const L = ABAJUR.pos, P0 = Fx.P(0, 0, -b.d / 2), proj = q => { const t = dot(n, sub(P0, L)) / dot(n, sub(q, L)); return add(L, mul(sub(q, L), t)); };
+          const sl = layer(cam.W, cam.H), sx = sl.getContext('2d');
+          sx.filter = `blur(${Math.max(1, Math.round(cam.S(P0) * 0.5))}px)`; sx.fillStyle = 'rgb(0,0,0)';
+          path(sx, hull(pontosLaje(F, CEL).map(proj).map(cam.P))); sx.fill(); sx.filter = 'none';
+          sx.globalCompositeOperation = 'destination-in'; path(sx, fc.frente.S); sx.fill();
+          ctx.save(); ctx.globalAlpha = 0.55; ctx.drawImage(sl, 0, 0); ctx.restore();
+        }
       }
       if (base) {   // o suporte de mesa: a chapa de base, a chapa de trás (inclinada) e o lábio da frente
-        caixa3d(ctx, cam, Fb, Object.assign({ alb: plast, aresta: 0.18 }, base));
+        caixa3d(ctx, cam, Fb, Object.assign({ alb: plast, aresta: 0.12 }, { u: base.u, h: [0, 0.32], v: base.v }));
+        // o chanfro: uma chapa um pouco menor por cima, mais clara (pega a luz), com o fio de luz na aresta da frente
+        caixa3d(ctx, cam, Fb, { u: [base.u[0] + 0.3, base.u[1] - 0.3], h: [0.32, base.h[1]], v: [base.v[0] + 0.3, base.v[1] - 0.3], alb: mix(plast, [70, 78, 92], 0.35), aresta: 0.45, esc: 0.9 });
         caixa3d(ctx, cam, F, { u: [-2.6, 2.6], h: [-1.0, 11], v: [CEL.d / 2, CEL.d / 2 + 0.45], alb: plast });
       }
+      // a sombra de contato do celular (ou do suporte) no tampo: escura, curta e mole
+      contato(ctx, cam, base ? pontosCaixa(Fb, { u: [base.u[0] - 0.3, base.u[1] + 0.3], h: [0, 0], v: [base.v[0] - 0.2, base.v[1] + 0.3] }) : [[-CEL.w / 2, 0, -CEL.d / 2], [CEL.w / 2, 0, -CEL.d / 2], [CEL.w / 2, 0, CEL.d / 2 + 0.6], [-CEL.w / 2, 0, CEL.d / 2 + 0.6]].map(([u, h, v]) => F.P(u, h, v)).map(p => [p[0], 0, p[2]]), 0.62);
       laje(ctx, cam, F, CEL);
       const [w, h, f] = UIS[c.ui]; const T = tex(w, h, 0.62, f);
       telaNoPlano(ctx, cam, F, [-CEL.w / 2 + 0.28, CEL.w / 2 - 0.28, 0.3, CEL.h - 0.3], -CEL.d / 2 - 0.005, T, 0.75);
@@ -556,8 +631,8 @@
       laje(ctx, cam, Fl, Object.assign({ alb: alu, aro: 0.3 }, tampa));
       const [w, h, f] = UIS[it.ui || 'clinica']; const T = tex(w, h, 0.52, f);
       const so = telaNoPlano(ctx, cam, Fl, [-14.6, 14.6, 1.2, 20.1], -tampa.d / 2 - 0.005, T, 0.2);
-      // a tela de noite: brilho baixo (a página clara não pode virar o ponto mais claro do quadro de longe)
-      ctx.save(); path(ctx, so); ctx.fillStyle = rgba(C.n950, 1 - o.telaBrilho * 0.74); ctx.fill(); ctx.restore();
+      // a tela de noite: um véu leve por cima da página escura
+      ctx.save(); path(ctx, so); ctx.fillStyle = rgba(C.n950, Math.max(0, 1 - o.telaBrilho * 0.96)); ctx.fill(); ctx.restore();
       // a webcam
       { const q = cam.P(Fl.P(0, 20.6, -tampa.d / 2 - 0.01)); circ(ctx, q[0], q[1], 1.4, rgba(C.black)); }
     }
@@ -567,57 +642,59 @@
     const tb = it.tablet, TB = { w: 24.6, h: 17.6, d: 0.7, r: 1.0 };
     const F = Fr({ x: tb.x, y: 1.3, z: tb.z, rot: tb.rot, tilt: tb.tilt }), Fb = Fr({ x: tb.x, y: 0, z: tb.z + 1.5, rot: tb.rot });
     const base = { u: [-7, 7], h: [0, 1.1], v: [-4.5, 5] };
-    const sc = it.sacola, Fs = Fr({ x: sc.x, y: 0, z: sc.z, rot: sc.rot }), sac = { u: [-8.5, 8.5], h: [0, 19], v: [-5, 5] };
+    const sc = it.sacola, k = sc.k || 1, Fs = Fr({ x: sc.x, y: 0, z: sc.z, rot: sc.rot }), sac = { u: [-8.5 * k, 8.5 * k], h: [0, 19 * k], v: [-5 * k, 5 * k] };
     const objeto = pontosLaje(F, TB).concat(pontosCaixa(Fb, base));
     const tela = { c: F.P(0, TB.h / 2, -TB.d / 2), n: F.R([0, 0, -1]), alcance: 22, k: 0.5, cor: [0.4, 0.5, 0.75] };
     function desenhar(ctx, cam, o) {
       const plast = [30, 34, 42];
-      // a sacola de papel (navy acinzentado) com as alças de cordão
-      caixa3d(ctx, cam, Fs, Object.assign({ alb: [58, 64, 80], aresta: 0.16, esc: 0.78 }, sac));
-      { const fz = -5.05; caixa3d(ctx, cam, Fs, { u: [-8.5, 8.5], h: [16.8, 19], v: [fz - 0.05, fz + 0.05], alb: [66, 72, 88], esc: 0.95 });
-        for (const vv of [-4.6, 4.6]) { const pts = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * i / 16; pts.push(cam.P(Fs.P(-3.2 * Math.cos(a), 19 + 7 * Math.sin(a), vv))); }
-          ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.strokeStyle = rgba(luz([40, 44, 54], Fs.P(0, 24, vv), [0, 1, -0.5]), 1); ctx.lineWidth = Math.max(1.2, cam.S(Fs.P(0, 22, vv)) * 0.35); ctx.lineCap = 'round'; ctx.stroke(); } }
+      // a sacola de papel (navy escuro) com as alças de cordão: menor, atrás e fora de foco (rodada 1 de ajuste)
+      { const sl = layer(cam.W, cam.H), sx = sl.getContext('2d');
+        caixa3d(sx, cam, Fs, Object.assign({ alb: [40, 45, 58], aresta: 0.1, esc: 0.75 }, sac));
+        const fz = -5.05 * k; caixa3d(sx, cam, Fs, { u: [-8.5 * k, 8.5 * k], h: [16.8 * k, 19 * k], v: [fz - 0.05, fz + 0.05], alb: [46, 51, 64], esc: 0.95 });
+        for (const vv of [-4.6 * k, 4.6 * k]) { const pts = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * i / 16; pts.push(cam.P(Fs.P(-3.2 * k * Math.cos(a), 19 * k + 7 * k * Math.sin(a), vv))); }
+          sx.beginPath(); pts.forEach((p, i) => i ? sx.lineTo(p[0], p[1]) : sx.moveTo(p[0], p[1])); sx.strokeStyle = rgba(luz([32, 36, 46], Fs.P(0, 24 * k, vv), [0, 1, -0.5]), 1); sx.lineWidth = Math.max(1.2, cam.S(Fs.P(0, 22 * k, vv)) * 0.35); sx.lineCap = 'round'; sx.stroke(); }
+        ctx.save(); ctx.filter = `blur(${sc.blur || 0}px)`; ctx.drawImage(sl, 0, 0); ctx.restore(); }
       caixa3d(ctx, cam, Fb, Object.assign({ alb: plast, aresta: 0.2 }, base));
       caixa3d(ctx, cam, F, { u: [-4, 4], h: [-0.6, 10], v: [TB.d / 2, TB.d / 2 + 0.5], alb: plast });
       laje(ctx, cam, F, Object.assign({ alb: [52, 57, 68], aro: 0.35 }, TB));
       const [w, h, f] = UIS.loja; const T = tex(w, h, 0.5, f);
       const so = telaNoPlano(ctx, cam, F, [-TB.w / 2 + 1.0, TB.w / 2 - 1.0, 1.0, TB.h - 1.0], -TB.d / 2 - 0.005, T, 0.3);
-      ctx.save(); path(ctx, so); ctx.fillStyle = rgba(C.n950, 1 - o.telaBrilho * 0.74); ctx.fill(); ctx.restore();
+      ctx.save(); path(ctx, so); ctx.fillStyle = rgba(C.n950, Math.max(0, 1 - o.telaBrilho * 0.96)); ctx.fill(); ctx.restore();
       caixa3d(ctx, cam, F, { u: [-8.5, 8.5], h: [-0.5, 0.8], v: [-TB.d / 2 - 0.7, -TB.d / 2 - 0.05], alb: plast, aresta: 0.25 });
     }
     return { objeto, sombras: [pontosLaje(F, TB), pontosCaixa(Fb, base), pontosCaixa(Fs, sac)], tela, desenhar, brilhoMesa: { c: [tb.x, 0.02, tb.z - 6], rx: 22, rz: 8, cor: C.n300, k: 0.18 } };
   }
   function montaTotem(it) {
     const t = it.totem, Fb = Fr({ x: t.x, y: 0, z: t.z, rot: t.rot });
-    const base = { u: [-12.5, 12.5], h: [0, 1.6], v: [-9.5, 9.5] }, col = { u: [-3.6, 3.6], h: [1.6, 33], v: [0.5, 5] };
-    const topo = Fb.P(0, 30, 2.5), Fh = Fr({ x: topo[0], y: topo[1], z: topo[2], rot: t.rot, tilt: 13 });
-    const cab = { w: 28, h: 44, d: 3.4, r: 1.8 };
+    const base = { u: [-17, 17], h: [0, 2.2], v: [-12, 12] }, col = { u: [-5, 5], h: [2.2, 92], v: [0.5, 7] };
+    const topo = Fb.P(0, 88, 3.8), Fh = Fr({ x: topo[0], y: topo[1], z: topo[2], rot: t.rot, tilt: 13 });
+    const cab = { w: 32, h: 46, d: 4, r: 2 };
     const objeto = pontosLaje(Fh, cab).concat(pontosCaixa(Fb, base));
-    const tela = { c: Fh.P(0, 28, -cab.d / 2), n: Fh.R([0, 0, -1]), alcance: 30, k: 1.2 };
-    const leitor = Fh.P(0, 6.6, -cab.d / 2 - 0.05);
+    const tela = { c: Fh.P(0, 28, -cab.d / 2), n: Fh.R([0, 0, -1]), alcance: 34, k: 1.0 };
+    const leitor = Fh.P(0, 6.8, -cab.d / 2 - 0.05);
     function desenhar(ctx, cam, o) {
       const corpo = [46, 52, 64];
       caixa3d(ctx, cam, Fb, Object.assign({ alb: corpo, aresta: 0.2, esc: 0.75 }, base));
       caixa3d(ctx, cam, Fb, Object.assign({ alb: corpo, esc: 0.6 }, col));
       const L = laje(ctx, cam, Fh, Object.assign({ alb: corpo, frente: [16, 21, 29], aro: 0.32, aroW: 0.04 }, cab));
       const [w, h, f] = UIS.totem; const T = tex(w, h, 0.62, f);
-      telaNoPlano(ctx, cam, Fh, [-12.4, 12.4, 13.0, 41.6], -cab.d / 2 - 0.01, T, 0.6);
+      telaNoPlano(ctx, cam, Fh, [-13.8, 13.8, 13.4, 44.0], -cab.d / 2 - 0.01, T, 0.6);
       // o leitor: aro escuro, a placa e o anel de LED ciano (o detalhe da Strukti), e o hexágono da marca
       const ua = Fh.R([1, 0, 0]), ha = Fh.R([0, 1, 0]), Fp = (u, h) => Fh.P(u, h, -cab.d / 2 - 0.03);
       const disc = (u, h, r, fill) => { discT(ctx, cam, Fp(u, h), mul(ua, r), mul(ha, r)); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = fill; ctx.fill(); ID(ctx); };
-      disc(0, 6.6, 4.6, rgba([8, 12, 18]));
-      disc(0, 6.6, 3.7, rgba(mix(C.c600, C.n900, 0.55)));
-      disc(0, 6.6, 3.0, rgba([12, 17, 25]));
-      { discT(ctx, cam, Fp(-10.2, 2.6), ua, ha); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 0.75, y = Math.sin(a) * 0.75; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.45); ctx.fill(); ID(ctx); }
+      disc(0, 6.8, 4.6, rgba([8, 12, 18]));
+      disc(0, 6.8, 3.7, rgba(mix(C.c600, C.n900, 0.55)));
+      disc(0, 6.8, 3.0, rgba([12, 17, 25]));
+      { discT(ctx, cam, Fp(-12, 2.6), ua, ha); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 0.75, y = Math.sin(a) * 0.75; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.45); ctx.fill(); ID(ctx); }
       return { ua, ha, Fp };
     }
     function emissao(ctx, cam, o, info) {
       const k = o.ledK; if (!(k > 0)) return;
       const { ua, ha, Fp } = info;
       ctx.save(); ctx.globalCompositeOperation = 'screen';
-      discT(ctx, cam, Fp(0, 6.6), mul(ua, 1), mul(ha, 1)); ctx.beginPath(); ctx.arc(0, 0, 3.7, 0, 7); ctx.arc(0, 0, 3.05, 0, 7, true); ctx.fillStyle = rgba(C.c500, 0.9 * k); ctx.fill(); ID(ctx);
-      glow(ctx, cam.P(Fp(0, 6.6)), cam.S(Fp(0, 6.6)) * 6, C.c500, 0.2 * k);
-      glow(ctx, cam.P(Fp(0, 6.6)), cam.S(Fp(0, 6.6)) * 14, C.c400, 0.05 * k);
+      discT(ctx, cam, Fp(0, 6.8), mul(ua, 1), mul(ha, 1)); ctx.beginPath(); ctx.arc(0, 0, 3.7, 0, 7); ctx.arc(0, 0, 3.05, 0, 7, true); ctx.fillStyle = rgba(C.c500, 0.9 * k); ctx.fill(); ID(ctx);
+      glow(ctx, cam.P(Fp(0, 6.8)), cam.S(Fp(0, 6.8)) * 6, C.c500, 0.2 * k);
+      glow(ctx, cam.P(Fp(0, 6.8)), cam.S(Fp(0, 6.8)) * 14, C.c400, 0.05 * k);
       ctx.restore();
     }
     return { objeto, sombras: [objeto.concat(pontosCaixa(Fb, col))], tela, desenhar, emissao, leds: [{ pos: add(leitor, mul(Fh.R([0, 0, -1]), 2)), k: 0.25, alcance: 9, eixo: Fh.R([0, 0, -1]) }],
@@ -633,16 +710,27 @@
     function desenhar(ctx, cam, o) {
       // as hastes até o teto
       for (const u of [-p.w * 0.36, p.w * 0.36]) { const a = cam.P(F.P(u, p.h, 0)), b = cam.P(F.P(u, 400, 0)); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.strokeStyle = rgba(mix(C.n800, C.n700, 0.6)); ctx.lineWidth = Math.max(2, cam.S(F.P(0, p.h, 0)) * 1.2); ctx.stroke(); ctx.strokeStyle = rgba(C.n400, 0.25); ctx.lineWidth = 1; ctx.stroke(); }
-      caixa3d(ctx, cam, F, Object.assign({ alb: [40, 46, 58], aresta: 0.3, esc: 0.7, albF: { frente: [26, 31, 40] } }, cx));
+      // rodada 1 de ajuste: um brilho fraco por trás (a luz dos painéis na parede de vidro), a moldura de alumínio com
+      // o fio de luz no topo e o reflexo ciano fraco na borda de baixo
+      { const c = cam.P(F.P(0, p.h / 2, p.d / 2)); ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.translate(c[0], c[1]); ctx.scale(1, 0.55);
+        glow(ctx, [0, 0], cam.S(F.P(0, p.h / 2, 0)) * p.w * 0.62, C.c600, 0.07 * o.ledK); ctx.restore(); }
+      caixa3d(ctx, cam, F, Object.assign({ alb: [40, 46, 58], aresta: 0.6, esc: 0.62, albF: { frente: [74, 82, 96] } }, cx));
       const Fp = (u, h) => F.P(u, h, -p.d / 2 - 0.05), ua = F.R([1, 0, 0]), ha = [0, 1, 0];
       const quad = (u0, u1, h0, h1, fill) => { path(ctx, [[u0, h0], [u1, h0], [u1, h1], [u0, h1]].map(([u, h]) => cam.P(Fp(u, h)))); ctx.fillStyle = fill; ctx.fill(); };
+      quad(-p.w / 2 + 1.5, p.w / 2 - 1.5, 1.5, p.h - 1.5, rgba([15, 19, 26]));
+      { const a = cam.P(Fp(-p.w / 2 + 1.5, 1.5)), b = cam.P(Fp(p.w / 2 - 1.5, 1.5)); ctx.strokeStyle = lin(ctx, a, b, [[0, rgba(C.c400, 0.04)], [0.35, rgba(C.c400, 0.22)], [0.7, rgba(C.c400, 0.12)], [1, rgba(C.c400, 0.03)]]); ctx.lineWidth = Math.max(1, cam.S(Fp(0, 1.5)) * 0.35); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      { const a = cam.P(Fp(-p.w / 2 + 0.3, p.h - 0.25)), b = cam.P(Fp(p.w / 2 - 0.3, p.h - 0.25)); ctx.strokeStyle = lin(ctx, a, b, [[0, rgba(C.n200, 0.12)], [0.45, rgba(mix(C.n200, C.lampW, 0.3), 0.5)], [1, rgba(C.n200, 0.18)]]); ctx.lineWidth = Math.max(1, cam.S(Fp(0, p.h)) * 0.3); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
       // dois painéis rebaixados, as faixas das equipes em cima (elétrico e ciano) e a coluna do meio
       quad(-p.w / 2 + 3, -4, 3.5, p.h - 7, rgba([9, 13, 19])); quad(4, p.w / 2 - 3, 3.5, p.h - 7, rgba([9, 13, 19]));
       quad(-p.w / 2 + 3, -4, p.h - 5.0, p.h - 3.8, rgba(C.e500, 0.5)); quad(4, p.w / 2 - 3, p.h - 5.0, p.h - 3.8, rgba(C.c400, 0.45));
       quad(-2.4, 2.4, 3.5, p.h - 7, rgba([12, 17, 24]));
       const disc = (u, h, r, fill) => { discT(ctx, cam, Fp(u, h), mul(ua, r), mul(ha, r)); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = fill; ctx.fill(); ID(ctx); };
       for (const lado of [-1, 1]) for (let i = 0; i < 20; i++) for (let j = 0; j < 17; j++) disc(lado * (6.2 + i * 2.05), 5.4 + j * 2.05, 0.42, rgba(C.n800, 0.55));
-      for (const q of pips) { disc(q.u, q.h, 3.0, rgba([7, 11, 16])); disc(q.u, q.h, 2.3, rgba(q.on ? mix(mix(C.c400, C.c200, 0.2), C.n300, 0.3) : mix(C.n800, C.n700, 0.25))); }
+      // os pips: o brilho dos acesos varia 10-15% (LEDs de verdade não são iguais) e cada um tem a lente mais clara no meio
+      const ON = mix(mix(C.c400, C.c200, 0.2), C.n300, 0.3);
+      pips.forEach((q, i) => { disc(q.u, q.h, 3.0, rgba([7, 11, 16]));
+        if (!q.on) { disc(q.u, q.h, 2.3, rgba(mix(C.n800, C.n700, 0.25))); return; }
+        const v = 0.86 + 0.14 * ((i * 37 + 11) % 7) / 6; disc(q.u, q.h, 2.3, rgba(mul(ON, v))); disc(q.u - 0.35, q.h + 0.45, 1.05, rgba(C.c200, 0.18 * v)); });
       disc(0, 27, 1.1, rgba(C.c300, 0.9)); disc(0, 17, 1.1, rgba(C.c300, 0.9));
       // a barra do tempo (embaixo, no meio) e o hexágono da marca
       quad(-1.2, 1.2, 6, 11.5, rgba(C.n700, 0.9)); quad(-1.2, 1.2, 6, 9.2, rgba(C.c400, 0.85));
@@ -657,7 +745,7 @@
       glow(ctx, cam.P(fr), cam.S(fr) * 70, C.c500, 0.05 * k);
       ctx.restore();
     }
-    return { objeto, sombras: [objeto], desenhar, emissao,
+    return { objeto, sombras: [], desenhar, emissao,   // suspenso: sem sombra no tampo
       leds: [{ pos: F.P(-24, p.h / 2, -p.d / 2 - 6), k: 1.1, alcance: 40, eixo: norm([0, -0.5, -1]) }, { pos: F.P(24, p.h / 2, -p.d / 2 - 6), k: 0.8, alcance: 40, eixo: norm([0, -0.5, -1]) }] };
   }
   function montaSensor(it) {
@@ -717,20 +805,28 @@
   }
 
   // ---------------- sombras (do abajur, mole da janela e de contato; Fleet) ----------------
-  function sombras(ctx, cam, o, sets) {
+  // só no tampo ou no piso (rodada 1 de ajuste: sem o recorte, a sombra projetada de pontos perto da altura do
+  // abajur caía no vidro como uma cunha diagonal); conjuntos acima do abajur não fazem sombra projetada
+  function sombras(ctx, cam, o, sets, amb) {
     if (!sets.length || !ABAJUR) return;
     const { W, H } = cam, P = cam.P, L = ABAJUR.pos;
     const sh = layer(W, H), s = sh.getContext('2d'); s.fillStyle = 'rgb(0,0,0)';
     const sPt = p => { const t = L[1] / (L[1] - p[1]); return [L[0] + (p[0] - L[0]) * t, 0, L[2] + (p[2] - L[2]) * t]; };
     const k = cam.S([0, 0, 30]);
     s.filter = `blur(${Math.round(k * 0.9)}px)`; s.globalAlpha = 0.5;
-    for (const pts of sets) { path(s, hull(pts.map(p => p[1] > 0.05 ? sPt(p) : p).map(P))); s.fill(); }
+    for (const pts of sets) { if (pts.some(p => p[1] > L[1] - 5)) continue; path(s, hull(pts.map(p => p[1] > 0.05 ? sPt(p) : p).map(P))); s.fill(); }
     s.filter = `blur(${Math.round(k * 1.8)}px)`; s.globalAlpha = 0.28;
     for (const pts of sets) { path(s, hull(pts.map(p => [p[0], 0, p[2] - p[1] * 0.55]).map(P))); s.fill(); }
     s.filter = `blur(${Math.max(1, Math.round(k * 0.5))}px)`; s.globalAlpha = 0.6;
     for (const pts of sets) { const f = pts.map(p => [p[0], 0, p[2]]); path(s, hull(f.filter((p, i) => pts[i][1] < 3).map(P))); s.fill(); }
     s.filter = 'none';
-    ctx.save(); ctx.globalAlpha = 0.85; ctx.drawImage(sh, 0, 0); ctx.restore();
+    ctx.save(); path(ctx, poligonoSup(cam, amb)); ctx.clip(); ctx.globalAlpha = 0.85; ctx.drawImage(sh, 0, 0); ctx.restore();
+  }
+  // sombra de contato: o contorno no tampo, borrado e escuro (rodada 1 de ajuste, nos aparelhos de mesa)
+  function contato(ctx, cam, pts, a) {
+    const sl = layer(cam.W, cam.H), s = sl.getContext('2d'), c = pts.reduce((t, p) => add(t, p), [0, 0, 0]).map(v => v / pts.length);
+    s.filter = `blur(${Math.max(1, Math.round(cam.S(c) * 0.45))}px)`; s.fillStyle = 'rgb(2,4,8)'; path(s, hull(pts.map(cam.P))); s.fill();
+    ctx.save(); ctx.globalAlpha = a; ctx.drawImage(sl, 0, 0); ctx.restore();
   }
   // a tela acesa clareia a mesa à frente do aparelho (Rota)
   function brilhoMesa(ctx, cam, o, b, amb) {
@@ -794,9 +890,11 @@
     reflexoCidade(ctx, cam, city, o, amb);
     // 2. sombras, o brilho da tela na mesa, e o objeto (com a caneca, onde houver)
     const sets = g.sombras.slice(); if (o.caneca && it.caneca) sets.push(pontosCaneca(it.caneca));
-    sombras(ctx, cam, o, sets);
+    sombras(ctx, cam, o, sets, amb);
     brilhoMesa(ctx, cam, o, g.brilhoMesa, amb);
     if (g.porta) g.porta(ctx, cam);
+    // a porta some para o navy-950 de cima para baixo (só no contador): a metade de baixo calma, sem quadro nem puxador
+    if (it.escurecer) { const [y0, y1, a] = it.escurecer; ctx.fillStyle = lin(ctx, [0, y0 * cam.H], [0, y1 * cam.H], [[0, rgba(C.n950, 0)], [0.6, rgba(C.n950, a * 0.75)], [1, rgba(C.n950, a)]]); ctx.fillRect(0, y0 * cam.H, cam.W, cam.H); }
     // a caneca atrás do objeto (mais longe que o centro dele) vem antes, para o objeto cobri-la
     const zObj = g.objeto.reduce((t, p) => t + p[2], 0) / g.objeto.length, canecaAtras = o.caneca && it.caneca && it.caneca.z > zObj;
     if (canecaAtras) caneca(ctx, cam, it.caneca);
