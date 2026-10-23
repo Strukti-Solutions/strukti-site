@@ -2,7 +2,8 @@ import { act, type ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { ENTRADA } from "@/lib/heroEntrada";
+import { ENTRADA, posicaoDoTitulo } from "@/lib/heroEntrada";
+import { useMidiaCoberta } from "./midia-coberta";
 import { ScrollExpandMedia } from "./scroll-expansion-hero";
 
 /**
@@ -130,6 +131,14 @@ const state = () => ({
   content: hero().dataset.content,
 });
 
+/** Lê o `useMidiaCoberta` de dentro da mídia, como o `HeroVideoClip`. */
+function SondaCoberta() {
+  const coberta = useMidiaCoberta();
+  return <div className="sonda-coberta" data-coberta={coberta ? "true" : "false"} />;
+}
+
+const coberta = () => document.querySelector<HTMLElement>(".sonda-coberta")?.dataset.coberta;
+
 function Hero() {
   return (
     <ScrollExpandMedia
@@ -139,7 +148,12 @@ function Hero() {
       date="Linha de apoio"
       scrollToExpand="Role para expandir"
       background={<div className="fundo-cinza" />}
-      media={<div className="sala-cinza" />}
+      media={
+        <>
+          <div className="sala-cinza" />
+          <SondaCoberta />
+        </>
+      }
       mediaLabel="A sala"
       mediaControl={<button type="button">Pausar</button>}
       entrada={{ aparelho: <div className="cinza" /> }}
@@ -258,6 +272,7 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
       "--hx-quadro-h",
       "--hx-linha1-x",
       "--hx-linha2-x",
+      "--hx-titulo-s",
       "--hx-titulo-saida",
     ]) {
       expect(variavel(nome), nome).not.toBe("");
@@ -810,5 +825,119 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     const resizeRemoved = removed.mock.calls.filter(([type]) => type === "resize").map(([, listener]) => listener);
     expect(resizeAdded.length).toBeGreaterThan(0);
     for (const listener of resizeAdded) expect(resizeRemoved).toContain(listener);
+  });
+
+  it("título inteiro na pausa: --hx-titulo-s é a escala do posicaoDoTitulo com as larguras medidas", async () => {
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__linha--1")) return 688;
+      if (this.classList.contains("hero-expansao__linha--2")) return 323;
+      return 0;
+    });
+    await mount();
+
+    // O jsdom não faz layout: a janela útil é a da window (1024 × 768).
+    const v = { w: window.innerWidth, h: window.innerHeight, emPe: false };
+    const { x, escala } = posicaoDoTitulo(v, [688, 323]);
+    expect(escala).toBeGreaterThan(0);
+    expect(escala).toBeLessThan(1);
+    expect(variavel("--hx-titulo-s")).toBe(String(escala));
+    expect(variavel("--hx-linha1-x")).toBe(`${x[0]}px`);
+    expect(variavel("--hx-linha2-x")).toBe(`${x[1]}px`);
+  });
+
+  it("uma metade do título que muda de largura (a fonte que carrega depois, o espaçamento do 1.4.12) mede de novo e segue a escala", async () => {
+    let largura1 = 600;
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__linha--1")) return largura1;
+      if (this.classList.contains("hero-expansao__linha--2")) return 323;
+      return 0;
+    });
+    // ResizeObserver que o teste dispara à mão (o jsdom não tem).
+    const observados = new Set<Element>();
+    let avisar: (() => void) | null = null;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          avisar = callback;
+        }
+        observe(el: Element) {
+          observados.add(el);
+        }
+        unobserve(el: Element) {
+          observados.delete(el);
+        }
+        disconnect() {
+          observados.clear();
+        }
+      },
+    );
+    const { unmount } = await mount();
+    expect([...observados].map((el) => el.className)).toEqual([
+      "hero-expansao__linha hero-expansao__linha--1",
+      "hero-expansao__linha hero-expansao__linha--2",
+    ]);
+    const v = { w: window.innerWidth, h: window.innerHeight, emPe: false };
+    expect(variavel("--hx-titulo-s")).toBe(String(posicaoDoTitulo(v, [600, 323]).escala));
+
+    largura1 = 688;
+    act(() => avisar?.());
+    frame();
+    expect(variavel("--hx-titulo-s")).toBe(String(posicaoDoTitulo(v, [688, 323]).escala));
+
+    unmount();
+    expect(observados.size).toBe(0);
+  });
+
+  it("sem largura medida, o título não escala (--hx-titulo-s 1)", async () => {
+    await mount();
+    expect(variavel("--hx-titulo-s")).toBe("1");
+  });
+
+  describe("a mídia coberta pela tela (o vídeo da sala pausa, M2 da revisão da fase 1)", () => {
+    it("descoberta em P = 0; coberta com k ≥ salaCobertaK (antes de P = 1), em P = 1 solto e em P = 1 recolhido", async () => {
+      await mount();
+      expect(coberta()).toBe("false");
+
+      // Trackpad (passos pequenos, diretos) até o limiar.
+      let passos = 0;
+      while (Number(variavel("--hx-k")) < ENTRADA.salaCobertaK) {
+        expect(coberta()).toBe("false");
+        wheel(30);
+        if (++passos > 400) throw new Error("não chegou ao limiar");
+      }
+      expect(hxp()).toBeLessThan(1);
+      expect(coberta()).toBe("true");
+
+      expandWithWheel();
+      expect(state()).toMatchObject({ expanded: "true", progress: "1.00" });
+      expect(coberta()).toBe("true");
+
+      // Recolhe: P fica em 1, a tela segue cobrindo a janela.
+      setScrollY(PALCO);
+      wheel(-100);
+      setScrollY(0);
+      expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+      expect(coberta()).toBe("true");
+
+      // Um clique para trás: k cai abaixo do limiar e a sala volta à vista.
+      wheel(-100);
+      settle();
+      expect(Number(variavel("--hx-k"))).toBeLessThan(ENTRADA.salaCobertaK);
+      expect(coberta()).toBe("false");
+    });
+
+    it("o movimento reduzido ligado com a mídia coberta a descobre (o estado parado é a pausa)", async () => {
+      await mount();
+      expandWithWheel();
+      expect(coberta()).toBe("true");
+
+      act(() => reducedMotion.set(true));
+      expect(coberta()).toBe("false");
+    });
+
+    it("no limiar: salaCobertaK é 0,98", () => {
+      expect(ENTRADA.salaCobertaK).toBe(0.98);
+    });
   });
 });

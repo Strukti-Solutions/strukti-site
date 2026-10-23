@@ -79,6 +79,46 @@ describe("<HeroNotebook />", () => {
     expect(section?.querySelector(".aparelho-cinza")).not.toBeNull();
   });
 
+  it("a mídia é a do siteConfig.heroNotebook, por enquadramento: o fundo e o pôster da mesa com o notebook, o retrato só em <source media>", async () => {
+    const { container } = await mount();
+    const { fundo, midia, midiaRetrato } = siteConfig.heroNotebook;
+    const retrato = "(orientation: portrait)";
+
+    const fundoImg = container.querySelector("img.hero-expansao__fundo-img");
+    expect(fundoImg?.getAttribute("src")).toBe(fundo.deitado.posterJpg);
+    const fundoSources = [...(fundoImg?.parentElement?.querySelectorAll("source") ?? [])].map((s) => [
+      s.getAttribute("media"),
+      s.getAttribute("srcset"),
+    ]);
+    expect(fundoSources).toEqual([
+      [retrato, fundo.retrato.posterAvif],
+      [retrato, fundo.retrato.posterJpg],
+      [null, fundo.deitado.posterAvif],
+    ]);
+
+    const poster = container.querySelector("img.hero-expansao__poster");
+    expect(poster?.getAttribute("src")).toBe(midia.posterJpg);
+    expect(poster?.getAttribute("fetchpriority")).toBe("high");
+    const posterSources = [...(poster?.parentElement?.querySelectorAll("source") ?? [])].map((s) => [
+      s.getAttribute("media"),
+      s.getAttribute("srcset"),
+    ]);
+    expect(posterSources).toEqual([
+      [retrato, midiaRetrato.posterAvif],
+      [retrato, midiaRetrato.posterJpg],
+      [null, midia.posterAvif],
+    ]);
+    // Nada do expansao, menos o fundo em pé (até a cena em pé ter o dela).
+    const urls = [...container.querySelectorAll("[src], [srcset]")].map(
+      (el) => el.getAttribute("src") ?? el.getAttribute("srcset"),
+    );
+    expect(urls.filter((url) => url?.includes("/hero/expansao/") && !url.includes("fundo-retrato"))).toEqual([]);
+    // Sem vídeo na configuração (só o pôster): o <video> fica, sem fonte.
+    const video = container.querySelector("video");
+    expect(video?.hasAttribute("src")).toBe(false);
+    expect(video?.querySelectorAll("source")).toHaveLength(0);
+  });
+
   it("no DOM, o controle do vídeo vem antes do bloco de chamada (o Tab chega ao controle primeiro)", async () => {
     const { container } = await mount();
     const controle = container.querySelector(".hero-expansao__controle");

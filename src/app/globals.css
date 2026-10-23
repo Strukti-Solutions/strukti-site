@@ -4494,12 +4494,13 @@ textarea.field__input {
   --hx-k: 0;
   --hx-quadro-w: 300px;
   --hx-quadro-h: 400px;
-  /* A tela no cartão: 200 px de largura (360 × 400/720), centrada, com o
-     centro 33 px acima do meio do palco. A escala é a de 1440 px de
-     largura (sem medir, o CSS não divide por uma largura). */
-  --hx-tela-s: 0.1389;
+  /* A tela no cartão: 164 px de largura (ENTRADA.aparelho.deitado,
+     295,2 × 400/720), centrada, com o centro 0,17 px acima do meio do palco.
+     A escala é a de 1440 px de largura (sem medir, o CSS não divide por uma
+     largura). O heroEntrada.test.ts confere estes números com a câmera. */
+  --hx-tela-s: 0.1139;
   --hx-tela-x: calc(50cqw * (1 - var(--hx-tela-s)));
-  --hx-tela-y: calc(var(--hx-palco-h) / 2 - 33.33px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
+  --hx-tela-y: calc(var(--hx-palco-h) / 2 - 0.17px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
   --hx-sala-z: 1;
   --hx-sala-ox: 50%;
   --hx-sala-oy: 50%;
@@ -4508,6 +4509,8 @@ textarea.field__input {
   --hx-sala-blur: 0px;
   --hx-linha1-x: 0px;
   --hx-linha2-x: 0px;
+  /* A escala das metades na pausa (posicaoDoTitulo): 1 até medir. */
+  --hx-titulo-s: 1;
   --hx-titulo-saida: 0;
   /* As caixas cinza do protótipo (a arte troca pelo vetor). */
   --aparelho-cinza-moldura: #4a505a;
@@ -4602,15 +4605,23 @@ textarea.field__input {
 
 /* As metades do título abrem até o lado da tela na pausa e, na
    aproximação, saem pelas bordas e somem. A data e a dica saem na
-   expansão, como no expansao. */
+   expansão, como no expansao. Na pausa, as duas encolhem por igual
+   (--hx-titulo-s, de 1 no cartão até a escala da pausa, com a expansão)
+   em volta da borda que encosta na tela: a direita da linha 1 e a
+   esquerda da linha 2 ficam a --hx-titulo-folga dela, e o resto cabe até a
+   borda da janela. */
 .hero-expansao--entrada .hero-expansao__linha--1 {
   opacity: calc(1 - var(--hx-titulo-saida));
-  transform: translateX(calc(var(--hx-e) * var(--hx-linha1-x) - var(--hx-titulo-saida) * 60vw));
+  transform-origin: 100% 50%;
+  transform: translateX(calc(var(--hx-e) * var(--hx-linha1-x) - var(--hx-titulo-saida) * 60vw))
+    scale(calc(1 - var(--hx-e) * (1 - var(--hx-titulo-s))));
 }
 
 .hero-expansao--entrada .hero-expansao__linha--2 {
   opacity: calc(1 - var(--hx-titulo-saida));
-  transform: translateX(calc(var(--hx-e) * var(--hx-linha2-x) + var(--hx-titulo-saida) * 60vw));
+  transform-origin: 0 50%;
+  transform: translateX(calc(var(--hx-e) * var(--hx-linha2-x) + var(--hx-titulo-saida) * 60vw))
+    scale(calc(1 - var(--hx-e) * (1 - var(--hx-titulo-s))));
 }
 
 .hero-expansao--entrada .hero-expansao__data {
@@ -4754,12 +4765,12 @@ textarea.field__input {
     --hx-k: 0 !important;
     --hx-quadro-w: 100cqw !important;
     --hx-quadro-h: var(--hx-palco-h) !important;
-    --hx-tela-s: 0.3125 !important;
+    --hx-tela-s: 0.25625 !important;
     --hx-tela-x: calc(50cqw * (1 - var(--hx-tela-s))) !important;
-    /* O centro da tela: 420/1280 da largura da mídia acima do pé do palco
-       (a mídia corta por baixo). */
+    /* O centro da tela: (720 − 359,7)/1280 da largura da mídia acima do pé
+       do palco (a mídia corta por baixo). */
     --hx-tela-y: calc(
-      var(--hx-palco-h) - 0.328125 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
+      var(--hx-palco-h) - 0.2814844 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
     ) !important;
     --hx-sala-z: 1 !important;
     --hx-sala-tx: 0px !important;
@@ -4778,6 +4789,8 @@ textarea.field__input {
       calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%),
       calc(50cqw - 50% - var(--gutter))
     ) !important;
+    /* Sem medir, sem escala: a linha que não cabe encosta no gutter. */
+    --hx-titulo-s: 1 !important;
     --hx-titulo-saida: 0 !important;
   }
 

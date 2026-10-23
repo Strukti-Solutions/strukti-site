@@ -146,10 +146,15 @@
  *   arrasto: o resto do gesto anda só o que o dedo andou depois. O
  *   `paint()` escreve a câmera (`camera()`) em variáveis CSS (`--hx-e`,
  *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x`,
- *   `--hx-linha2-x`, `--hx-titulo-saida`); a janela útil (largura da seção,
- *   altura do palco), a orientação (`data-orientacao`) e a largura das
+ *   `--hx-linha2-x`, `--hx-titulo-s`, `--hx-titulo-saida`); a janela útil
+ *   (largura da seção, altura do palco), a orientação (`data-orientacao`) e a largura das
  *   metades do título são medidas depois de montar e de novo a cada resize
- *   ou giro, e cada medida pede um quadro. O conteúdo é a tela do aparelho:
+ *   ou giro, e cada medida pede um quadro. A escala das metades na pausa
+ *   (`--hx-titulo-s`, fase 2 da arte, 23/10/2026) as deixa inteiras entre a
+ *   tela e a borda da janela. Com a tela cobrindo a sala (`k` a partir de
+ *   `ENTRADA.salaCobertaK`, e em P = 1 solto ou recolhido), a mídia recebe
+ *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
+ *   sala pausa. O conteúdo é a tela do aparelho:
  *   sempre à vista (`data-content` "visible"), no fluxo, logo abaixo do
  *   palco; o aparelho vai no quadro, `aria-hidden`. Liberação no topo da
  *   tela: no quadro em que o desenhado chega a 1, `data-expanded` vira
@@ -172,6 +177,7 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import { REDUCED_MOTION_QUERY, useCanAnimate } from "@/lib/motion";
 import { ENTRADA, camera, posicaoDoTitulo, quadro, type Viewport } from "@/lib/heroEntrada";
+import { MidiaCobertaContext } from "./midia-coberta";
 
 /** Roda: progresso por pixel de deltaY (original: 0,0009; ÷ 1,3, mais lenta). */
 const WHEEL_GAIN = 0.0007;
@@ -276,19 +282,24 @@ const VARIAVEIS_DA_CENA = [
   "--hx-quadro-h",
   "--hx-linha1-x",
   "--hx-linha2-x",
+  "--hx-titulo-s",
   "--hx-titulo-saida",
 ] as const;
 
 type Orientacao = "deitado" | "em-pe";
 
-/** Modo entrada: o que é medido depois de montar (a janela útil e a pose das metades do título na pausa). */
-type MedidaDaCena = { v: Viewport; linhas: [number, number] };
+/**
+ * Modo entrada: o que é medido depois de montar: a janela útil e a pose das
+ * metades do título na pausa (o deslocamento de cada uma e a escala das duas).
+ */
+type MedidaDaCena = { v: Viewport; titulo: ReturnType<typeof posicaoDoTitulo> };
 
 /**
  * Modo entrada: escreve a câmera em `p` nas variáveis da seção. A tela vai
  * pelo canto de cima à esquerda (o CSS a escala a partir dele) e a escala.
+ * Devolve o `k` (a aproximação, com a curva) da câmera escrita.
  */
-function pintarCena(section: HTMLElement, p: number, { v, linhas }: MedidaDaCena) {
+function pintarCena(section: HTMLElement, p: number, { v, titulo: pose }: MedidaDaCena) {
   const { e, k, tela, sala, titulo } = camera(p, v);
   const q = quadro(e, v);
   const px = (valor: number) => `${valor}px`;
@@ -306,11 +317,13 @@ function pintarCena(section: HTMLElement, p: number, { v, linhas }: MedidaDaCena
     "--hx-sala-blur": px(sala.blur),
     "--hx-quadro-w": px(q.w),
     "--hx-quadro-h": px(q.h),
-    "--hx-linha1-x": px(linhas[0]),
-    "--hx-linha2-x": px(linhas[1]),
+    "--hx-linha1-x": px(pose.x[0]),
+    "--hx-linha2-x": px(pose.x[1]),
+    "--hx-titulo-s": String(pose.escala),
     "--hx-titulo-saida": String(titulo.saida),
   };
   for (const nome of VARIAVEIS_DA_CENA) section.style.setProperty(nome, valores[nome]);
+  return k;
 }
 
 /** Progresso válido: de 0 a 1, arredondado na 6ª casa (sem a deriva do ponto flutuante). */
@@ -477,6 +490,17 @@ export function ScrollExpandMedia({
   const [contentShown, setContentShown] = useState(true);
   // Modo entrada: notebook ou celular, só depois de montar (o servidor não sabe).
   const [orientacao, setOrientacao] = useState<Orientacao>();
+  // Modo entrada: a tela cobre a sala (k ≥ ENTRADA.salaCobertaK)? Vai para a
+  // mídia pelo MidiaCobertaContext (o vídeo da sala pausa); o ref evita
+  // renderizar de novo a cada quadro.
+  const [midiaCoberta, setMidiaCoberta] = useState(false);
+  const midiaCobertaRef = useRef(false);
+
+  const marcarCoberta = useCallback((coberta: boolean) => {
+    if (midiaCobertaRef.current === coberta) return;
+    midiaCobertaRef.current = coberta;
+    setMidiaCoberta(coberta);
+  }, []);
 
   const paint = useCallback(() => {
     paintScheduled.current = false;
@@ -486,8 +510,11 @@ export function ScrollExpandMedia({
     section.style.setProperty("--hx-p", String(progress));
     // Duas casas; "1.00" só com a expansão completa.
     section.dataset.progress = (progress >= 1 ? 1 : Math.min(progress, 0.99)).toFixed(2);
-    if (entrada && medidaRef.current) pintarCena(section, progress, medidaRef.current);
-  }, [entrada]);
+    if (entrada && medidaRef.current) {
+      const k = pintarCena(section, progress, medidaRef.current);
+      marcarCoberta(k >= ENTRADA.salaCobertaK);
+    }
+  }, [entrada, marcarCoberta]);
 
   /** Pinta no próximo quadro (um só, por mais que se peça antes dele). */
   const schedulePaint = useCallback(() => {
@@ -594,8 +621,11 @@ export function ScrollExpandMedia({
   // Modo entrada: a janela útil (a largura da seção, sem a barra de rolagem
   // clássica, e a altura do palco), a orientação e a largura das metades do
   // título, medidas depois de montar (nada disso existe no servidor) e de
-  // novo a cada resize ou giro; cada medida pede um quadro. Mede também com
-  // o movimento reduzido: o `data-orientacao` vale para o estado parado.
+  // novo a cada resize ou giro e quando uma das metades muda de largura (a
+  // fonte que termina de carregar, o espaçamento de texto do usuário, o
+  // tamanho da fonte; com a largura muda a escala delas na pausa); cada
+  // medida pede um quadro. Mede também com o movimento reduzido: o
+  // `data-orientacao` vale para o estado parado.
   useEffect(() => {
     if (!entrada) return;
     const section = sectionRef.current;
@@ -611,19 +641,24 @@ export function ScrollExpandMedia({
         h: palco.clientHeight || window.innerHeight,
         emPe: emPeQuery?.matches === true,
       };
-      medidaRef.current = { v, linhas: posicaoDoTitulo(v, [largura(1), largura(2)]) };
+      medidaRef.current = { v, titulo: posicaoDoTitulo(v, [largura(1), largura(2)]) };
       setOrientacao(v.emPe ? "em-pe" : "deitado");
       schedulePaint();
     };
 
     medir();
     window.addEventListener("resize", medir);
+    // A caixa de layout das metades (o transform não conta). O jsdom e
+    // navegadores antigos não têm ResizeObserver.
+    const linhas = typeof ResizeObserver === "function" ? new ResizeObserver(medir) : null;
+    for (const linha of section.querySelectorAll(".hero-expansao__linha")) linhas?.observe(linha);
     // O `addListener` é o dos Safari antigos.
     if (typeof emPeQuery?.addEventListener === "function") emPeQuery.addEventListener("change", medir);
     else emPeQuery?.addListener?.(medir);
 
     return () => {
       window.removeEventListener("resize", medir);
+      linhas?.disconnect();
       if (typeof emPeQuery?.removeEventListener === "function") emPeQuery.removeEventListener("change", medir);
       else emPeQuery?.removeListener?.(medir);
       cancelPaint();
@@ -931,12 +966,13 @@ export function ScrollExpandMedia({
         cancelPaint();
         for (const nome of VARIAVEIS_DA_CENA) section.style.removeProperty(nome);
         section.dataset.expanded = "false";
+        marcarCoberta(false);
       }
       setArmed(false);
       setExpanded(false);
       setContentShown(true);
     };
-  }, [canAnimate, entrada, cancelPaint, draw, nudgeProgress, setProgress, stopSmooth, unexpand]);
+  }, [canAnimate, entrada, cancelPaint, draw, marcarCoberta, nudgeProgress, setProgress, stopSmooth, unexpand]);
 
   // Foco dentro do hero (Tab até um botão do conteúdo, leitor de tela):
   // completa a expansão, para nada focado ficar invisível. Ficam de fora o
@@ -985,7 +1021,7 @@ export function ScrollExpandMedia({
 
         <div className="hero-expansao__midia">
           <div className="hero-expansao__quadro" {...frameA11y}>
-            {media}
+            <MidiaCobertaContext.Provider value={midiaCoberta}>{media}</MidiaCobertaContext.Provider>
             <div className="hero-expansao__sombra" />
             {modoEntrada && (
               <div className="hero-expansao__aparelho" aria-hidden="true">

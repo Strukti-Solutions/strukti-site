@@ -71,6 +71,26 @@ describe('globals.css, bloco Hero "entrada"', () => {
     );
   });
 
+  it("na pausa, as metades do título escalam por --hx-titulo-s em volta da borda que encosta na tela", () => {
+    const corpo = (seletor: string) => {
+      const i = bloco.indexOf(`${seletor} {\n`);
+      expect(i, seletor).toBeGreaterThan(-1);
+      return bloco.slice(i, bloco.indexOf("}", i)).replace(/\s+/g, " ");
+    };
+    // A escala vem com a expansão (1 no cartão, --hx-titulo-s na pausa) e fica na aproximação.
+    const escala = "scale(calc(1 - var(--hx-e) * (1 - var(--hx-titulo-s))))";
+    const linha1 = corpo(".hero-expansao--entrada .hero-expansao__linha--1");
+    expect(linha1).toContain("transform-origin: 100% 50%;");
+    expect(linha1).toContain(escala);
+    const linha2 = corpo(".hero-expansao--entrada .hero-expansao__linha--2");
+    expect(linha2).toContain("transform-origin: 0 50%;");
+    expect(linha2).toContain(escala);
+    // Antes de medir, e no estado parado (sem medir), sem escala.
+    expect(corpo(".hero-expansao--entrada")).toContain("--hx-titulo-s: 1;");
+    const parado = bloco.slice(bloco.indexOf("@media (scripting: none), (prefers-reduced-motion: reduce) {"));
+    expect(parado.slice(0, parado.indexOf("\n}\n"))).toContain("--hx-titulo-s: 1 !important;");
+  });
+
   it("não usa 100vw (com a barra de rolagem clássica, passa da janela útil)", () => {
     expect(bloco).not.toContain("100vw");
   });

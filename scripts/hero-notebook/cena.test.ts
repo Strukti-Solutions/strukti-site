@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { ENTRADA } from "../../src/lib/heroEntrada";
 
 type Vec = [number, number, number];
 type Tela = {
@@ -109,6 +110,15 @@ describe("cena do hero notebook", () => {
     expect(geo.tela.cy).toBeCloseTo(t.cy, 1);
     expect(geo.tela.largura).toBeCloseTo(t.largura, 1);
     expect(geo.tela.altura).toBeCloseTo(t.altura, 1);
+  });
+
+  it("o ENTRADA.aparelho.deitado do site é o retângulo da tela na mídia (com 0,1 px)", () => {
+    const t = cena.telaDoNotebook("media");
+    const { deitado } = ENTRADA.aparelho;
+    expect(Math.abs(deitado.cx - t.cx)).toBeLessThanOrEqual(0.1);
+    expect(Math.abs(deitado.cy - t.cy)).toBeLessThanOrEqual(0.1);
+    expect(Math.abs(deitado.largura - t.largura)).toBeLessThanOrEqual(0.1);
+    expect(ENTRADA.midia.deitado).toMatchObject({ w: cena.CAMS.media?.W, h: cena.CAMS.media?.H });
   });
 
   describe("composição na mídia e no fundo largo (ajuste de arte 1)", () => {

@@ -130,6 +130,70 @@ const FIM_DE_EXPEDIENTE: HeroExpansaoMedia = {
   },
 };
 
+/**
+ * Um quadro da mídia do hero "notebook": a imagem parada (o pôster, AVIF com
+ * JPG de reserva) e, se houver, o loop mudo (WebM VP9 e MP4 H.264), do mesmo
+ * 1º quadro. Sem `webm` nem `mp4`, não há vídeo: fica só o pôster.
+ */
+export interface HeroNotebookQuadro {
+  webm?: string;
+  mp4?: string;
+  posterAvif: string;
+  posterJpg: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Mídia do hero "notebook" (spec 2026-10-23-hero-entrada-notebook-design.md,
+ * §6; produção em scripts/hero-notebook/), servida de public/hero/notebook/,
+ * nunca de CDN. Cada enquadramento tem a sua (Q26: em pé é
+ * `(orientation: portrait)`), e o navegador só baixa a do enquadramento
+ * atual. Os nomes e tamanhos são fixos (o heroNotebook.assets.test.ts
+ * confere os arquivos e os limites).
+ */
+export interface HeroNotebookMedia {
+  /** Fundo decorativo, visto em volta do cartão em P = 0 (com o aparelho renderizado). */
+  fundo: { deitado: HeroNotebookQuadro; retrato: HeroNotebookQuadro };
+  /** A sala que a câmera atravessa, sem o aparelho da frente (ele é vetor por cima), deitada. */
+  midia: HeroNotebookQuadro;
+  /** A mesma, em pé. */
+  midiaRetrato: HeroNotebookQuadro;
+}
+
+/*
+ * A mesa com o notebook aberto no centro: o mesmo mundo do "Fim de
+ * expediente", produção própria. Por enquanto, só as imagens paradas da
+ * cena deitada (o loop vem depois). Até a cena em pé ter mídia própria, o
+ * retrato mostra a mídia deitada e o fundo em pé do expansao (public/hero/
+ * expansao/, sem cópia).
+ */
+const MESA_COM_NOTEBOOK_MIDIA: HeroNotebookQuadro = {
+  posterAvif: "/hero/notebook/midia-poster.avif",
+  posterJpg: "/hero/notebook/midia-poster.jpg",
+  width: 1280,
+  height: 720,
+};
+
+const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
+  fundo: {
+    deitado: {
+      posterAvif: "/hero/notebook/fundo.avif",
+      posterJpg: "/hero/notebook/fundo.jpg",
+      width: 1920,
+      height: 1080,
+    },
+    retrato: {
+      posterAvif: "/hero/expansao/fundo-retrato.avif",
+      posterJpg: "/hero/expansao/fundo-retrato.jpg",
+      width: 1080,
+      height: 1920,
+    },
+  },
+  midia: MESA_COM_NOTEBOOK_MIDIA,
+  midiaRetrato: MESA_COM_NOTEBOOK_MIDIA,
+};
+
 /*
  * "Rota ao entardecer": "Aerial Footage of Truck on the Road", de K (Pexels),
  * https://www.pexels.com/video/aerial-footage-of-truck-on-the-road-9339061/
@@ -160,6 +224,7 @@ export const siteConfig = {
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
   heroExpansao: FIM_DE_EXPEDIENTE,
+  heroNotebook: MESA_COM_NOTEBOOK,
   heroSequence: {
     desktop: { frames: 90, width: 1600, height: 1000 },
     celular: { frames: 45, width: 800, height: 900 },
