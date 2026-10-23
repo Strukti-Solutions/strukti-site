@@ -33,14 +33,36 @@
  * SOFTWARE.
  *
  * Adaptado ao projeto (MASTER §9.8). A animação para quem usa roda ou toque é
- * a do original, com os mesmos números: progresso p de 0 a 1; a roda soma
- * deltaY × 0,0009; o toque soma deltaY × 0,005 para expandir e × 0,008 para
- * recolher; expandido, roda para cima (ou arrasto de mais de 20 px para
- * baixo) com scrollY ≤ 5 recolhe; o conteúdo aparece em p = 1 e some abaixo
- * de 0,75; o quadro vai de 300 × 400 a 1550 × 800 px (950 × 600 abaixo de
+ * a do original, com os números dele menos os ganhos (ver "Mais lenta" e
+ * "Roda de mouse suave" abaixo): progresso p de 0 a 1; a roda soma deltaY ×
+ * 0,0007 (o original: 0,0009); o toque soma deltaY × 0,0039 para expandir e
+ * × 0,0062 para recolher (o original: 0,005 e 0,008); expandido, roda para
+ * cima (ou arrasto de mais de 20 px para baixo) com scrollY ≤ 5 recolhe; o
+ * conteúdo aparece em p = 1 e some abaixo de 0,75; o quadro vai de 300 × 400 a 1550 × 800 px (950 × 600 abaixo de
  * 768 px), até 95vw × 85vh (e nunca sob a barra fixa, ver abaixo); o fundo
  * some (1 − p); o título e as legendas se abrem p × 150vw (180vw abaixo de
  * 768 px). Mudanças:
+ * - Mais lenta (23/10/2026, a pedido do dono, para o hero durar mais na
+ *   tela): os ganhos da roda e do toque divididos por 1,3, ~30% mais rolagem
+ *   para expandir em todos os meios: 1429 px de roda em vez de 1111 (15
+ *   cliques de 100 px em vez de 12), 256 px de arrasto em vez de 200. O
+ *   recolher do toque segue 1,6 × mais rápido que o expandir, como no
+ *   original. O teclado não mudou (seta 0,1, página 0,34): são passos
+ *   discretos, com transição, e já pedem 10 setas ou 3 páginas.
+ * - Roda de mouse suave (23/10/2026): um clique de roda (deltaY de ~100 px)
+ *   pulava 9 a 11% do progresso num quadro só, enquanto o trackpad e o toque
+ *   mandam passos pequenos e já pareciam contínuos. O clique agora move um
+ *   progresso-alvo, e um requestAnimationFrame leva o progresso desenhado
+ *   até ele por suavização exponencial no tempo (fator 1 − e^(−dt/τ), τ =
+ *   120 ms: ~2/3 do caminho em 120 ms e 95% em 360 ms, perto do que a
+ *   rolagem suave do navegador faz com um clique, e curto o bastante para
+ *   uma roda girada depressa, com cliques a cada 30 a 80 ms, virar um
+ *   movimento só). Cada clique novo redireciona do ponto atual. Trackpad e
+ *   toque seguem diretos, somando ao desenhado e ao alvo ao mesmo tempo (sem
+ *   salto ao alternar no meio de uma animação). Expandir (e soltar a
+ *   página), mostrar e esconder o conteúdo seguem o desenhado, não o alvo:
+ *   a página não rola com o quadro ainda crescendo. Teclado e saltos ("key"
+ *   e "auto", com a transição do CSS) cancelam a animação da roda.
  * - Sem framer-motion (ADR-002) e sem motion: tudo o que mudava com p virou
  *   CSS. O p vai para a propriedade `--hx-p` da seção, escrita num
  *   requestAnimationFrame (com `data-progress`, 2 casas), e as fórmulas do
@@ -115,11 +137,32 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import { REDUCED_MOTION_QUERY, useCanAnimate } from "@/lib/motion";
 
-/** Roda: progresso por pixel de deltaY (original: 0,0009). */
-const WHEEL_GAIN = 0.0009;
-/** Toque: progresso por pixel arrastado para expandir e para recolher (original). */
-const TOUCH_GAIN_FORWARD = 0.005;
-const TOUCH_GAIN_BACK = 0.008;
+/** Roda: progresso por pixel de deltaY (original: 0,0009; ÷ 1,3, mais lenta). */
+const WHEEL_GAIN = 0.0007;
+/** Toque: progresso por pixel arrastado para expandir e para recolher (original: 0,005 e 0,008; ÷ 1,3). */
+const TOUCH_GAIN_FORWARD = 0.0039;
+const TOUCH_GAIN_BACK = 0.0062;
+/**
+ * Roda de mouse: um passo de |deltaY| a partir disto (em px) é um clique, e
+ * anima; abaixo, é trackpad, e anda na hora. Chrome e Edge mandam 100 a 120
+ * px por clique (mais com escala de tela), o Firefox manda linhas (deltaMode
+ * 1, ver `isWheelNotch`); o trackpad manda muitos passos de 1 a ~30 px. Um
+ * arremesso rápido no trackpad pode passar de 40 px e ganhar a suavização:
+ * só um atraso curto, sem salto.
+ */
+const WHEEL_NOTCH_PX = 40;
+/** Roda de mouse: constante de tempo da suavização (o desenhado anda 1 − e^(−dt/τ) do que falta). */
+const WHEEL_SMOOTH_TAU_MS = 120;
+/**
+ * Mais perto do alvo do que isto, o desenhado encosta nele e a animação para
+ * (0,004 ≈ 5 px de crescimento, invisível). Encurta a cauda exponencial: de
+ * 0,99 a 1 são ~110 ms, e não ~360 ms com a página presa e o quadro já pronto.
+ */
+const WHEEL_SMOOTH_SNAP = 0.004;
+/** O 1º quadro de uma animação (sem quadro anterior para medir) vale 1/60 s. */
+const FIRST_FRAME_MS = 1000 / 60;
+/** Um quadro mais longo do que isso (aba em segundo plano, engasgo) conta só isto. */
+const MAX_FRAME_MS = 100;
 /** O conteúdo aparece em p = 1 e some abaixo disto (original). */
 const CONTENT_HIDE_BELOW = 0.75;
 /** "No topo", para recolher (original: scrollY ≤ 5). */
@@ -164,6 +207,21 @@ const OPEN_MENU_SELECTOR = ".topbar[data-open='true'] .topbar__nav";
 
 /** Fica de fora do "foco completa a expansão": o controle do vídeo. */
 const CONTROL_SELECTOR = ".hero-expansao__controle";
+
+/** Progresso válido: de 0 a 1, arredondado na 6ª casa (sem a deriva do ponto flutuante). */
+function clampProgress(value: number) {
+  // 10 × 0,1 dá 0,999…, e a 10ª seta não expandiria. Imperceptível na roda e no toque.
+  return Math.min(Math.max(Math.round(value * 1e6) / 1e6, 0), 1);
+}
+
+/**
+ * Clique de roda de mouse (anda em degraus, e anima) ou passo de trackpad
+ * (contínuo, direto)? Em linhas ou páginas (`deltaMode` 1 ou 2: o Firefox
+ * com mouse) é clique; em pixels, a partir de `WHEEL_NOTCH_PX`.
+ */
+function isWheelNotch(deltaMode: number, deltaYPx: number) {
+  return deltaMode !== 0 || Math.abs(deltaYPx) >= WHEEL_NOTCH_PX;
+}
 
 /** O alvo da âncora da URL (ex.: /#contato) existe e fica fora do hero? */
 function hashTargetOutside(section: HTMLElement) {
@@ -264,7 +322,13 @@ export function ScrollExpandMedia({
 }: ScrollExpandMediaProps) {
   const canAnimate = useCanAnimate();
   const sectionRef = useRef<HTMLElement>(null);
+  // O progresso desenhado (o que está no --hx-p e manda nos estados) e o
+  // alvo da roda de mouse, que o desenhado persegue. Parados, são iguais.
   const progressRef = useRef(0);
+  const targetRef = useRef(0);
+  // A animação da roda de mouse: o quadro pedido e a hora do último.
+  const smoothFrameRef = useRef<number | null>(null);
+  const smoothLastTimeRef = useRef<number | null>(null);
   const armedRef = useRef(false);
   const expandedRef = useRef(false);
   const touchStartRef = useRef<number | null>(null);
@@ -287,19 +351,22 @@ export function ScrollExpandMedia({
     section.dataset.progress = (progress >= 1 ? 1 : Math.min(progress, 0.99)).toFixed(2);
   }, []);
 
-  const setProgress = useCallback(
-    (next: number, input: ProgressInput) => {
-      const section = sectionRef.current;
-      if (section) section.dataset.input = input;
-      // Arredondado na 6ª casa: sem a deriva do ponto flutuante (10 × 0,1 dá
-      // 0,999…, e a 10ª seta não expandiria). Imperceptível na roda e no toque.
-      const progress = Math.min(Math.max(Math.round(next * 1e6) / 1e6, 0), 1);
+  /**
+   * Muda o progresso desenhado: pinta (no próximo quadro, ou já, de dentro
+   * de um) e faz os efeitos de estado, que seguem o desenhado. Em p = 1 o
+   * alvo também vai a 1: expandido, nada mais puxa o quadro de volta.
+   */
+  const draw = useCallback(
+    (next: number, paintNow = false) => {
+      const progress = clampProgress(next);
       progressRef.current = progress;
-      if (!paintScheduled.current) {
+      if (paintNow) paint();
+      else if (!paintScheduled.current) {
         paintScheduled.current = true;
         requestAnimationFrame(paint);
       }
       if (progress >= 1) {
+        targetRef.current = 1;
         if (!expandedRef.current) {
           expandedRef.current = true;
           setExpanded(true);
@@ -310,6 +377,41 @@ export function ScrollExpandMedia({
       }
     },
     [paint],
+  );
+
+  /** Para a animação da roda de mouse (o desenhado fica onde está). */
+  const stopSmooth = useCallback(() => {
+    if (smoothFrameRef.current !== null) cancelAnimationFrame(smoothFrameRef.current);
+    smoothFrameRef.current = null;
+    smoothLastTimeRef.current = null;
+  }, []);
+
+  /** Teclado e saltos: desenhado e alvo vão juntos ao valor (a transição é do CSS). */
+  const setProgress = useCallback(
+    (next: number, input: Extract<ProgressInput, "key" | "auto">) => {
+      stopSmooth();
+      const section = sectionRef.current;
+      if (section) section.dataset.input = input;
+      const progress = clampProgress(next);
+      targetRef.current = progress;
+      draw(progress);
+    },
+    [draw, stopSmooth],
+  );
+
+  /**
+   * Trackpad e toque: soma na hora ao desenhado e ao alvo. Parado, é o
+   * passo direto; no meio de uma animação da roda, o que faltava continua
+   * faltando (sem salto e sem atraso).
+   */
+  const nudgeProgress = useCallback(
+    (delta: number, input: Extract<ProgressInput, "wheel" | "touch">) => {
+      const section = sectionRef.current;
+      if (section) section.dataset.input = input;
+      targetRef.current = clampProgress(targetRef.current + delta);
+      draw(progressRef.current + delta);
+    },
+    [draw],
   );
 
   /** Recolhe (o progresso fica em 1 até a próxima roda, como no original). */
@@ -335,6 +437,31 @@ export function ScrollExpandMedia({
     // A roda e o touchmove (não passivos) estão na window?
     let holding = false;
 
+    /** Um quadro da animação da roda de mouse: anda 1 − e^(−dt/τ) do que falta. */
+    const smoothStep = (time: number) => {
+      smoothFrameRef.current = null;
+      if (!armedRef.current) {
+        smoothLastTimeRef.current = null;
+        return;
+      }
+      const last = smoothLastTimeRef.current;
+      const dt = last === null ? FIRST_FRAME_MS : Math.min(Math.max(time - last, 0), MAX_FRAME_MS);
+      smoothLastTimeRef.current = time;
+      const target = targetRef.current;
+      const gap = target - progressRef.current;
+      const factor = 1 - Math.exp(-dt / WHEEL_SMOOTH_TAU_MS);
+      draw(Math.abs(gap) <= WHEEL_SMOOTH_SNAP ? target : progressRef.current + gap * factor, true);
+      if (progressRef.current === targetRef.current) smoothLastTimeRef.current = null;
+      else smoothFrameRef.current = requestAnimationFrame(smoothStep);
+    };
+
+    /** Clique de roda de mouse: move o alvo; o desenhado segue do ponto em que está. */
+    const aimProgress = (delta: number) => {
+      section.dataset.input = "wheel";
+      targetRef.current = clampProgress(targetRef.current + delta);
+      if (smoothFrameRef.current === null) smoothFrameRef.current = requestAnimationFrame(smoothStep);
+    };
+
     armedRef.current = true;
     expandedRef.current = false;
     setArmed(true);
@@ -345,7 +472,8 @@ export function ScrollExpandMedia({
       const deltaY = event.deltaY;
       // Só de lado (o gesto de voltar e avançar do trackpad) ou zoom: é do navegador.
       if (deltaY === 0 || event.ctrlKey || insideOpenMenu(event.target) || motionReduced() || pageZoomed()) return;
-      const scale = event.deltaMode === 1 ? WHEEL_LINE_PX : event.deltaMode === 2 ? window.innerHeight : 1;
+      const deltaMode = event.deltaMode;
+      const scale = deltaMode === 1 ? WHEEL_LINE_PX : deltaMode === 2 ? window.innerHeight : 1;
       const delta = deltaY * scale;
       if (expandedRef.current) {
         if (delta < 0 && window.scrollY <= TOP_SLOP_PX) {
@@ -354,8 +482,11 @@ export function ScrollExpandMedia({
         }
         return;
       }
+      // Segura até o desenhado chegar a 1 (expandedRef): com o quadro ainda
+      // crescendo para o alvo, a página não rola.
       if (event.cancelable) event.preventDefault();
-      setProgress(progressRef.current + delta * WHEEL_GAIN, "wheel");
+      if (isWheelNotch(deltaMode, delta)) aimProgress(delta * WHEEL_GAIN);
+      else nudgeProgress(delta * WHEEL_GAIN, "wheel");
     };
 
     /** Conta os dedos; com dois ou mais (pinça), a rolagem fica com o navegador por um tempo. */
@@ -385,7 +516,7 @@ export function ScrollExpandMedia({
         return;
       }
       if (event.cancelable) event.preventDefault();
-      setProgress(progressRef.current + delta * (delta < 0 ? TOUCH_GAIN_BACK : TOUCH_GAIN_FORWARD), "touch");
+      nudgeProgress(delta * (delta < 0 ? TOUCH_GAIN_BACK : TOUCH_GAIN_FORWARD), "touch");
       touchStartRef.current = touch.clientY;
     };
 
@@ -408,7 +539,8 @@ export function ScrollExpandMedia({
         return;
       }
       event.preventDefault();
-      setProgress(step === Infinity ? 1 : step === -Infinity ? 0 : progressRef.current + step, "key");
+      // Do alvo: no meio de uma animação da roda, a tecla parte de onde ela ia.
+      setProgress(step === Infinity ? 1 : step === -Infinity ? 0 : targetRef.current + step, "key");
     };
 
     /**
@@ -464,9 +596,11 @@ export function ScrollExpandMedia({
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("hashchange", onHashChange);
       // De volta ao estado parado (ex.: a pessoa ligou o reduced motion).
+      stopSmooth();
       armedRef.current = false;
       expandedRef.current = false;
       progressRef.current = 0;
+      targetRef.current = 0;
       touchStartRef.current = null;
       section.style.removeProperty("--hx-p");
       section.dataset.progress = "0.00";
@@ -475,7 +609,7 @@ export function ScrollExpandMedia({
       setExpanded(false);
       setContentShown(true);
     };
-  }, [canAnimate, setProgress, unexpand]);
+  }, [canAnimate, draw, nudgeProgress, setProgress, stopSmooth, unexpand]);
 
   // Foco dentro do hero (Tab até um botão do conteúdo, leitor de tela):
   // completa a expansão, para nada focado ficar invisível. Ficam de fora o
