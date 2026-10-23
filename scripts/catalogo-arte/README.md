@@ -53,9 +53,22 @@ também fora.
   com crf 11, como no hero (acima de 12 o grão some e o céu fica liso, com
   faixas). JPG em q 2 (o padrão): no q 3 o grão da metade escura some.
   Confere o orçamento da §6.1 e sai com 1 se estourar.
+- `loop.js <receita.js>`: compõe o loop de 5 s de um dos 3 reais a partir de
+  passes ("placas"), como o `composite2.js` do hero, mas em Node e em ponto
+  flutuante: cada quadro é o cartão mais deltas periódicos que valem 0 em
+  t = 0, arredondados uma vez só. Confere que o quadro 0 é o cartão byte a
+  byte (sai com 1 se não for) e grava `plates/master.mkv` (ffv1, sem perda,
+  800 × 1200, 125 quadros). O tempo é periódico em 125 quadros: a emenda
+  124 → 0 é um passo como os outros. A receita é o `loop.js` de cada cena
+  (placas, `preparar` e `quadro`; ver o README dela).
 - `encode.sh <master.mkv> <pasta> <crf-mp4> <crf-webm>`: o loop dos 3 reais
   (600 × 900, 25 fps, 125 quadros), `cartao-loop.mp4` e `.webm`, até 600 KB
-  cada. É usado na Task A5.
+  cada. Os publicados usam 18 / 12 (no VP9 de 16 para cima voltam os quadros
+  repetidos, como no hero).
+- `vqa.sh <vídeo> <tag> [recorte] [cartao.png]`: o `vqa.sh` do hero para 125
+  quadros. PSNR de cada par de quadros seguidos (inteiro e no recorte do
+  movimento), pares idênticos, pior passo e mediana, a emenda 124 → 0 (≥ 45 dB)
+  e o quadro 0 contra o cartão reduzido a 600 × 900. Grava em `qa/`.
 - `sondas.js <pasta-da-cena> [cartao.png]`: a caixa do objeto principal (entre
   15% e 60% da altura), a luminância p90 da metade de baixo (até 60, de 0 a 255,
   o critério da faixa do título do hero) e a média dos cantos (até a do
