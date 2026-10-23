@@ -4463,6 +4463,393 @@ textarea.field__input {
 }
 
 /* ------------------------------------------------------------------ */
+/* Hero "entrada" (protótipo)                                          */
+/* ------------------------------------------------------------------ */
+/* O modo entrada do ScrollExpandMedia (o hero "notebook", spec
+   2026-10-23-hero-entrada-notebook-design.md): a expansão de cima, uma
+   pausa e a aproximação até a tela do aparelho, que é o bloco de chamada
+   (.hero-expansao__conteudo). Só vale com o modificador
+   .hero-expansao--entrada; o hero "expansao" de produção não muda.
+
+   O paint() escreve a câmera em px (src/lib/heroEntrada.ts): --hx-e (a
+   expansão, 0 a 1), --hx-k (a aproximação, com a curva), o quadro
+   (--hx-quadro-w/-h), a tela (--hx-tela-x/-y, o canto de cima à esquerda
+   na janela útil, e --hx-tela-s, a escala), a sala (--hx-sala-*) e as
+   metades do título (--hx-linha1-x/-2-x e --hx-titulo-saida). Aqui elas
+   viram transform, opacity e filter.
+
+   Os valores padrão são o cartão de 300 × 400 (p = 0): com JavaScript,
+   antes de montar, nada salta ao armar. Sem JavaScript e com reduced
+   motion vale a pose da pausa, só com CSS (ver o estado parado). As
+   larguras vêm do palco (cqw: sem a barra de rolagem clássica). A altura
+   do hero não muda entre os estados. */
+.hero-expansao--entrada {
+  /* A altura do palco (a da janela útil, para o paint()). */
+  --hx-palco-h: 100vh;
+  /* A largura da mídia da sala com cover (1280 × 720) no palco inteiro. */
+  --hx-midia-largura: max(100cqw, var(--hx-palco-h) * 16 / 9);
+  /* ENTRADA.tituloFolga: das metades do título até a borda da tela. */
+  --hx-titulo-folga: 24px;
+  --hx-e: 0;
+  --hx-k: 0;
+  --hx-quadro-w: 300px;
+  --hx-quadro-h: 400px;
+  /* A tela no cartão: 200 px de largura (360 × 400/720), centrada, com o
+     centro 33 px acima do meio do palco. A escala é a de 1440 px de
+     largura (sem medir, o CSS não divide por uma largura). */
+  --hx-tela-s: 0.1389;
+  --hx-tela-x: calc(50cqw * (1 - var(--hx-tela-s)));
+  --hx-tela-y: calc(var(--hx-palco-h) / 2 - 33.33px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
+  --hx-sala-z: 1;
+  --hx-sala-ox: 50%;
+  --hx-sala-oy: 50%;
+  --hx-sala-tx: 0px;
+  --hx-sala-ty: 0px;
+  --hx-sala-blur: 0px;
+  --hx-linha1-x: 0px;
+  --hx-linha2-x: 0px;
+  --hx-titulo-saida: 0;
+  /* As caixas cinza do protótipo (a arte troca pelo vetor). */
+  --aparelho-cinza-moldura: #4a505a;
+  --aparelho-cinza-base: #6b717c;
+}
+
+@supports (height: 1svh) {
+  .hero-expansao--entrada {
+    --hx-palco-h: 100svh;
+  }
+}
+
+/* Em pé (Q26), o celular: a tela no cartão tem 67 px (120 × 400/720), com
+   o centro 17 px acima do meio do palco; a escala é a de 390 px. */
+@media (orientation: portrait) {
+  .hero-expansao--entrada {
+    --hx-tela-s: 0.1709;
+    --hx-tela-y: calc(var(--hx-palco-h) / 2 - 16.67px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
+  }
+}
+
+/* O palco corta tudo o que amplia (sala, aparelho, título): a página não
+   ganha área de rolagem durante a cena. */
+.hero-expansao--entrada .hero-expansao__palco {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* O quadro vai do cartão ao palco inteiro (o paint() manda o tamanho),
+   sem os limites do expansao, e perde o raio e a sombra com a expansão. */
+.hero-expansao--entrada .hero-expansao__midia {
+  width: var(--hx-quadro-w);
+  height: var(--hx-quadro-h);
+  max-width: none;
+  max-height: none;
+  border-radius: calc(16px * (1 - var(--hx-e)));
+  box-shadow: 0 0 50px rgb(0 0 0 / calc(0.3 * (1 - var(--hx-e))));
+}
+
+/* As legendas seguem o quadro novo (o expansao repete a conta do --hx-p). */
+.hero-expansao--entrada .hero-expansao__legendas {
+  translate: calc(var(--hx-quadro-w) / 2 - 50%) calc(var(--hx-quadro-h) + var(--hx-legendas-gap));
+}
+
+.hero-expansao--entrada .hero-expansao__fundo {
+  opacity: calc(1 - var(--hx-e));
+}
+
+/* A sombra clareia na expansão e volta um pouco na aproximação (a sala
+   escurece, §4). */
+.hero-expansao--entrada .hero-expansao__sombra {
+  opacity: calc(0.5 - var(--hx-e) * 0.3 + var(--hx-k) * 0.3);
+}
+
+/* A sala amplia e desfoca em volta da tela da pausa, presa ao quadro (que
+   corta: nada vaza). */
+.hero-expansao--entrada :is(.hero-expansao__poster, .hero-expansao__video) {
+  transform-origin: var(--hx-sala-ox) var(--hx-sala-oy);
+  transform: translate(var(--hx-sala-tx), var(--hx-sala-ty)) scale(var(--hx-sala-z));
+  filter: blur(var(--hx-sala-blur));
+}
+
+/* O aparelho: uma caixa do tamanho do palco, escalada como a tela e posta
+   no mesmo retângulo dela. Ele fica no quadro (o canto do quadro está a
+   meia sobra do palco), entre a sala e a tela. */
+.hero-expansao--entrada .hero-expansao__aparelho {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100cqw;
+  height: var(--hx-palco-h);
+  transform-origin: 0 0;
+  transform: translate(
+      calc(var(--hx-tela-x) - (100cqw - var(--hx-quadro-w)) / 2),
+      calc(var(--hx-tela-y) - (var(--hx-palco-h) - var(--hx-quadro-h)) / 2)
+    )
+    scale(var(--hx-tela-s));
+  pointer-events: none;
+}
+
+/* Empilhamento (sem contexto novo no palco): sala 1 e aparelho 2 no
+   quadro, a tela 3, o título 4 ("mais perto da câmera"), o controle 5; a
+   barra do topo segue com 50. */
+.hero-expansao--entrada .hero-expansao__titulo {
+  z-index: 4;
+}
+
+.hero-expansao--entrada .hero-expansao__controle {
+  z-index: 5;
+}
+
+/* As metades do título abrem até o lado da tela na pausa e, na
+   aproximação, saem pelas bordas e somem. A data e a dica saem na
+   expansão, como no expansao. */
+.hero-expansao--entrada .hero-expansao__linha--1 {
+  opacity: calc(1 - var(--hx-titulo-saida));
+  transform: translateX(calc(var(--hx-e) * var(--hx-linha1-x) - var(--hx-titulo-saida) * 60vw));
+}
+
+.hero-expansao--entrada .hero-expansao__linha--2 {
+  opacity: calc(1 - var(--hx-titulo-saida));
+  transform: translateX(calc(var(--hx-e) * var(--hx-linha2-x) + var(--hx-titulo-saida) * 60vw));
+}
+
+.hero-expansao--entrada .hero-expansao__data {
+  transform: translateX(calc(var(--hx-e) * -1 * var(--hx-desliza)));
+}
+
+.hero-expansao--entrada .hero-expansao__dica {
+  transform: translateX(calc(var(--hx-e) * var(--hx-desliza)));
+}
+
+/* A tela: o bloco de chamada numa janela inteira, no fluxo logo abaixo do
+   palco, com o conteúdo centrado e o fundo da página. O padding de cima
+   do expansao passa para a .container, nos dois lados. */
+.hero-expansao--entrada .hero-expansao__conteudo {
+  z-index: 3;
+  display: grid;
+  align-content: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-top: 0;
+  background-color: var(--surface);
+}
+
+.hero-expansao--entrada .hero-expansao__conteudo > .container {
+  padding-block: clamp(var(--space-7), 6vw, var(--space-9));
+}
+
+/* Armada, a tela vai da sua posição no fluxo (o pé do palco) ao retângulo
+   da câmera. O data-progress="1.00" cobre o quadro em que a página volta
+   ao topo antes de o React escrever data-pin: a tela continua na cena. */
+.hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]) .hero-expansao__conteudo {
+  transform-origin: 0 0;
+  transform: translate(var(--hx-tela-x), calc(var(--hx-tela-y) - var(--hx-palco-h))) scale(var(--hx-tela-s));
+}
+
+/* Expandida, é a página (data-expanded vira "true" no mesmo quadro em que
+   a página rola até o topo da tela). */
+.hero-expansao--entrada[data-expanded="true"] .hero-expansao__conteudo {
+  transform: none;
+}
+
+/* Até a entrada terminar, o clique cai na cena (Q21); o foco pelo Tab não
+   depende disso e completa a entrada. */
+.hero-expansao--entrada[data-pin="true"]:not([data-progress="1.00"]) .hero-expansao__conteudo {
+  pointer-events: none;
+}
+
+/* O aparelho cinza (src/components/sections/AparelhoCinza.tsx). A caixa de
+   cada um é o retângulo da tela; a moldura é uma borda por fora dele, e o
+   miolo fica vazio (a tela de verdade vem por cima). As medidas são da
+   caixa sem escala (cqw é a largura do palco), então crescem com ela. */
+.hero-expansao--entrada :is(.aparelho-cinza, .aparelho-cinza__notebook, .aparelho-cinza__celular) {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-expansao--entrada .aparelho-cinza__celular {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  .hero-expansao--entrada .aparelho-cinza__notebook {
+    display: none;
+  }
+
+  .hero-expansao--entrada .aparelho-cinza__celular {
+    display: block;
+  }
+}
+
+/* Notebook: a tampa (moldura com o queixo mais alto) e, abaixo dela, a
+   base com o teclado em leve perspectiva (mais larga na frente). */
+.hero-expansao--entrada .aparelho-cinza__tampa {
+  --aparelho-cinza-borda: 2.5cqw;
+  position: absolute;
+  inset: calc(-1 * var(--aparelho-cinza-borda)) calc(-1 * var(--aparelho-cinza-borda))
+    calc(-1.8 * var(--aparelho-cinza-borda));
+  border: var(--aparelho-cinza-borda) solid var(--aparelho-cinza-moldura);
+  border-bottom-width: calc(1.8 * var(--aparelho-cinza-borda));
+  border-radius: var(--aparelho-cinza-borda);
+}
+
+.hero-expansao--entrada .aparelho-cinza__base {
+  position: absolute;
+  top: calc(100% + 4.5cqw);
+  right: -10%;
+  left: -10%;
+  height: 9%;
+  border-top: 0.6cqw solid var(--aparelho-cinza-moldura);
+  border-radius: 0 0 1.5cqw 1.5cqw;
+  background-color: var(--aparelho-cinza-base);
+  clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+}
+
+/* Celular: o corpo (moldura mais alta em cima e embaixo) de pé num
+   suporte, cujo pé aparece abaixo dele. */
+.hero-expansao--entrada .aparelho-cinza__corpo {
+  --aparelho-cinza-borda: 4cqw;
+  position: absolute;
+  inset: calc(-1.8 * var(--aparelho-cinza-borda)) calc(-1 * var(--aparelho-cinza-borda));
+  border: var(--aparelho-cinza-borda) solid var(--aparelho-cinza-moldura);
+  border-block-width: calc(1.8 * var(--aparelho-cinza-borda));
+  /* Raio igual à borda: o canto de dentro fica reto, como a tela. */
+  border-radius: var(--aparelho-cinza-borda) / calc(1.8 * var(--aparelho-cinza-borda));
+}
+
+.hero-expansao--entrada .aparelho-cinza__suporte {
+  position: absolute;
+  top: calc(100% + 7.2cqw);
+  right: 12%;
+  left: 12%;
+  height: 7%;
+  border-radius: 0 0 2cqw 2cqw;
+  background-color: var(--aparelho-cinza-base);
+  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+}
+
+/* Estado parado: sem JavaScript, ou com reduced motion (o JavaScript nem
+   arma; o !important vence o que ele ainda escrever, como o --hx-p do
+   expansao), a pose da pausa só com CSS: o quadro no palco inteiro, sem
+   raio, o fundo de fora apagado e o título ao lado do aparelho. A tela
+   fica no fluxo, sem transform, abaixo da cena (spec §7); no aparelho, o
+   miolo ganha o fundo da página. O centro da tela é o da conta do
+   heroEntrada.ts; a escala é a de 1440 × 900 deitado e de 390 × 844 em pé
+   (sem medir, o CSS não divide por uma largura). */
+@media (scripting: none), (prefers-reduced-motion: reduce) {
+  .hero-expansao--entrada {
+    --hx-e: 1 !important;
+    --hx-k: 0 !important;
+    --hx-quadro-w: 100cqw !important;
+    --hx-quadro-h: var(--hx-palco-h) !important;
+    --hx-tela-s: 0.3125 !important;
+    --hx-tela-x: calc(50cqw * (1 - var(--hx-tela-s))) !important;
+    /* O centro da tela: 420/1280 da largura da mídia acima do pé do palco
+       (a mídia corta por baixo). */
+    --hx-tela-y: calc(
+      var(--hx-palco-h) - 0.328125 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
+    ) !important;
+    --hx-sala-z: 1 !important;
+    --hx-sala-tx: 0px !important;
+    --hx-sala-ty: 0px !important;
+    --hx-sala-blur: 0px !important;
+    /* As metades, centradas no palco, a folga de cada borda da tela (o
+       50% é meia largura da própria linha). */
+    --hx-linha1-x: calc(-50cqw * var(--hx-tela-s) - var(--hx-titulo-folga) - 50%) !important;
+    --hx-linha2-x: calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%) !important;
+    --hx-titulo-saida: 0 !important;
+  }
+
+  .hero-expansao--entrada :is(.aparelho-cinza__tampa, .aparelho-cinza__corpo) {
+    background-color: var(--surface);
+  }
+}
+
+@media (scripting: none) and (orientation: portrait), (prefers-reduced-motion: reduce) and (orientation: portrait) {
+  .hero-expansao--entrada {
+    --hx-tela-s: 0.3607 !important;
+    /* 390/1280 da largura da mídia acima do pé (o celular está mais baixo). */
+    --hx-tela-y: calc(
+      var(--hx-palco-h) - 0.3046875 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
+    ) !important;
+  }
+}
+
+/* Teclado e saltos (âncora, foco): as camadas novas ganham a transição
+   curta do expansao, com a mesma curva (tela e aparelho seguem alinhados).
+   A tela não transiciona em p = 1: a página rola de uma vez na liberação e
+   na volta, e a tela tem de acompanhar no mesmo quadro. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__midia {
+    transition:
+      width 300ms var(--ease-out),
+      height 300ms var(--ease-out),
+      border-radius 300ms var(--ease-out),
+      box-shadow 300ms var(--ease-out);
+  }
+
+  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"])
+    :is(.hero-expansao__poster, .hero-expansao__video) {
+    transition:
+      transform 300ms var(--ease-out),
+      filter 300ms var(--ease-out);
+  }
+
+  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__aparelho {
+    transition: transform 300ms var(--ease-out);
+  }
+
+  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]):not([data-progress="1.00"])
+    .hero-expansao__conteudo {
+    transition: transform 300ms var(--ease-out);
+  }
+
+  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__linha {
+    transition:
+      transform 300ms var(--ease-out),
+      opacity 300ms var(--ease-out);
+  }
+}
+
+/* Cores forçadas (§8): a moldura do aparelho e a borda da tela na cena
+   continuam visíveis. */
+@media (forced-colors: active) {
+  .hero-expansao--entrada :is(.aparelho-cinza__tampa, .aparelho-cinza__corpo) {
+    outline: 2px solid CanvasText;
+  }
+
+  .hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"])
+    .hero-expansao__conteudo {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+}
+
+/* A barra do topo sobre a cena (Q9): a partir de 75em, com o hero armado,
+   a cápsula do data-scrolled="true" (§8b) já no topo da página, que fica
+   presa em scrollY = 0. Abaixo de 75em fica a faixa opaca (o painel do
+   Menu depende dela); o topo da tela fica sob ela, e isso é aceito. */
+@media (min-width: 75em) {
+  :root:has(.hero-expansao--entrada[data-pin="true"]) .topbar {
+    background-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  :root:has(.hero-expansao--entrada[data-pin="true"]) .topbar .topbar__bar {
+    max-width: 860px;
+    height: calc(var(--topbar-height) - 16px);
+    margin-top: 12px;
+    padding-inline: 20px;
+    border: 1px solid rgb(30 53 80 / 0.6);
+    border-radius: 999px;
+    background-color: rgb(8 18 29 / 0.72);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: var(--shadow-float);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* SPIKE: prévia [S1-B/S1-A] — descartável, sem portões                 */
 /* ------------------------------------------------------------------ */
 /* Hero: sem o 3D (o fio desenha o símbolo, ?fio=costura); no celular, a
