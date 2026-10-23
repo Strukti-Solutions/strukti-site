@@ -29,6 +29,7 @@
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
   const len = a => Math.hypot(a[0], a[1], a[2]);
   const norm = a => mul(a, 1 / len(a));
+  const GLOW_C = mix(C.n400, C.e500, 0.8), GLOW_A = 0.24;   // a luz da tela do notebook: um azul-navy claro
   function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
   // ---------------- world ----------------
@@ -41,11 +42,14 @@
     // (sw x sh) com bordas side/top/chin; a tampa sobe da dobradiça inclinada para trás `tilt` graus, o mesmo da câmera
     // media (calculado abaixo, depois das câmeras): a tela fica paralela ao quadro e vira um retângulo alinhado aos eixos.
     laptop: { x: 3, z: 29, w: 31, d: 21, h: 1.5, r: 1.2, sw: 28, sh: 17.5, side: 1.5, top: 1.15, chin: 2.25, lidT: 0.6, tilt: 0 },
-    // Caixa e celular puxados para dentro (no corte 4:3 deitado a mídia perde 160 px de cada lado): a caixa atrás, com o topo
-    // abaixo da linha 1 do título; o celular à frente dela. A caneca à frente, à direita: a boca abaixo da linha 2.
-    phone: { x: -22, z: 18, rot: 84, w: 7.3, d: 15.2, h: 0.85 },   // landscape, screen top to the viewer's left
-    box: { x: -29, z: 30, rot: 12, w: 9.6, d: 4.6, h: 13, r: 1.25 },
-    mug: { x: 29, z: 20, r: 4.1, h: 9.2 }
+    // Uma disposição só, para as duas câmeras (o fundo largo não muda nada daqui): a caixa do Replay atrás e o celular deitado
+    // logo à frente dela, na mesma coluna; a caneca do outro lado. Na mídia, tudo cabe entre o corte 4:3 deitado (160 px de cada
+    // lado) e o recorte do cartão de 300 x 400 em P = 0 (x 370-910), com ~40 px de folga; no fundo largo, fora do cartão de
+    // 1024 a 2560 px de janela. O celular fica quase de pé no quadro (rot 12): deitado na horizontal ele não cabe nessa faixa.
+    // A caixa tem o topo abaixo da linha 1 do título; a boca da caneca fica abaixo da linha 2. `alca`: o ângulo da alça (graus).
+    phone: { x: -26.5, z: 17.5, rot: 12, w: 7.1, d: 14.7, h: 0.85 },
+    box: { x: -30.2, z: 32, rot: 8, w: 9.6, d: 4.6, h: 13, r: 1.25 },
+    mug: { x: 33.5, z: 21, r: 3.8, h: 8.8, alca: -74 }
   };
   let W0 = BASE;
   function prepWorld(o) {
@@ -92,15 +96,17 @@
   // O fundo largo (bg) mostra o mundo como ele é, com o notebook renderizado: ele nunca é ampliado.
   const BG_WORLD = {
     laptop: { s: 0.84 },
-    // o celular à esquerda da caixa: fora do cartão de 300 x 400 em P = 0 (com o x da media ele seria cortado pela borda do cartão)
-    phone: { x: -40, z: 18, rot: 78 },
-    lamp: { base: [-100, 0, 50], elbow: [-108, 46, 56], head: [-84, 33, 38], target: [-64, 0, 38], k: 0.66, openK: 0.33 }
+    // o abajur baixo na ponta: a poça pega de leve a caixa e o celular (como no fundo de referência, onde ela pousava no caderno)
+    lamp: { base: [-100, 0, 50], elbow: [-108, 46, 56], head: [-84, 33, 38], target: [-52, 0, 30], k: 0.66, openK: 0.33 }
   };
   const CAMS = {
     // bg: a mesma direção da câmera media, mais aberta: o notebook fica atrás do cartão de 300 x 400 em P = 0 (a 1440x900, a tela
     // dele no fundo cai quase no mesmo lugar e no mesmo tamanho da tela no cartão), sem dois notebooks empilhados.
     bg: { W: 1920, H: 1080, pos: [3, 44, -110], target: [3, 22, 34], F: 1100, shiftY: -66, cityBlur: 6, bokeh: 13, bokehP: 0.035, refl: 0.13,
       dof: 0, vig: 0.85, bloom: 0.35, lampGlow: 0.05, grain: 5, rimA: 0.3, titleBand: [400, 680, 0.72], hint: [960, 835, 720, 125, 1.0], bottomFade: [0.78, 0.95, 1.0, 0.35, 0.6],
+      // o abajur é baixo: sem limite, a caneca jogava uma sombra de ~45 cm. Todas as sombras do abajur ficam curtas (até
+      // `sombraMax` x a altura de cada ponto) e mais leves no miolo (`sombraA`).
+      sombraMax: 1.1, sombraA: 0.7,
       world: Object.assign({ win: { mull: [[-43.5, -40.5], [40.5, 43.5]] } }, BG_WORLD),
       towers: [[-71, -18.4, 28, 1], [-18.4, -13.2, 9.5, 0], [13.4, 18.6, 11, 0], [18.6, 73, 31, 1]], centre: [-15.6, 15.6, -5.4] },
     // media: a mesma cidade desfocada do expansao (montada no quadro 1280x720), câmera mais baixa e de frente para o notebook,
@@ -152,7 +158,13 @@
     for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
     up.pop(); lo.pop(); return lo.concat(up);
   }
-  function shadowPt(L, p) { const t = L[1] / (L[1] - p[1]); return [L[0] + (p[0] - L[0]) * t, 0, L[2] + (p[2] - L[2]) * t]; }
+  // A sombra de p na mesa, vinda da luz L; `maxK`: o deslocamento na mesa fica em até maxK x a altura de p (sombra curta).
+  function shadowPt(L, p, maxK) {
+    const t = L[1] / (L[1] - p[1]), s = [L[0] + (p[0] - L[0]) * t, 0, L[2] + (p[2] - L[2]) * t];
+    if (maxK == null) return s;
+    const dx = s[0] - p[0], dz = s[2] - p[2], d = Math.hypot(dx, dz), lim = maxK * Math.max(0, p[1]);
+    return d > lim ? [p[0] + dx * lim / d, 0, p[2] + dz * lim / d] : s;
+  }
   function discT(ctx, cam, c, a, b) { const p0 = cam.P(c), pa = cam.P(add(c, a)), pb = cam.P(add(c, b)); ctx.setTransform(pa[0] - p0[0], pa[1] - p0[1], pb[0] - p0[0], pb[1] - p0[1], p0[0], p0[1]); }
   const ID = ctx => ctx.setTransform(1, 0, 0, 1, 0, 0);
   function radial(ctx, stops, r = 1) { const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r); for (const s of stops) g.addColorStop(s[0], s[1]); return g; }
@@ -427,6 +439,17 @@
       ctx.fillStyle = lin(ctx, [u0 * cam.W, 0], [u1 * cam.W, 0], [[0, rgba(C.edge, 0)], [1, rgba(C.edge, a)]]); ctx.fill();
     }
   }
+  // Com `peitoril`, depois do reflexo na mesa: desfoca o filete (o trilho, o bico do peitoril, a fresta escura e a borda de trás
+  // da mesa) à direita da tela, com a mesma rampa. Atrás das letras da linha 2 não fica uma linha horizontal (lia como um tachado).
+  function calmaPeitoril(ctx, cam, o) {
+    if (!o.peitoril) return;
+    const [u0, u1] = o.peitoril, w = W0.win, P = cam.P, H = cam.H;
+    const yT = P([0, w.y0 + w.rail, W0.glassZ])[1] - 12, yB = P([0, 0, W0.desk.z1 - 4])[1] + 8, bl = layer(cam.W, H), bx = bl.getContext('2d');
+    bx.filter = `blur(${o.peitorilBlur || 8}px)`; bx.drawImage(ctx.canvas, 0, 0); bx.filter = 'none'; bx.globalCompositeOperation = 'destination-in';
+    bx.fillStyle = lin(bx, [0, yT], [0, yB], [[0, 'rgba(0,0,0,0)'], [0.25, 'rgba(0,0,0,1)'], [0.75, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]); bx.fillRect(0, 0, cam.W, H);
+    bx.fillStyle = lin(bx, [u0 * cam.W, 0], [u1 * cam.W, 0], [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,1)']]); bx.fillRect(0, 0, cam.W, H);
+    ctx.drawImage(bl, 0, 0);
+  }
   function deskReflection(ctx, cam, city, o) {
     const dk = W0.desk, P = cam.P;
     const yS = P([0, W0.win.y0, W0.glassZ])[1];
@@ -453,27 +476,45 @@
     for (const u of [-L.w / 2, L.w / 2]) for (const v of [0, g.lidH]) r.push(g.at(u, v));
     return r;
   }
-  function drawShadows(ctx, cam) {
+  function drawShadows(ctx, cam, o = {}) {
     const { W, H } = cam, L = W0.lamp.bulb, P = cam.P;
     const sh = layer(W, H), s = sh.getContext('2d');
     s.fillStyle = 'rgb(0,0,0)';
     const lp = W0.laptop ? laptopPts() : null;
-    const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (lp) sets.push(lp); if (W0.phone) sets.push(slabPts(W0.phone));
-    const castOf = pts => hull(pts.map(p => p[1] > 0.05 ? shadowPt(L, p) : p).concat(pts.filter(p => p[1] <= 0.05)).map(P));
+    const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (W0.phone) sets.push(slabPts(W0.phone));
+    const todos = lp ? sets.concat([lp]) : sets;
+    const castOf = pts => hull(pts.map(p => p[1] > 0.05 ? shadowPt(L, p, o.sombraMax) : p).concat(pts.filter(p => p[1] <= 0.05)).map(P));
     const k = cam.S([0, 0, 30]);
     // lamp-cast shadows
-    s.filter = `blur(${Math.round(k * 0.9)}px)`; s.globalAlpha = 0.55 * (0.35 + 0.65 * LK);
-    for (const pts of sets) { if (L[1] > 1) { path(s, castOf(pts)); s.fill(); } }
+    s.filter = `blur(${Math.round(k * 0.9)}px)`; s.globalAlpha = 0.55 * (0.35 + 0.65 * LK) * (o.sombraA != null ? o.sombraA : 1);
+    for (const pts of todos) { if (L[1] > 1) { path(s, castOf(pts)); s.fill(); } }
     // soft window-side shadow toward the viewer (sky light from behind)
     s.filter = `blur(${Math.round(k * 1.6)}px)`; s.globalAlpha = 0.32;
     for (const pts of sets) { path(s, hull(pts.map(p => [p[0], 0, p[2] - p[1] * 0.55]).map(P))); s.fill(); }
     // ambient occlusion: a slightly grown footprint, medium blur
-    // (no notebook, o AO e a linha de contato têm desfoque largo, ~8 px na media: o vetor por cima tolera 1-2 px de arredondamento)
-    s.globalAlpha = 0.5;
-    for (const pts of sets) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.9 : 0.6)))}px)`; const f = pts.filter(p => p[1] <= 0.05); const c = f.reduce((a, p) => add(a, p), [0, 0, 0]).map(v => v / f.length); path(s, hull(f.map(p => add(c, mul(sub(p, c), 1.12))).map(P))); s.fill(); }
+    const ao = (c2, pts, bl, f2) => {
+      c2.filter = `blur(${Math.max(1, Math.round(k * bl))}px)`; c2.globalAlpha = 0.5;
+      const f = pts.filter(p => p[1] <= 0.05), c = f.reduce((a, p) => add(a, p), [0, 0, 0]).map(v => v / f.length);
+      path(c2, hull(f.map(p => f2(add(c, mul(sub(p, c), 1.12)))).map(P))); c2.fill();
+    };
+    for (const pts of sets) ao(s, pts, 0.6, p => p);
+    // O notebook tem a penumbra (janela e AO) numa camada própria, deslocada para a direita (o abajur está à esquerda) e
+    // apagada à esquerda da base: do lado da luz fica só a linha de contato, e o vetor por cima não deixa sobra.
+    // (o AO e a linha de contato dele têm desfoque largo, ~8-11 px na media: o vetor por cima tolera 1-2 px de arredondamento)
+    if (lp) {
+      const Lt = W0.laptop, nl = layer(W, H), n = nl.getContext('2d'), dx = Lt.w * 0.04, desl = p => [p[0] + dx, p[1], p[2]];
+      n.fillStyle = 'rgb(0,0,0)';
+      n.filter = `blur(${Math.round(k * 1.6)}px)`; n.globalAlpha = 0.32; path(n, hull(lp.map(p => desl([p[0], 0, p[2] - p[1] * 0.55])).map(P))); n.fill();
+      ao(n, lp, 0.9, desl);
+      const fr = frameOf({ x: Lt.x, z: Lt.z, rot: 0 }), e = 0.25;
+      const a = P(fr(-Lt.w / 2 + e, 0, -Lt.d / 2 - 30)), b = P(fr(-Lt.w / 2 + e, 0, Lt.d / 2 + 30));
+      n.filter = 'none'; n.globalAlpha = 1; n.globalCompositeOperation = 'destination-out';
+      path(n, [[-W, a[1]], a, b, [-W, b[1]]]); n.fill();
+      s.filter = 'none'; s.globalAlpha = 1; s.drawImage(nl, 0, 0);
+    }
     // tight contact line
     s.globalAlpha = 0.9;
-    for (const pts of sets) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.66 : 0.18)))}px)`; path(s, hull(pts.filter(p => p[1] <= 0.05).map(P))); s.fill(); }
+    for (const pts of todos) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.66 : 0.18)))}px)`; path(s, hull(pts.filter(p => p[1] <= 0.05).map(P))); s.fill(); }
     s.filter = 'none';
     ctx.save(); ctx.globalAlpha = 0.8; ctx.drawImage(sh, 0, 0); ctx.restore();
   }
@@ -490,15 +531,18 @@
   // O brilho frio da tela na mesa (Q18): uma elipse à frente da base, mais larga que ela e curta em profundidade, com nada
   // dentro da pegada (a tela ilumina a mesa à frente e dos lados, não por baixo). Fica também na mídia sem o notebook.
   // Depois, a linha de oclusão logo à frente do pé da base (um pouco além das quinas): a base pousa na mesa.
+  // A tela tem o fundo navy da página e pouco texto: ilumina pouco. O brilho é um azul-navy claro, mais fraco que a poça do
+  // abajur, e morre logo à frente da base (antes de y 680 na mídia).
+  function brilhoDaTela(L) { const zf = L.z - L.d / 2; return { centro: [L.x, 0.05, zf - L.d * 0.1], semiX: L.w * 0.78, semiZ: L.d * 0.36 }; }
   function screenGlow(ctx, cam) {
-    const L = W0.laptop, k = L.glow != null ? L.glow : 1, col = mix(C.e300, C.n200, 0.45), P = cam.P;
-    const fr = frameOf({ x: L.x, z: L.z, rot: 0 }), zf = L.z - L.d / 2;
+    const L = W0.laptop, k = L.glow != null ? L.glow : 1, col = GLOW_C, P = cam.P;
+    const fr = frameOf({ x: L.x, z: L.z, rot: 0 }), bt = brilhoDaTela(L);
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, cam.W, cam.H);
     rrect(L.w, L.d, L.r, 6).map(([u, v]) => P(fr(u, 0, v))).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
     ctx.clip('evenodd');
-    discT(ctx, cam, [L.x, 0.05, zf - L.d * 0.2], [L.w * 0.78, 0, 0], [0, 0, L.d * 0.42]);
-    ctx.fillStyle = radial(ctx, [[0, rgba(col, 0.3 * k)], [0.45, rgba(col, 0.15 * k)], [1, rgba(col, 0)]]);
+    discT(ctx, cam, bt.centro, [bt.semiX, 0, 0], [0, 0, bt.semiZ]);
+    ctx.fillStyle = radial(ctx, [[0, rgba(col, GLOW_A * k)], [0.4, rgba(col, GLOW_A * 0.47 * k)], [1, rgba(col, 0)]]);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx);
     ctx.restore();
     ctx.save(); ctx.globalCompositeOperation = 'source-over';
@@ -511,11 +555,11 @@
   }
 
   // O notebook aberto: base de alumínio grafite com teclado (teclas sem legenda) e trackpad, tampa com moldura preta e a
-  // tela com a página de longe (o bloco de chamada em barras, sem texto). Não é desenhado com `semAparelho` (câmera media).
+  // tela só no navy da página. Não é desenhado com `semAparelho` (câmera media).
   function drawLaptop(ctx, cam, o) {
     const L = W0.laptop; if (!L || o.semAparelho) return;
     const P = cam.P, g = laptopGeo(L), fr = frameOf({ x: L.x, z: L.z, rot: 0 });
-    const alu = [31, 34, 41], glowC = mix(C.e300, C.n200, 0.45);
+    const alu = [31, 34, 41], glowC = GLOW_C;
     const D = (u, v, h = L.h) => P(fr(u, h, v));          // base: u de um lado ao outro, v da frente (-) para o fundo (+)
     const quad = (u0, v0, u1, v1) => [D(u0, v0), D(u1, v0), D(u1, v1), D(u0, v1)];
     // base: a lateral e o tampo, com a luz do abajur de um lado
@@ -551,19 +595,14 @@
     const lid = rrect(L.w, g.lidH, 0.9, 5).map(([u, vv]) => P(g.at(u, vv + g.lidH / 2)));
     path(ctx, lid); ctx.fillStyle = rgba([9, 11, 15]); ctx.fill();
     ctx.strokeStyle = rgba(mix(light(alu, g.at(0, g.lidH), g.nrm, { amb: 1.2 }), C.n400, 0.3), 0.85); ctx.lineWidth = Math.max(1, cam.S(g.at(0, g.lidH / 2)) * 0.16); ctx.stroke();
-    // a tela: a página de longe, no navy dela, com o bloco de chamada em barras e dois botões (nada legível)
+    // a tela: só o navy da página (surface-space), com um brilho suave no meio. Sem elementos de interface: o conteúdo de
+    // verdade é a tela em HTML no site, e este notebook do fundo não pode brigar com ela.
     const sq = g.tela.map(p => P(p));
     path(ctx, sq); ctx.fillStyle = rgba(C.n950); ctx.fill();
     ctx.save(); path(ctx, sq); ctx.clip();
     { const c0 = P(g.at(0, L.chin + L.sh / 2, 0.02)), cx1 = P(g.at(L.sw / 2, L.chin + L.sh / 2, 0.02)), cy1 = P(g.at(0, L.chin, 0.02));
       ctx.setTransform(cx1[0] - c0[0], 0, 0, cy1[1] - c0[1], c0[0], c0[1]); }   // -1..1 nos dois eixos, y para baixo
-    ctx.fillStyle = radial(ctx, [[0, rgba(C.n900, 0.9)], [1, rgba(C.n950, 0)]], 1.1); ctx.fillRect(-1, -1, 2, 2);
-    ctx.filter = 'blur(0.7px)';
-    const bar = (x0, y0, x1, y1, col, a) => { ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.fillStyle = rgba(col, a); ctx.fill(); };
-    bar(-0.5, -0.34, 0.5, -0.25, C.n100, 0.42); bar(-0.38, -0.2, 0.38, -0.11, C.n100, 0.42);   // o h2, duas linhas
-    bar(-0.56, 0.0, 0.56, 0.035, C.n300, 0.24); bar(-0.42, 0.075, 0.42, 0.11, C.n300, 0.24);   // a frase
-    bar(-0.33, 0.24, -0.04, 0.36, C.e500, 0.7); bar(0.04, 0.24, 0.33, 0.36, C.n700, 0.8);     // os dois botões
-    ctx.filter = 'none';
+    ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.n900, C.n800, 0.5), 0.95)], [0.6, rgba(C.n900, 0.5)], [1, rgba(C.n950, 0)]], 1.15); ctx.fillRect(-1, -1, 2, 2);
     ID(ctx);
     // brilho do vidro
     { const a1 = P(g.at(-L.sw / 2, L.chin + L.sh)), a2 = P(g.at(L.sw / 6, L.chin)); ctx.fillStyle = lin(ctx, a1, a2, [[0, rgba(C.n300, 0.07)], [0.5, rgba(C.n300, 0.02)], [1, rgba(C.n300, 0)]]); ctx.fillRect(0, 0, cam.W, cam.H); }
@@ -682,7 +721,7 @@
     const m = W0.mug; if (!m) return null; const P = cam.P, N = 72;
     const ring = (h, r) => { const a = []; for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2; a.push(P([m.x + r * Math.cos(t), h, m.z + r * Math.sin(t)])); } return a; };
     const alb = [34, 50, 72];                  // matte navy-700 ceramic: recedes
-    const hAng = -40 * Math.PI / 180, hd = [Math.cos(hAng), 0, Math.sin(hAng)];
+    const hAng = (m.alca != null ? m.alca : -40) * Math.PI / 180, hd = [Math.cos(hAng), 0, Math.sin(hAng)];
     const hc = [m.x + hd[0] * (m.r + 1.3), m.h * 0.56, m.z + hd[2] * (m.r + 1.3)];
     const handle = () => {
       const pts = []; for (let i = 0; i <= 24; i++) { const a = -Math.PI / 2 + i / 24 * Math.PI; pts.push(P([hc[0] + hd[0] * Math.cos(a) * 1.9 - hd[0] * 0.6, hc[1] + Math.sin(a) * 2.8, hc[2] + hd[2] * Math.cos(a) * 1.9 - hd[2] * 0.6])); }
@@ -766,7 +805,7 @@
         }
       }
     }
-    if (W0.laptop) screenGlow(ctx, cam);
+    if (W0.laptop) { screenGlow(ctx, cam); toqueFrio(ctx, cam); }
     if (W0.phone) { const ph = W0.phone; discT(ctx, cam, [ph.x, 0.05, ph.z], [15, 0, 0], [0, 0, 15]);
       ctx.fillStyle = radial(ctx, [[0, rgba(C.e400, 0.09)], [0.5, rgba(C.e500, 0.03)], [1, rgba(C.e500, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
     if (info && info.led && ledK > 0) {
@@ -779,6 +818,19 @@
     }
     if (o.lampGlow && P(L.open)[2] > 0) glow(ctx, P(L.open), cam.S(L.open) * 11, C.lampW, o.lampGlow * LK);
     ctx.restore();
+  }
+
+  // A luz da tela chega de leve nos vizinhos: a face da caixa e a da caneca voltadas para o notebook pegam um frio fraco.
+  function toqueFrio(ctx, cam) {
+    const P = cam.P, Lt = W0.laptop, alvo = [Lt.x, 0, Lt.z];
+    const lado = (sil, c, r) => {   // sil: a silhueta em px; c: o centro (mundo); r: a distância (cm) do centro até a face
+      const d = norm(sub([alvo[0], c[1], alvo[2]], c)), p0 = P(c), p1 = P(add(c, mul(d, r)));
+      ctx.save(); path(ctx, sil); ctx.clip();
+      ctx.fillStyle = lin(ctx, p0, p1, [[0, rgba(GLOW_C, 0)], [0.55, rgba(GLOW_C, 0.02)], [1, rgba(GLOW_C, 0.085)]]); ctx.fillRect(0, 0, cam.W, cam.H);
+      ctx.restore();
+    };
+    const b = W0.box; if (b) lado(hull(boxPts().map(P)), [b.x, b.h / 2, b.z], b.w / 2);
+    const m = W0.mug; if (m) lado(hull(mugPts().map(P)), [m.x, m.h * 0.55, m.z], m.r);
   }
 
   function steam(ctx, cam, top) {
@@ -834,7 +886,8 @@
     const fill = pass === 'full' ? city : solid(cam.W, cam.H, pass === 'B' ? 128 : 0);
     drawWindow(ctx, cam, fill, o);
     deskReflection(ctx, cam, city, o);
-    drawShadows(ctx, cam);
+    calmaPeitoril(ctx, cam, o);
+    drawShadows(ctx, cam, o);
     if (o.lampBody !== false) drawLamp(ctx, cam, o);
     const info = drawBox(ctx, cam);
     drawLaptop(ctx, cam, o);
@@ -846,6 +899,6 @@
     LK = 1;
     return { cam };
   }
-  G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook };
+  G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.FDE;

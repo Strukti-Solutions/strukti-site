@@ -95,8 +95,21 @@ node sondas.js cur/media.png cur/bg.png [1440x900 1366x768]
   escondida atrás do notebook, para a linha 2 do título ficar sobre uma superfície
   só (`[u0, u1, a]`, em frações da largura).
 - No `bg` (`BG_WORLD`) o notebook é menor (`laptop.s 0.84`, base de ~212 px) para
-  caber atrás do cartão de 300 × 400 em P = 0 até 2560 px de janela, e o celular
-  fica à esquerda da caixa, fora do cartão.
+  caber atrás do cartão de 300 × 400 em P = 0 até 2560 px de janela.
+- Uma disposição só (ajuste de arte 2): celular, caixa e caneca vêm do `BASE` nas
+  duas câmeras (o `BG_WORLD` não mexe neles). A caixa fica atrás e o celular logo à
+  frente dela, na mesma coluna, quase de pé no quadro (`rot 12`); a caneca, do outro
+  lado, tem a alça para a frente (`alca`). Na `media`, os três ficam fora do recorte
+  do cartão em P = 0 (x 370–910 da mídia) com ~40 px de folga e dentro do corte 4:3;
+  no `bg`, fora do cartão de 1024 a 2560 px de janela. O `cena.test.ts` confere.
+- Luz (ajuste de arte 2): o brilho da tela (`GLOW_C`/`GLOW_A`, `brilhoDaTela`) é um
+  azul-navy claro e fraco, abaixo da poça do abajur, e morre antes de y 680 da mídia.
+  A penumbra do notebook (janela e AO) sai deslocada para a direita e apagada à
+  esquerda da base (o abajur está à esquerda); a caixa e a caneca pegam um toque frio
+  na face voltada para o notebook (`toqueFrio`). `calmaPeitoril` desfoca o filete do
+  peitoril à direita da tela, depois do reflexo na mesa. No `bg`, as sombras do
+  abajur são curtas (`sombraMax`, `sombraA`) e a poça pega de leve a caixa; a tela do
+  notebook é só o navy da página, sem barras nem botões.
 
 ## 4. Instalar
 

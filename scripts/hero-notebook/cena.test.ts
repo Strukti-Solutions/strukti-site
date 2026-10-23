@@ -20,7 +20,7 @@ type Tela = {
   cantos: [number, number][];
 };
 type Bloco = { x: number; z: number; rot: number; w: number; d: number; h: number };
-type Caneca = { x: number; z: number; r: number; h: number };
+type Caneca = { x: number; z: number; r: number; h: number; alca: number };
 type Mundo = {
   laptop: { x: number; z: number; w: number; d: number; h: number };
   phone: Bloco;
@@ -40,7 +40,12 @@ type Cena = {
     mug: { x: number; z: number };
     lamp: { base: Vec };
   };
-  CAMS: Record<string, { W: number; H: number; semAparelho?: boolean; peitoril?: unknown }>;
+  CAMS: Record<
+    string,
+    { W: number; H: number; semAparelho?: boolean; peitoril?: unknown; sombraMax?: number; world?: Record<string, unknown> }
+  >;
+  brilhoDaTela: (L: { x: number; z: number; w: number; d: number }) => { centro: Vec; semiZ: number };
+  shadowPt: (L: Vec, p: Vec, maxK?: number) => Vec;
   telaDoNotebook: (cam: string) => Tela;
   prepWorld: (o: object) => Mundo;
   makeCam: (o: object) => Camera;
@@ -151,7 +156,8 @@ describe("cena do hero notebook", () => {
       expect(boca.y0).toBeGreaterThanOrEqual(425);
       // E a caneca inteira, com a alça (a −40°, ~3,2 cm além da parede), cabe no corte 4:3 (até x 1120 da mídia).
       const m = w.mug;
-      const alca: Vec = [m.x + 0.766 * (m.r + 3.2), m.h * 0.56, m.z - 0.643 * (m.r + 3.2)];
+      const a = (m.alca * Math.PI) / 180;
+      const alca: Vec = [m.x + Math.cos(a) * (m.r + 3.2), m.h * 0.56, m.z + Math.sin(a) * (m.r + 3.2)];
       expect(caixa([...aro(m, 0), alca]).x1).toBeLessThanOrEqual(1100);
     });
 
@@ -182,6 +188,105 @@ describe("cena do hero notebook", () => {
       expect(u0 * 1280).toBeGreaterThanOrEqual(t.cx - t.largura / 2);
       expect(u1 * 1280).toBeLessThanOrEqual(t.cx + t.largura / 2);
       expect(a).toBeGreaterThan(0.4);
+    });
+  });
+
+  describe("o cartão em P = 0 e uma disposição só (ajuste de arte 2)", () => {
+    // O cartão de 300 × 400 (quadroInicial) cobre a mídia 1280 × 720 com cover 50% 100%: o recorte é x 369–911.
+    const RECORTE = (() => {
+      const m = Math.max(300 / 1280, 400 / 720);
+      const x0 = (1280 * m - 300) / 2 / m;
+      return { x0, x1: x0 + 300 / m };
+    })();
+    // No fundo largo (cover 50% 85%), a faixa coberta pelo cartão, de 1024 × 768 a 2560 × 1440.
+    const JANELAS: [number, number][] = [[1024, 768], [1180, 820], [1366, 768], [1440, 900], [2560, 1440], [2560, 1080]];
+    const noFundo = JANELAS.map(([w, h]) => {
+      const m = Math.max(w / 1920, h / 1080);
+      const ox = (w - 1920 * m) * 0.5;
+      return { x0: (w / 2 - 150 - ox) / m, x1: (w / 2 + 150 - ox) / m };
+    });
+    const px = (which: "media" | "bg") => {
+      const o = { ...cena.CAMS[which] } as Record<string, unknown>;
+      const w = cena.prepWorld(o);
+      const cam = cena.makeCam(o);
+      const caixa = (pts: Vec[]) => {
+        const q = pts.map((p) => cam.P(p));
+        const xs = q.map((p) => p[0]);
+        const ys = q.map((p) => p[1]);
+        return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+      };
+      const bloco = (ob: Bloco) => {
+        const fr = cena.frameOf(ob);
+        const pts: Vec[] = [];
+        for (const u of [-ob.w / 2, ob.w / 2]) for (const v of [-ob.d / 2, ob.d / 2]) for (const hh of [0, ob.h]) pts.push(fr(u, hh, v));
+        return caixa(pts);
+      };
+      const m = w.mug;
+      const aro = (h: number) =>
+        Array.from({ length: 32 }, (_, i): Vec => {
+          const a = (i / 32) * Math.PI * 2;
+          return [m.x + m.r * Math.cos(a), h, m.z + m.r * Math.sin(a)];
+        });
+      const a = (m.alca * Math.PI) / 180;
+      const alca: Vec = [m.x + Math.cos(a) * (m.r + 3.2), m.h * 0.56, m.z + Math.sin(a) * (m.r + 3.2)];
+      return { w, cam, box: bloco(w.box), phone: bloco(w.phone), mug: caixa([...aro(0), ...aro(m.h), alca]) };
+    };
+
+    it("na mídia, celular e caixa ficam fora do recorte do cartão, com folga de 39 px, e dentro do corte 4:3", () => {
+      const { box, phone } = px("media");
+      expect(RECORTE.x0).toBeCloseTo(370, 0);
+      expect(Math.max(box.x1, phone.x1)).toBeLessThanOrEqual(RECORTE.x0 - 39);
+      expect(box.x0).toBeGreaterThanOrEqual(185);
+      expect(phone.x0).toBeGreaterThanOrEqual(175);
+      expect(box.y0).toBeGreaterThanOrEqual(365);
+    });
+
+    it("na mídia, a caneca começa depois do recorte do cartão, com folga de 39 px", () => {
+      const { mug } = px("media");
+      expect(mug.x0).toBeGreaterThanOrEqual(RECORTE.x1 + 39);
+      expect(mug.x1).toBeLessThanOrEqual(1100);
+    });
+
+    it("uma disposição só: o fundo largo não muda a posição de celular, caixa e caneca", () => {
+      const bgWorld = cena.CAMS.bg?.world ?? {};
+      for (const k of ["phone", "box", "mug"]) expect(bgWorld[k]).toBeUndefined();
+      const { phone, box } = cena.BASE;
+      // A caixa atrás, o celular à frente dela.
+      expect(phone.z).toBeLessThan(box.z);
+      // Nas duas câmeras, o celular fica logo à frente (abaixo) da caixa, na mesma coluna.
+      for (const which of ["media", "bg"] as const) {
+        const c = px(which);
+        expect(c.phone.y1).toBeGreaterThan(c.box.y1);
+        const sobreposto = Math.min(c.phone.x1, c.box.x1) - Math.max(c.phone.x0, c.box.x0);
+        expect(sobreposto / Math.min(c.phone.x1 - c.phone.x0, c.box.x1 - c.box.x0)).toBeGreaterThanOrEqual(0.8);
+      }
+    });
+
+    it("no fundo largo, os objetos ficam fora do cartão em P = 0 (de 1024 × 768 a 2560 × 1440)", () => {
+      const { box, phone, mug } = px("bg");
+      const esq = Math.min(...noFundo.map((f) => f.x0));
+      const dir = Math.max(...noFundo.map((f) => f.x1));
+      // A borda do cartão a 1024 × 768 cai em x 749 do fundo: até 1 px de toque.
+      expect(Math.max(box.x1, phone.x1)).toBeLessThanOrEqual(esq + 1);
+      expect(mug.x0).toBeGreaterThanOrEqual(dir);
+    });
+
+    it("no fundo largo, a sombra do abajur é curta: a da caneca não passa de 1,5 × a largura dela", () => {
+      const k = cena.CAMS.bg?.sombraMax;
+      expect(k).toBeDefined();
+      const o = { ...cena.CAMS.bg } as Record<string, unknown>;
+      const w = cena.prepWorld(o) as Mundo & { lamp: { bulb: Vec } };
+      const m = w.mug;
+      const s = cena.shadowPt(w.lamp.bulb, [m.x + m.r, m.h, m.z], k);
+      expect(Math.hypot(s[0] - (m.x + m.r), s[2] - m.z)).toBeLessThanOrEqual(1.5 * 2 * m.r);
+    });
+
+    it("o brilho da tela na mesa morre antes de y 680 da mídia", () => {
+      const o = { ...cena.CAMS.media } as Record<string, unknown>;
+      const w = cena.prepWorld(o);
+      const cam = cena.makeCam(o);
+      const b = cena.brilhoDaTela(w.laptop);
+      expect(cam.P([b.centro[0], 0, b.centro[2] - b.semiZ])[1]).toBeLessThanOrEqual(680);
     });
   });
 
