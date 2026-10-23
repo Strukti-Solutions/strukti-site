@@ -142,7 +142,8 @@
  *   persegue), e não pela transição do CSS: a liberação acontece no quadro
  *   em que o desenhado chega a 1, e a transição seria cortada por ela já no
  *   keydown (achado da revisão final, 23/10/2026); o Tab ("auto") segue
- *   completando na hora (Q21). O
+ *   completando na hora (Q21). Recolher pelo toque zera o início do
+ *   arrasto: o resto do gesto anda só o que o dedo andou depois. O
  *   `paint()` escreve a câmera (`camera()`) em variáveis CSS (`--hx-e`,
  *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x`,
  *   `--hx-linha2-x`, `--hx-titulo-saida`); a janela útil (largura da seção,
@@ -754,6 +755,9 @@ export function ScrollExpandMedia({
         if (delta < -TOUCH_COLLAPSE_PX && window.scrollY <= topoSolto() + TOP_SLOP_PX) {
           if (event.cancelable) event.preventDefault();
           unexpand();
+          // Modo entrada: o resto do mesmo arrasto parte daqui (com o delta
+          // desde o começo do toque, a tela encolheria de uma vez).
+          if (entrada) touchStartRef.current = touch.clientY;
         }
         return;
       }

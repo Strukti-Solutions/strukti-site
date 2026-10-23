@@ -494,6 +494,23 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     expect(scrollTo).toHaveBeenCalledTimes(1);
   });
 
+  it("toque: depois de recolher, o movimento seguinte do mesmo arrasto parte do ponto em que recolheu", async () => {
+    await mount();
+    key("End");
+    settle();
+    expect(state().expanded).toBe("true");
+    setScrollY(PALCO);
+
+    touch("touchstart", 300);
+    expect(touch("touchmove", 330).defaultPrevented).toBe(true);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+    setScrollY(0);
+
+    // Mais 5 px no mesmo arrasto: só eles contam, não os 35 desde o início.
+    touch("touchmove", 335);
+    expect(hxp()).toBeCloseTo(1 - (5 * 0.0062) / ENTRADA.ganho, 6);
+  });
+
   it("volta pela barra de rolagem (ou o Home do navegador): expandido, rolar para acima do topo da tela recolhe com P em 1", async () => {
     await mount();
     expandWithWheel();
