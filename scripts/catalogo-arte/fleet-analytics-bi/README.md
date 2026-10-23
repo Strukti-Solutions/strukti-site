@@ -88,3 +88,31 @@ dados pulsando na tela), a A5.
 
 O render é determinístico (o mesmo PNG a cada vez), o que o loop da A5 usa: o
 quadro 0 dele é este cartão.
+
+## Loop de 5 s (Task A5)
+
+Os dados pulsam na tela: uma volta do `pulso` em 5 s (o anel do veículo
+selecionado, a curva de velocidade, que ondula na ponta, e a barra em ciano); a
+sala fica parada. O pulso muda a forma, não só o brilho, então há um passe por
+quadro: o `plates.html` renderiza a cena inteira com pulso = k / 125 e guarda só
+os dois recortes onde o pulso muda alguma coisa, a tela (x 300–690, y 240–530)
+e o reflexo dela na mesa (y 730–950), num mosaico de 5 × 5. Medido com pulso
+0,25 e 0,75 contra o cartão: fora deles o render é idêntico. A cidade e a mesa
+(os passes por pixel) saem uma vez por página (`_cache`, só no `plates.html`;
+o render de um quadro com cache é idêntico ao sem cache). O `loop.js` desta
+pasta troca os dois recortes do cartão pelos do render k; o render 0 é o
+próprio cartão, byte a byte. O grão é o mesmo em todos os renders.
+
+```sh
+for i in 0 25 50 75 100; do ../kit/shot.sh "plates.html?i0=$i&q=25" plates/pulso-$(printf %03d $i).png 1950 2550; done   # ~9 s cada
+node ../kit/loop.js loop.js                       # plates/master.mkv
+../kit/encode.sh plates/master.mkv final 18 12
+../kit/vqa.sh final/cartao-loop.webm fleet-webm 292:218:225:180 cur/cartao.png
+```
+
+| Medida (22/10/2026) | MP4 (H.264 crf 18) | WebM (VP9 crf 12) | Critério |
+|---|---|---|---|
+| Bytes | 192 104 | 178 934 | ≤ 600 000 |
+| Emenda 124 → 0 | 57,79 dB | 64,97 dB | ≥ 45 dB |
+| Pares seguidos idênticos | 0 | 0 | — |
+| Quadro 0 × cartão (600 × 900) | 41,75 dB | 41,88 dB | a perda é só a da compressão |

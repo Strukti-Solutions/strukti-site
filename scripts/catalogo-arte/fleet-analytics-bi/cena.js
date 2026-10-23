@@ -429,10 +429,11 @@
     const tex = textura(o);
     if (o.so === 'tela') { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cam.W, cam.H); ctx.drawImage(tex, 0, 0, cam.W, cam.W * tex.height / tex.width); return { cam }; }
     // 1. a cidade e, por cima, a mesa e a parede com o buraco da janela
-    const city = cidade(cam, o);
+    // _cache (só o plates.html do loop da A5): a cidade e a mesa não dependem do pulso; renderiza uma vez por página
+    const cache = o._cache, city = cache ? (cache.city = cache.city || cidade(cam, o)) : cidade(cam, o);
     ctx.drawImage(city, 0, 0);
     if (o.so === 'cidade') return { cam };
-    ctx.drawImage(basePass(cam, o), 0, 0);
+    ctx.drawImage(cache ? (cache.base = cache.base || basePass(cam, o)) : basePass(cam, o), 0, 0);
     janela(ctx, cam);
     reflexoCidade(ctx, cam, city, o);
     // 2. o halo da tela no ar da sala (atrás do monitor)
