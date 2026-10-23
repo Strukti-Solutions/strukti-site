@@ -74,8 +74,8 @@ desta pasta, composto pelo `../kit/loop.js`):
 
 quadro(t) = cartão − 0,45 · sobe(t) · E + névoa(x, y, t) · N, com
 sobe(t) = ½ − ½ cos(2πt / 5 s) (o LED cai de `ledK` 0,85 para ~0,47 no meio da
-volta e volta) e névoa = 0,6 · [sen(2πt / 5 s − f) + sen f], f a fase de uma
-onda de 900 px inclinada 12° (uma faixa de densidade que nasce, anda meia onda
+volta e volta) e névoa = 0,3 · [sen(2πt / 5 s − f) + sen f], f a fase de uma
+onda de 1700 px inclinada 12° (uma faixa de densidade que nasce, anda meia onda
 para a direita e some). Os dois valem 0 em t = 0: o quadro 0 é o cartão byte a
 byte. `veu` (padrão 1) só multiplica o ar iluminado; com 1 o cartão não muda
 (mesmo md5). O grão está só no cartão; os deltas são diferenças de passes com o
@@ -95,3 +95,7 @@ node ../kit/loop.js loop.js                       # plates/master.mkv (ffv1, 800
 | Emenda 124 → 0 | 49,74 dB | 67,77 dB | ≥ 45 dB |
 | Pares seguidos idênticos | 0 | 0 | — |
 | Quadro 0 × cartão (600 × 900) | 42,12 dB | 42,82 dB | a perda é só a da compressão |
+
+Rodada de série (A6): a névoa tinha ±60% e onda de 900 px; os dois cones, a ~430 px um do outro, ficavam em
+contrafase e o da direita parecia apagar. Agora é ±30% e 1700 px (~90° entre os cones), e o LED volta a ser o
+pulso principal. A emenda do MP4 subiu de 49,7 para 51,5 dB.

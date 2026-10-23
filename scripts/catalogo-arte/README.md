@@ -64,7 +64,9 @@ também fora.
 - `encode.sh <master.mkv> <pasta> <crf-mp4> <crf-webm>`: o loop dos 3 reais
   (600 × 900, 25 fps, 125 quadros), `cartao-loop.mp4` e `.webm`, até 600 KB
   cada. Os publicados usam 18 / 12 (no VP9 de 16 para cima voltam os quadros
-  repetidos, como no hero).
+  repetidos, como no hero). A conversão para YUV usa `accurate_rnd` e
+  `full_chroma_int` (A6). Forçar um quadro-chave no 124 do MP4 foi testado e
+  piorou a emenda (49,7 → 46,6 dB no Replay): ficou a cadeia de P-frames.
 - `vqa.sh <vídeo> <tag> [recorte] [cartao.png]`: o `vqa.sh` do hero para 125
   quadros. PSNR de cada par de quadros seguidos (inteiro e no recorte do
   movimento), pares idênticos, pior passo e mediana, a emenda 124 → 0 (≥ 45 dB)

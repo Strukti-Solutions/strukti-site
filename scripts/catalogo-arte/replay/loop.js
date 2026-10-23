@@ -8,7 +8,9 @@
 'use strict';
 const W = 800, H = 1200, N = 125, FPS = 25, T = N / FPS;
 const LED = 0.45;                 // no meio da volta o LED cai para 55% do cartão (ledK 0,85 -> ~0,47) e volta
-const NEV = { a: 0.6, lambda: 900, ang: -12 };   // a névoa: ondas de densidade de ±60%, 900 px, andando para a direita
+// A6: amplitude pela metade e onda de 1700 px (era ±60% e 900 px): os dois cones, a ~430 px um do outro, ficavam em
+// contrafase e o da direita parecia apagar; agora ficam a ~90° e o LED volta a ser o pulso principal
+const NEV = { a: 0.3, lambda: 1700, ang: -12 };   // a névoa: ondas de densidade de ±30%, 1700 px, andando para a direita
 module.exports = {
   W, H, N, fps: FPS,
   placas: { cartao: 'cur/cartao.png', L0: 'plates/L0.png', V0: 'plates/V0.png' },
