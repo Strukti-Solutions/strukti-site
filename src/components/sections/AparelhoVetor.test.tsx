@@ -263,7 +263,13 @@ describe('globals.css, bloco Hero "entrada"', () => {
     const [em1, em2] = [688 / 60, 323 / 60].map((n) => Math.round(n * 100) / 100);
     const fonte = (corpoDaRegra: string) =>
       corpoDaRegra.slice(corpoDaRegra.indexOf(".hero-expansao--entrada .hero-expansao__titulo h1 {")).match(/font-size: ([^;]*);/)?.[1]?.replace(/\s+/g, " ");
-    expect(fonte(parado)).toBe(`min( ${base}, var(--hx-parado-livre) / ${em1}, var(--hx-parado-livre) / ${em2} )`);
+    // Com piso: o piso da fonte de sempre (1,5rem), para o título crescer com o zoom e com a fonte grande do
+    // navegador (WCAG 1.4.4) quando o espaço livre, em px CSS, encolhe; abaixo dele a metade encosta na moldura.
+    const piso = base?.match(/^clamp\(([^,]+),/)?.[1];
+    expect(piso).toBe("1.5rem");
+    expect(fonte(parado)).toBe(
+      `max( ${piso}, min( ${base}, var(--hx-parado-livre) / ${em1}, var(--hx-parado-livre) / ${em2} ) )`,
+    );
     // A regra do deitado vale também em pé (as duas condições da media query); em pé muda só o espaço livre.
     expect(fonte(paradoEmPe)).toBeUndefined();
     expect(declaracao(parado, "--hx-parado-livre")).toBe(

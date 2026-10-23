@@ -4842,12 +4842,19 @@ textarea.field__input {
 
   /* A fonte do h1 de sempre, até as metades caberem no espaço livre: o
      espaço dividido pela largura de cada metade em em (688 e 323 px com a
-     fonte de 60 px, as do heroEntrada.test.ts). */
+     fonte de 60 px, as do heroEntrada.test.ts). Nunca abaixo do piso da
+     fonte de sempre (1,5rem): o livre é em px CSS e encolhe com o zoom, e
+     sem piso o título deixaria de crescer com o zoom e com a fonte grande
+     do navegador (WCAG 1.4.4). Abaixo do piso, a metade encosta na moldura
+     (ou passa sobre ela), como no cinza; a margem do palco segue valendo. */
   .hero-expansao--entrada .hero-expansao__titulo h1 {
-    font-size: min(
-      clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem),
-      var(--hx-parado-livre) / 11.47,
-      var(--hx-parado-livre) / 5.38
+    font-size: max(
+      1.5rem,
+      min(
+        clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem),
+        var(--hx-parado-livre) / 11.47,
+        var(--hx-parado-livre) / 5.38
+      )
     );
   }
 
