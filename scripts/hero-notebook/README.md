@@ -80,7 +80,23 @@ node sondas.js cur/media.png cur/bg.png [1440x900 1366x768]
   câmera do expansao, para o quadro ter o mesmo degradê (o claro do horizonte
   não fica atrás do título). A torre da direita sobe até sair do quadro, para
   o canto de cima escurecer como o da esquerda.
-- A mesa é mais funda (`z0: -70`): nas duas câmeras ela sai pelo pé do quadro.
+- A mesa vai até `z0: -45`: na `media` ela sai pelo pé do quadro; no `bg` a quina
+  da frente, com o fio de luz, fica no pé (y ≈ 995), como no fundo do expansao.
+- Composição (ajuste de arte 1): a caixa e o celular ficam puxados para dentro (no
+  corte 4:3 deitado a mídia perde 160 px de cada lado), com o topo da caixa abaixo
+  da linha 1 do título; a caneca vem para a frente, com a boca abaixo da linha 2.
+  O foco do abajur na `media` cai na caixa e no celular (`target [-30, 0, 24]`),
+  e o centro em frente ao notebook fica para o brilho frio da tela.
+- `screenGlow`: a elipse fria fica à frente da base (nada dentro da pegada), e uma
+  linha de oclusão logo à frente do pé assenta a base na mesa. O AO e a linha de
+  contato do notebook têm desfoque largo (~8 px na `media`), para o vetor por cima
+  tolerar 1–2 px de arredondamento.
+- `peitoril` (câmera `media`): o peitoril escurece à direita da tela, numa rampa
+  escondida atrás do notebook, para a linha 2 do título ficar sobre uma superfície
+  só (`[u0, u1, a]`, em frações da largura).
+- No `bg` (`BG_WORLD`) o notebook é menor (`laptop.s 0.84`, base de ~212 px) para
+  caber atrás do cartão de 300 × 400 em P = 0 até 2560 px de janela, e o celular
+  fica à esquerda da caixa, fora do cartão.
 
 ## 4. Instalar
 

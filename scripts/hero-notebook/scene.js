@@ -35,15 +35,17 @@
   const BASE = {
     wallZ: 64, glassZ: 71,
     win: { x0: -95, x1: 95, y0: 0.4, y1: 175, frame: 3, rail: 1.3, mull: [[-37, -34], [34, 37]] },
-    desk: { x0: -130, x1: 130, z0: -70, z1: 63, th: 3.2 },   // funda: nas duas câmeras a mesa sai pelo pé do quadro
+    desk: { x0: -130, x1: 130, z0: -45, z1: 63, th: 3.2 },   // na media a mesa sai pelo pé do quadro; no bg a quina da frente, com o fio de luz, fica no pé (y ≈ 995)
     lamp: { base: [-100, 0, 20], elbow: [-108, 44, 24], head: [-60, 78, 6], target: [2, 0, 16], k: 2.1, openK: 1, c0: 0.95, c1: 0.994, s0: 0.80, s1: 0.955, sw: 0.4 },
     // O notebook aberto no centro da mesa, de frente para a câmera (sai o caderno de papel). Base w x d x h, tela 16:10
     // (sw x sh) com bordas side/top/chin; a tampa sobe da dobradiça inclinada para trás `tilt` graus, o mesmo da câmera
     // media (calculado abaixo, depois das câmeras): a tela fica paralela ao quadro e vira um retângulo alinhado aos eixos.
     laptop: { x: 3, z: 29, w: 31, d: 21, h: 1.5, r: 1.2, sw: 28, sh: 17.5, side: 1.5, top: 1.15, chin: 2.25, lidT: 0.6, tilt: 0 },
-    phone: { x: -29, z: 19, rot: 76, w: 7.3, d: 15.2, h: 0.85 },   // landscape, screen top to the viewer's left
-    box: { x: -43, z: 36, rot: 12, w: 9.6, d: 4.6, h: 13, r: 1.25 },
-    mug: { x: 36, z: 33, r: 4.1, h: 9.2 }
+    // Caixa e celular puxados para dentro (no corte 4:3 deitado a mídia perde 160 px de cada lado): a caixa atrás, com o topo
+    // abaixo da linha 1 do título; o celular à frente dela. A caneca à frente, à direita: a boca abaixo da linha 2.
+    phone: { x: -22, z: 18, rot: 84, w: 7.3, d: 15.2, h: 0.85 },   // landscape, screen top to the viewer's left
+    box: { x: -29, z: 30, rot: 12, w: 9.6, d: 4.6, h: 13, r: 1.25 },
+    mug: { x: 29, z: 20, r: 4.1, h: 9.2 }
   };
   let W0 = BASE;
   function prepWorld(o) {
@@ -51,6 +53,8 @@
     if (o.world) for (const k in o.world) w[k] = o.world[k] === null ? null : Object.assign({}, w[k], o.world[k]);
     const L = w.lamp; L.axis = norm(sub(L.target, L.head));
     L.open = add(L.head, mul(L.axis, 6)); L.back = add(L.head, mul(L.axis, -5.5)); L.bulb = add(L.head, mul(L.axis, 3.5));
+    // `s`: o notebook em outra escala (o do fundo largo é menor, para caber atrás do cartão em P = 0 até 2560 px de janela)
+    const Lt = w.laptop; if (Lt && Lt.s && Lt.s !== 1) for (const k of ['w', 'd', 'h', 'r', 'sw', 'sh', 'side', 'top', 'chin', 'lidT']) Lt[k] *= Lt.s;
     W0 = w; return w;
   }
 
@@ -87,6 +91,9 @@
   }
   // O fundo largo (bg) mostra o mundo como ele é, com o notebook renderizado: ele nunca é ampliado.
   const BG_WORLD = {
+    laptop: { s: 0.84 },
+    // o celular à esquerda da caixa: fora do cartão de 300 x 400 em P = 0 (com o x da media ele seria cortado pela borda do cartão)
+    phone: { x: -40, z: 18, rot: 78 },
     lamp: { base: [-100, 0, 50], elbow: [-108, 46, 56], head: [-84, 33, 38], target: [-64, 0, 38], k: 0.66, openK: 0.33 }
   };
   const CAMS = {
@@ -101,8 +108,10 @@
     media: { W: 1280, H: 720, pos: [3, 42, -54], target: [3, 21, 34], F: 1050, shiftY: -80, cityBlur: 13, bokeh: 36, discBlur: 0.7, refl: 0.06, cityGain: 1.35,
       mcity: true, dof: 2.5, vig: 0.78, bloom: 0, lampGlow: 0, grain: 5, winBand: 0.3, lampBody: false, cone: false, bottomFade: [0.91, 0.97, 1.0, 0.45, 0.62],
       semAparelho: true, skyEl: -11,
+      // o peitoril escurece à direita da tela (rampa escondida atrás do notebook): a linha 2 do título fica sobre uma superfície só
+      peitoril: [0.45, 0.6, 0.64],
       world: { win: { mull: [[-43, -40], [46, 49]] },
-        lamp: { head: [-40, 95, 16], target: [-20, 0, 24], k: 1.6, c0: 0.88, c1: 0.985, s0: 0.78, s1: 0.94, sw: 0.4, cutZ: [3, 22, 24, 54] } } }
+        lamp: { head: [-40, 95, 16], target: [-30, 0, 24], k: 1.6, c0: 0.88, c1: 0.985, s0: 0.78, s1: 0.94, sw: 0.4, cutZ: [3, 22, 24, 54] } } }
   };
   // A tampa do notebook inclina para trás o mesmo ângulo da câmera media (sem guinada: x da câmera = x do alvo).
   { const m = CAMS.media, f = norm(sub(m.target, m.pos)); BASE.laptop.tilt = Math.asin(-f[1]) * 180 / Math.PI; }
@@ -410,6 +419,13 @@
       const e1 = P([a, w.y0 + rl, zf]), e2 = P([a, top, zf]);
       if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25), 0.4); ctx.lineWidth = Math.max(1, cam.S([a, 40, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); }
     }
+    // peitoril: [u0, u1, a] (frações da largura do quadro). Do trilho ao bico do peitoril, escurece até `a` de u0 a u1 e segue
+    // escuro até a borda: a face clara não corta a faixa da linha 2 do título ao meio.
+    if (o.peitoril) {
+      const [u0, u1, a] = o.peitoril;
+      path(ctx, [[w.x0 - 20, w.y0 + rl + 0.3, z1], [w.x1 + 20, w.y0 + rl + 0.3, z1], [w.x1 + 20, w.y0 - 1.15, z0 - 0.3], [w.x0 - 20, w.y0 - 1.15, z0 - 0.3]].map(P));
+      ctx.fillStyle = lin(ctx, [u0 * cam.W, 0], [u1 * cam.W, 0], [[0, rgba(C.edge, 0)], [1, rgba(C.edge, a)]]); ctx.fill();
+    }
   }
   function deskReflection(ctx, cam, city, o) {
     const dk = W0.desk, P = cam.P;
@@ -441,7 +457,8 @@
     const { W, H } = cam, L = W0.lamp.bulb, P = cam.P;
     const sh = layer(W, H), s = sh.getContext('2d');
     s.fillStyle = 'rgb(0,0,0)';
-    const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (W0.laptop) sets.push(laptopPts()); if (W0.phone) sets.push(slabPts(W0.phone));
+    const lp = W0.laptop ? laptopPts() : null;
+    const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (lp) sets.push(lp); if (W0.phone) sets.push(slabPts(W0.phone));
     const castOf = pts => hull(pts.map(p => p[1] > 0.05 ? shadowPt(L, p) : p).concat(pts.filter(p => p[1] <= 0.05)).map(P));
     const k = cam.S([0, 0, 30]);
     // lamp-cast shadows
@@ -451,11 +468,12 @@
     s.filter = `blur(${Math.round(k * 1.6)}px)`; s.globalAlpha = 0.32;
     for (const pts of sets) { path(s, hull(pts.map(p => [p[0], 0, p[2] - p[1] * 0.55]).map(P))); s.fill(); }
     // ambient occlusion: a slightly grown footprint, medium blur
-    s.filter = `blur(${Math.max(1, Math.round(k * 0.6))}px)`; s.globalAlpha = 0.5;
-    for (const pts of sets) { const f = pts.filter(p => p[1] <= 0.05); const c = f.reduce((a, p) => add(a, p), [0, 0, 0]).map(v => v / f.length); path(s, hull(f.map(p => add(c, mul(sub(p, c), 1.12))).map(P))); s.fill(); }
+    // (no notebook, o AO e a linha de contato têm desfoque largo, ~8 px na media: o vetor por cima tolera 1-2 px de arredondamento)
+    s.globalAlpha = 0.5;
+    for (const pts of sets) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.9 : 0.6)))}px)`; const f = pts.filter(p => p[1] <= 0.05); const c = f.reduce((a, p) => add(a, p), [0, 0, 0]).map(v => v / f.length); path(s, hull(f.map(p => add(c, mul(sub(p, c), 1.12))).map(P))); s.fill(); }
     // tight contact line
-    s.filter = `blur(${Math.max(1, Math.round(k * 0.18))}px)`; s.globalAlpha = 0.9;
-    for (const pts of sets) { path(s, hull(pts.filter(p => p[1] <= 0.05).map(P))); s.fill(); }
+    s.globalAlpha = 0.9;
+    for (const pts of sets) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.66 : 0.18)))}px)`; path(s, hull(pts.filter(p => p[1] <= 0.05).map(P))); s.fill(); }
     s.filter = 'none';
     ctx.save(); ctx.globalAlpha = 0.8; ctx.drawImage(sh, 0, 0); ctx.restore();
   }
@@ -469,12 +487,27 @@
     return { fr, tp };
   }
   // ---------------- o notebook ----------------
-  // O brilho frio da tela na mesa, à frente e dos lados da base (Q18). Fica também na mídia sem o notebook.
+  // O brilho frio da tela na mesa (Q18): uma elipse à frente da base, mais larga que ela e curta em profundidade, com nada
+  // dentro da pegada (a tela ilumina a mesa à frente e dos lados, não por baixo). Fica também na mídia sem o notebook.
+  // Depois, a linha de oclusão logo à frente do pé da base (um pouco além das quinas): a base pousa na mesa.
   function screenGlow(ctx, cam) {
-    const L = W0.laptop, k = L.glow != null ? L.glow : 1, col = mix(C.e300, C.n200, 0.45);
-    discT(ctx, cam, [L.x, 0.05, L.z - L.d * 0.45], [L.w * 0.9, 0, 0], [0, 0, L.d * 0.8]);
-    ctx.fillStyle = radial(ctx, [[0, rgba(col, 0.3 * k)], [0.4, rgba(col, 0.13 * k)], [1, rgba(col, 0)]]);
+    const L = W0.laptop, k = L.glow != null ? L.glow : 1, col = mix(C.e300, C.n200, 0.45), P = cam.P;
+    const fr = frameOf({ x: L.x, z: L.z, rot: 0 }), zf = L.z - L.d / 2;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, cam.W, cam.H);
+    rrect(L.w, L.d, L.r, 6).map(([u, v]) => P(fr(u, 0, v))).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
+    ctx.clip('evenodd');
+    discT(ctx, cam, [L.x, 0.05, zf - L.d * 0.2], [L.w * 0.78, 0, 0], [0, 0, L.d * 0.42]);
+    ctx.fillStyle = radial(ctx, [[0, rgba(col, 0.3 * k)], [0.45, rgba(col, 0.15 * k)], [1, rgba(col, 0)]]);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx);
+    ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation = 'source-over';
+    const s = cam.S(fr(0, 0, -L.d / 2)), e = 6 / s, dz = 2.6 / s;
+    const a1 = P(fr(-L.w / 2 - e, 0, -L.d / 2 - dz)), a2 = P(fr(L.w / 2 + e, 0, -L.d / 2 - dz));
+    ctx.filter = `blur(${Math.max(1, Math.round(s * 0.1))}px)`; ctx.lineCap = 'round';
+    ctx.strokeStyle = lin(ctx, a1, a2, [[0, rgba(C.edge, 0)], [0.04, rgba(C.edge, 0.4)], [0.96, rgba(C.edge, 0.4)], [1, rgba(C.edge, 0)]]);
+    ctx.lineWidth = Math.max(2, s * 0.32); ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke();
+    ctx.restore();
   }
 
   // O notebook aberto: base de alumínio grafite com teclado (teclas sem legenda) e trackpad, tampa com moldura preta e a
@@ -492,17 +525,17 @@
     const dl = light(alu, fr(-L.w / 2, L.h, 0), [0, 1, 0]), dr = light(alu, fr(L.w / 2, L.h, 0), [0, 1, 0]);
     path(ctx, tp); ctx.fillStyle = lin(ctx, D(-L.w / 2, 0), D(L.w / 2, 0), [[0, rgba(dl)], [1, rgba(dr)]]); ctx.fill();
     // teclado: seis fileiras de teclas escuras (a de cima mais fina; a de baixo com a barra de espaço), sem legenda
-    const keyC = rgba([13, 15, 20], 0.88), gap = 0.26;
-    let v = L.d / 2 - 1.9;
+    const ks = L.s || 1, keyC = rgba([13, 15, 20], 0.88), gap = 0.26 * ks;   // ks: a escala do notebook (medidas do de 31 cm)
+    let v = L.d / 2 - 1.9 * ks;
     [[0.8, 14], [1.4, 14], [1.4, 14], [1.4, 13], [1.4, 12], [1.4, 0]].forEach(([hk, n]) => {
-      const v1 = v, v0 = v - hk; v = v0 - gap;
+      const v1 = v, v0 = v - hk * ks; v = v0 - gap;
       const parts = [];
       if (!n) parts.push([-12.6, -9.1], [-8.85, -6.5], [-6.25, 6.0], [6.25, 8.45], [8.7, 10.5], [10.75, 12.6]);
-      else { const wk = (25.2 - gap * (n - 1)) / n; for (let i = 0; i < n; i++) parts.push([-12.6 + i * (wk + gap), -12.6 + i * (wk + gap) + wk]); }
-      for (const [a, b] of parts) { path(ctx, quad(a, v0, b, v1)); ctx.fillStyle = keyC; ctx.fill(); }
+      else { const wk = (25.2 - 0.26 * (n - 1)) / n; for (let i = 0; i < n; i++) parts.push([-12.6 + i * (wk + 0.26), -12.6 + i * (wk + 0.26) + wk]); }
+      for (const [a, b] of parts) { path(ctx, quad(a * ks, v0, b * ks, v1)); ctx.fillStyle = keyC; ctx.fill(); }
     });
     // trackpad
-    path(ctx, quad(-6.4, -L.d / 2 + 1.3, 6.4, -L.d / 2 + 8.4)); ctx.fillStyle = rgba(mix(mix(dl, dr, 0.5), C.black, 0.1)); ctx.fill();
+    path(ctx, quad(-6.4 * ks, -L.d / 2 + 1.3 * ks, 6.4 * ks, -L.d / 2 + 8.4 * ks)); ctx.fillStyle = rgba(mix(mix(dl, dr, 0.5), C.black, 0.1)); ctx.fill();
     ctx.strokeStyle = rgba(C.n400, 0.22); ctx.lineWidth = 0.8; ctx.stroke();
     // a luz fria da tela no tampo e no teclado, mais forte junto da dobradiça
     ctx.save(); path(ctx, tp); ctx.clip(); ctx.globalCompositeOperation = 'screen';
