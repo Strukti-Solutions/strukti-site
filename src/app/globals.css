@@ -2143,6 +2143,13 @@ video:focus-visible {
     gap: var(--space-1);
   }
 
+  /* 18 px: "Replay para quadras" cabe numa linha no cartão de 235 px, e o
+     texto começa abaixo do botão da caixa na arte (a etiqueta, os dois selos
+     e a frase já ocupam ~2/3 do cartão). */
+  .catalogo__nome {
+    font-size: 1.125rem;
+  }
+
   .catalogo__frase {
     font-size: 0.875rem;
     line-height: 1.4;
