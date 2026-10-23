@@ -6,7 +6,7 @@ import { HeroNotebook } from "./HeroNotebook";
 
 /**
  * Hero "notebook" (protótipo da entrada pelo notebook): é o `HeroExpansao`
- * com `entrada={{ aparelho: <AparelhoCinza /> }}`. Aqui só o contrato do
+ * com `entrada={{ aparelho: <AparelhoVetor /> }}`. Aqui só o contrato do
  * HTML (a mecânica de câmera está em scroll-expansion-hero.test.tsx e
  * heroEntrada.test.ts).
  */
@@ -70,13 +70,14 @@ describe("<HeroNotebook />", () => {
     );
   });
 
-  it("a section tem o modificador hero-expansao--entrada e o aparelho cinza no palco", async () => {
+  it("a section tem o modificador hero-expansao--entrada e o aparelho em vetor no palco", async () => {
     const { container } = await mount();
     const section = container.querySelector("#inicio");
 
     expect(section?.classList.contains("hero-expansao")).toBe(true);
     expect(section?.classList.contains("hero-expansao--entrada")).toBe(true);
-    expect(section?.querySelector(".aparelho-cinza")).not.toBeNull();
+    expect(section?.querySelector(".aparelho-vetor")).not.toBeNull();
+    expect(section?.querySelector(".aparelho-cinza")).toBeNull();
   });
 
   it("a mídia é a do siteConfig.heroNotebook, por enquadramento: o fundo e o pôster da mesa com o notebook, o retrato só em <source media>", async () => {

@@ -183,6 +183,47 @@ describe("camera: a mídia e o aparelho do enquadramento atual", () => {
   });
 });
 
+describe("telaNaCena: a tela presa pelo pé (N4)", () => {
+  // A tela tem a proporção da janela (Q13), e a da arte, a dela (16:10 o notebook, 390 × 844 o celular). A borda de baixo
+  // da tela fica no pé da tela da arte (cy + altura/2), onde a moldura em vetor encontra a base ou o suporte: numa janela
+  // mais larga a tampa fica mais baixa, numa mais estreita, mais alta, e a base nunca sai do lugar vazio da mesa.
+  const JANELAS: Viewport[] = [
+    NOTEBOOK_GRANDE,
+    NOTEBOOK_COM_BARRA,
+    { w: 2560, h: 1080, emPe: false },
+    { w: 1024, h: 768, emPe: false },
+    CELULAR,
+    { w: 768, h: 1024, emPe: true },
+    { w: 820, h: 1180, emPe: true },
+    { w: 360, h: 740, emPe: true },
+  ];
+
+  it("ENTRADA.aparelho tem a altura da tela da arte, na proporção dela", () => {
+    expect(ENTRADA.aparelho.deitado.largura / ENTRADA.aparelho.deitado.altura).toBeCloseTo(16 / 10, 3);
+    expect(ENTRADA.aparelho.emPe.largura / ENTRADA.aparelho.emPe.altura).toBeCloseTo(390 / 844, 3);
+  });
+
+  it.each(JANELAS)("a $w × $h, em todo e, o pé da tela na janela é o pé da tela da arte", (v) => {
+    const { midia } = cenaDe(v);
+    const aparelho = ENTRADA.aparelho[v.emPe ? "emPe" : "deitado"];
+    for (const e of [0, 0.4, 1]) {
+      const { cy, s } = telaNaCena(e, v);
+      const q = quadro(e, v);
+      const m = Math.max(q.w / midia.w, q.h / midia.h);
+      const topoDaMidia = (v.h - q.h) / 2 + (q.h - midia.h * m) * midia.posY;
+      expect(cy + (s * v.h) / 2).toBeCloseTo(topoDaMidia + (aparelho.cy + aparelho.altura / 2) * m, 6);
+    }
+  });
+
+  it("na proporção da arte, o centro é o da tela da arte (1440 × 900 e 390 × 844)", () => {
+    for (const v of [NOTEBOOK_GRANDE, CELULAR]) {
+      const { midia, aparelho } = cenaDe(v);
+      const m = Math.max(v.w / midia.w, v.h / midia.h);
+      expect(telaNaCena(1, v).cy).toBeCloseTo((v.h - midia.h * m) * midia.posY + aparelho.cy * m, 1);
+    }
+  });
+});
+
 describe("camera: notebook ou celular", () => {
   it("em pé usa aparelho.emPe e deitado usa aparelho.deitado", () => {
     const deitado = camera(ENTRADA.E, { w: 800, h: 600, emPe: false }).tela;
@@ -371,20 +412,22 @@ describe("globals.css: os números fixos da cena batem com o ENTRADA", () => {
     expect(numero(valor(noCartao(), "--hx-tela-s"), /^([\d.]+)/)).toBeCloseTo(cartaoTela.s, 4);
     expect(numero(valor(noCartao(), "--hx-tela-y"), /\/ 2 - ([\d.]+)px/)).toBeCloseTo(v.h / 2 - cartaoTela.cy, 2);
 
-    // A pausa: --hx-tela-s e o centro em `posY` da altura do palco menos uma fração da largura da mídia (o cover corta
-    // em posY: deitado, 50% 100%, o centro fica acima do pé; em pé, 50% 50%, em volta do meio do palco).
+    // A pausa: --hx-tela-s e o topo da tela pelo pé (a tela presa pelo pé da tela da arte, N4): `posY` da altura do
+    // palco mais ou menos uma fração da largura da mídia (o cover corta em posY: deitado, 50% 100%, o pé fica acima do pé
+    // do palco; em pé, 50% 50%, abaixo do meio dele), menos a altura da tela.
     const pausaTela = camera(ENTRADA.E, v).tela;
     expect(numero(valor(naPausa(), "--hx-tela-s"), /^([\d.]+)/)).toBeCloseTo(pausaTela.s, 4);
     const y = valor(naPausa(), "--hx-tela-y");
     const forma = y?.match(
-      /^calc\( ?var\(--hx-palco-h\)( \/ 2)? - (?:([\d.]+) \* var\(--hx-midia-largura\) - )?var\(--hx-tela-s\) \* var\(--hx-palco-h\) \/ 2 ?\) !important$/,
+      /^calc\( ?var\(--hx-palco-h\)( \/ 2)? ([+-]) ([\d.]+) \* var\(--hx-midia-largura\) - var\(--hx-tela-s\) \* var\(--hx-palco-h\) ?\) !important$/,
     );
     expect(forma, y).not.toBeNull();
     const parteDoPalco = forma?.[1] ? 0.5 : 1;
-    const fracao = Number(forma?.[2] ?? 0);
+    const fracao = Number(forma?.[3] ?? 0) * (forma?.[2] === "-" ? -1 : 1);
     const { w, h, posY } = cenaDe(v).midia;
     expect(parteDoPalco).toBe(posY);
     const larguraDaMidia = Math.max(v.w, (v.h * w) / h);
-    expect(parteDoPalco * v.h - fracao * larguraDaMidia).toBeCloseTo(pausaTela.cy, 1);
+    const topo = pausaTela.cy - (pausaTela.s * v.h) / 2;
+    expect(parteDoPalco * v.h + fracao * larguraDaMidia - pausaTela.s * v.h).toBeCloseTo(topo, 1);
   });
 });

@@ -4512,9 +4512,6 @@ textarea.field__input {
   /* A escala das metades na pausa (posicaoDoTitulo): 1 até medir. */
   --hx-titulo-s: 1;
   --hx-titulo-saida: 0;
-  /* As caixas cinza do protótipo (a arte troca pelo vetor). */
-  --aparelho-cinza-moldura: #4a505a;
-  --aparelho-cinza-base: #6b717c;
 }
 
 @supports (height: 1svh) {
@@ -4685,74 +4682,83 @@ textarea.field__input {
   pointer-events: none;
 }
 
-/* O aparelho cinza (src/components/sections/AparelhoCinza.tsx). A caixa de
-   cada um é o retângulo da tela; a moldura é uma borda por fora dele, e o
-   miolo fica vazio (a tela de verdade vem por cima). As medidas são da
-   caixa sem escala (cqw é a largura do palco), então crescem com ela. */
-.hero-expansao--entrada :is(.aparelho-cinza, .aparelho-cinza__notebook, .aparelho-cinza__celular) {
+/* O aparelho em vetor (src/components/sections/AparelhoVetor.tsx). A caixa
+   de cada um é o retângulo da tela (o furo da moldura); a tela de verdade
+   vem por cima, e o miolo fica vazio. A unidade --av-px é 1 px da mídia: a
+   tela tem a largura da tela da arte (--av-largura, em px da mídia) e 100cqw
+   na caixa sem escala, então tudo cresce com ela. As medidas e as cores vêm
+   do aparelhoVetor.json (o componente as escreve no style). */
+.hero-expansao--entrada :is(.aparelho-vetor, .aparelho-vetor__notebook, .aparelho-vetor__celular) {
   position: absolute;
   inset: 0;
 }
 
-.hero-expansao--entrada .aparelho-cinza__celular {
+.hero-expansao--entrada :is(.aparelho-vetor__notebook, .aparelho-vetor__celular) {
+  --av-px: calc(100cqw / var(--av-largura));
+}
+
+.hero-expansao--entrada .aparelho-vetor__celular {
   display: none;
 }
 
 @media (orientation: portrait) {
-  .hero-expansao--entrada .aparelho-cinza__notebook {
+  .hero-expansao--entrada .aparelho-vetor__notebook {
     display: none;
   }
 
-  .hero-expansao--entrada .aparelho-cinza__celular {
+  .hero-expansao--entrada .aparelho-vetor__celular {
     display: block;
   }
 }
 
-/* Notebook: a tampa (moldura com o queixo mais alto) e, abaixo dela, a
-   base com o teclado em leve perspectiva (mais larga na frente). */
-.hero-expansao--entrada .aparelho-cinza__tampa {
-  --aparelho-cinza-borda: 2.5cqw;
+/* A moldura: a tampa do notebook (borda de vidro preto com o queixo mais
+   alto e o ponto da câmera) e o corpo do celular (cantos arredondados). A
+   borda tem espessura fixa em volta da tela, que tem a proporção da janela
+   (Q13): numa janela mais larga, a tampa fica mais baixa; o pé dela fica no
+   pé da tela da arte, sobre a base. O aro de alumínio é uma sombra sem
+   desfoque por fora da borda. */
+.hero-expansao--entrada :is(.aparelho-vetor__tampa, .aparelho-vetor__corpo) {
   position: absolute;
-  inset: calc(-1 * var(--aparelho-cinza-borda)) calc(-1 * var(--aparelho-cinza-borda))
-    calc(-1.8 * var(--aparelho-cinza-borda));
-  border: var(--aparelho-cinza-borda) solid var(--aparelho-cinza-moldura);
-  border-bottom-width: calc(1.8 * var(--aparelho-cinza-borda));
-  border-radius: var(--aparelho-cinza-borda);
+  inset: calc(-1 * var(--av-topo) * var(--av-px)) calc(-1 * var(--av-lado) * var(--av-px))
+    calc(-1 * var(--av-queixo) * var(--av-px));
+  border-style: solid;
+  border-color: var(--av-vidro);
+  border-width: calc(var(--av-topo) * var(--av-px)) calc(var(--av-lado) * var(--av-px))
+    calc(var(--av-queixo) * var(--av-px));
+  border-radius: calc(var(--av-raio) * var(--av-px));
+  box-shadow: 0 0 0 calc(var(--av-aro) / 2 * var(--av-px)) var(--av-aro-cor);
 }
 
-.hero-expansao--entrada .aparelho-cinza__base {
+/* O ponto da câmera, no meio da borda de cima: a lente navy com um reflexo
+   elétrico (o único detalhe de cor do aparelho). */
+.hero-expansao--entrada .aparelho-vetor__camera {
   position: absolute;
-  top: calc(100% + 4.5cqw);
-  right: -10%;
-  left: -10%;
-  height: 9%;
-  border-top: 0.6cqw solid var(--aparelho-cinza-moldura);
-  border-radius: 0 0 1.5cqw 1.5cqw;
-  background-color: var(--aparelho-cinza-base);
-  clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+  top: calc(-0.5 * var(--av-topo) * var(--av-px));
+  left: 50%;
+  width: calc(var(--av-camera) * var(--av-px));
+  height: calc(var(--av-camera) * var(--av-px));
+  border-radius: 50%;
+  /* electric-400 a 55% sobre o navy-900; o anel no navy-600 */
+  background:
+    radial-gradient(circle at 38% 36%, rgb(58 160 245 / 0.55) 0 16%, transparent 32%),
+    var(--color-navy-900);
+  box-shadow: 0 0 0 calc(0.25 * var(--av-px)) rgb(42 71 102 / 0.6);
+  translate: -50% -50%;
 }
 
-/* Celular: o corpo (moldura mais alta em cima e embaixo) de pé num
-   suporte, cujo pé aparece abaixo dele. */
-.hero-expansao--entrada .aparelho-cinza__corpo {
-  --aparelho-cinza-borda: 4cqw;
+/* A base com o teclado e o suporte: SVG presos ao pé da tela, no viewBox
+   do vetor.js (px da mídia, a origem no meio do pé da tela). O pé da tela
+   fica sempre no pé da tela da arte (telaNaCena), então eles caem no lugar
+   vazio da mesa em qualquer janela. A base vem antes da tampa (a tampa
+   cobre o fundo dela); o suporte vem depois do corpo (o ressalto fica à
+   frente dele; a chapa, recortada pelo corpo, atrás). */
+.hero-expansao--entrada :is(.aparelho-vetor__base, .aparelho-vetor__suporte) {
   position: absolute;
-  inset: calc(-1.8 * var(--aparelho-cinza-borda)) calc(-1 * var(--aparelho-cinza-borda));
-  border: var(--aparelho-cinza-borda) solid var(--aparelho-cinza-moldura);
-  border-block-width: calc(1.8 * var(--aparelho-cinza-borda));
-  /* Raio igual à borda: o canto de dentro fica reto, como a tela. */
-  border-radius: var(--aparelho-cinza-borda) / calc(1.8 * var(--aparelho-cinza-borda));
-}
-
-.hero-expansao--entrada .aparelho-cinza__suporte {
-  position: absolute;
-  top: calc(100% + 7.2cqw);
-  right: 12%;
-  left: 12%;
-  height: 7%;
-  border-radius: 0 0 2cqw 2cqw;
-  background-color: var(--aparelho-cinza-base);
-  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+  top: calc(100% + var(--av-y) * var(--av-px));
+  left: calc(50% + var(--av-x) * var(--av-px));
+  width: calc(var(--av-w) * var(--av-px));
+  height: calc(var(--av-h) * var(--av-px));
+  overflow: visible;
 }
 
 /* Estado parado: sem JavaScript, ou com reduced motion (o JavaScript nem
@@ -4760,8 +4766,9 @@ textarea.field__input {
    expansao), a pose da pausa só com CSS: o quadro no palco inteiro, sem
    raio, o fundo de fora apagado e o título ao lado do aparelho. A tela
    fica no fluxo, sem transform, abaixo da cena (spec §7); no aparelho, o
-   miolo ganha o fundo da página. O centro da tela é o da conta do
-   heroEntrada.ts; a escala é a de 1440 × 900 deitado e de 390 × 844 em pé
+   miolo ganha o fundo da página. A tela fica presa pelo pé, como na conta
+   do heroEntrada.ts (telaNaCena): o pé dela é o pé da tela da arte, sobre a
+   base ou o suporte; a escala é a de 1440 × 900 deitado e de 390 × 844 em pé
    (sem medir, o CSS não divide por uma largura). */
 @media (scripting: none), (prefers-reduced-motion: reduce) {
   .hero-expansao--entrada {
@@ -4771,10 +4778,10 @@ textarea.field__input {
     --hx-quadro-h: var(--hx-palco-h) !important;
     --hx-tela-s: 0.25625 !important;
     --hx-tela-x: calc(50cqw * (1 - var(--hx-tela-s))) !important;
-    /* O centro da tela: (720 − 359,7)/1280 da largura da mídia acima do pé
-       do palco (a mídia corta por baixo). */
+    /* O pé da tela: (720 − 359,7 − 184,5/2)/1280 da largura da mídia acima
+       do pé do palco (a mídia corta por baixo). */
     --hx-tela-y: calc(
-      var(--hx-palco-h) - 0.2814844 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
+      var(--hx-palco-h) - 0.2094141 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h)
     ) !important;
     --hx-sala-z: 1 !important;
     --hx-sala-tx: 0px !important;
@@ -4798,7 +4805,7 @@ textarea.field__input {
     --hx-titulo-saida: 0 !important;
   }
 
-  .hero-expansao--entrada :is(.aparelho-cinza__tampa, .aparelho-cinza__corpo) {
+  .hero-expansao--entrada :is(.aparelho-vetor__notebook, .aparelho-vetor__celular) {
     background-color: var(--surface);
   }
 }
@@ -4806,9 +4813,9 @@ textarea.field__input {
 @media (scripting: none) and (orientation: portrait), (prefers-reduced-motion: reduce) and (orientation: portrait) {
   .hero-expansao--entrada {
     --hx-tela-s: 0.32326 !important;
-    /* A mídia em pé corta em volta do meio, e a tela do celular está no
-       meio dela: o centro da tela é o do palco. */
-    --hx-tela-y: calc(var(--hx-palco-h) / 2 - var(--hx-tela-s) * var(--hx-palco-h) / 2) !important;
+    /* A mídia em pé corta em volta do meio; o pé da tela do celular fica
+       (640 + 413,78/2 − 640)/720 da largura da mídia abaixo do meio do palco. */
+    --hx-tela-y: calc(var(--hx-palco-h) / 2 + 0.2873472 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h)) !important;
   }
 }
 
@@ -4848,11 +4855,16 @@ textarea.field__input {
   }
 }
 
-/* Cores forçadas (§8): a moldura do aparelho e a borda da tela na cena
-   continuam visíveis. */
+/* Cores forçadas (§8): a moldura do aparelho, o contorno da base e do
+   suporte e a borda da tela na cena continuam visíveis. */
 @media (forced-colors: active) {
-  .hero-expansao--entrada :is(.aparelho-cinza__tampa, .aparelho-cinza__corpo) {
+  .hero-expansao--entrada :is(.aparelho-vetor__tampa, .aparelho-vetor__corpo) {
     outline: 2px solid CanvasText;
+  }
+
+  .hero-expansao--entrada .aparelho-vetor__lateral {
+    stroke: CanvasText;
+    stroke-width: 1.5;
   }
 
   .hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"])

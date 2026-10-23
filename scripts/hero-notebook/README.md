@@ -87,6 +87,37 @@ node sondas.js --em-pe cur/media-retrato.png cur/portrait.png [390x844 360x740 3
   celular, e saem também as caixas das metades como o site as desenha na
   pausa (`metade1`, `metade2`, na escala do `posicaoDoTitulo`).
 
+### O aparelho em vetor
+
+```sh
+node vetor.js > ../../src/components/sections/aparelhoVetor.json
+```
+
+O aparelho da frente (o notebook na `media`, o celular no suporte na
+`mediaRetrato`) não está na mídia: no site ele é vetor por cima
+(`src/components/sections/AparelhoVetor.tsx`). O `vetor.js` projeta a mesma
+geometria e a mesma luz do `drawLaptop` e do `drawCelularEmPe` pelas câmeras
+das mídias, em px da mídia, com a origem no meio do pé da tela:
+
+- a moldura (a tampa, o corpo): as espessuras da borda em volta da tela
+  (`lado`, `topo`, `queixo`), o raio, o aro, o ponto da câmera e as cores. No
+  site ela é uma borda CSS de espessura fixa em volta da tela HTML, que tem a
+  proporção da janela;
+- o que fica abaixo do pé da tela, em SVG (`caixa` é o viewBox): a base com o
+  teclado (seis fileiras sem legenda), o trackpad, o brilho frio da tela no
+  tampo, a quina da frente e a dobradiça; a chapa do suporte (recortada pelo
+  corpo, `semCorpo`) e o ressalto. A prateleira fica inteira atrás do
+  ressalto e não sai;
+- uma sombra de contato sob o pé (`contato`), nova: a base e o suporte pousam
+  na mesa.
+
+O site prende a tela pelo pé da tela da arte (`ENTRADA.aparelho`, `cy +
+altura / 2`, no `telaNaCena`): numa janela mais larga que a arte a tampa fica
+mais baixa, numa mais estreita, mais alta, e a base e o suporte caem sempre no
+lugar vazio da mesa. Mexeu no notebook, no celular ou nas câmeras, rode o
+`vetor.js` de novo: o `cena.test.ts` confere que o JSON do site é a saída dele
+e que as bordas batem com o `geo.js`.
+
 ## 3. Diferenças para o expansao
 
 - `BASE.laptop` no lugar de `BASE.notebook` (o caderno); celular, caixa e

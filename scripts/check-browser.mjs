@@ -275,10 +275,11 @@ const EXP_WHEEL_BUDGET = 80;
 // 2026-10-23-hero-entrada-notebook-design.md): os ganchos estáveis das
 // Tasks 2 e 3. A tela é o próprio bloco de chamada (EXP_CONTEUDO_SELECTOR);
 // o aparelho é a caixa do tamanho da tela (o furo da moldura), e a moldura é
-// a tampa do notebook ou o corpo do celular, o que estiver à vista.
+// a tampa do notebook ou o corpo do celular, o que estiver à vista (o
+// AparelhoVetor da fase de arte, ganchos aparelho-vetor__*).
 const ENT_SELECTOR = ".hero-expansao--entrada";
 const ENT_APARELHO_SELECTOR = ".hero-expansao__aparelho";
-const ENT_MOLDURA_SELECTOR = ".aparelho-cinza__tampa, .aparelho-cinza__corpo";
+const ENT_MOLDURA_SELECTOR = ".aparelho-vetor__tampa, .aparelho-vetor__corpo";
 // Computador; a barra de rolagem clássica (a janela útil ~15 px mais
 // estreita que a janela, Review Focus 1); o mesmo com a tela a 125%
 // (pixels de tela fracionários); e o celular em pé, com toque (Q6, Q26).
@@ -1980,8 +1981,8 @@ const ENT_READ_FN = `(() => {
     aparelho: rect(root.querySelector(${JSON.stringify(ENT_APARELHO_SELECTOR)})),
     moldura: rect(moldura),
     linhas: [...root.querySelectorAll(".hero-expansao__linha")].map(rect),
-    notebook: shown(root.querySelector(".aparelho-cinza__notebook")),
-    celular: shown(root.querySelector(".aparelho-cinza__celular")),
+    notebook: shown(root.querySelector(".aparelho-vetor__notebook")),
+    celular: shown(root.querySelector(".aparelho-vetor__celular")),
   };
 })`;
 

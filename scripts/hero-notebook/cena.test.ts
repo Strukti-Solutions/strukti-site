@@ -592,4 +592,80 @@ describe("cena do hero notebook", () => {
     );
     for (const f of fontes) expect(readFileSync(join(PASTA, f), "utf8")).not.toMatch(/hero-expansao/);
   });
+  describe("o aparelho em vetor (N4): a geometria e a luz vêm da arte", () => {
+    type Geo = {
+      tela: { cx: number; cy: number; largura: number; altura: number };
+      base: { frenteEsq: Ponto; frenteDir: Ponto; fundoEsq: Ponto; fundoDir: Ponto; chaoFrente: number };
+      tampa: { esq: number; dir: number; topo: number; pe: number };
+      celular: { esq: number; dir: number; topo: number; pe: number };
+      suporte: { frenteEsq: Ponto; frenteDir: Ponto; pe: number };
+    };
+    type Ponto = [number, number];
+    type Caixa = [number, number, number, number];
+    type Moldura = { lado: number; topo: number; queixo: number; raio: number; aro: number };
+    type Vetor = {
+      notebook: { tela: { largura: number; altura: number }; tampa: Moldura; base: { caixa: Caixa } };
+      celular: { tela: { largura: number; altura: number }; corpo: Moldura; suporte: { caixa: Caixa } };
+    };
+    const geo = (camera: string) =>
+      JSON.parse(execFileSync("node", ["geo.js", "{}", camera], { cwd: PASTA, encoding: "utf8" })) as Geo;
+
+    it("o aparelhoVetor.json do site é a saída do vetor.js (rodar o vetor.js de novo depois de mexer na cena)", () => {
+      const vetor = (require("./vetor.js") as () => Vetor)();
+      const json = JSON.parse(
+        readFileSync(join(PASTA, "../../src/components/sections/aparelhoVetor.json"), "utf8"),
+      ) as Vetor;
+      expect(json).toEqual(vetor);
+    });
+
+    it("a tela do vetor é a do ENTRADA, com a altura da arte (o pé da tela prende a moldura)", () => {
+      const vetor = (require("./vetor.js") as () => Vetor)();
+      const { deitado, emPe } = ENTRADA.aparelho;
+      expect(vetor.notebook.tela).toEqual({ largura: deitado.largura, altura: deitado.altura });
+      expect(vetor.celular.tela).toEqual({ largura: emPe.largura, altura: emPe.altura });
+      expect(Math.abs(deitado.altura - geo("media").tela.altura)).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(emPe.altura - geo("mediaRetrato").tela.altura)).toBeLessThanOrEqual(0.1);
+    });
+
+    it("a tampa é a da arte em volta da tela: bordas e queixo com 0,1 px", () => {
+      const { tela, tampa } = geo("media");
+      const t = (require("./vetor.js") as () => Vetor)().notebook.tampa;
+      expect(Math.abs(t.lado - (tela.cx - tela.largura / 2 - tampa.esq))).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(t.lado - (tampa.dir - tela.cx - tela.largura / 2))).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(t.topo - (tela.cy - tela.altura / 2 - tampa.topo))).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(t.queixo - (tampa.pe - tela.cy - tela.altura / 2))).toBeLessThanOrEqual(0.1);
+      expect(t.raio).toBeGreaterThan(0);
+      expect(t.aro).toBeGreaterThan(0);
+    });
+
+    it("o corpo do celular é o da arte em volta da tela, com cantos arredondados maiores que a borda", () => {
+      const { tela, celular } = geo("mediaRetrato");
+      const c = (require("./vetor.js") as () => Vetor)().celular.corpo;
+      expect(Math.abs(c.lado - (tela.cx - tela.largura / 2 - celular.esq))).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(c.topo - (tela.cy - tela.altura / 2 - celular.topo))).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(c.queixo - (celular.pe - tela.cy - tela.altura / 2))).toBeLessThanOrEqual(0.1);
+      expect(c.raio).toBeGreaterThan(Math.max(c.lado, c.topo));
+    });
+
+    it("a base e o suporte (px da mídia, origem no meio do pé da tela) cobrem o tampo e o pé da arte", () => {
+      const vetor = (require("./vetor.js") as () => Vetor)();
+      const deitado = geo("media");
+      const pe = deitado.tela.cy + deitado.tela.altura / 2;
+      const [x0, y0, w, h] = vetor.notebook.base.caixa;
+      const { base } = deitado;
+      for (const [x, y] of [base.frenteEsq, base.frenteDir, base.fundoEsq, base.fundoDir]) {
+        expect(x - deitado.tela.cx).toBeGreaterThanOrEqual(x0);
+        expect(x - deitado.tela.cx).toBeLessThanOrEqual(x0 + w);
+        expect(y - pe).toBeGreaterThanOrEqual(y0);
+      }
+      expect(y0 + h).toBeGreaterThanOrEqual(base.chaoFrente - pe);
+
+      const emPe = geo("mediaRetrato");
+      const peEmPe = emPe.tela.cy + emPe.tela.altura / 2;
+      const [sx0, sy0, sw, sh] = vetor.celular.suporte.caixa;
+      expect(sx0).toBeLessThanOrEqual(emPe.suporte.frenteEsq[0] - emPe.tela.cx);
+      expect(sx0 + sw).toBeGreaterThanOrEqual(emPe.suporte.frenteDir[0] - emPe.tela.cx);
+      expect(sy0 + sh).toBeGreaterThanOrEqual(emPe.suporte.pe - peEmPe);
+    });
+  });
 });

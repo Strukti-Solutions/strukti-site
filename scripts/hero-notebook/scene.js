@@ -1173,6 +1173,8 @@
     return { cam };
   }
   G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt,
-    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular, corDaMesa, discosDaCidade, coresDoMontante };
+    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular, corDaMesa, discosDaCidade, coresDoMontante,
+    // para o vetor do aparelho (vetor.js): a mesma luz, o mesmo contorno arredondado e as mesmas cores
+    light, rrect, hull, C, GLOW_C };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.FDE;

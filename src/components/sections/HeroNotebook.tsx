@@ -3,16 +3,17 @@ import { siteConfig } from "@/config/site";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { ScrollExpandMedia } from "@/components/ui/scroll-expansion-hero";
 import { HeroOpcaoTexto } from "@/components/spike/HeroOpcao";
-import { AparelhoCinza } from "./AparelhoCinza";
+import { AparelhoVetor } from "./AparelhoVetor";
 import { HeroVideoClip, HeroVideoProvider, HeroVideoToggle } from "./HeroVideoMedia";
 
 /**
  * Hero "notebook" (protótipo da entrada pelo notebook, spec
  * 2026-10-23-hero-entrada-notebook-design.md): o `HeroExpansao` com o modo
  * `entrada` do `ScrollExpandMedia` ligado. Depois da expansão até a tela
- * cheia, há uma pausa e a câmera se aproxima da tela de um aparelho (aqui as
- * caixas cinza do `AparelhoCinza`, notebook deitado ou celular em pé) até
- * ela virar a página; a rolagem para cima desfaz o caminho.
+ * cheia, há uma pausa e a câmera se aproxima da tela de um aparelho (o
+ * `AparelhoVetor`: o notebook deitado ou o celular em pé, em vetor por cima
+ * do lugar vazio dele na mesa) até ela virar a página; a rolagem para cima
+ * desfaz o caminho.
  *
  * A mídia é a da mesa com o notebook (`siteConfig.heroNotebook`, fase 2 da
  * arte), por enquadramento: o fundo e o pôster em `<picture>` com o retrato
@@ -42,7 +43,7 @@ export function HeroNotebook() {
         date={<HeroOpcaoTexto campo="eyebrow" />}
         scrollToExpand={hint}
         mediaLabel={mediaAlt}
-        entrada={{ aparelho: <AparelhoCinza /> }}
+        entrada={{ aparelho: <AparelhoVetor /> }}
         background={
           <picture>
             <source media={portrait} type="image/avif" srcSet={fundo.retrato.posterAvif} />

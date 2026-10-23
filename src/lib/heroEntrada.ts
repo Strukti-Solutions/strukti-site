@@ -49,14 +49,16 @@ export const ENTRADA = {
     emPe: { w: 720, h: 1280, posX: 0.5, posY: 0.5 },
   },
   /**
-   * Centro e largura da tela do aparelho na cena, em px da mídia do
+   * Centro, largura e altura da tela do aparelho na cena, em px da mídia do
    * enquadramento: o retângulo da tela na arte (`node
-   * scripts/hero-notebook/geo.js '{}' media`, o notebook, e `… mediaRetrato`,
-   * o celular).
+   * scripts/hero-notebook/geo.js '{}' media`, o notebook, 16:10, e `…
+   * mediaRetrato`, o celular, 390 × 844). A tela da janela tem a proporção da
+   * janela (Q13) e fica presa pelo pé da tela da arte (`cy + altura / 2`),
+   * onde a moldura em vetor encontra a base ou o suporte (ver `telaNaCena`).
    */
   aparelho: {
-    deitado: { cx: 640, cy: 359.7, largura: 295.2 },
-    emPe: { cx: 360, cy: 640, largura: 191.2 },
+    deitado: { cx: 640, cy: 359.7, largura: 295.2, altura: 184.5 },
+    emPe: { cx: 360, cy: 640, largura: 191.2, altura: 413.78 },
   },
   /** O quadro no início da expansão, em px. */
   quadroInicial: { w: 300, h: 400 },
@@ -65,8 +67,12 @@ export const ENTRADA = {
 /** A mídia de um enquadramento: o tamanho, em px, e o `object-position` do cover (0 a 1). */
 export type Midia = { w: number; h: number; posX: number; posY: number };
 
-/** O que a câmera usa de um enquadramento: a mídia e a tela do aparelho nela (px da mídia). */
-export type Cena = { midia: Midia; aparelho: { cx: number; cy: number; largura: number } };
+/**
+ * O que a câmera usa de um enquadramento: a mídia e a tela do aparelho nela (px
+ * da mídia). Com `altura`, a tela fica presa pelo pé (`cy + altura / 2`); sem
+ * ela, pelo centro (`cy`).
+ */
+export type Cena = { midia: Midia; aparelho: { cx: number; cy: number; largura: number; altura?: number } };
 
 /** A cena do enquadramento atual: notebook deitado ou celular em pé (Q26). */
 export function cenaDe(v: Viewport): Cena {
@@ -122,6 +128,13 @@ export function quadro(e: number, v: Viewport): { w: number; h: number } {
  * (px da janela) e a escala (largura da tela ÷ `v.w`; a tela tem a proporção
  * da janela, então a altura é `s · v.h`).
  *
+ * A tela da janela tem a largura da tela da arte e a proporção da janela: na
+ * mídia, a altura dela é `largura · v.h / v.w`. Ela fica presa pelo pé da tela
+ * da arte (`cy + altura / 2`): numa janela mais larga que a arte, a tampa fica
+ * mais baixa; numa mais estreita, mais alta; e o pé da moldura, onde ficam a
+ * base do notebook e o suporte do celular, nunca sai do lugar vazio da mesa
+ * (Review Focus 2). Na proporção da arte, o centro é o `cy` dela.
+ *
  * O quadro fica centrado na janela. A mídia cobre o quadro como o CSS faz
  * (`object-fit: cover; object-position: 50% 100%`): `m` é a escala do cover e a
  * origem do conteúdo, dentro do quadro, é `((qw − w·m)·posX, (qh − h·m)·posY)`.
@@ -131,13 +144,14 @@ export function telaNaCena(e: number, v: Viewport, cena: Cena = cenaDe(v)): { cx
   const q = quadro(e, v);
   const { midia, aparelho: tela } = cena;
   const m = Math.max(q.w / midia.w, q.h / midia.h);
+  const cyNaMidia = tela.altura === undefined ? tela.cy : tela.cy + (tela.altura - (tela.largura * v.h) / v.w) / 2;
   const esquerdaDoQuadro = (v.w - q.w) / 2;
   const topoDoQuadro = (v.h - q.h) / 2;
   const origemX = (q.w - midia.w * m) * midia.posX;
   const origemY = (q.h - midia.h * m) * midia.posY;
   return {
     cx: esquerdaDoQuadro + origemX + tela.cx * m,
-    cy: topoDoQuadro + origemY + tela.cy * m,
+    cy: topoDoQuadro + origemY + cyNaMidia * m,
     s: (tela.largura * m) / v.w,
   };
 }
