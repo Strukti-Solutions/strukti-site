@@ -59,3 +59,39 @@ node ../kit/sondas.js . cur/cartao.png               # sai com 1 se alguma sonda
 
 O render é determinístico (o mesmo PNG a cada vez), o que o loop da A5 usa: o
 quadro 0 dele é este cartão.
+
+## Loop de 5 s (Task A5)
+
+O LED respira e a névoa dos refletores anda devagar; o resto fica parado.
+Passes e composição periódica, como o `composite2.js` do hero (`loop.js`
+desta pasta, composto pelo `../kit/loop.js`):
+
+| Placa | Como | O que dá |
+|---|---|---|
+| `cur/cartao.png` | o cartão | o quadro 0 |
+| `plates/L0.png` | `cartao.html?ledK=0` | E = cartão − L0: o LED (barra, brilhos e o bloom dele) |
+| `plates/V0.png` | `cartao.html?veu=0` | N = cartão − V0: o ar iluminado (véus, cones de névoa, o brilho atrás da caixa e a faixa baixa), com a contraluz que ele dá aos fios |
+
+quadro(t) = cartão − 0,45 · sobe(t) · E + névoa(x, y, t) · N, com
+sobe(t) = ½ − ½ cos(2πt / 5 s) (o LED cai de `ledK` 0,85 para ~0,47 no meio da
+volta e volta) e névoa = 0,6 · [sen(2πt / 5 s − f) + sen f], f a fase de uma
+onda de 900 px inclinada 12° (uma faixa de densidade que nasce, anda meia onda
+para a direita e some). Os dois valem 0 em t = 0: o quadro 0 é o cartão byte a
+byte. `veu` (padrão 1) só multiplica o ar iluminado; com 1 o cartão não muda
+(mesmo md5). O grão está só no cartão; os deltas são diferenças de passes com o
+mesmo grão (não há grão temporal).
+
+```sh
+../kit/shot.sh "cartao.html?ledK=0" plates/L0.png 800 1200
+../kit/shot.sh "cartao.html?veu=0" plates/V0.png 800 1200
+node ../kit/loop.js loop.js                       # plates/master.mkv (ffv1, 800 x 1200, 125 quadros)
+../kit/encode.sh plates/master.mkv final 18 12    # cartao-loop.mp4 (crf 18) e .webm (crf 12), 600 x 900
+../kit/vqa.sh final/cartao-loop.webm replay-webm 600:450:0:0 cur/cartao.png
+```
+
+| Medida (22/10/2026) | MP4 (H.264 crf 18) | WebM (VP9 crf 12) | Critério |
+|---|---|---|---|
+| Bytes | 366 277 | 296 613 | ≤ 600 000 |
+| Emenda 124 → 0 | 49,74 dB | 67,77 dB | ≥ 45 dB |
+| Pares seguidos idênticos | 0 | 0 | — |
+| Quadro 0 × cartão (600 × 900) | 42,12 dB | 42,82 dB | a perda é só a da compressão |

@@ -160,17 +160,20 @@
   // névoa dos refletores: véu, cone de névoa e o banco de lâmpadas; a faixa de névoa sobre o piso iluminado
   function nevoa(ctx, cam, o) {
     const P = cam.P, k = o.nevoa != null ? o.nevoa : 1; if (k <= 0) return;
+    // veu: só o ar iluminado (véus, cones, o brilho atrás da caixa e a faixa baixa), sem os bancos e os postes deles;
+    // o loop (A5) compõe a névoa à deriva com o passe veu = 0. Com veu = 1 (o cartão) nada muda
+    const v = o.veu != null ? o.veu : 1;
     ctx.save(); ctx.globalCompositeOperation = 'screen';
     const fk = o.facho != null ? o.facho : 1, yMax = (o.fachoMax || 0.45) * cam.H, cinza = mix(C.n300, C.floodW, 0.35);
     for (const R of MUNDO.refletores) {
       const h = P(R.pos); if (h[2] <= 0) continue;
       const s = cam.S(R.pos), noQuadro = h[0] > -60 && h[0] < cam.W + 60 && h[1] > -60 && h[1] < cam.H;
       // o véu de luz no ar em volta do banco (o céu deixa de ser uniforme perto dos refletores)
-      glow(ctx, h, Math.max(90, s * 1500), mix(C.floodW, C.n300, 0.6), 0.06 * k);
-      if (!noQuadro) { glow(ctx, h, Math.max(18, s * 420), mix(C.floodW, C.n300, 0.25), 0.08 * k); continue; }
+      glow(ctx, h, Math.max(90, s * 1500), mix(C.floodW, C.n300, 0.6), 0.06 * k * v);
+      if (!noQuadro) { glow(ctx, h, Math.max(18, s * 420), mix(C.floodW, C.n300, 0.25), 0.08 * k * v); continue; }
       posteBanco(ctx, cam, R, h, o);
       // cone de névoa sob o banco, abrindo para a quadra: azul-acinzentado, tênue, e some antes de 45% da altura
-      { const cv = layer(cam.W, cam.H), cc = cv.getContext('2d'), rb = o.bancoR || 13, ab = (R.longe ? 0.08 : 0.10) * k * fk;
+      { const cv = layer(cam.W, cam.H), cc = cv.getContext('2d'), rb = o.bancoR || 13, ab = (R.longe ? 0.08 : 0.10) * k * fk * v;
         const yb = Math.min(yMax, h[1] + (R.longe ? 210 : 260)), ab2 = (yb - h[1]) * (R.longe ? 0.42 : 0.55);
         const dx = (P(R.alvo)[0] - h[0]) * 0.25;   // o cone pende um pouco para onde o refletor aponta
         path(cc, [[h[0] - rb, h[1] + 4], [h[0] + rb, h[1] + 4], [h[0] + dx + ab2, yb], [h[0] + dx - ab2, yb]]);
@@ -180,11 +183,11 @@
     }
     // brilho da névoa atrás da caixa: o ar sobre a quadra vizinha, iluminado
     { const c = P([-500, 160, 2600]); if (c[2] > 0) { ctx.save(); ctx.translate(c[0], c[1]); ctx.scale(cam.W * 0.62, cam.H * 0.2);
-      ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.floodW, C.n300, 0.45), 0.13 * k)], [0.5, rgba(C.n300, 0.05 * k)], [1, rgba(C.n300, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore(); } }
+      ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.floodW, C.n300, 0.45), 0.13 * k * v)], [0.5, rgba(C.n300, 0.05 * k * v)], [1, rgba(C.n300, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore(); } }
     // faixa de névoa baixa sobre o piso da quadra vizinha (o ar iluminado)
     const V = MUNDO.vizinha, c0 = P(VZ.W(0, V.L * 0.55, 60)), cx = P(VZ.W(V.W / 2, V.L * 0.55, 60));
     if (c0[2] > 0) { ctx.save(); ctx.translate(c0[0], c0[1]); ctx.scale(Math.max(200, Math.abs(cx[0] - c0[0])) * 1.6, 70);
-      ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.floodW, C.n300, 0.5), 0.10 * k)], [0.6, rgba(C.n300, 0.04 * k)], [1, rgba(C.n300, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore(); }
+      ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.floodW, C.n300, 0.5), 0.10 * k * v)], [0.6, rgba(C.n300, 0.04 * k * v)], [1, rgba(C.n300, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ctx.restore(); }
     ctx.restore();
   }
 
