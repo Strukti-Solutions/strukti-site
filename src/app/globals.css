@@ -4646,6 +4646,18 @@ textarea.field__input {
   transform: translate(var(--hx-tela-x), calc(var(--hx-tela-y) - var(--hx-palco-h))) scale(var(--hx-tela-s));
 }
 
+/* Na cena, a tela mostra só a altura da janela (a do aparelho): uma tela
+   mais alta que ela (celular deitado, fonte grande, o espaçamento do
+   1.4.12) vazaria da moldura, por cima da base e da sala. O corte é um
+   clip-path, e não height + overflow, para a altura do hero não mudar entre
+   os estados (as âncoras abaixo ficam no lugar); o que passa fica embaixo,
+   e o que se vê é o topo da tela, o mesmo da página solta. Sai no mesmo
+   quadro da liberação, junto com o transform. */
+.hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"])
+  .hero-expansao__conteudo {
+  clip-path: inset(0 0 calc(100% - var(--hx-palco-h)) 0);
+}
+
 /* Expandida, é a página (data-expanded vira "true" no mesmo quadro em que
    a página rola até o topo da tela). */
 .hero-expansao--entrada[data-expanded="true"] .hero-expansao__conteudo {
