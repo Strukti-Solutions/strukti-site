@@ -163,10 +163,11 @@ export interface HeroNotebookMedia {
 
 /*
  * A mesa com o notebook aberto no centro: o mesmo mundo do "Fim de
- * expediente", produção própria. Por enquanto, só as imagens paradas (o
- * loop vem depois). Deitado, o notebook no centro da mesa; em pé, o celular
- * num suporte, na frente e no centro, com o notebook atrás (cada
- * enquadramento com a sua mídia e o seu fundo).
+ * expediente", produção própria. A mídia que a câmera atravessa tem o loop
+ * de 10 s (o pôster é o 1º quadro); o fundo é só a imagem parada. Deitado, o
+ * notebook no centro da mesa; em pé, o celular num suporte, na frente e no
+ * centro, com o notebook atrás (cada enquadramento com a sua mídia e o seu
+ * fundo).
  */
 const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
   fundo: {
@@ -184,12 +185,16 @@ const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
     },
   },
   midia: {
+    webm: "/hero/notebook/midia.webm",
+    mp4: "/hero/notebook/midia.mp4",
     posterAvif: "/hero/notebook/midia-poster.avif",
     posterJpg: "/hero/notebook/midia-poster.jpg",
     width: 1280,
     height: 720,
   },
   midiaRetrato: {
+    webm: "/hero/notebook/midia-retrato.webm",
+    mp4: "/hero/notebook/midia-retrato.mp4",
     posterAvif: "/hero/notebook/midia-retrato-poster.avif",
     posterJpg: "/hero/notebook/midia-retrato-poster.jpg",
     width: 720,

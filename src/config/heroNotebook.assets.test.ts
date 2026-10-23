@@ -115,6 +115,24 @@ describe("siteConfig.heroNotebook: a cena em pé", () => {
   });
 });
 
+describe("siteConfig.heroNotebook: o loop de 10 s (N5)", () => {
+  it.each([
+    ["midia", heroNotebook.midia, "midia"],
+    ["midiaRetrato", heroNotebook.midiaRetrato, "midia-retrato"],
+  ] as const)("%s tem o loop em WebM e MP4, com o nome do pôster do mesmo enquadramento", (_campo, quadro, base) => {
+    expect(quadro.webm).toBe(`/hero/notebook/${base}.webm`);
+    expect(quadro.mp4).toBe(`/hero/notebook/${base}.mp4`);
+    expect(quadro.posterAvif).toBe(`/hero/notebook/${base}-poster.avif`);
+  });
+
+  it("o fundo não tem vídeo (ele nunca é ampliado: só a imagem parada)", () => {
+    for (const fundo of [heroNotebook.fundo.deitado, heroNotebook.fundo.retrato]) {
+      expect(fundo.webm).toBeUndefined();
+      expect(fundo.mp4).toBeUndefined();
+    }
+  });
+});
+
 describe("siteConfig.heroNotebook: a cena deitada", () => {
   it("o fundo e a mídia deitados são os do notebook (public/hero/notebook/)", () => {
     expect(heroNotebook.fundo.deitado.posterAvif).toBe("/hero/notebook/fundo.avif");

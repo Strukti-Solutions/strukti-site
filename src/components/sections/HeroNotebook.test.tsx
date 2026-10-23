@@ -120,10 +120,32 @@ describe("<HeroNotebook />", () => {
       midiaRetrato.posterAvif,
       midiaRetrato.posterJpg,
     ]);
-    // Sem vídeo na configuração (só o pôster): o <video> fica, sem fonte.
+    // O loop de 10 s (N5): o <video> não tem <source>; o src sai do efeito, depois de montar, pelo enquadramento atual
+    // (deitado aqui: o matchMedia responde false). O jsdom não toca WebM, então fica o MP4.
     const video = container.querySelector("video");
-    expect(video?.hasAttribute("src")).toBe(false);
     expect(video?.querySelectorAll("source")).toHaveLength(0);
+    expect(video?.getAttribute("src")).toBe(midia.mp4);
+  });
+
+  it("em pé, o vídeo é o loop do retrato (nunca o do deitado)", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((media: string) => ({
+        matches: media === "(orientation: portrait)",
+        media,
+        onchange: null,
+        addEventListener() {},
+        removeEventListener() {},
+        addListener() {},
+        removeListener() {},
+        dispatchEvent: () => false,
+      })),
+    );
+    const { container } = await mount();
+    const { midiaRetrato } = siteConfig.heroNotebook;
+
+    expect(midiaRetrato.mp4).toBe("/hero/notebook/midia-retrato.mp4");
+    expect(container.querySelector("video")?.getAttribute("src")).toBe(midiaRetrato.mp4);
   });
 
   it("no DOM, o controle do vídeo vem antes do bloco de chamada (o Tab chega ao controle primeiro)", async () => {
