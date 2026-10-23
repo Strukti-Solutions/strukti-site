@@ -703,7 +703,7 @@ describe("cena do hero notebook", () => {
       pasta: string;
       mosaico: [number, number];
       cidade: { pass: string; W: number; H: number; F: number; shiftY: number; pxk: number };
-      vapor: { x: number; y: number; w: number; h: number; desfoque: number };
+      vapor: { x: number; y: number; w: number; h: number; desfoque: number; fase: number; opacidade: number };
       led: [number, number];
       recorteVapor: { x: number; y: number; w: number; h: number };
       curvas: { cidade: string; led: string; abajur: string; vapor: string };
@@ -778,7 +778,29 @@ describe("cena do hero notebook", () => {
     it("em pé, o vapor fica no desfoque do fundo, como a caneca; deitado, nítido", () => {
       expect(loop.quadro("media").vapor.desfoque).toBe(0);
       const o = cena.CAMS.mediaRetrato as unknown as { desfoque: [number, number, number]; F: number };
-      expect(loop.quadro("mediaRetrato").vapor.desfoque).toBe(Math.max(1, Math.round((o.desfoque[2] * o.F) / 1000)));
+      const fundo = Math.max(1, Math.round((o.desfoque[2] * o.F) / 1000));
+      // ajuste de arte (rodada 1): em pé, o vapor é névoa, mais mole que a borda da caneca (6 a 7 px, o fundo dá 4)
+      const v = loop.quadro("mediaRetrato").vapor;
+      expect(v.desfoque).toBeGreaterThan(fundo);
+      expect(v.desfoque).toBeGreaterThanOrEqual(6);
+      expect(v.desfoque).toBeLessThanOrEqual(7);
+      expect(loop.grafo("mediaRetrato")).toContain(`gblur=sigma=${v.desfoque}`);
+    });
+
+    it("em pé, o quadro 0 (o pôster) pega a faixa do vapor defasada, e o pico do vapor é 20% mais baixo", () => {
+      // ajuste de arte (rodada 1): no início da faixa, o vapor em pé é uma reta ao lado do montante da janela
+      const r = loop.quadro("mediaRetrato");
+      expect(r.vapor.fase).toBeGreaterThanOrEqual(120);
+      expect(r.vapor.fase).toBeLessThanOrEqual(160);
+      expect(loop.avalia(r.curvas.vapor, 0)).toBe(r.vapor.fase);
+      expect(r.vapor.opacidade).toBeCloseTo(0.8, 9);
+      const g = loop.grafo("mediaRetrato");
+      expect(g).toContain(`colorchannelmixer=rr=0.8:gg=0.8:bb=0.8`);
+      // deitado fica como foi aprovado: sem defasagem, sem atenuação, o mesmo grafo
+      const d = loop.quadro("media");
+      expect({ fase: d.vapor.fase, opacidade: d.vapor.opacidade }).toEqual({ fase: 0, opacidade: 1 });
+      expect(d.curvas.vapor).toBe("trunc(mod(t*1200/10,400))");
+      expect(loop.grafo("media")).not.toContain("colorchannelmixer");
     });
 
     it.each(ENQ)("%s: o loop fecha em 10 s (as curvas em t = 10 voltam ao valor de t = 0)", (cam) => {

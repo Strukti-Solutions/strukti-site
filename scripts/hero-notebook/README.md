@@ -271,8 +271,11 @@ ffmpeg -y -v error -i plates2-retrato/master.mkv -frames:v 1 final2/poster-retra
   foto), o abajur oscila 3% e o vapor sobe três períodos por volta.
 - O vapor fica na boca da caneca de cada câmera, na escala dela (a faixa do
   `steam2.html` foi desenhada para 8,56 px/cm: deitado ela cresce 1,5×, em pé
-  2,2×). Em pé, a caneca está no desfoque do fundo, e o vapor leva o mesmo
-  desfoque (`gblur` de 4 px).
+  2,2×). Em pé, a caneca está no desfoque do fundo, e o vapor é névoa
+  (`VAPOR_EM` no `loop.js`, ajuste de arte da N5): `gblur` de 7 px (o fundo dá
+  4), pico 20% mais baixo e a faixa adiantada 140 px, para o quadro 0 (o
+  pôster) não ser uma reta ao lado do montante da janela. Deitado, o vapor é o
+  do expansao, sem ajuste.
 - Em pé, a placa da cidade leva o desfoque do fundo (`desfoque` da câmera, no
   passe `city` do `scene.js`), e as folgas em px das janelas e dos discos em
   volta dos montantes crescem com o `pxk`: a cidade em 2x é a mesma da foto.

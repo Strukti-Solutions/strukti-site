@@ -10,7 +10,8 @@
 //   ser a foto (o pôster sai do quadro 0);
 // - j(t): o abajur oscila 3%;
 // - vapor(t): a faixa do steam2.html (em 2x, período de 400 px) sobe três períodos por volta, na boca da caneca e na
-//   escala dela. Em pé, a caneca está no desfoque do fundo (`desfoque` da câmera), e o vapor leva o mesmo desfoque.
+//   escala dela. Em pé, a caneca está no desfoque do fundo (`desfoque` da câmera), e o vapor, mais mole ainda, é névoa:
+//   mais desfoque, pico 20% mais baixo e a faixa defasada no quadro 0 (VAPOR_EM).
 // O brilho frio da tela do aparelho na mesa fica parado (spec §12: a tela é o site, sem animação): ele está no passe A
 // (e no D, porque não depende do abajur), e nenhum termo o modula.
 (function (G) {
@@ -18,6 +19,11 @@
   // A faixa do vapor (steam2.html) foi desenhada para uma boca de caneca vista a 8,56 px/cm (o vapor ocupa 48 x 120 px do
   // quadro, ~14 cm de altura); o pé da faixa fica 4 px acima da boca. Noutra escala, a faixa cresce na mesma proporção.
   const VAPOR = { w: 48, h: 120, S: 8.56, acima: 4 };
+  // Ajuste de arte (rodada 1 da N5), só em pé: a faixa ali fica 2,2× maior, e o fio do hero vira uma linha encostada
+  // no montante da janela. `fase` (px da faixa, de 0 a 400) adianta o começo dela, para o quadro 0 (o pôster) pegar a
+  // voluta que abre e não a reta; a curva continua periódica em 10 s, então a emenda não muda. `desfoque` (px) troca o
+  // do fundo (4) por um de névoa, e `opacidade` baixa o pico do vapor. Deitado fica como foi aprovado (o vapor do hero).
+  const VAPOR_EM = { mediaRetrato: { fase: 140, desfoque: 7, opacidade: 0.8 } };
   const SAIDA = { media: 'midia', mediaRetrato: 'midia-retrato' };
   const PASTA = { media: 'plates2', mediaRetrato: 'plates2-retrato' };
   const LED_PADRAO = 0.82, LED_RESPIRA = 0.18, ABAJUR = 0.03;
@@ -38,6 +44,8 @@
       const yN = c.P([cx, 0, zN])[1], yD = c.P([cx, 0, zD])[1], peso = Math.min(1, Math.max(0, (yN - p[1]) / (yN - yD)));
       desfoque = peso > 0.5 ? Math.max(1, Math.round(px * o.F / 1000)) : 0;
     }
+    const aj = VAPOR_EM[cam] || {}, fase = aj.fase || 0, opacidade = aj.opacidade != null ? aj.opacidade : 1;
+    if (aj.desfoque) desfoque = Math.max(desfoque, aj.desfoque);
     const rx = Math.max(0, x - w / 2), ry = Math.max(0, y - 3);
     const recorteVapor = { x: rx, y: ry, w: Math.min(o.W, x + w + w / 2) - rx, h: Math.min(o.H, y + h + 8) - ry };
     const k0 = o.ledK != null ? o.ledK : LED_PADRAO, k1 = k0 + LED_RESPIRA <= 1 ? k0 + LED_RESPIRA : k0 - LED_RESPIRA;
@@ -46,12 +54,12 @@
       cidade: '8-trunc(8*pow(sin(PI*t/10),2)+0.5)',
       led: `${num(k0)}${k1 >= k0 ? '+' : '-'}${num(Math.abs(k1 - k0))}*(0.5-0.5*cos(2*PI*T/10))`,
       abajur: `${ABAJUR}*sin(2*PI*T/10)`,
-      vapor: 'trunc(mod(t*1200/10,400))'
+      vapor: `trunc(mod(t*1200/10${fase ? `+${fase}` : ''},400))`
     };
     return {
       cam, W: o.W, H: o.H, saida: SAIDA[cam], pasta: PASTA[cam], mosaico: [2 * o.W, 2 * o.H],
       cidade: { pass: 'city', W: 2 * o.W + 16, H: 2 * o.H, F: 2 * o.F, shiftY: 2 * (o.shiftY || 0), pxk: 2, dither: 3 },
-      vapor: { x, y, w, h, desfoque }, led: [num(k0), num(k1)], recorteVapor, curvas
+      vapor: { x, y, w, h, desfoque, fase, opacidade }, led: [num(k0), num(k1)], recorteVapor, curvas
     };
   }
 
@@ -66,7 +74,7 @@
       `[x2][Lp]blend=all_expr='A+B*${k.abajur}'[x3]`,
       `[5]format=gbrp,split[s1][s2];[s1][s2]vstack,crop=96:240:0:'${k.vapor}'[sc]`,
       `[6]format=gbrp[m]`,
-      `[sc][m]blend=all_mode=multiply,scale=${v.w}:${v.h}:flags=lanczos,pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`,
+      `[sc][m]blend=all_mode=multiply,scale=${v.w}:${v.h}:flags=lanczos${v.opacidade < 1 ? `,colorchannelmixer=rr=${v.opacidade}:gg=${v.opacidade}:bb=${v.opacidade}` : ''},pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`,
       '[x3][st]blend=all_mode=addition,format=gbrp[out]'
     ].join(';\n');
   }
