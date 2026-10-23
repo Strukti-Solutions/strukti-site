@@ -53,6 +53,24 @@ describe('globals.css, bloco Hero "entrada"', () => {
     expect(bloco).toContain("forced-colors");
   });
 
+  it("no estado parado, as metades do título ficam inteiras no palco, entre os gutters", () => {
+    // O palco corta (overflow: clip) e o estado parado é permanente: a linha
+    // que passasse da borda ficaria ilegível. A borda esquerda da linha 1
+    // (centrada, 50% é meia largura dela) não passa do gutter, e a direita
+    // da linha 2 também não.
+    const inicio = bloco.indexOf("@media (scripting: none), (prefers-reduced-motion: reduce) {");
+    expect(inicio).toBeGreaterThan(-1);
+    const parado = bloco.slice(inicio, bloco.indexOf("\n}\n", inicio));
+    const declaracao = (nome: string) => parado.match(new RegExp(`${nome}:\\s*([^;]*);`))?.[1]?.replace(/\s+/g, " ");
+
+    expect(declaracao("--hx-linha1-x")).toBe(
+      "max( calc(-50cqw * var(--hx-tela-s) - var(--hx-titulo-folga) - 50%), calc(-50cqw + 50% + var(--gutter)) ) !important",
+    );
+    expect(declaracao("--hx-linha2-x")).toBe(
+      "min( calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%), calc(50cqw - 50% - var(--gutter)) ) !important",
+    );
+  });
+
   it("não usa 100vw (com a barra de rolagem clássica, passa da janela útil)", () => {
     expect(bloco).not.toContain("100vw");
   });

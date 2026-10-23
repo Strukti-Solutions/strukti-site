@@ -4754,9 +4754,18 @@ textarea.field__input {
     --hx-sala-ty: 0px !important;
     --hx-sala-blur: 0px !important;
     /* As metades, centradas no palco, a folga de cada borda da tela (o
-       50% é meia largura da própria linha). */
-    --hx-linha1-x: calc(-50cqw * var(--hx-tela-s) - var(--hx-titulo-folga) - 50%) !important;
-    --hx-linha2-x: calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%) !important;
+       50% é meia largura da própria linha), mas nunca além do gutter: o
+       palco corta, e este estado não passa. Se a linha não cabe ao lado
+       da tela (1440 × 900, em pé), ela encosta no gutter e cobre um pouco
+       o aparelho, inteira e legível. */
+    --hx-linha1-x: max(
+      calc(-50cqw * var(--hx-tela-s) - var(--hx-titulo-folga) - 50%),
+      calc(-50cqw + 50% + var(--gutter))
+    ) !important;
+    --hx-linha2-x: min(
+      calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%),
+      calc(50cqw - 50% - var(--gutter))
+    ) !important;
     --hx-titulo-saida: 0 !important;
   }
 
