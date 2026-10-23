@@ -17,6 +17,7 @@ desenhado em código (ADR-005): nada de IA generativa nem de banco de imagens.
 | `replay/` | O cartão do Replay (ver o `README.md` dela) |
 | `rota-de-vendas/` | O cartão do Rota de Vendas (ver o `README.md` dela) |
 | `fleet-analytics-bi/` | O cartão do Fleet Analytics BI (ver o `README.md` dela) |
+| `inventados/` | A cena-modelo dos 7 inventados, por slug (`cartao.html?slug=`; ver o `README.md` dela) |
 
 Cada cena tem `cena.js` (o mundo e o render, sobre o kit), `cartao.html` (a
 câmera retrato 800 × 1200) e um `README.md`. As saídas (`cur/`, `final/`,
