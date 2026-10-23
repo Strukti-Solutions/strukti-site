@@ -419,6 +419,129 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     expect(scrollTo).not.toHaveBeenCalled();
   });
 
+  describe("rolagens de fora em vários passos (a rolagem suave do navegador, o arrasto da barra)", () => {
+    // O relógio das janelas de graça é o dos quadros: cada `scrollPage` anda
+    // 16 ms, e `frame(ms)` sem nada na fila só adianta o relógio.
+    beforeEach(() => {
+      vi.spyOn(performance, "now").mockImplementation(() => frameClock);
+    });
+
+    /** A barra do topo: um link para a seção de produtos, fora do hero. */
+    const barra = (
+      <>
+        <nav>
+          <a href="#produtos">Produtos</a>
+        </nav>
+        <div id="produtos" />
+      </>
+    );
+    /** As posições de uma rolagem suave de 0 até os produtos, um `scroll` por quadro. */
+    const ATE_OS_PRODUTOS = [40, 120, 300, 600, 700, 760, 1100, 1600];
+
+    function semRolarAteATela() {
+      expect(scrollTo).not.toHaveBeenCalledWith(expect.objectContaining({ top: PALCO }));
+    }
+
+    it("âncora com a página presa, a URL muda antes do 1º scroll e o hashchange vem no meio: completa sem rolar e não recolhe", async () => {
+      await mount(barra);
+      window.history.pushState(null, "", "/#produtos");
+
+      for (const y of ATE_OS_PRODUTOS.slice(0, 3)) {
+        scrollPage(y);
+        expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+      }
+      act(() => {
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+      for (const y of ATE_OS_PRODUTOS.slice(3)) scrollPage(y);
+
+      expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("âncora com a página presa, o hashchange antes do 1º scroll: completa sem rolar e as posições abaixo do topo da tela não recolhem", async () => {
+      await mount(barra);
+      window.history.pushState(null, "", "/#produtos");
+      act(() => {
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+      expect(state()).toMatchObject({ pin: "false", expanded: "true" });
+
+      for (const y of ATE_OS_PRODUTOS) {
+        scrollPage(y);
+        expect(state().expanded).toBe("true");
+      }
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("clicar de novo na mesma âncora (sem hashchange), presa: completa sem rolar; sem o clique, a âncora velha não conta", async () => {
+      await mount(barra);
+      window.history.pushState(null, "", "/#produtos");
+      act(() => {
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+      scrollPage(2000);
+      // De volta ao topo: a roda recolhe no topo da tela, e a página fica em 0.
+      frame(1000);
+      scrollPage(PALCO);
+      wheel(-100);
+      expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+      setScrollY(0);
+      frame(1000);
+      scrollTo.mockClear();
+
+      // A barra de rolagem arrastada para baixo, com a âncora velha na URL: é
+      // uma rolagem de fora como outra qualquer (completa e rola até a tela).
+      scrollPage(300);
+      expect(state().expanded).toBe("true");
+      expect(scrollTo).toHaveBeenCalledWith({ top: PALCO, left: 0, behavior: "instant" });
+      setScrollY(PALCO);
+      wheel(-100);
+      setScrollY(0);
+      frame(1000);
+      scrollTo.mockClear();
+
+      // O clique na mesma âncora: o navegador rola até ela, sem hashchange.
+      act(() => {
+        screen.getByRole("link", { name: "Produtos" }).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      });
+      for (const y of ATE_OS_PRODUTOS) {
+        scrollPage(y);
+        expect(state().expanded).toBe("true");
+      }
+      semRolarAteATela();
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("arrastar a barra de rolagem para cima, expandido: recolhe uma vez e fica preso em P = 1, sem completar de novo a cada movimento", async () => {
+      await mount();
+      expandWithWheel();
+      frame(1000);
+      scrollTo.mockClear();
+
+      scrollPage(600);
+      expect(state()).toEqual({ pin: "true", expanded: "false", progress: "1.00", content: "visible" });
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "instant" });
+
+      // O arrasto continua (o navegador põe a página de volta onde o mouse
+      // está, sem ver o scrollTo do meio): segue recolhido e preso no topo.
+      for (const y of [590, 580, 400, 120]) {
+        scrollPage(y);
+        expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+        expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "instant" });
+      }
+      semRolarAteATela();
+      expect(hxp()).toBe(1);
+
+      // Assentou: uma rolagem de fora nova completa e rola até a tela.
+      frame(1000);
+      scrollTo.mockClear();
+      scrollPage(300);
+      expect(state().expanded).toBe("true");
+      expect(scrollTo).toHaveBeenCalledWith({ top: PALCO, left: 0, behavior: "instant" });
+    });
+  });
+
   it("expandido e rolado além de uma tela abaixo do topo da tela, a roda e o touchmove saem da window; voltam antes", async () => {
     await mount();
     expandWithWheel();

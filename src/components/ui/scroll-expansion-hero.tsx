@@ -152,7 +152,12 @@
  *   recolher, passa a ser o topo da tela; recolher (roda, toque, teclas, ou
  *   uma rolagem para acima do topo da tela, como a barra de rolagem ou o
  *   Home do navegador) deixa p em 1 e volta a página ao topo, no mesmo
- *   quadro.
+ *   quadro. Rolagens em vários passos têm uma janela de graça (renovada a
+ *   cada `scroll`, até ~250 ms sem nenhum): a rolagem suave até uma âncora
+ *   fora do hero (clique no link, âncora nova na URL ou `hashchange`)
+ *   completa sem rolar e não recolhe no caminho; o arrasto da barra para
+ *   cima, depois de recolher, mantém a página no topo, presa em p = 1, em
+ *   vez de completar e recolher de novo a cada movimento do mouse.
  */
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
@@ -200,6 +205,18 @@ const WHEEL_LINE_PX = 16;
 const MULTI_TOUCH_GRACE_MS = 300;
 /** Página ampliada (pinça) acima desta escala: roda e toque são do navegador. */
 const ZOOMED_SCALE = 1.01;
+/**
+ * Modo entrada: depois do clique numa âncora fora do hero (ou do
+ * `hashchange`), a rolagem do navegador até ela pode começar até este tempo
+ * depois (a rolagem suave começa no quadro seguinte; folga para engasgos).
+ */
+const ANCORA_ESPERA_MS = 500;
+/**
+ * Modo entrada: uma rolagem em vários passos (a suave até uma âncora, o
+ * arrasto da barra de rolagem) segue em andamento enquanto chegam `scroll`
+ * com menos que isto entre eles (a rolagem suave manda um por quadro).
+ */
+const ROLAGEM_ASSENTA_MS = 250;
 
 /** O que mudou o progresso por último (`data-input`: o CSS anima "key" e "auto"). */
 type ProgressInput = "wheel" | "touch" | "key" | "auto";
@@ -302,9 +319,9 @@ function isWheelNotch(deltaMode: number, deltaYPx: number) {
   return deltaMode !== 0 || Math.abs(deltaYPx) >= WHEEL_NOTCH_PX;
 }
 
-/** O alvo da âncora da URL (ex.: /#contato) existe e fica fora do hero? */
-function hashTargetOutside(section: HTMLElement) {
-  const hash = window.location.hash.slice(1);
+/** O alvo da âncora (a da URL, ex.: /#contato, ou a de um link) existe e fica fora do hero? */
+function hashTargetOutside(section: HTMLElement, ancora = window.location.hash) {
+  const hash = ancora.slice(1);
   if (!hash) return false;
   let id = hash;
   try {
@@ -314,6 +331,23 @@ function hashTargetOutside(section: HTMLElement) {
   }
   const target = document.getElementById(id);
   return target !== null && !section.contains(target);
+}
+
+/**
+ * O clique foi num link para uma âncora desta página, que o navegador vai
+ * seguir? Devolve a âncora (com o `#`) ou `null`. Os mesmos critérios do
+ * `useCatalogo`: botão principal, sem modificador, sem `preventDefault`, na
+ * mesma aba e no mesmo documento.
+ */
+function ancoraDoClique(event: MouseEvent) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return null;
+  }
+  const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+  if (!(link instanceof HTMLAnchorElement) || !link.hash) return null;
+  if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return null;
+  const semAncora = (url: string) => url.split("#")[0];
+  return semAncora(link.href) === semAncora(window.location.href) ? link.hash : null;
 }
 
 function insideOpenMenu(target: EventTarget | null) {
@@ -603,6 +637,19 @@ export function ScrollExpandMedia({
     let multiTouchUntil = 0;
     // A roda e o touchmove (não passivos) estão na window?
     let holding = false;
+    // Modo entrada: até quando a rolagem é a do navegador indo até uma âncora
+    // fora do hero (completa sem rolar e não recolhe), e até quando ainda é a
+    // mesma que recolheu (o arrasto da barra para cima: segue presa no topo).
+    // As duas se renovam a cada `scroll` que chega dentro delas.
+    let ancoraAte = 0;
+    let recolhidoAte = 0;
+    // A âncora da URL da última vez que o hero olhou: uma nova, fora do hero,
+    // é um link seguido, mesmo que o `scroll` chegue antes do `hashchange`.
+    let hashVisto = window.location.hash;
+    /** Uma âncora fora do hero foi seguida agora: a rolagem que vem é do navegador. */
+    const notarAncora = () => {
+      ancoraAte = performance.now() + ANCORA_ESPERA_MS;
+    };
     // Modo entrada: o percurso é ENTRADA.ganho vezes mais longo na roda e no
     // toque (o teclado segue por p).
     const divisor = entrada ? ENTRADA.ganho : 1;
@@ -746,23 +793,66 @@ export function ScrollExpandMedia({
     // Modo entrada, expandido: uma rolagem para acima do topo da tela (barra
     // de rolagem, Home do navegador, âncora do próprio hero) recolhe, como a
     // roda, e o palco nunca aparece em p = 1 sem a tela por cima.
+    // Modo entrada, rolagens em vários passos: a suave até uma âncora fora do
+    // hero (o html tem scroll-behavior: smooth) passa por posições dentro do
+    // palco, e um scrollTo ali a interromperia; ela completa sem rolar e não
+    // recolhe até assentar. O arrasto da barra para cima, depois de recolher,
+    // continua mandando a página para onde o mouse está (o navegador não vê o
+    // scrollTo do meio): até ele assentar, a página volta ao topo, presa em
+    // p = 1, sem completar e recolher de novo a cada movimento.
     const onScroll = () => {
-      const pinching = touchCount >= 2 || performance.now() < multiTouchUntil;
+      const now = performance.now();
+      const pinching = touchCount >= 2 || now < multiTouchUntil;
+      let indoAteAncora = false;
+      let recolhendo = false;
+      if (entrada) {
+        const hash = window.location.hash;
+        if (hash !== hashVisto) {
+          hashVisto = hash;
+          if (hashTargetOutside(section)) notarAncora();
+        }
+        indoAteAncora = now < ancoraAte;
+        if (indoAteAncora) ancoraAte = Math.max(ancoraAte, now + ROLAGEM_ASSENTA_MS);
+        recolhendo = !indoAteAncora && now < recolhidoAte;
+        if (recolhendo) recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+      }
       if (expandedRef.current) {
-        if (entrada && !pinching && window.scrollY < topoSolto() - TOP_SLOP_PX) unexpand();
-      } else if (window.scrollY > 0 && !pinching) setProgress(1, "auto");
+        if (entrada && !pinching && !indoAteAncora && window.scrollY < topoSolto() - TOP_SLOP_PX) {
+          unexpand();
+          recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+        }
+      } else if (window.scrollY > 0 && !pinching) {
+        if (recolhendo) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        else setProgress(1, "auto", !indoAteAncora);
+      }
       syncHoldListeners();
     };
 
     // A âncora é do navegador: ele rola até ela (no modo entrada, o hero não rola).
     const onHashChange = () => {
-      if (!expandedRef.current && hashTargetOutside(section)) setProgress(1, "auto", false);
+      const fora = hashTargetOutside(section);
+      if (entrada) {
+        hashVisto = window.location.hash;
+        if (fora) notarAncora();
+      }
+      if (!expandedRef.current && fora) setProgress(1, "auto", false);
+    };
+
+    // Modo entrada: um link para uma âncora fora do hero. Pega também o
+    // clique na âncora que já está na URL, que não manda `hashchange` (o
+    // navegador só rola). Na window, na fase de bolha, para enxergar o
+    // `preventDefault` dos `onClick` do React.
+    const onClick = (event: MouseEvent) => {
+      const ancora = ancoraDoClique(event);
+      if (ancora !== null && hashTargetOutside(section, ancora)) notarAncora();
     };
 
     // Página já rolada (posição restaurada) ou âncora fora do hero: começa
     // expandido, sem prender. No modo entrada, rolada para dentro do palco, a
     // página vai até o topo da tela; além dele, ou com a âncora, fica.
     const ancoraFora = hashTargetOutside(section);
+    // A rolagem do navegador até ela, se ainda vier, é dele (modo entrada).
+    if (entrada && ancoraFora) notarAncora();
     setProgress(window.scrollY > 0 || ancoraFora ? 1 : 0, "auto", !ancoraFora);
     syncHoldListeners();
     window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -771,6 +861,7 @@ export function ScrollExpandMedia({
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("hashchange", onHashChange);
+    if (entrada) window.addEventListener("click", onClick);
 
     return () => {
       window.removeEventListener("wheel", onWheel);
@@ -781,6 +872,7 @@ export function ScrollExpandMedia({
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("click", onClick);
       // De volta ao estado parado (ex.: a pessoa ligou o reduced motion).
       stopSmooth();
       armedRef.current = false;
