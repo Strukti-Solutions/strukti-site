@@ -87,8 +87,9 @@
 //      rolagem de lado, a tela no furo do aparelho em toda amostra e, entre
 //      E e E + Pa (a pausa: --hx-e = 1 e --hx-k = 0), parada (±1 px);
 //   3. no quadro da liberação (lido no MutationObserver de data-expanded): a
-//      tela igual à janela útil {0, 0, clientWidth, innerHeight} (±1 px) e
-//      scrollY igual à altura do palco;
+//      tela igual à janela útil {0, 0, clientWidth, innerHeight} (±1 px; uma
+//      tela mais alta que a janela começa nela e passa do pé) e scrollY
+//      igual à altura do palco;
 //   4. a volta: a roda para cima recolhe sem salto (a tela igual à janela em
 //      todo quadro gravado) e o progresso volta a 0 pelo mesmo caminho;
 //   5. a barra de rolagem: expandido, scrollTo(0, palco/2) e um arrasto
@@ -99,7 +100,12 @@
 //      entrada completa em menos de 500 ms, uma rolagem só, o foco à vista;
 //   8. /#contato e a posição restaurada (recarregar): começa dentro, sem
 //      salto do alvo, com o vídeo da sala pausado;
-//   9. em pé: data-orientacao="em-pe" e o celular; os passos 3 e 4 com toque.
+//   9. em pé: data-orientacao="em-pe" e o celular; os passos 3 e 4 com toque;
+//  10. o teclado a 740×360 deitado, com o espaçamento do 1.4.12 e a fonte
+//      raiz a 200% (a tela mais alta que a janela): a seta até expandir, com a tela (a parte à vista,
+//      sob o clip-path da cena) no furo do aparelho em toda amostra; o último
+//      quadro antes da liberação já com a tela quase na janela (sem corte
+//      seco); os passos 3 e 4 com Page Up e seta para cima.
 // Com outra variante, avisa que pulou.
 //
 // Com um hero que prende a rolagem, três conferências gerais poderiam
@@ -1096,6 +1102,8 @@ const KEYS = {
   Tab: { key: "Tab", code: "Tab", vk: 9 },
   Space: { key: " ", code: "Space", vk: 32, text: " " },
   PageDown: { key: "PageDown", code: "PageDown", vk: 34 },
+  PageUp: { key: "PageUp", code: "PageUp", vk: 33 },
+  ArrowUp: { key: "ArrowUp", code: "ArrowUp", vk: 38 },
   End: { key: "End", code: "End", vk: 35 },
   Home: { key: "Home", code: "Home", vk: 36 },
   ArrowDown: { key: "ArrowDown", code: "ArrowDown", vk: 40 },
@@ -1927,6 +1935,15 @@ const ENT_READ_FN = `(() => {
   };
   const palco = root.querySelector(${JSON.stringify(EXP_PALCO_SELECTOR)});
   const moldura = [...root.querySelectorAll(${JSON.stringify(ENT_MOLDURA_SELECTOR)})].find(shown) ?? null;
+  // A tela à vista: na cena, o clip-path corta o que passa da altura da
+  // janela (a do palco); a caixa é a de cima, na escala da tela.
+  const telaEl = root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)});
+  let tela = rect(telaEl);
+  const telaInteira = tela;
+  if (tela && palco && getComputedStyle(telaEl).clipPath !== "none") {
+    const h = Math.min(tela.h, (tela.w * palco.clientHeight) / palco.clientWidth);
+    tela = { ...tela, bottom: tela.top + h, h };
+  }
   return {
     t: performance.now(),
     hxp: num("--hx-p"),
@@ -1944,7 +1961,10 @@ const ENT_READ_FN = `(() => {
     sw: doc.scrollWidth,
     height: root.offsetHeight,
     palco: rect(palco),
-    tela: rect(root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)})),
+    tela,
+    telaInteira,
+    // A altura da tela sem escala (com o corte da cena, ela passa da janela?).
+    telaAltura: telaEl ? telaEl.offsetHeight : null,
     aparelho: rect(root.querySelector(${JSON.stringify(ENT_APARELHO_SELECTOR)})),
     moldura: rect(moldura),
     notebook: shown(root.querySelector(".aparelho-cinza__notebook")),
@@ -2012,6 +2032,18 @@ const entSame = (a, b, tol = 1) =>
   !!a && !!b && ["left", "top", "right", "bottom"].every((side) => Math.abs(a[side] - b[side]) <= tol);
 /** A janela útil (sem a barra de rolagem clássica), na leitura `s`. */
 const entJanela = (s) => ({ left: 0, top: 0, right: s.cw, bottom: s.vh, w: s.cw, h: s.vh });
+/**
+ * A tela começa na janela útil e a cobre: os lados e o topo dela (±1 px) e,
+ * embaixo, até o pé da janela ou além. Solta, uma tela mais alta que a
+ * janela (a fonte grande do passo 10) segue no fluxo; na cena, a parte à
+ * vista (sob o corte) é a janela.
+ */
+const entNaJanela = (s, tol = 1) =>
+  !!s.tela &&
+  Math.abs(s.tela.left) <= tol &&
+  Math.abs(s.tela.top) <= tol &&
+  Math.abs(s.tela.right - s.cw) <= tol &&
+  s.tela.bottom >= s.vh - tol;
 const entDentro = (inner, outer, tol = 1) =>
   !!inner &&
   !!outer &&
@@ -2211,7 +2243,7 @@ function entCheckLiberacao(ctx, what, marks, depois, { exato }) {
     ctx.fail(`${what}: não houve quadro de liberação (data-expanded não virou "true")`);
     return;
   }
-  if (!entSame(quadro.tela, entJanela(quadro))) {
+  if (!entNaJanela(quadro)) {
     ctx.fail(`${what}: no quadro da liberação, a tela está em ${entRect(quadro.tela)}; a janela útil é (0, 0) ${quadro.cw}×${quadro.vh} (Review Focus 1)`);
   }
   if (!quadro.palco || Math.abs(quadro.scrollY - quadro.palco.h) > 1) {
@@ -2241,7 +2273,7 @@ async function entVolta(cdp, ctx, what, { recolher, recuar, budget, s0, pausaIda
     `(() => { const palco = document.querySelector(${JSON.stringify(EXP_PALCO_SELECTOR)}); window.scrollTo({ top: palco.offsetHeight, left: 0, behavior: "instant" }); })()`,
   );
   const antes = await entState(cdp);
-  if (antes.expanded !== "true" || !entSame(antes.tela, entJanela(antes))) {
+  if (antes.expanded !== "true" || !entNaJanela(antes)) {
     ctx.fail(`${what}: antes de recolher, esperava expandido com a tela na janela (${entDesc(antes)}, tela ${entRect(antes.tela)})`);
     return;
   }
@@ -2254,7 +2286,7 @@ async function entVolta(cdp, ctx, what, { recolher, recuar, budget, s0, pausaIda
     ctx.fail(`${what}: não recolheu preso em P = 1 no topo (${entDesc(depois)})`);
     return;
   }
-  const salto = [...rec.marks, ...rec.frames, depois].find((s) => !entSame(s.tela, entJanela(s)));
+  const salto = [...rec.marks, ...rec.frames, depois].find((s) => !entNaJanela(s));
   if (salto) ctx.fail(`${what}: ao recolher, um quadro com a tela em ${entRect(salto.tela)} (${entDesc(salto)}); esperado a janela inteira, sem salto`);
   ctx.log(`${what}: recolheu sem salto (${rec.frames.length} quadros gravados com a tela na janela), ${entDesc(depois)}`);
 
@@ -2361,7 +2393,10 @@ async function entBarraPass(cdp, ctx) {
       })()`,
     ],
   ]) {
+    // O End anima como o clique da roda (~0,7 s); o data-progress fica em
+    // 0.99 na cauda, e o entState sozinho a daria por assentada.
     await pressKey(cdp, KEYS.End);
+    await expSettle(cdp);
     const aberto = await entState(cdp);
     if (aberto.expanded !== "true" || Math.abs(aberto.scrollY - (aberto.palco?.h ?? NaN)) > 1) {
       ctx.fail(`barra de rolagem, ${nome}: o End não deixou a página no topo da tela (${entDesc(aberto)})`);
@@ -2536,6 +2571,7 @@ async function entAncoraPass(cdp, ctx) {
   // Posição restaurada: a página rolada além da tela, recarregada.
   if (!(await expLoadPinned(cdp, ctx, "posição restaurada"))) return;
   await pressKey(cdp, KEYS.End);
+  await expSettle(cdp);
   const aberto = await entState(cdp);
   const alvo = Math.round((aberto.palco?.h ?? ctx.height) + 1200);
   await evalValue(cdp, `window.scrollTo({ top: ${alvo}, left: 0, behavior: "instant" })`);
@@ -2592,6 +2628,62 @@ async function entToquePass(cdp, ctx) {
     s0,
     pausaIda: pausa[0]?.tela ?? null,
   });
+}
+
+/** A tela baixa do passo 10: o celular deitado, sem toque (o teclado de um tablet, de um notebook com a janela baixa). */
+const ENT_TECLADO_SIZE = { width: 740, height: 360, dsf: 1, mobile: false };
+/** Com o 1.4.12, a fonte raiz a 200% (a tela passa da altura da janela, M1). */
+const ENT_TECLADO_CSS = `${TEXT_SPACING_CSS} html { font-size: 200% !important; }`;
+
+/**
+ * 10. O teclado (I1 e M1 da revisão final): a 740×360 deitado, com o
+ * espaçamento do 1.4.12 e a fonte raiz a 200%, a seta até expandir (a tela à vista no aparelho em
+ * toda amostra), o último quadro antes da liberação com a tela quase na
+ * janela (o passo que chega a 1 anima até o fim, sem corte seco), a
+ * liberação, e a volta com Page Up e seta para cima.
+ */
+async function entTecladoPass(cdp, ctx) {
+  const tamanho = `${ENT_TECLADO_SIZE.width}×${ENT_TECLADO_SIZE.height}`;
+  const tctx = { ...ctx, ...ENT_TECLADO_SIZE, size: tamanho, toque: false };
+  await entMetrics(cdp, tctx);
+  await setReducedMotion(cdp, false);
+  try {
+    if (!(await expLoadPinned(cdp, tctx, "teclado"))) return;
+    await evalValue(
+      cdp,
+      `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(ENT_TECLADO_CSS)}; document.head.appendChild(s); })()`,
+    );
+    const s0 = await entState(cdp);
+    const maisAlta = s0.telaAltura > (s0.palco?.h ?? Infinity) + 1;
+    if (!maisAlta) ctx.fail(`teclado a ${tamanho}: a tela (${s0.telaAltura}px) cabe no palco (${Math.round(s0.palco?.h ?? NaN)}px); o corte da cena (M1) não foi exercitado`);
+    ctx.log(`teclado a ${tamanho}, com o 1.4.12 e a fonte a 200%: a tela tem ${s0.telaAltura}px sem escala; o palco, ${Math.round(s0.palco?.h ?? NaN)}px`);
+    await entRecStart(cdp, true);
+    const samples = await entIda(cdp, ctx, `teclado a ${tamanho}`, () => pressKey(cdp, KEYS.ArrowDown), 20);
+    const rec = await entRecStop(cdp);
+    if (!samples) return;
+    // O que o corte evita: a caixa inteira da tela passaria do pé da moldura.
+    const vaza = samples.filter((s) => s.expanded !== "true" && s.telaInteira && s.moldura).map((s) => s.telaInteira.bottom - s.moldura.bottom);
+    ctx.log(`teclado a ${tamanho}: sem o corte, a tela passaria até ${Math.round(Math.max(0, ...vaza))}px do pé da moldura; à vista, ela fica no furo do aparelho`);
+    const liberacao = rec.marks.find((mark) => mark.expanded === "true");
+    const antes = liberacao ? rec.frames.filter((f) => f.t < liberacao.t && f.expanded !== "true").at(-1) : null;
+    if (!antes || !antes.tela) {
+      ctx.fail(`teclado a ${tamanho}: sem quadro gravado antes da liberação`);
+    } else if (antes.tela.w < 0.95 * antes.cw) {
+      ctx.fail(`teclado a ${tamanho}: no último quadro antes da liberação, a tela tinha ${entRect(antes.tela)} numa janela de ${antes.cw}×${antes.vh} (corte seco até a página, ${entDesc(antes)})`);
+    }
+    ctx.log(`teclado a ${tamanho}: último quadro antes da liberação com a tela em ${antes ? entRect(antes.tela) : "?"}`);
+    entCheckLiberacao(ctx, `teclado a ${tamanho}`, rec.marks, samples.at(-1), { exato: true });
+    const pausa = samples.filter(entPausa);
+    await entVolta(cdp, ctx, `teclado a ${tamanho}, volta`, {
+      recolher: () => pressKey(cdp, KEYS.PageUp),
+      recuar: (fino) => pressKey(cdp, fino ? KEYS.ArrowUp : KEYS.PageUp),
+      budget: 20,
+      s0,
+      pausaIda: pausa[0]?.tela ?? null,
+    });
+  } finally {
+    await entMetrics(cdp, ctx);
+  }
 }
 
 // --- Catálogo de produtos (#produtos): as passadas (cada uma recebe o tamanho e onde anotar) ---
@@ -4125,6 +4217,7 @@ try {
         await runEntPass(ctx, "resize", () => entResizePass(cdp, ctx));
         await runEntPass(ctx, "Tab", () => entTabPass(cdp, ctx));
         await runEntPass(ctx, "âncora", () => entAncoraPass(cdp, ctx));
+        await runEntPass(ctx, "teclado", () => entTecladoPass(cdp, ctx));
       }
       await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: false }).catch(() => {});
     }
@@ -4408,7 +4501,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
-    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa; no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular. ' +
+    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa; no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
     "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
