@@ -188,9 +188,11 @@ describe("camera: notebook ou celular", () => {
     const deitado = camera(ENTRADA.E, { w: 800, h: 600, emPe: false }).tela;
     const emPe = camera(ENTRADA.E, { w: 800, h: 600, emPe: true }).tela;
     expect(emPe.s).not.toBeCloseTo(deitado.s, 3);
-    // Mesma janela e mesma mídia: a razão das escalas é a razão das larguras.
+    // Mesma janela, cada um com a sua mídia: a razão das escalas é a razão das larguras na escala do cover de cada mídia.
+    const cover = (m: { w: number; h: number }) => Math.max(800 / m.w, 600 / m.h);
     expect(emPe.s / deitado.s).toBeCloseTo(
-      ENTRADA.aparelho.emPe.largura / ENTRADA.aparelho.deitado.largura,
+      (ENTRADA.aparelho.emPe.largura * cover(ENTRADA.midia.emPe)) /
+        (ENTRADA.aparelho.deitado.largura * cover(ENTRADA.midia.deitado)),
       9,
     );
   });
@@ -344,12 +346,20 @@ describe("globals.css: os números fixos da cena batem com o ENTRADA", () => {
     "@media (scripting: none) and (orientation: portrait), (prefers-reduced-motion: reduce) and (orientation: portrait) {\n  .hero-expansao--entrada {\n",
   );
 
-  it("a largura da mídia com cover usa a proporção da mídia (deitada; em pé, sem regra própria, a mesma)", () => {
+  it("a largura da mídia com cover usa a proporção da mídia de cada enquadramento", () => {
     expect(valor(cartao, "--hx-midia-largura")).toBe("max(100cqw, var(--hx-palco-h) * 16 / 9)");
     expect(ENTRADA.midia.deitado.w / ENTRADA.midia.deitado.h).toBeCloseTo(16 / 9, 9);
-    if (!/--hx-midia-largura/.test(cartaoEmPe + paradoEmPe)) {
-      expect(ENTRADA.midia.emPe.w / ENTRADA.midia.emPe.h).toBeCloseTo(16 / 9, 9);
-    }
+    // Em pé, a mídia própria (720 × 1280): uma regra só para ela.
+    expect(valor(cartaoEmPe, "--hx-midia-largura")).toBe("max(100cqw, var(--hx-palco-h) * 9 / 16)");
+    expect(ENTRADA.midia.emPe.w / ENTRADA.midia.emPe.h).toBeCloseTo(9 / 16, 9);
+  });
+
+  it("o corte da mídia (--hx-midia-pos) é o object-position de ENTRADA.midia em cada enquadramento", () => {
+    const pos = (m: { posX: number; posY: number }) => `${m.posX * 100}% ${m.posY * 100}%`;
+    // Deitado vale o do .hero-expansao (50% 100%), que o modo entrada não muda.
+    expect(valor(cartao, "--hx-midia-pos")).toBeUndefined();
+    expect(pos(ENTRADA.midia.deitado)).toBe("50% 100%");
+    expect(valor(cartaoEmPe, "--hx-midia-pos")).toBe(pos(ENTRADA.midia.emPe));
   });
 
   it.each([
@@ -361,15 +371,20 @@ describe("globals.css: os números fixos da cena batem com o ENTRADA", () => {
     expect(numero(valor(noCartao(), "--hx-tela-s"), /^([\d.]+)/)).toBeCloseTo(cartaoTela.s, 4);
     expect(numero(valor(noCartao(), "--hx-tela-y"), /\/ 2 - ([\d.]+)px/)).toBeCloseTo(v.h / 2 - cartaoTela.cy, 2);
 
-    // A pausa: --hx-tela-s e o centro a uma fração da largura da mídia acima do pé do palco.
+    // A pausa: --hx-tela-s e o centro em `posY` da altura do palco menos uma fração da largura da mídia (o cover corta
+    // em posY: deitado, 50% 100%, o centro fica acima do pé; em pé, 50% 50%, em volta do meio do palco).
     const pausaTela = camera(ENTRADA.E, v).tela;
     expect(numero(valor(naPausa(), "--hx-tela-s"), /^([\d.]+)/)).toBeCloseTo(pausaTela.s, 4);
-    const fracao = numero(
-      valor(naPausa(), "--hx-tela-y"),
-      /var\(--hx-palco-h\) - ([\d.]+) \* var\(--hx-midia-largura\)/,
+    const y = valor(naPausa(), "--hx-tela-y");
+    const forma = y?.match(
+      /^calc\( ?var\(--hx-palco-h\)( \/ 2)? - (?:([\d.]+) \* var\(--hx-midia-largura\) - )?var\(--hx-tela-s\) \* var\(--hx-palco-h\) \/ 2 ?\) !important$/,
     );
-    const { w, h } = cenaDe(v).midia;
+    expect(forma, y).not.toBeNull();
+    const parteDoPalco = forma?.[1] ? 0.5 : 1;
+    const fracao = Number(forma?.[2] ?? 0);
+    const { w, h, posY } = cenaDe(v).midia;
+    expect(parteDoPalco).toBe(posY);
     const larguraDaMidia = Math.max(v.w, (v.h * w) / h);
-    expect(v.h - fracao * larguraDaMidia).toBeCloseTo(pausaTela.cy, 1);
+    expect(parteDoPalco * v.h - fracao * larguraDaMidia).toBeCloseTo(pausaTela.cy, 1);
   });
 });

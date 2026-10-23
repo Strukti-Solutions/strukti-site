@@ -108,11 +108,17 @@ describe("<HeroNotebook />", () => {
       [retrato, midiaRetrato.posterJpg],
       [null, midia.posterAvif],
     ]);
-    // Nada do expansao, menos o fundo em pé (até a cena em pé ter o dela).
+    // Nada do expansao: as duas cenas (deitada e em pé) são as do notebook.
     const urls = [...container.querySelectorAll("[src], [srcset]")].map(
       (el) => el.getAttribute("src") ?? el.getAttribute("srcset"),
     );
-    expect(urls.filter((url) => url?.includes("/hero/expansao/") && !url.includes("fundo-retrato"))).toEqual([]);
+    expect(urls.filter((url) => url?.includes("/hero/expansao/"))).toEqual([]);
+    expect(urls.filter((url) => url?.includes("-retrato"))).toEqual([
+      fundo.retrato.posterAvif,
+      fundo.retrato.posterJpg,
+      midiaRetrato.posterAvif,
+      midiaRetrato.posterJpg,
+    ]);
     // Sem vídeo na configuração (só o pôster): o <video> fica, sem fonte.
     const video = container.querySelector("video");
     expect(video?.hasAttribute("src")).toBe(false);

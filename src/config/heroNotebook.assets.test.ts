@@ -8,9 +8,9 @@ import { readAvif } from "@/test/avif";
 /**
  * A mídia do hero "notebook" (fase 2 da arte, Global Constraints do plano
  * 2026-10-23-hero-notebook-arte): confere os arquivos que o
- * `siteConfig.heroNotebook` usa (e só eles: o vídeo e a mídia em pé chegam
- * depois), com o tamanho e o limite de bytes de cada nome. Mídia só do
- * próprio site (ADR-008).
+ * `siteConfig.heroNotebook` usa (e só eles: o vídeo chega depois), com o
+ * tamanho e o limite de bytes de cada nome. Mídia só do próprio site
+ * (ADR-008), de public/hero/notebook/.
  */
 
 const PUBLIC_DIR = path.resolve(import.meta.dirname, "../../public");
@@ -59,7 +59,7 @@ describe.each(quadros)("siteConfig.heroNotebook.%s", (_campo, quadro) => {
     expect(limite, quadro.posterAvif).toBeDefined();
     for (const url of [quadro.posterAvif, quadro.posterJpg, quadro.webm, quadro.mp4]) {
       if (url === undefined) continue;
-      expect(url).toMatch(/^\/hero\/(notebook|expansao)\/[a-z-]+\.(avif|jpg|webm|mp4)$/);
+      expect(url).toMatch(/^\/hero\/notebook\/[a-z-]+\.(avif|jpg|webm|mp4)$/);
     }
     expect(nome(quadro.posterJpg)).toBe(nome(quadro.posterAvif));
     expect({ w: quadro.width, h: quadro.height }).toEqual({ w: limite?.w, h: limite?.h });
@@ -94,6 +94,24 @@ describe.each(quadros)("siteConfig.heroNotebook.%s", (_campo, quadro) => {
       expect(bytes, `${url}: ${bytes} bytes`).toBeGreaterThan(0);
       expect(bytes, `${url}: ${bytes} bytes`).toBeLessThanOrEqual(clipe![tipo]!);
     }
+  });
+});
+
+describe("siteConfig.heroNotebook: a cena em pé", () => {
+  it("o fundo e a mídia em pé são os do notebook, com a mídia própria de 720 × 1280 (não a deitada)", () => {
+    expect(heroNotebook.fundo.retrato).toMatchObject({
+      posterAvif: "/hero/notebook/fundo-retrato.avif",
+      posterJpg: "/hero/notebook/fundo-retrato.jpg",
+      width: 1080,
+      height: 1920,
+    });
+    expect(heroNotebook.midiaRetrato).toMatchObject({
+      posterAvif: "/hero/notebook/midia-retrato-poster.avif",
+      posterJpg: "/hero/notebook/midia-retrato-poster.jpg",
+      width: 720,
+      height: 1280,
+    });
+    expect(heroNotebook.midiaRetrato).not.toBe(heroNotebook.midia);
   });
 });
 

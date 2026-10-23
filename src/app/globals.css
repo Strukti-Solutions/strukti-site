@@ -4523,12 +4523,16 @@ textarea.field__input {
   }
 }
 
-/* Em pé (Q26), o celular: a tela no cartão tem 67 px (120 × 400/720), com
-   o centro 17 px acima do meio do palco; a escala é a de 390 px. */
+/* Em pé (Q26), o celular, com a mídia própria (720 × 1280, ENTRADA.midia.
+   emPe) cortada em volta do meio: a tela do celular, no meio da mídia, fica
+   no meio do palco. No cartão ela tem 80 px (191,2 × 300/720), com o centro
+   no meio do palco; a escala é a de 390 px. */
 @media (orientation: portrait) {
   .hero-expansao--entrada {
-    --hx-tela-s: 0.1709;
-    --hx-tela-y: calc(var(--hx-palco-h) / 2 - 16.67px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
+    --hx-midia-largura: max(100cqw, var(--hx-palco-h) * 9 / 16);
+    --hx-midia-pos: 50% 50%;
+    --hx-tela-s: 0.20427;
+    --hx-tela-y: calc(var(--hx-palco-h) / 2 - 0px - var(--hx-tela-s) * var(--hx-palco-h) / 2);
   }
 }
 
@@ -4801,11 +4805,10 @@ textarea.field__input {
 
 @media (scripting: none) and (orientation: portrait), (prefers-reduced-motion: reduce) and (orientation: portrait) {
   .hero-expansao--entrada {
-    --hx-tela-s: 0.3607 !important;
-    /* 390/1280 da largura da mídia acima do pé (o celular está mais baixo). */
-    --hx-tela-y: calc(
-      var(--hx-palco-h) - 0.3046875 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h) / 2
-    ) !important;
+    --hx-tela-s: 0.32326 !important;
+    /* A mídia em pé corta em volta do meio, e a tela do celular está no
+       meio dela: o centro da tela é o do palco. */
+    --hx-tela-y: calc(var(--hx-palco-h) / 2 - var(--hx-tela-s) * var(--hx-palco-h) / 2) !important;
   }
 }
 

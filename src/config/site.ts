@@ -163,18 +163,11 @@ export interface HeroNotebookMedia {
 
 /*
  * A mesa com o notebook aberto no centro: o mesmo mundo do "Fim de
- * expediente", produção própria. Por enquanto, só as imagens paradas da
- * cena deitada (o loop vem depois). Até a cena em pé ter mídia própria, o
- * retrato mostra a mídia deitada e o fundo em pé do expansao (public/hero/
- * expansao/, sem cópia).
+ * expediente", produção própria. Por enquanto, só as imagens paradas (o
+ * loop vem depois). Deitado, o notebook no centro da mesa; em pé, o celular
+ * num suporte, na frente e no centro, com o notebook atrás (cada
+ * enquadramento com a sua mídia e o seu fundo).
  */
-const MESA_COM_NOTEBOOK_MIDIA: HeroNotebookQuadro = {
-  posterAvif: "/hero/notebook/midia-poster.avif",
-  posterJpg: "/hero/notebook/midia-poster.jpg",
-  width: 1280,
-  height: 720,
-};
-
 const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
   fundo: {
     deitado: {
@@ -184,14 +177,24 @@ const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
       height: 1080,
     },
     retrato: {
-      posterAvif: "/hero/expansao/fundo-retrato.avif",
-      posterJpg: "/hero/expansao/fundo-retrato.jpg",
+      posterAvif: "/hero/notebook/fundo-retrato.avif",
+      posterJpg: "/hero/notebook/fundo-retrato.jpg",
       width: 1080,
       height: 1920,
     },
   },
-  midia: MESA_COM_NOTEBOOK_MIDIA,
-  midiaRetrato: MESA_COM_NOTEBOOK_MIDIA,
+  midia: {
+    posterAvif: "/hero/notebook/midia-poster.avif",
+    posterJpg: "/hero/notebook/midia-poster.jpg",
+    width: 1280,
+    height: 720,
+  },
+  midiaRetrato: {
+    posterAvif: "/hero/notebook/midia-retrato-poster.avif",
+    posterJpg: "/hero/notebook/midia-retrato-poster.jpg",
+    width: 720,
+    height: 1280,
+  },
 };
 
 /*

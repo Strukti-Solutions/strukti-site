@@ -38,23 +38,25 @@ export const ENTRADA = {
   tituloMargem: 16,
   /**
    * A mídia da sala de cada enquadramento, com o `object-position` do cover
-   * (`--hx-midia-pos`, 50% 100%). Deitado, a do notebook, 1280 × 720. Em pé,
-   * enquanto a cena em pé não tem mídia própria, o retrato mostra a mesma
-   * mídia deitada (siteConfig.heroNotebook.midiaRetrato), e a câmera usa as
-   * medidas dela.
+   * (`--hx-midia-pos`). Deitado, a do notebook, 1280 × 720, cortada por
+   * baixo (50% 100%: o pé da mídia emenda na página). Em pé, a do celular
+   * num suporte, 720 × 1280 (siteConfig.heroNotebook.midiaRetrato), cortada
+   * em volta do meio (50% 50%): a tela do celular, no meio da mídia, fica no
+   * meio do cartão e, nos tablets em pé, no meio da janela, ao lado do título.
    */
   midia: {
     deitado: { w: 1280, h: 720, posX: 0.5, posY: 1 },
-    emPe: { w: 1280, h: 720, posX: 0.5, posY: 1 },
+    emPe: { w: 720, h: 1280, posX: 0.5, posY: 0.5 },
   },
   /**
    * Centro e largura da tela do aparelho na cena, em px da mídia do
-   * enquadramento. Deitado, o retângulo da tela do notebook na arte
-   * (`node scripts/hero-notebook/geo.js`); em pé, o celular do protótipo.
+   * enquadramento: o retângulo da tela na arte (`node
+   * scripts/hero-notebook/geo.js '{}' media`, o notebook, e `… mediaRetrato`,
+   * o celular).
    */
   aparelho: {
     deitado: { cx: 640, cy: 359.7, largura: 295.2 },
-    emPe: { cx: 640, cy: 330, largura: 120 },
+    emPe: { cx: 360, cy: 640, largura: 191.2 },
   },
   /** O quadro no início da expansão, em px. */
   quadroInicial: { w: 300, h: 400 },

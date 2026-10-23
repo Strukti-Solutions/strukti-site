@@ -378,6 +378,16 @@ describe("cena do hero notebook", () => {
       expect(geo.suporte.pe).toBeGreaterThan(t.cy + t.altura / 2);
     });
 
+    it("o ENTRADA.aparelho.emPe e o ENTRADA.midia.emPe são os da mídia em pé (com 0,1 px)", () => {
+      const t = cena.telaDoCelular("mediaRetrato");
+      const { emPe } = ENTRADA.aparelho;
+      expect(Math.abs(emPe.cx - t.cx)).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(emPe.cy - t.cy)).toBeLessThanOrEqual(0.1);
+      expect(Math.abs(emPe.largura - t.largura)).toBeLessThanOrEqual(0.1);
+      // Cover 50% 50%: a tela do celular (no meio da mídia) fica no meio do cartão e, nos tablets em pé, no meio da janela.
+      expect(ENTRADA.midia.emPe).toMatchObject({ w: 720, h: 1280, posX: 0.5, posY: 0.5 });
+    });
+
     it("o notebook fica atrás do celular, cortado por ele (e desfocado), com a tampa acima da tela", () => {
       const { w, caixa } = quadroEmPe("mediaRetrato");
       const L = w.laptop;
