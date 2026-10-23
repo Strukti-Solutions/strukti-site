@@ -1,6 +1,6 @@
 # Onde paramos — 03/10/2026 (novo rumo: hardware + IA)
 
-Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é privado: `github.com/Thiago432544/strukti-site`.
+Registro do Claudinho para quem retomar o trabalho no PC novo. O repositório é privado, na organização Strukti-Solutions: `github.com/Strukti-Solutions/strukti-site`.
 
 ## Novo rumo (03/10/2026)
 
