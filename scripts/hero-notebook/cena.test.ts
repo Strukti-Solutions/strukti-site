@@ -6,7 +6,7 @@
  * (Canvas2D) é conferido nas fotos; aqui fica a geometria, que roda no Node.
  */
 import { execFileSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -588,6 +588,17 @@ describe("cena do hero notebook", () => {
         "media-retrato.html",
         "shot.sh",
         "stills.sh",
+        // o loop de 10 s (N5): os passes e a composição, nos dois enquadramentos
+        "loop.js",
+        "plates.html",
+        "plates-retrato.html",
+        "city2x.html",
+        "city2x-retrato.html",
+        "steam2.html",
+        "derive.sh",
+        "composite2.js",
+        "encode.sh",
+        "vqa.sh",
       ]),
     );
     for (const f of fontes) expect(readFileSync(join(PASTA, f), "utf8")).not.toMatch(/hero-expansao/);
@@ -680,6 +691,129 @@ describe("cena do hero notebook", () => {
       expect(sx0).toBeLessThanOrEqual(emPe.suporte.frenteEsq[0] - emPe.tela.cx);
       expect(sx0 + sw).toBeGreaterThanOrEqual(emPe.suporte.frenteDir[0] - emPe.tela.cx);
       expect(sy0 + sh).toBeGreaterThanOrEqual(emPe.suporte.pe - peEmPe);
+    });
+  });
+
+  describe("o loop de 10 s (N5): os passes e a composição nos dois enquadramentos", () => {
+    type Quadro = {
+      cam: string;
+      W: number;
+      H: number;
+      saida: string;
+      pasta: string;
+      mosaico: [number, number];
+      cidade: { pass: string; W: number; H: number; F: number; shiftY: number; pxk: number };
+      vapor: { x: number; y: number; w: number; h: number; desfoque: number };
+      led: [number, number];
+      recorteVapor: { x: number; y: number; w: number; h: number };
+      curvas: { cidade: string; led: string; abajur: string; vapor: string };
+    };
+    type Loop = {
+      quadro: (cam: string) => Quadro;
+      grafo: (cam: string) => string;
+      avalia: (expr: string, t: number) => number;
+      VAPOR: { w: number; h: number; S: number };
+    };
+    // carregado no beforeAll: sem o loop.js, cada caso falha sozinho (e não a suíte inteira)
+    let loop: Loop;
+    beforeAll(() => {
+      loop = require("./loop.js") as Loop;
+    });
+    const ENQ: [string, string, number, number][] = [
+      ["media", "midia", 1280, 720],
+      ["mediaRetrato", "midia-retrato", 720, 1280],
+    ];
+
+    it.each(ENQ)("%s vira %s, com o tamanho da mídia e uma pasta de passes própria", (cam, saida, W, H) => {
+      const q = loop.quadro(cam);
+      expect({ saida: q.saida, W: q.W, H: q.H }).toEqual({ saida, W, H });
+      expect(q.mosaico).toEqual([2 * W, 2 * H]);
+      expect(q.pasta).toMatch(/^plates2/);
+      expect(loop.quadro("media").pasta).not.toBe(loop.quadro("mediaRetrato").pasta);
+    });
+
+    it.each(ENQ)("%s: a cidade em 2x cai exatamente sobre a cidade do quadro (2 × o px, mais 8 px de folga)", (cam) => {
+      const q = loop.quadro(cam);
+      const o = cena.CAMS[cam] as unknown as { W: number; H: number; F: number; shiftY?: number };
+      expect(q.cidade).toMatchObject({ pass: "city", W: 2 * o.W + 16, H: 2 * o.H, F: 2 * o.F, pxk: 2 });
+      expect(q.cidade.shiftY).toBe(2 * (o.shiftY ?? 0));
+      cena.prepWorld(Object.assign({}, cena.CAMS[cam]));
+      const c1 = cena.makeCam(Object.assign({}, cena.CAMS[cam]));
+      const c2 = cena.makeCam(Object.assign({}, cena.CAMS[cam], q.cidade));
+      for (const p of [[-40, 80, 200], [30, 140, 400], [0, 60, 150]] as Vec[]) {
+        const a = c1.P(p);
+        const b = c2.P(p);
+        expect(b[0]).toBeCloseTo(2 * a[0] + 8, 6);
+        expect(b[1]).toBeCloseTo(2 * a[1], 6);
+      }
+    });
+
+    it.each(ENQ)("%s: o vapor sobe da boca da caneca, na escala dela", (cam) => {
+      const q = loop.quadro(cam);
+      const o = Object.assign({}, cena.CAMS[cam]);
+      const mundo = cena.prepWorld(o);
+      const c = cena.makeCam(o) as Camera & { S: (p: Vec) => number };
+      const top: Vec = [mundo.mug.x, mundo.mug.h, mundo.mug.z];
+      const [px, py] = c.P(top);
+      const s = c.S(top) / loop.VAPOR.S;
+      const { x, y, w, h } = q.vapor;
+      expect(Math.abs(x + w / 2 - px)).toBeLessThanOrEqual(1);
+      expect(y + h).toBeLessThanOrEqual(py);
+      expect(y + h).toBeGreaterThanOrEqual(py - 8 * s);
+      expect(Math.abs(w - loop.VAPOR.w * s)).toBeLessThanOrEqual(2);
+      expect(Math.abs(h - loop.VAPOR.h * s)).toBeLessThanOrEqual(2);
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(x + w).toBeLessThanOrEqual(q.W);
+      // a conferência do vapor (vqa.sh) recorta em volta dele
+      const r = q.recorteVapor;
+      expect(r.x).toBeLessThanOrEqual(x);
+      expect(r.x + r.w).toBeGreaterThanOrEqual(x + w);
+      expect(r.y).toBeLessThanOrEqual(y);
+      expect(r.y + r.h).toBeGreaterThanOrEqual(y + h);
+      expect(r.x).toBeGreaterThanOrEqual(0);
+      expect(r.x + r.w).toBeLessThanOrEqual(q.W);
+    });
+
+    it("em pé, o vapor fica no desfoque do fundo, como a caneca; deitado, nítido", () => {
+      expect(loop.quadro("media").vapor.desfoque).toBe(0);
+      const o = cena.CAMS.mediaRetrato as unknown as { desfoque: [number, number, number]; F: number };
+      expect(loop.quadro("mediaRetrato").vapor.desfoque).toBe(Math.max(1, Math.round((o.desfoque[2] * o.F) / 1000)));
+    });
+
+    it.each(ENQ)("%s: o loop fecha em 10 s (as curvas em t = 10 voltam ao valor de t = 0)", (cam) => {
+      const { curvas } = loop.quadro(cam);
+      for (const expr of Object.values(curvas)) {
+        expect(loop.avalia(expr, 10)).toBeCloseTo(loop.avalia(expr, 0), 9);
+        // e não é constante: há movimento
+        const vals = Array.from({ length: 50 }, (_, i) => loop.avalia(expr, (i * 10) / 50));
+        expect(Math.max(...vals) - Math.min(...vals)).toBeGreaterThan(0);
+      }
+      // a cidade balança até 8 px em 2x (4 px no quadro, em passos de meio pixel) e parte do lugar certo
+      expect(loop.avalia(curvas.cidade, 0)).toBe(8);
+      // o abajur oscila 3%
+      expect(loop.avalia(curvas.abajur, 0)).toBeCloseTo(0, 9);
+      expect(loop.avalia(curvas.abajur, 2.5)).toBeCloseTo(0.03, 9);
+    });
+
+    it.each(ENQ)("%s: no quadro 0, o LED tem o brilho da foto parada (o pôster é o quadro 0) e respira 18%%", (cam) => {
+      const q = loop.quadro(cam);
+      const o = cena.CAMS[cam] as unknown as { ledK?: number };
+      expect(loop.avalia(q.curvas.led, 0)).toBeCloseTo(o.ledK ?? 0.82, 9);
+      expect(q.led[0]).toBeCloseTo(o.ledK ?? 0.82, 9);
+      expect(Math.abs(q.led[1] - q.led[0])).toBeCloseTo(0.18, 9);
+      expect(Math.max(...q.led)).toBeLessThanOrEqual(1);
+    });
+
+    it.each(ENQ)("%s: o grafo do composite usa as curvas, o lugar do vapor e o tamanho do quadro", (cam) => {
+      const q = loop.quadro(cam);
+      const g = loop.grafo(cam);
+      for (const expr of Object.values(q.curvas)) expect(g).toContain(expr);
+      expect(g).toContain(`pad=${q.W}:${q.H}:${q.vapor.x}:${q.vapor.y}`);
+      expect(g).toContain(`scale=${q.W}:${q.H}:flags=lanczos`);
+      expect(g.includes("gblur")).toBe(q.vapor.desfoque > 0);
+      // o brilho frio da tela fica parado (spec §12): ele está no passe A, e o grafo só modula cidade, LED, abajur e vapor
+      expect(g.match(/blend=all_expr/g)).toHaveLength(2);
     });
   });
 });

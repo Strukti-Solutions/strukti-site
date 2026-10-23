@@ -504,13 +504,14 @@
   // Em pé (com `bokehCol`), as janelas acesas das torres ficam em prumadas: só uma parte das colunas (`janelas`, 0 a 1, sorteada
   // pela própria coluna) tem luz, e nenhuma janela cai sobre um montante. Espalhadas pela torre inteira, liam como neve.
   function janelasAcesas(cam, o, lights) {
-    const mont = montantesNoQuadro(cam), pJan = o.janelas != null ? o.janelas : 0.35, sorte = {};
+    // k: a escala do px (2 na placa da cidade do loop, que é o quadro em 2x)
+    const mont = montantesNoQuadro(cam), pJan = o.janelas != null ? o.janelas : 0.35, sorte = {}, k = o.pxk || 1;
     const daColuna = c => { if (sorte[c] == null) { let h = 7; for (let i = 0; i < c.length; i++) h = (h * 31 + c.charCodeAt(i)) | 0; sorte[c] = rng(h)() < pJan; } return sorte[c]; };
     return lights.filter(([a, e, w, h, , , kind, coluna]) => {
       if (kind !== 2) return true;
       if (!daColuna(coluna)) return false;
       const p = cam.D(a + w / 2, e + h / 2);
-      return !mont.some(([xa, xb]) => p[0] + 14 > xa(p[1]) && p[0] - 14 < xb(p[1]));
+      return !mont.some(([xa, xb]) => p[0] + 14 * k > xa(p[1]) && p[0] - 14 * k < xb(p[1]));
     });
   }
   // `bokehCol` [pCol, pLuz] (em pé, ajuste de arte 1): os discos desfocados saem só das janelas das torres, em colunas: uma
@@ -528,7 +529,7 @@
       if (!cl.t) continue;
       const p = cam.D(a + w / 2, e + h / 2), r = o.bokeh * k * cl.t * (0.85 + tam * 0.3);
       if (p[2] <= 0.05 || p[0] < -r || p[0] > cam.W + r || p[1] < -r || p[1] > cam.H + r) continue;
-      if (mont.some(([xa, xb]) => p[0] + r + 6 > xa(p[1]) && p[0] - r - 6 < xb(p[1]))) continue;
+      if (mont.some(([xa, xb]) => p[0] + r + 6 * k > xa(p[1]) && p[0] - r - 6 * k < xb(p[1]))) continue;
       if (sorteio > pLuz || cl.n >= 4 || e - cl.ult < 1.9) continue;
       cl.n++; cl.ult = e; out.push({ p: [p[0], p[1]], r, col, A: (o.discA || 0.13) * 0.6 + luz * luz * 0.22, torre: true, coluna });
     }
@@ -1146,7 +1147,12 @@
     const pass = o.pass || 'full';
     prepWorld(o); const cam = makeCam(o);
     const ctx = canvas.getContext('2d');
-    if (pass === 'city') { const city = cityLayer(cam, o); ctx.drawImage(city, 0, 0); if (o.dither) addGrain(ctx, cam.W, cam.H, o.dither, 77); return { cam }; }
+    if (pass === 'city') {
+      const city = cityLayer(cam, o); ctx.drawImage(city, 0, 0);
+      // em pé, a janela inteira fica no desfoque do fundo (desfocaFundo): a placa da cidade do loop leva o mesmo desfoque
+      if (o.desfoque) { ctx.filter = `blur(${Math.max(1, Math.round(o.desfoque[2] * cam.F / 1000))}px)`; ctx.drawImage(city, 0, 0); ctx.filter = 'none'; }
+      if (o.dither) addGrain(ctx, cam.W, cam.H, o.dither, 77); return { cam };
+    }
     LK = pass === 'D' ? 0 : 1;
     const ledK = pass === 'C' ? 1 : pass === 'full' ? (o.ledK != null ? o.ledK : 0.82) : 0;
     basePass(ctx, cam, o);

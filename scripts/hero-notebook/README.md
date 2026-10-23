@@ -49,8 +49,7 @@ mkdir -p cur
 ```
 
 O mundo (`BASE` no `scene.js`) e as câmeras (`CAMS`) valem para as quatro
-fotos: mexeu num objeto, renderize todas. Os passes do loop de 10 s ainda não
-estão aqui.
+fotos: mexeu num objeto, renderize todas, e os passes do loop (§5) também.
 
 ## 2. O retângulo da tela e as sondas
 
@@ -214,13 +213,72 @@ e que as bordas batem com o `geo.js`.
 
 ## 4. Instalar
 
-As fotos viram `fundo.*` e `midia-poster.*` em `public/hero/notebook/` pelo
-`stills.sh` (`./stills.sh cur/bg.png final2/fundo 11 3`, igual ao expansao);
-os limites estão nas Global Constraints do plano da arte. O pôster definitivo
-sai do quadro 0 do loop, quando os passes estiverem prontos.
+As fotos viram `fundo.*` em `public/hero/notebook/` pelo `stills.sh`
+(`./stills.sh cur/bg.png final2/fundo 11 3`, igual ao expansao); os limites
+estão nas Global Constraints do plano da arte. Os pôsteres (`midia-poster.*` e
+`midia-retrato-poster.*`) saem do quadro 0 do loop (§5).
 
 Instaladas em 23/10/2026: `fundo.*` (de `cur/bg.png`) e `midia-poster.*` (de
 `cur/media.png`), ambas com crf 11 e `-q:v` 3; em pé, `fundo-retrato.*` (de
 `cur/portrait.png`) e `midia-retrato-poster.*` (de `cur/media-retrato.png`), com
 os mesmos números. O `src/config/heroNotebook.assets.test.ts`
 confere os tamanhos e os limites dos arquivos que o `siteConfig.heroNotebook` usa.
+
+Instalados em 23/10/2026 (N5): `midia.{webm,mp4}` e `midia-retrato.{webm,mp4}`,
+com os pôsteres refeitos do quadro 0 de cada loop.
+
+## 5. O loop de 10 s
+
+Os dois enquadramentos (a mídia deitada `media`, 1280 × 720, e a em pé
+`mediaRetrato`, 720 × 1280) têm o mesmo loop do expansao, montado no ffmpeg a
+partir de passes da câmera da mídia. O que muda de um para o outro (tamanhos,
+a cidade em 2x, o lugar e a escala do vapor, o LED e as curvas) está no
+`loop.js` (`node loop.js media`, `node loop.js mediaRetrato`); os HTML só
+chamam `FDE_LOOP.passes` e `FDE_LOOP.cidade`.
+
+```sh
+mkdir -p plates2 plates2-retrato final2
+# deitado
+./shot.sh plates.html plates2/tiles.png 2560 1440        # A, B, C e D num mosaico
+./shot.sh city2x.html plates2/city2x.png 2576 1440       # a cidade em 2x (o balanço de meio pixel)
+./shot.sh steam2.html plates2/steam2.png 520 420         # o vapor (faixa e máscara, em 2x)
+ffmpeg -y -v error -i plates2/steam2.png -vf crop=96:400:0:0 plates2/strip.png
+ffmpeg -y -v error -i plates2/steam2.png -vf crop=96:240:100:0 plates2/mask.png
+./derive.sh plates2 1280 720
+node composite2.js media                                 # -> plates2/master.mkv (ffv1, 251 quadros)
+./encode.sh plates2/master.mkv final2 20 10 midia
+ffmpeg -y -v error -i plates2/master.mkv -frames:v 1 final2/poster-master.png
+./stills.sh final2/poster-master.png final2/midia-poster 11 3
+./vqa.sh final2/midia.webm d-webm media && ./vqa.sh final2/midia.mp4 d-mp4 media
+# em pé (a faixa do vapor é a mesma)
+./shot.sh plates-retrato.html plates2-retrato/tiles.png 1440 2560
+./shot.sh city2x-retrato.html plates2-retrato/city2x.png 1456 2560
+cp plates2/strip.png plates2/mask.png plates2-retrato/
+./derive.sh plates2-retrato 720 1280
+node composite2.js mediaRetrato                          # -> plates2-retrato/master.mkv
+./encode.sh plates2-retrato/master.mkv final2 20 10 midia-retrato
+ffmpeg -y -v error -i plates2-retrato/master.mkv -frames:v 1 final2/poster-retrato-master.png
+./stills.sh final2/poster-retrato-master.png final2/midia-retrato-poster 11 3
+./vqa.sh final2/midia-retrato.webm r-webm mediaRetrato && ./vqa.sh final2/midia-retrato.mp4 r-mp4 mediaRetrato
+```
+
+- Os passes são os do expansao: A (a sala com a cidade preta), B (cidade cinza
+  128), C (A com o LED aceso) e D (A com o abajur apagado); o `derive.sh`
+  calcula T = (B − A) × 255/128, E = C − A e Lp = A − D.
+- final(t) = A + T × cidade(t) + k(t) × E + j(t) × Lp + vapor(t), periódico em
+  10 s: o quadro 250 é igual ao 0. A cidade balança meio pixel, o LED respira
+  18% a partir do brilho da foto parada (0,82 deitado, 1 em pé: o quadro 0 é a
+  foto), o abajur oscila 3% e o vapor sobe três períodos por volta.
+- O vapor fica na boca da caneca de cada câmera, na escala dela (a faixa do
+  `steam2.html` foi desenhada para 8,56 px/cm: deitado ela cresce 1,5×, em pé
+  2,2×). Em pé, a caneca está no desfoque do fundo, e o vapor leva o mesmo
+  desfoque (`gblur` de 4 px).
+- Em pé, a placa da cidade leva o desfoque do fundo (`desfoque` da câmera, no
+  passe `city` do `scene.js`), e as folgas em px das janelas e dos discos em
+  volta dos montantes crescem com o `pxk`: a cidade em 2x é a mesma da foto.
+- O brilho frio da tela do aparelho na mesa fica parado (spec §12: a tela é o
+  site, sem animação): ele está no passe A e no D, e nenhum termo o modula.
+- O `encode.sh` grava os quadros 0 a 249 (o `<video loop>` emenda o 249 no 0),
+  com os números do expansao: MP4 crf 20 e WebM crf 10. O `vqa.sh` mede a
+  emenda (ao menos 45 dB) e os pares iguais no recorte do vapor (até 10%), com
+  o recorte do `loop.js`.
