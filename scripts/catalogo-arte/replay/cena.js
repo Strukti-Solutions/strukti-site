@@ -39,10 +39,11 @@
     return { c, s, W: (u, w, y = 0) => [V.cx + u * c + w * s, y, V.cz - u * s + w * c],
       L: (x, z) => { const dx = x - V.cx, dz = z - V.cz; return [dx * c - dz * s, dx * s + dz * c]; } }; })();
   for (const R of MUNDO.refletores) if (R.loc) { R.pos = VZ.W(R.loc[0], R.loc[2], R.loc[1]); R.alvo = VZ.W(R.alvo[0], R.alvo[1]); }
-  // câmera retrato 800 x 1200: a caixa a ~1/3 da altura, quase de frente (como no hero, ~20° de lado)
-  const CAM = { W: 800, H: 1200, pos: [23, 121, -70], target: [0, 120, -9], F: 1200, shiftY: -180,
-    fundoBlur: 4.5, fundoExp: 0.86, fundoExpPiso: 0.96, faixaPiso: [0.28, 0.34, 0.54, 0.62], telaPiso: 0.2, posteSombra: [0.5, 0.57, 0.72], vig: 0.9, vigR: [0.18, 0.7], vigC: [0.5, 0.34], bottomFade: [0.5, 0.78, 1.0, 0.38, 0.62], bloom: 0.18, grain: 5, grainBaixo: [0.6, 6.5], ledK: 0.85, nevoa: 1,
-    bancoR: 13, fachoMax: 0.45, linhaDir: 0.6, poca: [0.3, 160, 300], face: 8, realce: 0.07, contato: 0.45 };
+  // câmera retrato 800 x 1200: a caixa entre 17% e 38% da altura (A7: no celular o texto do cartão começa a ~29%),
+  // quase de frente (como no hero, ~20° de lado)
+  const CAM = { W: 800, H: 1200, pos: [23, 121, -70], target: [0, 120, -9], F: 1200, shiftY: -270,
+    fundoBlur: 4.5, fundoExp: 0.86, fundoExpPiso: 0.96, faixaPiso: [0.205, 0.265, 0.465, 0.545], telaPiso: 0.2, posteSombra: [0.425, 0.495, 0.645], vig: 1, vigR: [0.18, 0.66], vigC: [0.5, 0.32], bottomFade: [0.5, 0.78, 1.0, 0.38, 0.62], bloom: 0.18, grain: 5, grainBaixo: [0.6, 6.5], ledK: 0.85, nevoa: 1,
+    bancoR: 13, fachoMax: 0.375, linhaDir: 0.6, poca: [0.3, 160, 300], face: 8, realce: 0.07, contato: 0.45 };
 
   function prepLuz(o) {
     LUZ.ceuDir = norm([0, 1, 0.3]);    // céu de hora azul por cima (cena externa)
