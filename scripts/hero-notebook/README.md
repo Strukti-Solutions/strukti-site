@@ -143,6 +143,19 @@ node sondas.js --em-pe cur/media-retrato.png cur/portrait.png [390x844 360x740 3
   morre antes do pé do quadro (`cutZ`). Os objetos são desenhados de trás para a
   frente (pelo `z`), e `desfocaFundo` desfoca o que fica atrás do celular antes de
   desenhá-lo nítido.
+- Em pé, ajuste de arte 1 (crítica da N3):
+  - `vazio` (só na `mediaRetrato`): o lugar do suporte não tem mais a pegada dura (AO e linha de contato quase pretos, que
+    liam como uma peça deitada na mesa). Fica uma sombra difusa numa camada própria: a sombra longa do abajur para a
+    direita, a da janela e pegadas encaixadas 15% maiores que a chapa (`cresce`), cada uma menor e mais desfocada, com a
+    borda em ~20 px (`transicao`) e o miolo em ~rgb(51, 48, 41), nunca abaixo de ~rgb(44, 40, 33). Sem linha de contato:
+    ela fica no vetor (N4). O brilho frio da tela à frente do vazio (`brilhoDoCelular`) ficou mais largo e um pouco mais forte.
+  - O abajur fica baixo e com a poça em gaussiana (`lamp.gauss`, `[sigma, saia]` em graus): o centro no suporte, e as
+    laterais do corte de 390 × 844 caem ao menos 30% (o `cena.test.ts` confere com o `corDaMesa`). O veio da mesa em pé
+    (`veio`) varia o espaçamento e o contraste das faixas.
+  - Os montantes em pé têm 7 cm (`MONT_EM_PE`), com a face lateral clara e a quina do lado da cidade acesa (`montante`).
+  - A cidade em pé (`bokehCol`): as janelas acesas e os discos desfocados ficam nas prumadas das torres
+    (`janelasAcesas`, `discosDaCidade`), com tamanhos por coluna, até 4 discos por coluna e nenhum sobre um montante.
+  - A caixa do Replay escapa em parte do desfoque do fundo (o 4º número do `desfoque`, 0,45).
 
 ## 4. Instalar
 

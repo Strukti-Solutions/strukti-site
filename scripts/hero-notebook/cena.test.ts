@@ -57,8 +57,11 @@ type Cena = {
       peitoril?: unknown;
       sombraMax?: number;
       world?: Record<string, unknown>;
+      vazio?: { cresce: number; transicao: number; contato: boolean };
     }
   >;
+  corDaMesa: (p: Vec) => Vec;
+  discosDaCidade: (cam: Camera, o: object) => { p: [number, number]; r: number; torre: boolean; coluna: string }[];
   brilhoDaTela: (L: { x: number; z: number; w: number; d: number }) => { centro: Vec; semiZ: number };
   shadowPt: (L: Vec, p: Vec, maxK?: number) => Vec;
   telaDoNotebook: (cam: string) => Tela;
@@ -439,6 +442,79 @@ describe("cena do hero notebook", () => {
       expect(ox + tb.cx * k).toBeCloseTo(noCartao.cx, 0);
       expect(Math.abs(oy + tb.cy * k - noCartao.cy)).toBeLessThanOrEqual(2);
       expect((tb.largura * k) / noCartao.largura).toBeCloseTo(1, 1);
+    });
+
+    // Ajuste de arte 1 (crítica da N3)
+    const lum = (c: Vec) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+
+    it("o lugar vazio do suporte na mídia em pé é uma sombra difusa: ~15% maior que a chapa, transição de 15 a 25 px", () => {
+      const v = cena.CAMS.mediaRetrato?.vazio;
+      expect(v).toBeDefined();
+      expect(v!.cresce).toBeGreaterThanOrEqual(1.1);
+      expect(v!.cresce).toBeLessThanOrEqual(1.25);
+      // a transição (borda do desfoque, ~2,5 σ) fica entre 15 e 25 px da mídia
+      expect(v!.transicao).toBeGreaterThanOrEqual(15);
+      expect(v!.transicao).toBeLessThanOrEqual(25);
+      // sem a linha de contato nítida (ela fica a cargo do vetor da N4); o fundo em pé, com o celular, mantém a dele
+      expect(v!.contato).toBe(false);
+      expect(cena.CAMS.portrait?.vazio).toBeUndefined();
+    });
+
+    it("a poça do abajur em pé fecha nas laterais do corte de 390 × 844: cai ao menos 30% em x < 80 e x > 310 do corte", () => {
+      const o = { ...cena.CAMS.mediaRetrato } as Record<string, unknown>;
+      cena.prepWorld(o);
+      const cam = cena.makeCam(o) as Camera & { ray: (x: number, y: number) => Vec; pos: Vec };
+      const naMesa = (sx: number, sy: number): Vec => {
+        const d = cam.ray(sx, sy);
+        const t = -cam.pos[1] / d[1];
+        return [cam.pos[0] + d[0] * t, 0, cam.pos[2] + d[2] * t];
+      };
+      // o cover de 390 × 844 mostra x 64-656 da mídia; as laterais (x < 80 e x > 310 do corte) são medidas no meio de cada
+      // uma (x 40 e 350 do corte, ~125 e ~595 da mídia), nas linhas da poça (y 800-980 da mídia: z de ~-1 a ~-13, em volta do
+      // suporte; atrás de z 2 a poça já foi cortada pelo `cutZ` e a mesa só tem a luz ambiente)
+      const k = EM_PE.h / 1280;
+      const corte = (720 - EM_PE.w / k) / 2;
+      const [xe, xd] = [corte + 40 / k, corte + 350 / k];
+      for (const y of [800, 860, 920, 980]) {
+        const centro = lum(cena.corDaMesa(naMesa(360, y)));
+        for (const x of [xe, xd]) expect(lum(cena.corDaMesa(naMesa(x, y)))).toBeLessThanOrEqual(0.7 * centro);
+      }
+    });
+
+    it("os montantes da janela em pé têm a espessura da esquadria (ao menos 2× os 3 cm de antes)", () => {
+      for (const which of ["mediaRetrato", "portrait"] as const) {
+        const { w } = quadroEmPe(which);
+        for (const [a, b] of (w as unknown as { win: { mull: [number, number][] } }).win.mull) expect(b - a).toBeGreaterThanOrEqual(6);
+      }
+    });
+
+    it("as luzes desfocadas da cidade em pé ficam nas torres, em colunas, longe dos montantes e com tamanhos variados", () => {
+      for (const which of ["mediaRetrato", "portrait"] as const) {
+        const o = { ...cena.CAMS[which] } as Record<string, unknown>;
+        const w = cena.prepWorld(o) as unknown as { win: { mull: [number, number][] }; glassZ: number };
+        const cam = cena.makeCam(o);
+        const discos = cena.discosDaCidade(cam, o);
+        expect(discos.length).toBeGreaterThanOrEqual(6);
+        // presas às janelas das torres, e em colunas: cada disco divide a coluna com outro
+        for (const d of discos) expect(d.torre).toBe(true);
+        const porColuna = new Map<string, number>();
+        for (const d of discos) porColuna.set(d.coluna, (porColuna.get(d.coluna) ?? 0) + 1);
+        expect([...porColuna.values()].filter((n) => n >= 2).length).toBeGreaterThanOrEqual(porColuna.size / 2);
+        // nenhum disco sobre um montante (com a borda do disco), na altura do disco: com a câmera inclinada, o montante
+        // vira uma reta levemente diagonal no quadro
+        const xNaAltura = (x: number, y: number) => {
+          const p = cam.P([x, 20, w.glassZ]);
+          const q = cam.P([x, 150, w.glassZ]);
+          return p[0] + ((q[0] - p[0]) * (y - p[1])) / (q[1] - p[1]);
+        };
+        for (const d of discos) {
+          for (const [a, b] of w.win.mull) {
+            expect(d.p[0] + d.r * 0.8 < xNaAltura(a, d.p[1]) || d.p[0] - d.r * 0.8 > xNaAltura(b, d.p[1])).toBe(true);
+          }
+        }
+        const rs = discos.map((d) => d.r);
+        expect(Math.max(...rs) / Math.min(...rs)).toBeGreaterThanOrEqual(2.5);
+      }
     });
   });
 

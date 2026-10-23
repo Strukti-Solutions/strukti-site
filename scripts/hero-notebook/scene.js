@@ -72,7 +72,12 @@
     const L = W0.lamp, d = sub(L.bulb, p), dist = len(d), l = mul(d, 1 / dist);
     const cosS = dot(mul(l, -1), L.axis), sw = L.sw != null ? L.sw : 0.16;
     // cutZ: the shade's front lip stops the light short of the viewer (the pool must not run off the bottom of the frame)
-    const spot = (sstep(L.c0 || 0.905, L.c1 || 0.985, cosS) * (1 - sw) + sstep(L.s0 || 0.76, L.s1 || 0.93, cosS) * sw) * (L.cutZ ? sstep(L.cutZ[0], L.cutZ[1], p[2]) * (L.cutZ.length > 2 ? 1 - sstep(L.cutZ[2], L.cutZ[3], p[2]) : 1) : 1);
+    // `gauss` [sigma, saia] (graus): no lugar do cone, uma poça que cai devagar desde o centro (em pé, onde o quadro mostra só
+    // uns 20 cm de mesa na largura) e uma saia larga e fraca; `sw` e os cones ficam para as outras câmeras
+    const ang = L.gauss ? Math.acos(clamp(cosS, -1, 1)) * 180 / Math.PI : 0;
+    const cone = L.gauss ? Math.exp(-0.5 * Math.pow(ang / L.gauss[0], 2)) * (1 - sw) + Math.exp(-0.5 * Math.pow(ang / L.gauss[1], 2)) * sw
+      : sstep(L.c0 || 0.905, L.c1 || 0.985, cosS) * (1 - sw) + sstep(L.s0 || 0.76, L.s1 || 0.93, cosS) * sw;
+    const spot = cone * (L.cutZ ? sstep(L.cutZ[0], L.cutZ[1], p[2]) * (L.cutZ.length > 2 ? 1 - sstep(L.cutZ[2], L.cutZ[3], p[2]) : 1) : 1);
     const lam = n ? Math.max(0, dot(n, l)) : 1;
     return LK * (L.k || 1) * spot * lam / (1 + Math.pow(dist / 42, 2)) * 3.3;
   }
@@ -110,8 +115,13 @@
       suporte: { w: 7.8, d: 7.4, h: 0.55, r: 1.1, lip: 0.9 } },
     box: { x: -20, z: 55, rot: -14, w: 9.6, d: 4.6, h: 13, r: 1.25 },
     mug: { x: 15, z: 13, r: 3.8, h: 8.8, alca: -30 },
-    lamp: { base: [-100, 0, 20], elbow: [-108, 44, 24], head: [-42, 80, -10], target: [-5, 0, -4], k: 1.15, c0: 0.91, c1: 0.99, s0: 0.8, s1: 0.95, sw: 0.45, cutZ: [-26, -12, 2, 24] }
+    // O abajur, fora do quadro à esquerda, baixo e fechado (ajuste de arte 1): a poça é localizada, com o centro no suporte, e
+    // cai para o escuro nas laterais do corte de 390 x 844 (o cena.test.ts confere). A sombra longa vai para a direita.
+    lamp: { base: [-100, 0, 20], elbow: [-108, 44, 24], head: [-16, 50, -10], target: [3, 0, -6.5], k: 0.8, gauss: [6.5, 30], sw: 0.05, cutZ: [-26, -12, 2, 24] }
   };
+  // Os montantes em pé (ajuste de arte 1): 7 cm, a esquadria grossa do fundo de referência (com 3 cm, de frente e sobre as
+  // torres escuras, liam como cabos pendurados). `montante` na câmera: a face lateral pega a luz da cidade, com a quina clara.
+  const MONT_EM_PE = [[-28, -21], [27, 34]];
   const CAMS = {
     // bg: a mesma direção da câmera media, mais aberta: o notebook fica atrás do cartão de 300 x 400 em P = 0 (a 1440x900, a tela
     // dele no fundo cai quase no mesmo lugar e no mesmo tamanho da tela no cartão), sem dois notebooks empilhados.
@@ -137,15 +147,18 @@
     // (`desfoque`: [z nítido, z desfocado, px], a mesa nítida na frente e o fundo desfocado atrás). pos e alvo: ver abaixo.
     mediaRetrato: { W: 720, H: 1280, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.8,
       bloom: 0, lampGlow: 0, grain: 5, lampBody: false, cone: false, titleBand: [540, 760, 0.6], bottomFade: [0.88, 0.97, 1.0, 0.5, 0.72],
-      semAparelho: true, aparelho: 'celular', desfoque: [10, 22, 5],
-      world: Object.assign({ win: { mull: [[-26, -23], [29, 32]] } }, PT_WORLD),
+      semAparelho: true, aparelho: 'celular', desfoque: [10, 22, 5, 0.45],
+      // o lugar vazio do suporte (ajuste de arte 1): sombra difusa, 15% maior que a chapa, borda de ~20 px, sem linha de contato
+      vazio: { cresce: 1.15, transicao: 20, contato: false, a: 0.85 },
+      veio: true, montante: true, bokehCol: [0.5, 0.8],
+      world: Object.assign({ win: { mull: MONT_EM_PE } }, PT_WORLD),
       towers: [[-46, -7.5, 41, 1], [-7.5, -3.6, 12, 0], [4.2, 8, 14, 0], [8, 46, 46, 1]], centre: [-3.6, 4.2, -6] },
     // portrait (fundo em pé, 1080 x 1920, visto em volta do cartão em P = 0): a mesma câmera, mais aberta, com o celular
     // renderizado. F e shiftY: ver abaixo (a tela do celular do fundo fica atrás da do cartão a 390 x 844).
     portrait: { W: 1080, H: 1920, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.82,
       bloom: 0.25, lampGlow: 0, grain: 5, lampBody: false, cone: false, bottomFade: [0.8, 0.95, 1.0, 0.4, 0.62],
-      aparelho: 'celular', desfoque: [10, 22, 5],
-      world: Object.assign({ win: { mull: [[-26, -23], [29, 32]] } }, PT_WORLD),
+      aparelho: 'celular', desfoque: [10, 22, 5, 0.45], veio: true, montante: true, bokehCol: [0.5, 0.8],
+      world: Object.assign({ win: { mull: MONT_EM_PE } }, PT_WORLD),
       towers: [[-46, -7.5, 41, 1], [-7.5, -3.6, 12, 0], [4.2, 8, 14, 0], [8, 46, 46, 1]], centre: [-3.6, 4.2, -6] }
   };
   // A tampa do notebook inclina para trás o mesmo ângulo da câmera media (sem guinada: x da câmera = x do alvo).
@@ -243,11 +256,22 @@
   function solid(W, H, v) { const c = layer(W, H), x = c.getContext('2d'); x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(0, 0, W, H); return c; }
 
   // ---------------- base pass (per pixel): wall, window hole, desk ----------------
+  const deskA = [54, 52, 49];
+  // A cor da mesa no ponto p (luz ambiente, janela e abajur), antes do brilho do bulbo e do veio.
+  function corDaMesa(p) { return light(deskA, p, [0, 1, 0], { wk: 0.22 + sstep(20, 63, p[2]) * 0.75 }); }
+  // `veio` (câmeras em pé): de frente, o veio regular do laminado vira listras retas e iguais. Aqui o espaçamento e o
+  // contraste variam por faixa (z deformado devagar, amplitude que sobe e desce), como o veio visto de lado no deitado.
+  function veioIrregular(x, z) {
+    const zz = z + Math.sin(z * 0.37 + 1.7) * 1.3 + Math.sin(x * 0.019 + z * 0.11) * 0.9;
+    const amp = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(z * 0.83 + Math.sin(z * 0.29 + x * 0.004) * 2.1));
+    return (Math.sin(zz * 2.1 + Math.sin(x * 0.037 + zz * 0.21) * 2.6) * 0.55 * amp + Math.sin(zz * 6.7 + Math.sin(x * 0.09) * 1.3) * 0.3 * (1.3 - amp)
+      + Math.sin(zz * 17.3 + x * 0.013) * 0.15) * 1.15;
+  }
   function basePass(ctx, cam, o) {
     const { W, H } = cam, img = ctx.createImageData(W, H), D = img.data;
     const pos = cam.pos, wz = W0.wallZ, dk = W0.desk, win = W0.win, L = W0.lamp;
     const R = rng(7);
-    const wallA = [44, 50, 62], deskA = [54, 52, 49], frontA = [30, 34, 42];
+    const wallA = [44, 50, 62], frontA = [30, 34, 42];
     for (let sy = 0; sy < H; sy++) {
       for (let sx = 0; sx < W; sx++) {
         const d = cam.ray(sx + 0.5, sy + 0.5); let col, a = 255;
@@ -265,15 +289,14 @@
           const t = -pos[1] / d[1]; const x = pos[0] + d[0] * t, z = pos[2] + d[2] * t;
           if (z >= dk.z0 && x > dk.x0 && x < dk.x1) {
             const p = [x, 0, z];
-            const back = sstep(20, 63, z);
-            col = light(deskA, p, [0, 1, 0], { wk: 0.22 + back * 0.75 });
+            col = corDaMesa(p);
             // satin reflection of the bulb on the laminate
             const v = norm(sub(pos, p)), l = norm(sub(L.bulb, p)), h = norm(add(v, l));
             const spec = Math.pow(Math.max(0, h[1]), 60) * lampI(p, null) * 26;
             col = add(col, [spec * LMP[0], spec * LMP[1], spec * LMP[2]]);
             // oak-veneer laminate: long grain along x, 3-5% contrast relative to the local value
             const lum = (col[0] + col[1] + col[2]) / 3;
-            const fig = Math.sin(z * 2.1 + Math.sin(x * 0.037 + z * 0.21) * 2.6) * 0.55 + Math.sin(z * 6.7 + Math.sin(x * 0.09) * 1.3) * 0.3 + Math.sin(z * 17.3 + x * 0.013) * 0.15;
+            const fig = o.veio ? veioIrregular(x, z) : Math.sin(z * 2.1 + Math.sin(x * 0.037 + z * 0.21) * 2.6) * 0.55 + Math.sin(z * 6.7 + Math.sin(x * 0.09) * 1.3) * 0.3 + Math.sin(z * 17.3 + x * 0.013) * 0.15;
             const g = (R() - 0.5) * 2.0 + fig * lum * 0.045; col = add(col, [g, g * 0.98, g * 0.93]);
           } else {
             const tf = (dk.z0 - pos[2]) / d[2]; const fy = pos[1] + d[1] * tf;
@@ -341,7 +364,7 @@
           const ja = (R() - 0.5) * fw * 0.22, je = (R() - 0.5) * fh * 0.16, sw = 0.55 + R() * 0.2, shh = 0.48 + R() * 0.16;
           if (!rowOn || !on) continue;
           if (a + ja >= CENTRE[0] && a + ja <= CENTRE[1] && e + je <= CENTRE[2]) continue;
-          lights.push([a + ja, e + je, fw * sw, fh * shh, pick(), (0.15 + R() * 0.24) * (R() < 0.7 ? rowLv : lv()), 2]);
+          lights.push([a + ja, e + je, fw * sw, fh * shh, pick(), (0.15 + R() * 0.24) * (R() < 0.7 ? rowLv : lv()), 2, a1 + ':' + Math.round((a - a1) / fw)]);   // [7]: a coluna de janelas
         }
       }
     }
@@ -422,7 +445,7 @@
     skyRows(c); c.filter = `blur(${Math.round(o.cityBlur * k * 0.8)}px)`; c.drawImage(sc, 0, 0); c.filter = 'none';
     // lights on their own layer so the title band / hint zone can be calmed
     const lc = layer(W, H), lx = lc.getContext('2d');
-    for (const [a, e, w, h, col, al] of lights) { const q = [cam.D(a, e), cam.D(a + w, e), cam.D(a + w, e + h), cam.D(a, e + h)]; if (q.some(p => p[2] < 0.05)) continue; if (q.every(p => p[0] < -40 || p[0] > W + 40 || p[1] < -40 || p[1] > H + 40)) continue; lx.fillStyle = rgba(col, Math.min(1, al * (o.cityGain || 1))); path(lx, q); lx.fill(); }
+    for (const [a, e, w, h, col, al] of (o.bokehCol ? janelasAcesas(cam, o, lights) : lights)) { const q = [cam.D(a, e), cam.D(a + w, e), cam.D(a + w, e + h), cam.D(a, e + h)]; if (q.some(p => p[2] < 0.05)) continue; if (q.every(p => p[0] < -40 || p[0] > W + 40 || p[1] < -40 || p[1] > H + 40)) continue; lx.fillStyle = rgba(col, Math.min(1, al * (o.cityGain || 1))); path(lx, q); lx.fill(); }
     // bokeh discs: few, large, soft, one tone
     const dc = layer(W, H), dx = dc.getContext('2d'); const R2 = rng(99);
     const disc = (p, r, col, A) => { const gr = dx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r);
@@ -442,7 +465,8 @@
         const p = cam.D(az, el); const t = R2(); const col = t < 0.6 ? C.n300 : t < 0.9 ? C.e300 : C.n100;
         disc(p, o.bokeh * sc * (0.6 + R2() * 0.9), col, 0.15 + R2() * 0.17);
       }
-    } else for (const [a, e, w, h, col, al] of lights) {
+    } else if (o.bokehCol) for (const d of discosDaCidade(cam, o)) disc(d.p, d.r, d.col, d.A);
+    else for (const [a, e, w, h, col, al] of lights) {
       if (R2() > (o.bokehP || 0.04)) continue;
       const p = cam.D(a + w / 2, e + h / 2); if (p[2] <= 0.05 || p[0] < -80 || p[0] > W + 80 || p[1] < -80 || p[1] > H + 80) continue;
       disc(p, o.bokeh * k * (0.8 + R2() * 0.6), col, (o.discA || 0.13) + R2() * 0.15);
@@ -456,6 +480,45 @@
     calm(lx); calm(dx);
     c.save(); c.globalCompositeOperation = 'screen'; c.filter = `blur(${Math.round(o.cityBlur * k)}px)`; c.drawImage(lc, 0, 0); c.filter = `blur(${Math.round(o.cityBlur * k * (o.discBlur || 0.35))}px)`; c.drawImage(dc, 0, 0); c.restore();
     return cv;
+  }
+
+  // O x de cada montante no quadro, em função da altura y (a aresta vertical vira uma reta no quadro, levemente diagonal).
+  function montantesNoQuadro(cam) {
+    const z1 = W0.glassZ;
+    return W0.win.mull.map(([a, b]) => [a, b].map(x => { const p = cam.P([x, 20, z1]), q = cam.P([x, 150, z1]); return y => p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]); }));
+  }
+  // Em pé (com `bokehCol`), as janelas acesas das torres ficam em prumadas: só uma parte das colunas (`janelas`, 0 a 1, sorteada
+  // pela própria coluna) tem luz, e nenhuma janela cai sobre um montante. Espalhadas pela torre inteira, liam como neve.
+  function janelasAcesas(cam, o, lights) {
+    const mont = montantesNoQuadro(cam), pJan = o.janelas != null ? o.janelas : 0.35, sorte = {};
+    const daColuna = c => { if (sorte[c] == null) { let h = 7; for (let i = 0; i < c.length; i++) h = (h * 31 + c.charCodeAt(i)) | 0; sorte[c] = rng(h)() < pJan; } return sorte[c]; };
+    return lights.filter(([a, e, w, h, , , kind, coluna]) => {
+      if (kind !== 2) return true;
+      if (!daColuna(coluna)) return false;
+      const p = cam.D(a + w / 2, e + h / 2);
+      return !mont.some(([xa, xb]) => p[0] + 14 > xa(p[1]) && p[0] - 14 < xb(p[1]));
+    });
+  }
+  // `bokehCol` [pCol, pLuz] (em pé, ajuste de arte 1): os discos desfocados saem só das janelas das torres, em colunas: uma
+  // fração pCol das colunas acende, e em cada uma delas uma janela vira disco com chance pLuz. Tamanho e brilho variam mais,
+  // e nenhum disco encosta num montante (a borda do disco fica fora da esquadria, na altura dele no quadro).
+  function discosDaCidade(cam, o) {
+    const { lights } = buildCity(o.towers || TOWERS, o.centre || CENTRE0), k = o.pxk || 1, [pCol, pLuz] = o.bokehCol;
+    const R = rng(4242), cols = {}, out = [], mont = montantesNoQuadro(cam);
+    for (const [a, e, w, h, col, al, kind, coluna] of lights) {
+      if (kind !== 2) continue;
+      // cada coluna acesa tem um tamanho (a janela daquela prumada); de uma coluna para outra o tamanho varia bastante
+      // (até 4 discos por coluna, com um andar apagado entre dois acesos: a prumada não vira um risco)
+      if (cols[coluna] == null) cols[coluna] = { t: R() < pCol ? 0.28 + Math.pow(R(), 1.6) * 1.1 : 0, n: 0, ult: -9 };
+      const cl = cols[coluna], sorteio = R(), tam = R(), luz = R();
+      if (!cl.t) continue;
+      const p = cam.D(a + w / 2, e + h / 2), r = o.bokeh * k * cl.t * (0.85 + tam * 0.3);
+      if (p[2] <= 0.05 || p[0] < -r || p[0] > cam.W + r || p[1] < -r || p[1] > cam.H + r) continue;
+      if (mont.some(([xa, xb]) => p[0] + r + 6 > xa(p[1]) && p[0] - r - 6 < xb(p[1]))) continue;
+      if (sorteio > pLuz || cl.n >= 4 || e - cl.ult < 1.9) continue;
+      cl.n++; cl.ult = e; out.push({ p: [p[0], p[1]], r, col, A: (o.discA || 0.13) * 0.6 + luz * luz * 0.22, torre: true, coluna });
+    }
+    return out;
   }
 
   // ---------------- window ----------------
@@ -495,10 +558,16 @@
     { const a1 = P([w.x0, w.y0 + rl, fz]), a2 = P([w.x1, w.y0 + rl, fz]); ctx.strokeStyle = rgba(C.n400, 0.5); ctx.lineWidth = Math.max(1, cam.S([0, 0, fz]) * 0.16); ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke(); }
     for (const [a, b] of w.mull) {
       const zf = z1 - 4.5; const side = cam.pos[0] < a ? a : b; const sn = cam.pos[0] < a ? -1 : 1;
-      face([[side, w.y0 + rl, zf], [side, w.y0 + rl, z1], [side, top, z1], [side, top, zf]], light(fA, [side, 40, 69], [sn, 0, 0], { wk: 0 }));
-      face([[a, w.y0 + rl, zf], [b, w.y0 + rl, zf], [b, top, zf], [a, top, zf]], frameC);
-      const e1 = P([a, w.y0 + rl, zf]), e2 = P([a, top, zf]);
-      if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25), 0.4); ctx.lineWidth = Math.max(1, cam.S([a, 40, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); }
+      // `montante` (em pé): a face lateral pega a luz da cidade e a da frente fica um tom acima das torres escuras atrás
+      face([[side, w.y0 + rl, zf], [side, w.y0 + rl, z1], [side, top, z1], [side, top, zf]], o.montante ? mix(C.n700, C.n600, 0.35) : light(fA, [side, 40, 69], [sn, 0, 0], { wk: 0 }));
+      face([[a, w.y0 + rl, zf], [b, w.y0 + rl, zf], [b, top, zf], [a, top, zf]], o.montante ? mix(C.n900, C.n800, 0.6) : frameC);
+      const linha = (x, col, lw) => { const e1 = P([x, w.y0 + rl, zf]), e2 = P([x, top, zf]); if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); } };
+      if (!o.montante) linha(a, rgba(mix(C.n600, C.n300, 0.25), 0.4), Math.max(1, cam.S([a, 40, zf]) * 0.25));
+      else {
+        // a quina do lado da cidade (entre a face lateral e a da frente) clara, e a outra quina escura: a esquadria tem volume
+        linha(side, rgba(mix(C.n400, C.n300, 0.4), 0.32), Math.max(1.5, cam.S([side, 40, zf]) * 0.3));
+        linha(side === a ? b : a, rgba(C.edge, 0.55), Math.max(2, cam.S([a, 40, zf]) * 0.5));
+      }
     }
     // peitoril: [u0, u1, a] (frações da largura do quadro). Do trilho ao bico do peitoril, escurece até `a` de u0 a u1 e segue
     // escuro até a borda: a face clara não corta a faixa da linha 2 do título ao meio.
@@ -558,7 +627,10 @@
     s.fillStyle = 'rgb(0,0,0)';
     const lp = W0.laptop ? laptopPts() : null;
     const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (W0.phone) sets.push(slabPts(W0.phone));
-    if (W0.celular) sets.push(celularPts());
+    // `vazio` (mídia em pé, sem o celular): o lugar do suporte fica com uma sombra difusa numa camada própria (abaixo),
+    // não com a pegada dura (AO e linha de contato) que leria como uma peça preta deitada na mesa.
+    const vz = W0.celular && o.vazio && semOAparelho(o, 'celular') ? o.vazio : null, cel = W0.celular ? celularPts() : null;
+    if (cel && !vz) sets.push(cel);
     const todos = lp ? sets.concat([lp]) : sets;
     const castOf = pts => hull(pts.map(p => p[1] > 0.05 ? shadowPt(L, p, o.sombraMax) : p).concat(pts.filter(p => p[1] <= 0.05)).map(P));
     const k = cam.S([0, 0, 30]);
@@ -593,6 +665,23 @@
     s.globalAlpha = 0.9;
     for (const pts of todos) { s.filter = `blur(${Math.max(1, Math.round(k * (pts === lp ? 0.66 : 0.18)))}px)`; path(s, hull(pts.filter(p => p[1] <= 0.05).map(P))); s.fill(); }
     s.filter = 'none';
+    // O lugar vazio do suporte: a sombra longa do abajur (para a direita) e a da janela como antes, e no lugar da chapa um AO
+    // `cresce` x maior, com a borda em `transicao` px (~2,5 sigma do desfoque), mais escuro no meio. Sem a linha de contato
+    // (ela fica no vetor, no site). A camada entra com `a`: o miolo não passa do escuro de uma sombra (nunca um preto chapado),
+    // e o vazio aceita um aparelho um pouco maior ou menor, ou um pé mais alto ou mais baixo, sem aparecer como objeto.
+    if (vz) {
+      const vl = layer(W, H), v = vl.getContext('2d'); v.fillStyle = 'rgb(0,0,0)';
+      const sg = vz.transicao / 2.5;
+      v.filter = `blur(${Math.round(Math.max(k * 0.9, sg))}px)`; v.globalAlpha = 0.45; path(v, castOf(cel)); v.fill();
+      v.filter = `blur(${Math.round(k * 1.6)}px)`; v.globalAlpha = 0.22; path(v, hull(cel.map(p => [p[0], 0, p[2] - p[1] * 0.55]).map(P))); v.fill();
+      const f = cel.filter(p => p[1] <= 0.05), c = f.reduce((a, p) => add(a, p), [0, 0, 0]).map(t => t / f.length);
+      // pegadas encaixadas, cada uma menor e mais desfocada: a sombra escurece aos poucos até o meio, sem um platô com borda
+      for (const g of [1, 0.82, 0.62, 0.42]) {
+        v.filter = `blur(${Math.round(sg * (1 + (1 - g) * 2))}px)`; v.globalAlpha = 0.26;
+        path(v, hull(f.map(p => add(c, mul(sub(p, c), vz.cresce * g))).map(P))); v.fill();
+      }
+      s.filter = 'none'; s.globalAlpha = vz.a; s.drawImage(vl, 0, 0);
+    }
     ctx.save(); ctx.globalAlpha = 0.8; ctx.drawImage(sh, 0, 0); ctx.restore();
   }
 
@@ -782,7 +871,8 @@
     bloco(pr.x0, pr.x1, rs.z0, rs.z1, rs.y1);
   }
   // O brilho da tela do celular na mesa, à frente do suporte (fica também na mídia em pé, sem o celular).
-  function brilhoDoCelular(c) { return { centro: [c.x, 0.05, c.z - c.suporte.lip - 2.6], semiX: c.w * 1.05, semiZ: 3.4 }; }
+  // (ajuste de arte 1: mais largo e mais forte, para ler como luz da tela sobre a mesa à frente do vazio)
+  function brilhoDoCelular(c) { return { centro: [c.x, 0.05, c.z - c.suporte.lip - 2.8], semiX: c.w * 1.25, semiZ: 4.4, a: GLOW_A * 1.0 }; }
   // Em pé: desfoca o que está atrás do celular (a mesa do fundo, o notebook, a caixa, a caneca, a janela). A máscara é
   // vertical: nítida até a linha da mesa em z = zN, desfocada a partir da linha de z = zD (o desfoque, `px` na F 1000).
   function desfocaFundo(ctx, cam, o) {
@@ -792,6 +882,12 @@
     bc.filter = `blur(${Math.max(1, Math.round(px * cam.F / 1000))}px)`; bc.drawImage(ctx.canvas, 0, 0); bc.filter = 'none';
     bc.globalCompositeOperation = 'destination-in';
     bc.fillStyle = lin(bc, [0, yD], [0, yN], [[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]); bc.fillRect(0, 0, cam.W, cam.H);
+    // o 4º número: quanto a caixa do Replay (o hardware da cena) escapa do desfoque, numa máscara macia em volta dela
+    if (o.desfoque[3] && W0.box) {
+      bc.globalCompositeOperation = 'destination-out'; bc.globalAlpha = o.desfoque[3]; bc.fillStyle = 'rgb(0,0,0)';
+      bc.filter = `blur(${Math.max(1, Math.round(px * cam.F / 1000))}px)`; path(bc, hull(boxPts().map(cam.P))); bc.fill();
+      bc.filter = 'none'; bc.globalAlpha = 1;
+    }
     ctx.drawImage(b, 0, 0);
   }
 
@@ -942,7 +1038,7 @@
     }
     if (W0.laptop) { screenGlow(ctx, cam); toqueFrio(ctx, cam); }
     if (W0.celular) { const bc = brilhoDoCelular(W0.celular); discT(ctx, cam, bc.centro, [bc.semiX, 0, 0], [0, 0, bc.semiZ]);
-      ctx.fillStyle = radial(ctx, [[0, rgba(GLOW_C, GLOW_A * 0.8)], [0.45, rgba(GLOW_C, GLOW_A * 0.35)], [1, rgba(GLOW_C, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
+      ctx.fillStyle = radial(ctx, [[0, rgba(GLOW_C, bc.a)], [0.45, rgba(GLOW_C, bc.a * 0.45)], [1, rgba(GLOW_C, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
     if (W0.phone) { const ph = W0.phone; discT(ctx, cam, [ph.x, 0.05, ph.z], [15, 0, 0], [0, 0, 15]);
       ctx.fillStyle = radial(ctx, [[0, rgba(C.e400, 0.09)], [0.5, rgba(C.e500, 0.03)], [1, rgba(C.e500, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
     if (info && info.led && ledK > 0) {
@@ -1042,6 +1138,6 @@
     return { cam };
   }
   G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt,
-    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular };
+    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular, corDaMesa, discosDaCidade };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.FDE;
