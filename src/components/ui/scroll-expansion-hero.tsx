@@ -157,7 +157,10 @@
  *   fora do hero (clique no link, âncora nova na URL ou `hashchange`)
  *   completa sem rolar e não recolhe no caminho; o arrasto da barra para
  *   cima, depois de recolher, mantém a página no topo, presa em p = 1, em
- *   vez de completar e recolher de novo a cada movimento do mouse.
+ *   vez de completar e recolher de novo a cada movimento do mouse; e o
+ *   arrasto para baixo a partir do topo, depois de completar, mantém a
+ *   página no topo da tela até passar dele, em vez de recolher no caminho
+ *   (o que prendia a página no topo: achado do check:browser, 23/10/2026).
  */
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
@@ -638,11 +641,14 @@ export function ScrollExpandMedia({
     // A roda e o touchmove (não passivos) estão na window?
     let holding = false;
     // Modo entrada: até quando a rolagem é a do navegador indo até uma âncora
-    // fora do hero (completa sem rolar e não recolhe), e até quando ainda é a
-    // mesma que recolheu (o arrasto da barra para cima: segue presa no topo).
-    // As duas se renovam a cada `scroll` que chega dentro delas.
+    // fora do hero (completa sem rolar e não recolhe), até quando ainda é a
+    // mesma que recolheu (o arrasto da barra para cima: segue presa no topo)
+    // e até quando ainda é a mesma que completou (o arrasto da barra para
+    // baixo: segue no topo da tela até passar dele). As três se renovam a
+    // cada `scroll` que chega dentro delas.
     let ancoraAte = 0;
     let recolhidoAte = 0;
+    let completadoAte = 0;
     // A âncora da URL da última vez que o hero olhou: uma nova, fora do hero,
     // é um link seguido, mesmo que o `scroll` chegue antes do `hashchange`.
     let hashVisto = window.location.hash;
@@ -799,12 +805,17 @@ export function ScrollExpandMedia({
     // recolhe até assentar. O arrasto da barra para cima, depois de recolher,
     // continua mandando a página para onde o mouse está (o navegador não vê o
     // scrollTo do meio): até ele assentar, a página volta ao topo, presa em
-    // p = 1, sem completar e recolher de novo a cada movimento.
+    // p = 1, sem completar e recolher de novo a cada movimento. O arrasto
+    // para baixo a partir do topo é o espelho: o 1º movimento completa e
+    // rola até o topo da tela; até ele assentar, as posições ainda acima do
+    // topo da tela voltam a ele, em vez de recolher (o que prenderia a
+    // página no topo), e as abaixo ficam com o navegador.
     const onScroll = () => {
       const now = performance.now();
       const pinching = touchCount >= 2 || now < multiTouchUntil;
       let indoAteAncora = false;
       let recolhendo = false;
+      let completando = false;
       if (entrada) {
         const hash = window.location.hash;
         if (hash !== hashVisto) {
@@ -815,15 +826,25 @@ export function ScrollExpandMedia({
         if (indoAteAncora) ancoraAte = Math.max(ancoraAte, now + ROLAGEM_ASSENTA_MS);
         recolhendo = !indoAteAncora && now < recolhidoAte;
         if (recolhendo) recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+        completando = !indoAteAncora && now < completadoAte;
+        if (completando) completadoAte = now + ROLAGEM_ASSENTA_MS;
       }
       if (expandedRef.current) {
         if (entrada && !pinching && !indoAteAncora && window.scrollY < topoSolto() - TOP_SLOP_PX) {
-          unexpand();
-          recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+          if (completando) {
+            window.scrollTo({ top: topoSolto(), left: 0, behavior: "instant" });
+          } else {
+            unexpand();
+            recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+          }
         }
       } else if (window.scrollY > 0 && !pinching) {
         if (recolhendo) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-        else setProgress(1, "auto", !indoAteAncora);
+        else {
+          // A liberação rola até o topo da tela só se a página está acima dele.
+          if (entrada && !indoAteAncora && window.scrollY < topoSolto()) completadoAte = now + ROLAGEM_ASSENTA_MS;
+          setProgress(1, "auto", !indoAteAncora);
+        }
       }
       syncHoldListeners();
     };

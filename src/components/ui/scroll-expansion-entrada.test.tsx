@@ -540,6 +540,36 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
       expect(state().expanded).toBe("true");
       expect(scrollTo).toHaveBeenCalledWith({ top: PALCO, left: 0, behavior: "instant" });
     });
+
+    it("arrastar a barra de rolagem para baixo, presa no topo: completa uma vez e fica no topo da tela até o arrasto passar dele, sem recolher no caminho", async () => {
+      await mount();
+      scrollPage(200);
+      expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+      expect(scrollTo).toHaveBeenCalledWith({ top: PALCO, left: 0, behavior: "instant" });
+
+      // O arrasto continua (o navegador põe a página onde o mouse está, ainda
+      // acima do topo da tela, sem ver o scrollTo do meio): segue dentro, de
+      // volta ao topo da tela, em vez de recolher e prender a página no topo.
+      for (const y of [400, 600, 700]) {
+        scrollPage(y);
+        expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+        expect(scrollTo).toHaveBeenLastCalledWith({ top: PALCO, left: 0, behavior: "instant" });
+      }
+      expect(scrollTo).not.toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+
+      // Passou do topo da tela: a página é do navegador.
+      scrollTo.mockClear();
+      for (const y of [900, 1300]) scrollPage(y);
+      expect(state().expanded).toBe("true");
+      expect(scrollTo).not.toHaveBeenCalled();
+
+      // Assentou: uma rolagem para acima do topo da tela (a barra arrastada
+      // para cima) recolhe, como antes.
+      frame(1000);
+      scrollPage(300);
+      expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+      expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "instant" });
+    });
   });
 
   it("expandido e rolado além de uma tela abaixo do topo da tela, a roda e o touchmove saem da window; voltam antes", async () => {
