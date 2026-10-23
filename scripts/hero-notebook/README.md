@@ -117,3 +117,7 @@ As fotos viram `fundo.*` e `midia-poster.*` em `public/hero/notebook/` pelo
 `stills.sh` (`./stills.sh cur/bg.png final2/fundo 11 3`, igual ao expansao);
 os limites estão nas Global Constraints do plano da arte. O pôster definitivo
 sai do quadro 0 do loop, quando os passes estiverem prontos.
+
+Instaladas em 23/10/2026: `fundo.*` (de `cur/bg.png`) e `midia-poster.*` (de
+`cur/media.png`), ambas com crf 11 e `-q:v` 3. O `src/config/heroNotebook.assets.test.ts`
+confere os tamanhos e os limites dos arquivos que o `siteConfig.heroNotebook` usa.
