@@ -1,0 +1,130 @@
+# Arte do catálogo
+
+Os cartões de `public/catalogo/<slug>/` (spec 2026-10-16, §6). A **arte
+final** (plano `docs/superpowers/plans/2026-10-22-catalogo-arte.md`) está
+instalada desde 22/10/2026 no lugar dos degradês provisórios, com os mesmos
+nomes e sem mexer no código. As fontes ficam aqui; as saídas, fora do git.
+
+## Instalar
+
+Os arquivos finais de cada cena ficam em `<cena>/final/` (os 3 reais) e em
+`inventados/final/<slug>/` (os 7 inventados). Instalar é copiar com os mesmos
+nomes e conferir:
+
+```sh
+for s in replay rota-de-vendas fleet-analytics-bi; do cp scripts/catalogo-arte/$s/final/cartao* public/catalogo/$s/; done
+for s in placar-conectado totem-check-in contador-de-fluxo agenda-de-quadras estoque-oficinas site-clinicas vitrine-lojas; do
+  cp scripts/catalogo-arte/inventados/final/$s/cartao* public/catalogo/$s/
+done
+npx vitest run src/content/catalogo.assets.test.ts   # medidas e orçamento da §6.1
+node scripts/catalogo-arte/medir-contraste.mjs       # texto do cartão do centro >= 4,5:1
+```
+
+As `tela-N.svg` não são desta produção: continuam ilustrativas (§5.4) até
+chegarem as capturas reais.
+
+## Arte final: cenas no mundo do hero
+
+Mesma produção do hero "Fim de expediente" (`scripts/hero-expansao/`): cenas em
+Canvas2D, fotografadas por um Edge sem janela e codificadas no ffmpeg. Tudo é
+desenhado em código (ADR-005): nada de IA generativa nem de banco de imagens.
+
+| Pasta | O que tem |
+|---|---|
+| `kit/` | O que é comum à série e fixa o estilo (abaixo) |
+| `replay/` | O cartão do Replay (ver o `README.md` dela) |
+| `rota-de-vendas/` | O cartão do Rota de Vendas (ver o `README.md` dela) |
+| `fleet-analytics-bi/` | O cartão do Fleet Analytics BI (ver o `README.md` dela) |
+| `inventados/` | A cena-modelo dos 7 inventados, por slug (`cartao.html?slug=`; ver o `README.md` dela) |
+
+Cada cena tem `cena.js` (o mundo e o render, sobre o kit), `cartao.html` (a
+câmera retrato 800 × 1200) e um `README.md`. As saídas (`cur/`, `final/`,
+`plates/`, `qa/`) ficam fora do git; o kit tem o perfil do Edge em `kit/prof/`,
+também fora.
+
+### O kit (`kit/`)
+
+- `cena.js` (`window.KIT` no navegador, `require` no Node): copiado e adaptado
+  do `scene.js` do hero, sem importar nada dele (o hero não muda).
+  - **Paleta**: a do design system (navy, elétrico, ciano), mais `lampW` (o
+    abajur do hero, ~4000 K) e `floodW` (refletor, branco neutro).
+  - **Luz**: cor = albedo × (ambiente de hora azul + luz do céu/janela + luzes
+    pontuais). Cada cena declara as suas luzes em `LUZ.pontos` (posição, cor,
+    força, alcance, cone e uma máscara opcional) e a direção do céu em
+    `LUZ.ceuDir`.
+  - **Câmera**: `makeCam` do hero (alvo, F, deslocamento do centro);
+    `RETRATO` = 800 × 1200; `caixaPct` mede uma caixa em % do quadro.
+  - **Céu de hora azul** por elevação (`SKY`, `ceu`), disco de bokeh (`disco`)
+    e halo (`glow`), como na cidade do hero.
+  - **Acabamento** (`acabamento`): bloom leve, vinheta elíptica até `C.edge`
+    (os cantos caem para o navy), esmaecimento da metade de baixo
+    (`bottomFade`, onde fica o texto do cartão do centro) e o grão estático do
+    hero (amplitude 5, semente 42; o mesmo em todos os passes, então não ferve
+    no loop). `grainBaixo: [y, amplitude]` sobe o grão abaixo da fração `y` da
+    altura (mesmos números sorteados), para ele sobreviver ao JPG na metade
+    escura; o Replay usa `[0.6, 6.5]`.
+- `shot.sh <html[?consulta]> <png> <l> <a>`: o `shot.sh` do hero, com os
+  caminhos relativos à pasta atual. Um Edge por vez, flags de pouca memória, e
+  no fim fecha só os processos com o perfil `kit/prof`.
+- `stills.sh <png> <pasta> [crf] [q] [crf-480] [q-480]`: `cartao.avif/.jpg` e
+  `cartao-480.avif/.jpg` (o 480 reduzido do 800 com lanczos). AVIF de 8 bits
+  com crf 11, como no hero (acima de 12 o grão some e o céu fica liso, com
+  faixas). JPG em q 2 (o padrão): no q 3 o grão da metade escura some.
+  Confere o orçamento da §6.1 e sai com 1 se estourar.
+- `loop.js <receita.js>`: compõe o loop de 5 s de um dos 3 reais a partir de
+  passes ("placas"), como o `composite2.js` do hero, mas em Node e em ponto
+  flutuante: cada quadro é o cartão mais deltas periódicos que valem 0 em
+  t = 0, arredondados uma vez só. Confere que o quadro 0 é o cartão byte a
+  byte (sai com 1 se não for) e grava `plates/master.mkv` (ffv1, sem perda,
+  800 × 1200, 125 quadros). O tempo é periódico em 125 quadros: a emenda
+  124 → 0 é um passo como os outros. A receita é o `loop.js` de cada cena
+  (placas, `preparar` e `quadro`; ver o README dela).
+- `encode.sh <master.mkv> <pasta> <crf-mp4> <crf-webm>`: o loop dos 3 reais
+  (600 × 900, 25 fps, 125 quadros), `cartao-loop.mp4` e `.webm`, até 600 KB
+  cada. Os publicados usam 18 / 12 (no VP9 de 16 para cima voltam os quadros
+  repetidos, como no hero). A conversão para YUV usa `accurate_rnd` e
+  `full_chroma_int` (A6). Forçar um quadro-chave no 124 do MP4 foi testado e
+  piorou a emenda (49,7 → 46,6 dB no Replay): ficou a cadeia de P-frames.
+- `vqa.sh <vídeo> <tag> [recorte] [cartao.png]`: o `vqa.sh` do hero para 125
+  quadros. PSNR de cada par de quadros seguidos (inteiro e no recorte do
+  movimento), pares idênticos, pior passo e mediana, a emenda 124 → 0 (≥ 45 dB)
+  e o quadro 0 contra o cartão reduzido a 600 × 900. Grava em `qa/`.
+- `sondas.js <pasta-da-cena> [cartao.png]`: a caixa do objeto principal (entre
+  15% e 60% da altura), a luminância p90 da metade de baixo (até 60, de 0 a 255,
+  o critério da faixa do título do hero) e a média dos cantos (até a do
+  navy-900), mais o Y médio por faixa de 10%. Sai com 1 se algo reprovar.
+
+### Regras da série (§6.2 e plano)
+
+- Hora azul e paleta da marca; elétrico e ciano só nos detalhes da Strukti.
+  Sem natureza nem paisagem, sem texto na imagem, sem logo de terceiro.
+- Objeto principal entre ~15% e 60% da altura; metade de baixo calma e escura;
+  leitura clara na miniatura de 64 px; cantos que caem para o navy.
+- Nada inventado sobre os 3 reais: sem cliente, quadra com nome, número ou marca.
+- Olhar cada render (inteiro e reduzido a 64 px) antes de dar por pronto.
+
+## Arte provisória (histórico)
+
+`provisorio.sh` gerava os arquivos **provisórios** de `public/catalogo/<slug>/` antes da arte final (até 22/10/2026): um degradê da cor do tipo para o navy `#0e1c2b`, sem ruído, para caber no orçamento da spec (2026-10-16, §6.1). Fica para montar um item novo antes da arte dele; não é arte final.
+
+```bash
+bash scripts/catalogo-arte/provisorio.sh <slug> <cor-do-tipo> [--loop]
+```
+
+| Tipo | Cor | Exemplo |
+|---|---|---|
+| hardware (ciano) | `22d3ee` | `provisorio.sh placar-conectado 22d3ee` |
+| aplicativo (elétrico) | `0185e7` | `provisorio.sh rota-de-vendas 0185e7 --loop` |
+| site (violeta suave) | `8b7ff0` | `provisorio.sh site-clinicas 8b7ff0` |
+
+- Gera `cartao.avif/.jpg` (800x1200) e `cartao-480.avif/.jpg` (480x720). Com `--loop` (só os 3 reais: `replay`, `rota-de-vendas`, `fleet-analytics-bi`), gera também `cartao-loop.webm/.mp4` (600x900, 25 fps, 5 s, o degradê respirando; o último quadro volta ao quadro 0).
+- Não mexe nas telas `tela-1..3.svg`. (O `LEIA-PROVISORIO.txt` que acompanhava os provisórios saiu com a arte final.)
+- Precisa de `ffmpeg` com `gradients`, `libaom-av1`, `libvpx-vp9` e `libx264`.
+- O teste `src/content/catalogo.assets.test.ts` confere medidas e orçamento.
+
+## Contraste
+
+`node scripts/catalogo-arte/medir-contraste.mjs` mede o texto do cartão do
+centro sobre a arte **instalada** em `public/catalogo/` (MASTER §3.4). Rode de
+novo a cada troca da arte. Com a arte final (22/10/2026): pior razão 10,17:1 a
+1440 × 900, 7,54:1 a 390 × 844 e 6,97:1 a 360 × 740 (exige 4,5:1).

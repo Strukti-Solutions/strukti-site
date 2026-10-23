@@ -1,0 +1,8 @@
+# Saídas da produção: nada disto vai para o git. Os finais vão para public/catalogo/<slug>/ (Task A7).
+cur/
+plates/
+final/
+qa/
+*.png
+*.avif
+*.jpg

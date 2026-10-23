@@ -59,8 +59,8 @@ function prefersSavingData() {
  * (o `useCanAnimate` acompanha a preferência ao vivo). O controle (WCAG 2.2.2) manda acima disso: "Pausar" para de vez;
  * "Tocar" toca mesmo com reduced motion ou com um vídeo do portfólio
  * tocando, porque foi a pessoa que pediu — e, como qualquer play, pausa esse
- * vídeo do portfólio (o listener de ProjectGrid.tsx não distingue quem
- * pediu o play), mantendo só um vídeo tocando por vez.
+ * vídeo do portfólio (o listener do CatalogoInterativo.tsx não distingue
+ * quem pediu o play), mantendo só um vídeo tocando por vez.
  */
 export function HeroVideoProvider({ children }: { children: ReactNode }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);

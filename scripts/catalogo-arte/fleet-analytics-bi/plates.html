@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>placas do loop fleet</title>
+<!-- Placas do loop de 5 s (Task A5): a cena inteira com pulso = k / n, para k de i0 a i0 + q - 1, e de cada render só os
+     dois recortes onde o pulso muda alguma coisa (a tela e o reflexo dela na mesa), lado a lado num mosaico de `col`
+     colunas. A cidade e a mesa são renderizadas uma vez por página (_cache). Uso (um Edge por vez, ~25 renders por foto):
+     ../kit/shot.sh "plates.html?i0=0&q=25" plates/pulso-00.png 1950 2550 -->
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#000}canvas{display:block}</style></head>
+<body><canvas id="m"></canvas>
+<script src="../kit/cena.js"></script>
+<script src="cena.js"></script>
+<script>
+try {
+  const q = new URLSearchParams(location.search), num = (k, d) => q.has(k) ? +q.get(k) : d;
+  const i0 = num('i0', 0), qt = num('q', 25), n = num('n', 125), col = num('col', 5);
+  // recortes [x, y, w, h] no quadro 800 x 1200 (medidos com pulso 0,25 e 0,75 contra o cartão: tela y 271-500, reflexo y 750-920)
+  const R = window.RECORTES = [[300, 240, 390, 290], [300, 730, 390, 220]];
+  const TW = R[0][2], TH = R[0][3] + R[1][3];
+  const m = document.getElementById('m'); m.width = TW * col; m.height = TH * Math.ceil(qt / col);
+  const mc = m.getContext('2d'), cache = {};
+  for (let k = 0; k < qt; k++) {
+    const c = document.createElement('canvas'); c.width = 800; c.height = 1200;
+    CENA.render(c, { pulso: ((i0 + k) % n) / n, _cache: cache });
+    const tx = (k % col) * TW, ty = Math.floor(k / col) * TH;
+    mc.drawImage(c, R[0][0], R[0][1], R[0][2], R[0][3], tx, ty, R[0][2], R[0][3]);
+    mc.drawImage(c, R[1][0], R[1][1], R[1][2], R[1][3], tx, ty + R[0][3], R[1][2], R[1][3]);
+  }
+} catch (e) { KIT.mostrarErro(e); }
+</script>
+</body></html>

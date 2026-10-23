@@ -5,6 +5,7 @@ import Image from "next/image";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { MenuProdutos } from "@/components/MenuProdutos";
 import type { LinkBancada } from "@/lib/bancada/link";
 
 /**
@@ -21,7 +22,9 @@ export const TOPBAR_WIDE_QUERY = "(min-width: 75em)";
  * borda a borda da janela, com a junta de 3 px embaixo. O conteúdo fica no
  * container do site, alinhado com as seções. A partir de 75em (1200 px) mostra
  * marca, links e WhatsApp numa linha; abaixo disso, marca e botão "Menu", que
- * abre um painel com os links e o WhatsApp, preso embaixo da barra.
+ * abre um painel com os links e o WhatsApp, preso embaixo da barra. O item
+ * "#produtos" é o menu "Produtos ▾" (MenuProdutos): popover na barra larga,
+ * sublista no painel.
  *
  * A árvore é uma só em qualquer largura: o que muda é o CSS (seção "Barra do
  * topo" de globals.css). O botão vem antes do painel no DOM, para o Tab
@@ -44,16 +47,15 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   useEffect(() => {
     const targets = nav.map((item) => item.href.slice(1));
 
-    // v2.2: os links de produto apontam para os cartões (#replay…), dentro de
-    // #produtos, e não para seções do <main>. Por isso a posição vem do
-    // retângulo na tela (o offsetTop de um cartão é relativo ao pai) e o alvo
-    // só vale enquanto cruza a sua linha: onde o clique na barra o deixa, o
-    // scroll-padding-top do html mais o scroll-margin-top dele (os cartões
-    // têm o seu e param mais abaixo que as seções), com 1 px de folga para o
-    // arredondamento. Entre dois alvos (Sob medida, Como trabalhamos,
-    // Dúvidas), nenhum link fica marcado. Com os cartões lado a lado (mesmo
-    // topo), vale o da âncora da URL, que o clique na barra define; sem ela,
-    // o primeiro do menu.
+    // Os alvos são as seções #produtos, #equipe e #contato; os produtos
+    // (#slug) ficam no menu "Produtos ▾" e não são alvo: com o painel de um
+    // produto aberto, quem fica marcado é o botão do menu, pela seção. A
+    // posição vem do retângulo na tela e o alvo só vale enquanto cruza a sua
+    // linha: onde o clique na barra o deixa, o scroll-padding-top do html
+    // mais o scroll-margin-top dele, com 1 px de folga para o arredondamento.
+    // Entre dois alvos (Sob medida, Como trabalhamos, Dúvidas), nenhum item
+    // fica marcado. Se dois cruzarem a linha juntos, vale o da âncora da
+    // URL; sem ela, o primeiro do menu.
     const computeActive = () => {
       const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
       const hash = window.location.hash.slice(1);
@@ -76,8 +78,8 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       setActiveHref(current ? `#${current}` : null);
     };
 
-    // A âncora também muda sem rolar: com os cartões lado a lado e a página
-    // já parada neles, o clique em outro produto só troca a URL.
+    // A âncora também muda sem rolar (ex.: outro produto escolhido no menu
+    // com a página já parada no catálogo): o hashchange recalcula.
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -94,8 +96,14 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
   useEffect(() => {
     if (!open) return;
 
+    // O Esc é só do Menu enquanto ele está aberto: na captura do document,
+    // com stopPropagation, ele não chega a quem ouve depois (o painel de um
+    // produto do catálogo, que fecharia junto). A lista "Produtos ▾", que
+    // fica por dentro do Menu, ouve antes, na captura da janela, e para o
+    // 1º Esc nela.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      event.stopPropagation();
       setOpen(false);
       toggleRef.current?.focus();
     };
@@ -107,11 +115,11 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
       if (wide?.matches) setOpen(false);
     };
 
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown);
     wide?.addEventListener("change", onWide);
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("pointerdown", onPointerDown);
       wide?.removeEventListener("change", onWide);
     };
@@ -162,13 +170,17 @@ export function TopBar({ linkBancada }: { linkBancada?: LinkBancada } = {}) {
           <ul className="topbar__links">
             {nav.map((item) => (
               <li key={item.href}>
-                <a
-                  href={item.href}
-                  aria-current={activeHref === item.href ? "true" : undefined}
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </a>
+                {item.href === "#produtos" ? (
+                  <MenuProdutos ativo={activeHref === item.href} aoEscolher={() => setOpen(false)} />
+                ) : (
+                  <a
+                    href={item.href}
+                    aria-current={activeHref === item.href ? "true" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                )}
               </li>
             ))}
           </ul>

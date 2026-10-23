@@ -1,0 +1,11 @@
+# Saídas da produção: nada disto vai para o git. Os finais vão para public/catalogo/fleet-analytics-bi/ (Task A7).
+cur/
+plates/
+final/
+qa/
+*.png
+*.mkv
+*.mp4
+*.webm
+*.avif
+*.jpg

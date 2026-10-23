@@ -134,6 +134,8 @@ Número: +55 83 99968-3670. O link é montado por `siteConfig.whatsapp.linkWithM
 > Cidade:
 > Quantas quadras:
 
+*Nota (22/10/2026): saiu do código com o botão do cartão da v2.2 (o catálogo não tem WhatsApp no painel, spec do catálogo Q5). O texto fica aqui para o site próprio do replay.*
+
 *Nota: no código, a mensagem é uma string só, com `\n` entre as linhas e nada depois dos dois-pontos: `"Olá! Vim pelo site da Strukti Soluções e quero o piloto gratuito do replay na minha quadra.\nCidade:\nQuantas quadras:"`. O `encodeURIComponent` transforma cada `\n` em `%0A`. A pessoa completa a cidade e o número de quadras antes de enviar; se mandar sem completar, a equipe pergunta. Usada só no botão do cartão do replay. Link para testar: `https://wa.me/5583999683670?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Strukti%20Solu%C3%A7%C3%B5es%20e%20quero%20o%20piloto%20gratuito%20do%20replay%20na%20minha%20quadra.%0ACidade%3A%0AQuantas%20quadras%3A`*
 
 *Nota (v2.2): antes (v2.0), "Olá! Vim pelo site da Strukti Soluções e quero agendar uma demonstração do replay para a minha quadra." [decidido 13/10, itens 3 e 11]*
@@ -380,15 +382,115 @@ Selo: **Piloto gratuito** (`piloto`).
 
 ### Textos de interface dos cartões
 
-**`aplicativos.grid.playLabel` (nome acessível do botão de reproduzir nos cartões de aplicativo):** Assistir ao vídeo: {nome} ({duração})
+Os cartões da parede da v2.2 não existem mais: a microcopy do catálogo (seção "Textos de interface do catálogo (`catalogoUi`)", mais abaixo) toma o lugar deles. Dos três textos antigos, dois continuam em uso, agora no painel do produto, e um saiu:
 
-**`aplicativos.grid.showMore` (botão, quando houver mais de 6 cartões):** Mostrar mais projetos
+**`catalogoUi.assistir` (nome acessível do botão de reproduzir do vídeo no painel e texto do link para o vídeo na ficha sem JS; antes `aplicativos.grid.playLabel`):** Assistir ao vídeo: {nome} ({duração})
 
-**`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo, nos 3 cartões):** Ler a descrição do vídeo
+**`aplicativos.videoDescriptionLinkLabel` (link que abre a descrição do vídeo, no painel):** Ler a descrição do vídeo
 
-*Nota (v2.2): o `playLabel` ganha a duração, como o do replay; `{duração}` vem de um campo novo do projeto (por exemplo, `video.durationLabel`: "22 s" e "53 s", medidos com ffprobe em 13/10: 21,6 s e 52,6 s). Os outros dois textos não mudam (v1.5). Com 3 cartões, o "Mostrar mais projetos" não aparece. [proposta]*
+*Nota (22/10/2026): saiu o `aplicativos.grid.showMore` ("Mostrar mais projetos"), do botão que revelava mais de 6 cartões: o catálogo navega pelo coverflow, pelas bolinhas e pela fita, sem "mostrar mais". A chave saiu de `src/content/landing.ts`. [texto antigo, aprovado na v2.2]*
 
-*Nota (v2.2): saem `aplicativos.title` ("Aplicativos sob medida") e `aplicativos.intro`, porque a seção Aplicativos deixa de existir (o "sob medida" e o diagnóstico foram para `produtos.intro`). As chaves `aplicativos.*` que ficam podem mudar de lugar no código; o texto é o mesmo. [proposta]*
+*Nota (22/10/2026): também saíram do código, sem uso desde que o catálogo tomou o lugar da parede, as chaves `produtos.replay.oneLiner`, `produtos.replay.cta`, `produtos.replay.siteLinkLabel` (o painel usa `catalogoUi.siteLink`, "Ver o site"), `whatsappMessages.replay`, `aplicativos.cta` e, nos aplicativos, `videoTitle` e `platforms`. Os textos ficam neste documento como registro (e para o site do replay e as páginas dos produtos).*
+
+### Catálogo (proposta — aguardando aprovação)
+
+Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seção Produtos vira um catálogo em coverflow com 10 itens: o cartão do centro mostra tipo, selo de fase, nome, frase e "Ver detalhes"; o clique abre um painel com abas (Visão geral · Como funciona · Telas) e o botão "Quero saber mais" (spec `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`, §3 e §5). Os textos ficam em `src/content/catalogo.ts` (`CATALOGO` e `catalogoUi`). O título e a introdução da seção continuam os de cima (`produtos.title` e `produtos.intro`).
+
+*Nota: os textos novos dos 3 produtos reais usam só fatos que já estão nesta página (frases, destaques, descrições dos vídeos e dúvidas). Nada de cliente, quadra instalada ou resultado medido. Limites para caber no painel sem rolagem (spec §5.3): frase até ~110 caracteres; "Para quem é" até ~140; 3 a 4 benefícios de até ~70; passos com título de até ~30 e texto de até ~90.*
+
+#### Replay para quadras (`replay`)
+
+- **`nome`:** `produtos.replay.name` ("Replay para quadras"), por referência.
+- **`frase` (nova):** Para quadras de aluguel: o jogador aperta um botão na beira da quadra e leva o lance no celular.
+- **`painel.video`:** o vídeo do replay (`produtos.replay.video`), por referência.
+- **`painel.paraQuem` ("Para quem é"):** Donos de quadras de aluguel que querem dar ao jogador mais um motivo para voltar.
+- **`painel.beneficios`:**
+  - Salva os últimos 30 segundos, na hora em que o jogador aperta.
+  - O lance chega no celular, pronto para baixar e compartilhar.
+  - Funciona em qualquer quadra: society, areia e futsal.
+  - Usa o Wi-Fi da própria arena.
+- **`painel.comoFunciona` ("Como funciona"):**
+  1. **O jogador aperta o botão.** Saiu um lance bonito? Ele aperta o botão na beira da quadra.
+  2. **O sistema salva o lance.** A câmera da quadra guarda os últimos 30 segundos e envia pelo Wi-Fi da arena.
+  3. **O lance chega no celular.** O jogador baixa ou compartilha o lance, que fica disponível por 7 dias.
+- **`arte.alt` (cartão):** A caixa do botão do replay no alambrado de uma quadra vazia à noite, com névoa dos refletores e o LED ciano aceso.
+- **`painel.telas[].alt`:** Tela ilustrativa: a busca do lance. · Tela ilustrativa: a lista de lances do dia. · Tela ilustrativa: o lance aberto, com os botões de baixar e compartilhar.
+
+*Nota: a frase do cartão da v2.2 (`produtos.replay.oneLiner`, 130 caracteres) passa do limite do catálogo. A nova mantém o mecanismo (o botão na beira da quadra) e o lance no celular; o "mais um motivo para voltar" vai para o "Para quem é". Os fatos vêm da frase da v2.2, da descrição do vídeo (30 segundos, society/areia/futsal, Baixar e Compartilhar, "Disponível por 7 dias") e da dúvida do Wi-Fi da arena. O link do site é `produtos.replay.siteUrl` (escondido enquanto for `null`).*
+
+#### Rota de Vendas (`rota-de-vendas`)
+
+- **`nome` e `frase`:** `name` e `summary` do projeto, por referência ("Para o vendedor externo e para a entrega: do pedido feito na loja do cliente até a porta.").
+- **`painel.video`:** o vídeo do Rota de Vendas, por referência.
+- **`painel.paraQuem`:** Empresas com vendedor externo e entrega própria que ainda controlam pedidos e rotas na planilha, no papel ou no WhatsApp.
+- **`painel.beneficios`** (partem dos `highlights[].lead`):
+  - Clientes na mão do vendedor, com botões para ligar e abrir no mapa.
+  - Pedido com o número do sistema que você já usa.
+  - Rota de entrega por cidade, com o roteiro em Word, PDF e Excel.
+  - Funciona sem internet: tudo fica guardado no aparelho.
+- **`painel.comoFunciona`:**
+  1. **O vendedor acha o cliente.** Busca por nome, cidade ou CNPJ, no celular, mesmo sem sinal.
+  2. **O pedido entra.** Com o número do sistema que a empresa já usa. Número repetido não passa.
+  3. **A entrega sai na rota.** As paradas saem agrupadas por cidade, com a lista de carga de cada uma.
+- **`arte.alt`:** Um celular com a rota do Rota de Vendas no suporte do painel de um carro parado, com a cidade desfocada no para-brisa.
+- **`painel.telas[].alt`:** Tela ilustrativa: a lista de clientes, com a busca. · Tela ilustrativa: um pedido com o número do outro sistema. · Tela ilustrativa: a rota de entrega, com as paradas agrupadas por cidade.
+
+#### Fleet Analytics BI (`fleet-analytics-bi`)
+
+- **`nome`:** `name` do projeto, por referência.
+- **`frase` (nova):** Para quem cuida de uma frota: do rastreador de cada veículo aos chamados de reboque, no mesmo lugar.
+- **`painel.video`:** o vídeo do Fleet Analytics BI, por referência.
+- **`painel.paraQuem`:** Empresas que cuidam de uma frota e querem rastreador, custos, abastecimentos, viagens e chamados de reboque num lugar só.
+- **`painel.beneficios`:**
+  - Cada veículo acompanhado em tempo real, a partir do rastreador.
+  - Custos, abastecimentos e viagens no mesmo lugar.
+  - Alerta de abastecimento com consumo fora do padrão.
+  - Chamados de reboque com despacho, vistoria digital e faturamento.
+- **`painel.comoFunciona`:**
+  1. **O rastreador manda os dados.** Cada veículo envia a posição, e o mapa mostra a frota em tempo real.
+  2. **Os números se juntam.** Trajetos, custos e abastecimentos de cada veículo aparecem na mesma tela.
+  3. **O reboque também entra.** Do despacho à vistoria digital e ao faturamento, cada chamado fica registrado.
+- **`arte.alt`:** O painel do Fleet Analytics BI num monitor de um escritório escuro, com o mapa da frota e a janela para a cidade.
+- **`painel.telas[].alt`:** Tela ilustrativa: o mapa da frota em tempo real. · Tela ilustrativa: os custos e as viagens de um veículo. · Tela ilustrativa: a lista de chamados de reboque.
+
+*Nota: o resumo da v2.2 (`summary`, 137 caracteres) passa do limite do catálogo; a frase nova é o mesmo resumo sem "com custos, abastecimentos e viagens", que vai para os benefícios. Os fatos vêm do resumo e da descrição do vídeo (tempo real, alertas de abastecimento, despacho, vistoria digital, faturamento). Nenhum número do vídeo entra no painel.*
+
+#### Os 7 itens fictícios
+
+**Fictício, troca quando houver produto real.** Estão no site para mostrar a escala do catálogo (decisão do Thiago, spec Q14/Q25/Q28), com o selo "Em desenvolvimento" e `ficticio: true` no código. Os textos completos (para quem é, benefícios, como funciona e telas) ficam só em `src/content/catalogo.ts`; não levam a marcação `[A PREENCHER]`, para o `check:placeholders` não falhar por eles.
+
+| Slug | Tipo | Nome | Frase | Assunto do formulário |
+|---|---|---|---|---|
+| `placar-conectado` | Hardware | Placar conectado para quadras | Para quadras de aluguel: o placar do jogo numa tela na parede, marcado pelo celular. | Outro assunto |
+| `agenda-de-quadras` | Aplicativo | Agenda de quadras | Para arenas: os horários das quadras num lugar só, com reserva pelo celular. | Aplicativo sob medida |
+| `site-clinicas` | Site | Site para clínicas | Um site simples para a clínica: especialidades, endereço e um botão para marcar pelo WhatsApp. | Outro assunto |
+| `totem-check-in` | Hardware | Totem de check-in para academias | Para academias: o aluno faz o check-in no totem da entrada, e a recepção vê quem chegou. | Outro assunto |
+| `estoque-oficinas` | Aplicativo | Estoque para oficinas | Para oficinas: cada peça que entra e sai fica registrada, e o aviso de reposição chega antes de faltar. | Aplicativo sob medida |
+| `vitrine-lojas` | Site | Vitrine para lojas de bairro | Para lojas de bairro: os produtos numa vitrine na internet, com pedido pelo WhatsApp. | Outro assunto |
+| `contador-de-fluxo` | Hardware | Contador de fluxo para lojas | Para lojas: um sensor sobre a porta conta quem entra, hora a hora, e mostra no celular. | Outro assunto |
+
+*Nota: "Quero saber mais" leva ao formulário com o assunto marcado: o replay em "Replay para quadras"; os aplicativos em "Aplicativo sob medida"; os sites e os outros hardwares em "Outro assunto" (spec §3.6). Um assunto próprio para sites pede mudança na validação do servidor e fica para depois.*
+
+#### Textos de interface do catálogo (`catalogoUi`)
+
+- **`rotuloCarrossel` (nome da região do carrossel):** Catálogo de produtos
+- **`roledescCarrossel` / `roledescProduto` (o que o leitor de tela diz que é cada coisa):** carrossel / produto
+- **`posicao` (nome de cada cartão e anúncio da troca):** {i} de {n}: {nome}
+- **`verDetalhes` (botão do cartão do centro):** Ver detalhes
+- **`saberMais` (botão do painel):** Quero saber mais
+- **`fechar` (botão X do painel):** Fechar
+- **`anterior` / `proximo` (setas ‹ ›):** Produto anterior / Próximo produto
+- **`irPara` (bolinhas):** Ir para {nome}
+- **`abas`:** Visão geral · Como funciona · Telas
+- **`paraQuem` (rótulo na Visão geral):** Para quem é
+- **`siteLink` (link do site, quando houver):** Ver o site
+- **`telaAnterior` / `proximaTela` (setas das telas):** Tela anterior / Próxima tela
+- **`filtros` (pílulas):** Todos · Hardware · Aplicativos · Sites
+- **`tipos` (etiqueta do tipo no cartão):** Hardware · Aplicativo · Site
+
+*Nota (22/10/2026): o rótulo do carrossel é "Catálogo de produtos" e não "Produtos", porque "Produtos" já nomeia a seção (`section#produtos`) e o rótulo de cada região da página tem de ser único para o leitor de tela. Cada cartão é um `<div role="group">` com o nome `posicao`.*
+
+*Nota: `{i}`, `{n}` e `{nome}` o site preenche sozinho. Os selos de fase são os de sempre (`statusLabels`); os fictícios usam "Em desenvolvimento".*
 
 ---
 
@@ -790,7 +892,7 @@ O Thiago decide:
 
 Não bloqueiam a publicação:
 
-9. Páginas próprias dos produtos. Enquanto não existirem, os links da barra do topo rolam até os cartões e o link "Ver o site do replay" fica escondido.
+9. Páginas próprias dos produtos. Enquanto não existirem, os links da barra do topo rolam até os cartões e o link "Ver o site" do painel do replay fica escondido.
 10. CNPJ no rodapé, quando houver.
 
 *Nota (v2.2): saem da landing, e passam para a futura página do replay, as pendências 4 a 9 da v2.1: as condições do piloto, o que acontece com os lances se o Wi-Fi cair, o tempo de instalação, a imagem de compartilhamento nova, o nome da quadra no clipe e o resumo por escrito do diagnóstico no replay. Dos dados pedidos ao Thiago na PROPOSTA.md §4, a landing agora só precisa dos itens acima.*

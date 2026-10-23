@@ -833,7 +833,8 @@ video:focus-visible {
   list-style: none;
 }
 
-.topbar__links a {
+/* Só os links de 1º nível: a sublista de produtos (abaixo) tem os seus. */
+.topbar__links > li > a {
   display: flex;
   align-items: center;
   min-height: 48px;
@@ -845,19 +846,119 @@ video:focus-visible {
   text-underline-offset: 6px;
 }
 
-.topbar__links a:hover {
+.topbar__links > li > a:hover {
   color: #ffffff;
   text-decoration-line: underline;
   text-decoration-thickness: 2px;
 }
 
 /* Dentro do painel, o foco desenha para dentro (MASTER §5.5). */
-.topbar__links a:focus-visible {
+.topbar__links > li > a:focus-visible {
   outline-offset: -3px;
 }
 
-.topbar__links li + li {
+.topbar__links > li + li {
   border-top: 1px solid var(--color-navy-800);
+}
+
+/*
+ * Menu "Produtos ▾" (spec do catálogo, 2026-10-16, §3.5; MenuProdutos.tsx).
+ * No painel, o botão é uma linha como os links, e a lista abre logo abaixo
+ * como sublista, recuada e com os grupos por tipo. A partir de 75em, a mesma
+ * lista vira um popover abaixo do botão (mais embaixo). Sem JS, no lugar do
+ * botão fica um link para #produtos, com o mesmo visual (sem o sublinhado).
+ */
+.topbar__produtos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--gutter);
+  border: 0;
+  background: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: start;
+  text-decoration-line: none;
+  text-underline-offset: 6px;
+  cursor: pointer;
+}
+
+.topbar__produtos:hover {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+}
+
+.topbar__produtos:focus-visible {
+  outline-offset: -3px;
+}
+
+/* A seta é um canto de borda girado (em currentColor: aparece nas cores
+   forçadas); aponta para cima com a lista aberta. */
+.topbar__produtos-seta {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.topbar__produtos[aria-expanded="true"] .topbar__produtos-seta {
+  margin-top: 4px;
+  transform: rotate(-135deg);
+}
+
+.topbar__produtos-menu {
+  padding-bottom: var(--space-3);
+}
+
+/* O `hidden` precisa vencer o display do popover (75em+). */
+.topbar__produtos-menu[hidden] {
+  display: none;
+}
+
+/* O nome do grupo: sem caixa-alta nem espacejamento (MASTER §4); a
+   hierarquia vem do peso, do tamanho e da cor, menor e mais apagado que os
+   produtos. */
+.topbar__produtos-tipo {
+  margin: var(--space-2) 0 0;
+  padding: 0 var(--gutter) 0 calc(var(--gutter) + var(--space-4));
+  color: var(--color-navy-300);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.topbar__produtos-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topbar__produtos-lista a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--gutter) 0 calc(var(--gutter) + var(--space-4));
+  color: var(--color-navy-100);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration-line: none;
+  text-underline-offset: 5px;
+}
+
+.topbar__produtos-lista a:hover {
+  color: #ffffff;
+  text-decoration-line: underline;
+}
+
+.topbar__produtos-lista a:focus-visible {
+  outline-offset: -3px;
 }
 
 .topbar__nav .topbar__whatsapp {
@@ -891,6 +992,12 @@ video:focus-visible {
     transition:
       transform var(--duration-base) var(--ease-standard),
       top var(--duration-base) var(--ease-standard);
+  }
+
+  .topbar__produtos-seta {
+    transition:
+      transform var(--duration-base) var(--ease-standard),
+      margin-top var(--duration-base) var(--ease-standard);
   }
 
   .topbar[data-open="true"] .topbar__nav {
@@ -948,19 +1055,88 @@ video:focus-visible {
     gap: clamp(16px, 15vw - 164px, 32px);
   }
 
-  .topbar__links li + li {
+  .topbar__links > li + li {
     border-top: 0;
   }
 
-  .topbar__links a {
+  .topbar__links > li > a,
+  .topbar__produtos {
     min-height: 44px;
     padding: 0;
     color: var(--color-navy-200);
     font-size: 0.9375rem;
   }
 
-  .topbar__links a:focus-visible {
+  .topbar__links > li > a:focus-visible,
+  .topbar__produtos:focus-visible {
     outline-offset: 3px;
+  }
+
+  /* "Produtos ▾" na linha dos links: a seta logo depois do texto, e o
+     popover centrado no botão, abaixo da barra (ou da cápsula). */
+  .topbar__produtos-raiz {
+    position: relative;
+  }
+
+  .topbar__produtos {
+    gap: 8px;
+    width: auto;
+  }
+
+  .topbar__produtos:hover,
+  .topbar__produtos[aria-expanded="true"] {
+    color: #ffffff;
+  }
+
+  /* Três colunas, uma por tipo. Com a tela baixa, rola dentro dele. */
+  .topbar__produtos-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    /* Largura pelo conteúdo (max-content), não pela caixa estreita do
+       botão, onde o encolher-para-caber esmagaria as colunas. Cada coluna
+       tem no mínimo 12,5rem e cresce até o nome mais longo caber numa linha
+       (os da coluna Hardware quebravam em 2 e se misturavam); com a janela
+       estreita, a fonte maior ou o espaçamento do 1.4.12, o teto de largura
+       faz os nomes quebrarem de novo, e o espaço entre itens os separa. */
+    display: grid;
+    grid-auto-columns: minmax(12.5rem, max-content);
+    grid-auto-flow: column;
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--space-5));
+    gap: var(--space-5);
+    max-height: calc(100dvh - var(--topbar-height) - var(--space-6));
+    padding: var(--space-4) var(--space-5);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--color-navy-800);
+    border-radius: var(--radius-3);
+    background-color: var(--color-navy-950);
+    box-shadow: var(--shadow-float);
+    translate: -50% 0;
+    white-space: normal;
+  }
+
+  .topbar__produtos-tipo {
+    margin: 0 0 var(--space-1);
+    padding: 0;
+  }
+
+  /* Um item de 2 linhas não se mistura com o seguinte: a entrelinha fica
+     curta (1,3) e entre os itens há 8 px a mais, além da folga dos 44 px. */
+  .topbar__produtos-lista {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .topbar__produtos-lista a {
+    padding: 0;
+    font-size: 0.9375rem;
+    line-height: 1.3;
+  }
+
+  .topbar__produtos-lista a:focus-visible {
+    outline-offset: 2px;
   }
 
   .topbar__nav .topbar__whatsapp {
@@ -1013,13 +1189,15 @@ video:focus-visible {
   }
 
   /* O link da seção visível ganha um traço embaixo (N2): sinaliza nos links
-     que já existem, sem componente novo. */
-  .topbar__links a[aria-current] {
+     que já existem, sem componente novo. No catálogo, é o botão "Produtos". */
+  .topbar__links > li > a[aria-current],
+  .topbar__produtos[aria-current] {
     color: #ffffff;
     position: relative;
   }
 
-  .topbar__links a[aria-current]::after {
+  .topbar__links > li > a[aria-current]::after,
+  .topbar__produtos[aria-current]::after {
     content: "";
     position: absolute;
     right: 0;
@@ -1047,6 +1225,20 @@ video:focus-visible {
       border-radius var(--duration-base) var(--ease-standard),
       background-color var(--duration-base) var(--ease-standard),
       box-shadow var(--duration-base) var(--ease-standard);
+  }
+
+  /* O popover entra como o painel do Menu: um fade com 8 px de descida. */
+  .topbar__produtos-menu {
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  @starting-style {
+    .topbar__produtos-menu {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
   }
 }
 
@@ -1596,57 +1788,794 @@ video:focus-visible {
 }
 
 /* ------------------------------------------------------------------ */
-/* 11. Grade de vídeos dos aplicativos (MASTER §8.8)                   */
+/* 11b. Catálogo de produtos (MASTER §8.8)                             */
 /* ------------------------------------------------------------------ */
-.portfolio__video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background-color: #000000;
+/*
+ * Spec 2026-10-16 (§3.1, §4, §8). Estados na raiz `.catalogo`:
+ * - data-js="false" no servidor e no 1º render do cliente: sem JS, uma
+ *   fileira com rolagem para o lado e o <details> de cada cartão (§8.5);
+ * - data-js="true" depois de montar: o coverflow. A posição de cada cartão
+ *   vem no data-pos (-2 a 2, ou "oculto"), e a CSS faz o resto;
+ * - data-estado="fechado|aberto": a caixa (.catalogo__corpo) tem a mesma
+ *   altura nos dois (§4), para nada abaixo da seção se mexer.
+ */
+
+/* Os laterais passam das bordas do conteúdo (no celular, os ±1 aparecem
+   pelas pontas); sem rolagem para o lado na página. */
+.catalogo-secao {
+  overflow-x: clip;
 }
 
-.portfolio__meta {
-  max-width: 66ch;
-  margin-top: var(--space-5);
+/* O fundo ambiente fica atrás do resto do catálogo, sem sair dele. */
+.catalogo {
+  position: relative;
+  isolation: isolate;
 }
 
-.portfolio__meta summary {
-  width: fit-content;
-  margin-top: var(--space-3);
-  border-radius: var(--radius-1);
-  color: var(--link);
+/* Fundo ambiente (§3.1, Q39, §7): a arte do centro desenhada pequena (64 px),
+   ampliada pelo transform e desfocada (desfoque barato), sob uma camada navy
+   forte; as bordas somem no fundo da seção. Duas camadas em crossfade de 1 s.
+   Decorativo: sem JS e em cores forçadas, sai. Não sobe além do catálogo,
+   para não cobrir o título da seção. */
+.catalogo__fundo {
+  position: absolute;
+  inset: 0 -12%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
+}
+
+.catalogo__fundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgb(8 18 29 / 0.85);
+}
+
+.catalogo__fundo-camada {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  max-width: none;
+  height: 96px;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translate(-50%, -50%) scale(24);
+}
+
+.catalogo__fundo-camada[data-visivel="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__fundo-camada {
+    transition: opacity 1000ms ease;
+  }
+}
+
+.catalogo[data-js="false"] .catalogo__fundo {
+  display: none;
+}
+
+.catalogo__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.catalogo[data-js="true"] .catalogo__corpo {
+  height: clamp(600px, 80svh, 860px);
+}
+
+/* Sem JS (e no 1º render do cliente, o mesmo HTML), a fileira é mais baixa
+   que o coverflow; sem este mínimo, a caixa crescia ~200 px ao montar, o
+   que vem abaixo pulava (CLS) e o /#contato carregado direto parava fora do
+   formulário. Mínimo, não altura: o <details> aberto ainda cresce. */
+.catalogo[data-js="false"] .catalogo__corpo {
+  min-height: clamp(600px, 80svh, 860px);
+}
+
+/* Filtro por tipo (§3.3): pílulas com alvo de 44 px. */
+.catalogo__filtro {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.catalogo__filtro button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-.portfolio__meta summary:hover {
-  color: var(--link-hover);
+.catalogo__filtro button:hover {
+  background-color: var(--outline-hover);
 }
 
-.portfolio__meta details p {
-  margin: var(--space-3) 0 0;
-  color: var(--text-muted);
+.catalogo__filtro button[aria-pressed="true"] {
+  border-color: var(--color-electric-700);
+  background-color: var(--color-electric-700);
+  color: #ffffff;
 }
 
-.portfolio__more {
-  margin-top: var(--space-9);
+/* Região do carrossel: o palco (com as setas) e as bolinhas embaixo. */
+.catalogo__carrossel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
 }
 
-.project-card {
+.catalogo__cena {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* O palco mede a si mesmo (cqh/cqw) para dimensionar o cartão do centro.
+   pan-y: o dedo na vertical rola a página (Review Focus 1); pinch-zoom: a
+   pinça amplia a página (o navegador cuida dela e manda pointercancel). */
+.catalogo__palco {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  perspective: 1400px;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Cartão do centro 2:3: 86% da altura do palco no computador e ~70% da
+   largura no celular (105cqw = 70% × 1,5), o que for menor. */
+.catalogo[data-js="true"] .catalogo__cartao {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: min(86cqh, 105cqw);
+  aspect-ratio: 2 / 3;
+  translate: -50% -50%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="0"] {
+  z-index: 3;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="1"] {
+  z-index: 2;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  transform: translateX(86%) scale(0.84) rotateY(-24deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="-1"] {
+  z-index: 2;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  transform: translateX(-86%) scale(0.84) rotateY(24deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="2"] {
+  z-index: 1;
+  opacity: 0.38;
+  filter: brightness(0.55) blur(1px);
+  transform: translateX(155%) scale(0.68) rotateY(-38deg);
+}
+
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="-2"] {
+  z-index: 1;
+  opacity: 0.38;
+  filter: brightness(0.55) blur(1px);
+  transform: translateX(-155%) scale(0.68) rotateY(38deg);
+}
+
+/* Os laterais são paradas de Tab, e o contorno de foco é desenhado no próprio
+   cartão: com a opacidade e o filtro do ±1/±2, o anel sairia apagado e
+   borrado (2.4.7, 1.4.11; vale também em cores forçadas). Mesma
+   especificidade das regras acima: vence por vir depois. O lateral que
+   cairia sob as setas (ou fora da tela) nem entra no Tab (Coverflow.tsx). */
+.catalogo[data-js="true"] .catalogo__cartao:focus-visible {
+  opacity: 1;
+  filter: none;
+}
+
+/* Do ±3 em diante (o inert e o aria-hidden vêm do JS). */
+.catalogo[data-js="true"] .catalogo__cartao[data-pos="oculto"] {
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.5);
+}
+
+/* Celular: o ±2 também some (o inert vem do JS, pelo matchMedia). */
+@media (max-width: 767.98px) {
+  .catalogo[data-js="true"] .catalogo__cartao:is([data-pos="2"], [data-pos="-2"]) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* Troca no coverflow (§7): 800 ms; com movimento reduzido, instantânea. */
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo[data-js="true"] .catalogo__cartao {
+    transition:
+      transform 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      opacity 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      filter 800ms cubic-bezier(0.25, 1, 0.5, 1),
+      visibility 800ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+}
+
+.catalogo__superficie {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-900);
+  box-shadow: var(--shadow-float);
+}
+
+/* A entrada da seção anima este invólucro (o cartão já tem o transform do
+   data-pos); a superfície ocupa o cartão inteiro. */
+.catalogo[data-js="true"] :is(.catalogo__entrada, .catalogo__superficie) {
+  height: 100%;
+}
+
+.catalogo__arte,
+.catalogo__loop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* O loop de 5 s (§6.2) cobre a arte; o quadro 0 é igual a ela. */
+.catalogo__loop {
+  pointer-events: none;
+}
+
+/* Hover (Q9): só um contorno leve; não abre nem centraliza. */
+.catalogo[data-js="true"] .catalogo__cartao:hover .catalogo__superficie {
+  box-shadow:
+    0 0 0 1px var(--color-cyan-400),
+    var(--shadow-float);
+}
+
+/* O texto fica na metade de baixo, sobre um degradê escuro (§3.1). O
+   esmaecimento mora só no padding de cima (--info-fade): a parada opaca
+   (0,8) fica onde o texto começa, então todo o texto está sobre um véu de
+   pelo menos 0,8, com qualquer arte (WCAG 1.4.3, MASTER §3.4). O degradê
+   acompanha a rolagem (local).
+
+   A caixa nunca passa do cartão (a superfície corta o que sobra): com o
+   espaçamento de texto do 1.4.12 ou uma fonte maior (1.4.4), o texto que
+   não couber rola por dentro, em vez de sumir acima da borda, e as palavras
+   longas quebram em vez de passar da largura. */
+.catalogo__info {
+  --info-fade: var(--space-8);
+  position: absolute;
+  inset: auto 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-bottom: var(--space-5);
+  max-height: 100%;
+  overflow: hidden auto;
+  overflow-wrap: anywhere;
+  /* Uma caixa que rola não herda o touch-action do palco: sem repetir aqui,
+     o dedo para o lado sobre o texto virava rolagem (pointercancel) e não
+     trocava de produto. A rolagem de dentro passa à página no fim. */
+  touch-action: pan-y pinch-zoom;
+  padding: var(--info-fade) var(--space-5) var(--space-5);
+  background: linear-gradient(
+      to top,
+      rgb(8 18 29 / 0.94) 0%,
+      rgb(8 18 29 / 0.8) calc(100% - var(--info-fade)),
+      rgb(8 18 29 / 0) 100%
+    )
+    local;
 }
 
-.project-card__media {
+.catalogo__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A etiqueta do tipo: sem caixa-alta nem espacejamento (MASTER §4); se
+   distingue pela cor e pelo peso. */
+.catalogo__tipo {
+  color: var(--color-cyan-300);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.catalogo__nome {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.625rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.catalogo__frase {
+  margin: 0;
+  color: var(--color-navy-100);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.catalogo__ver {
+  align-self: flex-start;
+  /* Com fonte maior, o rótulo quebra em vez de passar da largura do cartão. */
+  max-width: 100%;
+  margin-top: var(--space-2);
+}
+
+/* Cartão pequeno (o celular, ~214×320 px a 360×740 e ~235×352 a 390×844,
+   ou uma tela baixa): sem isto, o texto do centro passava do cartão já no
+   tamanho padrão. Respiro, entrelinha e frase menores (14 px, o mínimo da
+   MASTER §4), para caber sem rolar; a rolagem por dentro fica para o
+   1.4.12 e a fonte maior. O palco é o contêiner (container-type: size). */
+@container (max-width: 400px) or (max-height: 465px) {
+  .catalogo__info {
+    --info-fade: var(--space-4);
+    gap: var(--space-1);
+    padding-inline: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .catalogo__meta {
+    gap: var(--space-1);
+  }
+
+  /* 18 px: "Replay para quadras" cabe numa linha no cartão de 235 px, e o
+     texto começa abaixo do botão da caixa na arte (a etiqueta, os dois selos
+     e a frase já ocupam ~2/3 do cartão). */
+  .catalogo__nome {
+    font-size: 1.125rem;
+  }
+
+  .catalogo__frase {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .catalogo__ver {
+    margin-top: 0;
+  }
+}
+
+/* Laterais (Q38): só a arte e o nome pequeno. */
+.catalogo[data-js="true"] .catalogo__cartao:not([data-pos="0"]) :is(.catalogo__meta, .catalogo__frase) {
+  display: none;
+}
+
+.catalogo[data-js="true"] .catalogo__cartao:not([data-pos="0"]) .catalogo__nome {
+  font-size: 1rem;
+}
+
+/* Com JS, o painel é outro (o <details> é o de quem está sem JS). */
+.catalogo[data-js="true"] .catalogo__ficha {
+  display: none;
+}
+
+/* Setas ‹ ›, nas laterais do palco, e bolinhas: alvos de 44 px. */
+.catalogo__seta {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background-color: rgb(8 18 29 / 0.72);
+  color: #ffffff;
+  translate: 0 -50%;
+  cursor: pointer;
+}
+
+.catalogo__seta:hover {
+  background-color: var(--color-navy-700);
+}
+
+.catalogo__seta--anterior {
+  left: 0;
+}
+
+.catalogo__seta--proxima {
+  right: 0;
+}
+
+@media (min-width: 768px) {
+  .catalogo__seta {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* As bolinhas têm 44 px quando cabem; com muitos itens numa tela estreita,
+   encolhem até 24 px de largura (WCAG 2.5.8), sem quebrar a linha. */
+.catalogo__bolinhas {
+  display: flex;
+  justify-content: center;
+}
+
+.catalogo__bolinhas button {
+  display: grid;
+  flex: 0 1 44px;
+  place-items: center;
+  min-width: 24px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.catalogo__bolinhas button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--color-navy-400);
+}
+
+/* A ativa, alongada. */
+.catalogo__bolinhas button[aria-current="true"]::before {
+  width: 22px;
+  background-color: var(--color-cyan-400);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__bolinhas button::before {
+    transition:
+      width var(--duration-base) var(--ease-standard),
+      background-color var(--duration-base) var(--ease-standard);
+  }
+}
+
+/* Estado aberto (§3.2): o coverflow sai da tela (hidden; os cartões ficam no
+   DOM pela âncora), o painel ocupa a altura que sobra no .catalogo__corpo e
+   a fita (~110 px) fica embaixo. A Visão geral cabe sem rolar (§5.3); a
+   rolagem interna do painel é só a exceção da §4: telas baixas (menos de
+   ~800 px de altura), o celular (menos de 768 px de largura, onde o vídeo
+   e o texto empilham), zoom e espaçamento de texto. */
+.catalogo__carrossel[hidden] {
+  display: none;
+}
+
+.catalogo__painel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  /* O dedo na vertical rola o painel ou a página (Review Focus 1); a pinça
+     amplia a página. */
+  touch-action: pan-y pinch-zoom;
+}
+
+/* A superfície (fundo, borda e sombra) numa camada própria: é ela que cresce
+   do cartão do centro ao abrir (layoutId, §7), sem esticar o texto. */
+.catalogo__painel-superficie {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-navy-700);
+  border-radius: var(--radius-3);
+  background-color: var(--color-navy-900);
+  box-shadow: var(--shadow-float);
+}
+
+/* O conteúdo, sobre a superfície; é aqui que o painel rola por dentro (§4).
+   Também é a referência do conteúdo que sai na troca (popLayout), e o
+   deslize dele não cria rolagem para o lado. */
+.catalogo__painel-interior {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-4) var(--space-5) var(--painel-pb);
+  overflow: hidden auto;
+  /* O Tab não deixa o foco sob a pista, na borda de baixo. */
+  scroll-padding-block-end: var(--pista-altura);
+  --painel-pb: var(--space-4);
+  --pista-altura: 24px;
+}
+
+/* Pista de rolagem (§4, exceção): quando o painel rola por dentro, a borda
+   de baixo esmaece para a cor do painel, sinal de que há mais conteúdo; no
+   fim da rolagem, ela some. É uma camada colada embaixo (sticky), que não
+   ocupa lugar (a margem negativa desconta a altura e o gap) nem recebe o
+   clique. O sticky do Chromium prende na borda do conteúdo, sem o padding de
+   baixo: o bottom negativo desconta o padding e cola a pista na borda visível
+   do painel, por dentro do 1 px da borda da superfície (o interior passa por
+   baixo dela, e a pista opaca a apagaria). O degradê é quase todo leve (até
+   0,15: o texto inteiro na tela fica acima de 4,5:1, mesmo o navy-300) e só
+   escurece de fato nos últimos 8 px, onde a linha já está cortada pela
+   borda. A opacidade segue a rolagem
+   (animation-timeline): sem rolagem, a linha do tempo fica inativa e vale o
+   0 de base. Não anima com o tempo, então é igual com movimento reduzido. */
+.catalogo__painel-interior::after {
+  content: "";
+  position: sticky;
+  bottom: calc(1px - var(--painel-pb));
+  flex: none;
+  height: var(--pista-altura);
+  margin-top: calc(-1 * (var(--space-3) + var(--pista-altura)));
+  background: linear-gradient(
+    to bottom,
+    rgb(14 28 43 / 0),
+    rgb(14 28 43 / 0.15) calc(100% - 8px),
+    var(--color-navy-900)
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .catalogo__painel-interior::after {
+    animation: catalogo-pista linear both;
+    animation-timeline: scroll(nearest block);
+  }
+}
+
+@keyframes catalogo-pista {
+  0%,
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Sem animation-timeline (Firefox): a camada fica sempre, mas no lugar do
+   padding de baixo, que ela substitui: no fim da rolagem cobre só o vazio. */
+@supports not (animation-timeline: scroll()) {
+  .catalogo__painel-interior {
+    --painel-pb: 0px;
+    --pista-altura: var(--space-4);
+  }
+
+  .catalogo__painel-interior::after {
+    margin-top: calc(-1 * var(--space-3));
+    opacity: 1;
+  }
+}
+
+.catalogo__painel-cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+
+.catalogo__painel-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.catalogo__painel-nome {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.375rem, 1.1rem + 1vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.catalogo__painel-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.catalogo__painel-site {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  color: var(--link);
+  font-weight: 600;
+}
+
+.catalogo__painel-site:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__painel-seta,
+.catalogo__fechar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.catalogo__painel-seta:hover,
+.catalogo__fechar:hover,
+.catalogo__tela-seta:hover {
+  background-color: var(--outline-hover);
+}
+
+/* Abas (§8.3): a ativa sublinhada em ciano; alvos de 44 px. */
+.catalogo__abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.catalogo__aba {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalogo__aba:hover {
+  color: var(--text);
+}
+
+.catalogo__aba[aria-selected="true"] {
+  border-bottom-color: var(--color-cyan-400);
+  color: var(--text);
+}
+
+/* Celular: as três abas numa linha só. */
+@media (max-width: 767.98px) {
+  .catalogo__painel-interior {
+    padding-inline: var(--space-4);
+  }
+
+  .catalogo__abas {
+    gap: 0;
+  }
+
+  .catalogo__aba {
+    padding: 0 var(--space-2);
+    font-size: 0.875rem;
+  }
+}
+
+.catalogo__aba-conteudo[hidden] {
+  display: none;
+}
+
+/* Visão geral: o vídeo (ou a arte) à esquerda e o texto à direita. */
+.catalogo__aba-conteudo--visao {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+/* A partir de 768 px, a mídia fica com 4/9 da largura e, como a altura da
+   seção é fixa (§4), também com um teto de altura: o que sobra da seção
+   (clamp da §4) depois do filtro, cabeçalho, abas, fita e espaços (~364 px)
+   e da legenda do vídeo embaixo (~78 px), passado para a largura em 16:9.
+   Assim a Visão geral cabe sem rolar de 1280×800 para cima. */
+@media (min-width: 768px) {
+  .catalogo__aba-conteudo--visao {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
+    gap: var(--space-6);
+  }
+
+  .catalogo__painel-midia {
+    width: 100%;
+    max-width: calc((clamp(600px, 80svh, 860px) - 442px) * 16 / 9);
+  }
+}
+
+/* No painel, o texto mais junto: a Visão geral cabe sem rolar (§4). */
+.catalogo__painel .catalogo__visao {
+  gap: var(--space-2);
+}
+
+.catalogo__painel .catalogo__beneficios {
+  gap: 2px;
+}
+
+.catalogo__painel-midia {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  border-radius: var(--radius-2);
   background-color: #000000;
+  box-shadow: var(--shadow-screen);
 }
 
-.project-card__play {
+/* A arte dos inventados não é tela: sem a luz embaixo, que sem vídeo e sem
+   legenda parecia uma segunda caixa (§5.4). */
+.catalogo__painel-midia--arte {
+  box-shadow: none;
+}
+
+.catalogo__painel-arte {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A coluna da mídia: o vídeo (ou a arte) e, embaixo, a legenda e a
+   descrição do vídeo, recolhida (a alternativa em texto, WCAG 1.2.1). */
+.catalogo__painel-coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.catalogo__video-texto summary {
+  width: fit-content;
+  margin-top: var(--space-1);
+  padding-block: 2px;
+  border-radius: var(--radius-1);
+  color: var(--link);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.catalogo__video-texto summary:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__video-texto details p {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Vídeo de demonstração (VideoDemo): o pôster com "Assistir" e, no clique,
+   o player no mesmo lugar. A moldura corta o que passa da borda: o contorno
+   de foco é desenhado para dentro (2.4.7), como no <video>. */
+.video-demo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  container-type: inline-size;
+}
+
+.video-demo__play {
   position: absolute;
   inset: 0;
   display: block;
@@ -1657,83 +2586,465 @@ video:focus-visible {
   cursor: pointer;
 }
 
-.project-card__play img {
-  width: 100%;
-  height: 100%;
+.video-demo__play:focus-visible {
+  outline-offset: -3px;
+}
+
+.video-demo__play img {
   object-fit: cover;
 }
 
-.project-card__play-icon {
+/* O "Assistir" fica num canto de baixo (à esquerda, ou à direita com
+   `playCorner`), fora do texto desenhado no pôster. O contorno branco separa
+   o botão de qualquer pôster: o electric-700 sozinho fica abaixo de 3:1 sobre
+   o escuro (1.4.11). O alvo é o pôster inteiro (o botão), não o ícone. No
+   Rota de Vendas, embaixo das etiquetas Clientes, Pedidos e Rotas sobram
+   só 30% da altura do pôster: o ícone tem 36 px, a 6 px da borda, no pôster
+   pequeno (270 a 318 px de largura no painel), e 56 px, a 16 px da borda,
+   a partir de 440 px (abaixo disso, os 56 px encostariam nas etiquetas). */
+.video-demo__icone {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  bottom: 6px;
+  left: 6px;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #ffffff;
   border-radius: var(--radius-2);
   background-color: var(--color-electric-700);
   color: #ffffff;
-  transform: translate(-50%, -50%);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
-.project-card__play:hover .project-card__play-icon {
+.video-demo__icone--direita {
+  right: 6px;
+  left: auto;
+}
+
+.video-demo__icone svg {
+  width: 16px;
+  height: 16px;
+}
+
+@container (min-width: 440px) {
+  .video-demo__icone {
+    bottom: var(--space-4);
+    left: var(--space-4);
+    width: 56px;
+    height: 56px;
+  }
+
+  .video-demo__icone--direita {
+    right: var(--space-4);
+    left: auto;
+  }
+
+  .video-demo__icone svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.video-demo__play:hover .video-demo__icone {
   background-color: var(--color-electric-800);
 }
 
-.project-card__body {
-  padding: var(--space-4) 20px 0;
+.video-demo__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000000;
 }
 
-.project-card__summary {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 1rem;
+/* Telas no painel: uma por vez, centrada, na altura que o painel deixa. */
+.catalogo__painel .catalogo__telas {
+  align-items: center;
 }
 
-/*
- * Cartão largo (MASTER §8.8): quando a grade tem um cartão só, a partir de
- * 1024 px ele ocupa a largura da parede com o pôster (colunas 1–7) ao lado
- * do texto (8–12), em vez de um pôster 16:9 de 1200 px que competiria com o
- * destaque. O pôster fica centrado na altura do texto; o player ocupa o
- * mesmo lugar dele. Abaixo de 1024 px ele empilha como os outros (a 768, lado
- * a lado, o pôster ficava com 344 px e faixas vazias em cima e embaixo).
- */
-.project-card--wide .project-card__summary {
-  max-width: 60ch;
+.catalogo__painel .catalogo__telas-lista {
+  justify-content: center;
+  overflow: visible;
 }
 
-@media (min-width: 1024px) {
-  .project-card--wide {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    align-items: center;
-    gap: 0;
-    padding-bottom: 0;
-  }
-
-  .project-card--wide .project-card__body {
-    max-width: 30rem;
-    padding: var(--space-5) var(--space-7) var(--space-5) var(--space-6);
-  }
+.catalogo__painel .catalogo__tela img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: clamp(180px, 38svh, 340px);
 }
 
-.tags {
+/* Fita de miniaturas (§3.2): mini-cartões de ~64×86 px, com o nome sobre
+   um degradê escuro na parte de baixo da arte, como nos cartões. As margens
+   automáticas centram poucos itens sem cortar os muitos; o padding deixa o
+   contorno de foco inteiro (a rolagem corta o que passa da borda). */
+/* Na entrada, as miniaturas descem de cima (§7): o que passa da borda de
+   cima não vira rolagem. */
+.catalogo__fita {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
   gap: var(--space-2);
-  margin: var(--space-3) 0 0;
+  padding: 6px;
+  overflow: auto hidden;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalogo__fita {
+    scroll-behavior: smooth;
+  }
+}
+
+.catalogo__miniatura {
+  position: relative;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 86px;
   padding: 0;
+  border: 0;
+  border-radius: var(--radius-2);
+  background-color: var(--color-navy-900);
+  color: var(--color-navy-100);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.catalogo__miniatura:first-child {
+  margin-left: auto;
+}
+
+.catalogo__miniatura:last-child {
+  margin-right: auto;
+}
+
+.catalogo__miniatura-arte {
+  display: block;
+  width: 64px;
+  height: 86px;
+  border-radius: var(--radius-2);
+  object-fit: cover;
+  opacity: 0.7;
+}
+
+.catalogo__miniatura:hover .catalogo__miniatura-arte {
+  opacity: 1;
+}
+
+.catalogo__miniatura-nome {
+  position: absolute;
+  inset: auto 0 0;
+  display: block;
+  padding: 14px 0 4px;
+  border-radius: 0 0 var(--radius-2) var(--radius-2);
+  background: linear-gradient(to top, rgb(8 18 29 / 0.94) 0%, rgb(8 18 29 / 0.82) 60%, rgb(8 18 29 / 0) 100%);
+}
+
+/* Exatamente 2 linhas: o corte é na caixa sem padding em cima e embaixo, e a
+   altura máxima casa com a entrelinha (a 3ª linha não aparece embaixo da
+   reticência). A entrelinha de 1,25 deixa os descendentes da 2ª linha
+   inteiros. O padding dos lados fica aqui, e não no nome, para a reticência
+   caber na caixa do corte: o Chromium centra a 2ª linha sem contar a
+   reticência (11 px) e a põe depois, então ela passa da borda do texto em até
+   metade da largura dela (5,5 px). Os 6 px ficam à direita: a largura do
+   texto (58 px, as mesmas quebras de antes) e os três pontos inteiros. */
+.catalogo__miniatura-texto {
+  display: -webkit-box;
+  max-height: calc(2 * 1lh);
+  padding-inline: 0 6px;
+  overflow: hidden;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* O ativo: contorno elétrico e o nome em destaque. */
+.catalogo__miniatura[aria-current="true"] {
+  color: #ffffff;
+}
+
+.catalogo__miniatura[aria-current="true"] .catalogo__miniatura-arte {
+  outline: 2px solid var(--color-electric-500);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+/* Telas muito baixas (paisagem de celular, zoom, 1.4.12): a acessibilidade
+   vence a altura constante (§4); a seção cresce. */
+@media (max-height: 34em) {
+  .catalogo[data-js="true"] .catalogo__corpo {
+    height: auto;
+  }
+
+  .catalogo[data-js="false"] .catalogo__corpo {
+    min-height: 0;
+  }
+
+  .catalogo[data-js="true"] .catalogo__cena {
+    flex: none;
+    height: clamp(18rem, 85svh, 26rem);
+  }
+}
+
+/* Sem JS (§8.5): fileira com rolagem para o lado e scroll-snap, sem 3D; os
+   controles que dependem de JS ficam escondidos. */
+.catalogo[data-js="false"] .catalogo__cena {
+  flex: none;
+}
+
+.catalogo[data-js="false"] .catalogo__palco {
+  position: static;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  container-type: normal;
+  perspective: none;
+}
+
+.catalogo[data-js="false"] .catalogo__cartao {
+  flex: 0 0 min(80%, 300px);
+  scroll-snap-align: start;
+}
+
+.catalogo[data-js="false"] :is(.catalogo__filtro, .catalogo__seta, .catalogo__bolinhas, .catalogo__ver) {
+  display: none;
+}
+
+/* O conteúdo do produto (§3.2): no <details> sem JS e, depois, no painel. */
+.catalogo__ficha summary {
+  width: fit-content;
+  padding-block: 10px;
+  color: var(--link);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalogo__ficha summary:hover {
+  color: var(--link-hover);
+}
+
+.catalogo__ficha-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+.catalogo__visao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.catalogo__subtitulo {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 640;
+}
+
+.catalogo__para-quem,
+.catalogo__ficha-video,
+.catalogo__site {
+  margin: 0;
+}
+
+.catalogo__beneficios {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.catalogo__saber-mais {
+  align-self: flex-start;
+}
+
+.catalogo__passos {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.catalogo__passo-titulo {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.catalogo__passo-texto {
+  margin: var(--space-1) 0 0;
+}
+
+.catalogo__telas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.catalogo__telas-lista {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
   list-style: none;
 }
 
-.tags > li {
-  padding: 2px 10px;
-  border: 1px solid var(--color-navy-600);
-  border-radius: var(--radius-1);
-  color: var(--text-muted);
-  font-size: 0.875rem;
+.catalogo__tela {
+  flex: 0 0 auto;
+}
+
+.catalogo__tela[hidden] {
+  display: none;
+}
+
+.catalogo__tela--celular img {
+  width: 120px;
+  height: auto;
+}
+
+.catalogo__tela--navegador img {
+  width: 240px;
+  height: auto;
+}
+
+/* Molduras das telas (§3.2): o celular com a borda arredondada e o
+   navegador com a barra de cima e os três pontos. */
+.catalogo__tela img {
+  display: block;
+}
+
+.catalogo__tela--celular img {
+  border: 6px solid var(--color-navy-700);
+  border-radius: 22px;
+  background-color: var(--color-navy-950);
+}
+
+.catalogo__tela--navegador {
+  padding-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--color-navy-700);
+  border-radius: var(--radius-2);
+  background:
+    radial-gradient(circle at 10px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    radial-gradient(circle at 22px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    radial-gradient(circle at 34px 9px, var(--color-navy-400) 3px, transparent 3.5px),
+    var(--color-navy-700);
+}
+
+.catalogo__telas-setas {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.catalogo__tela-seta {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--outline-border);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Cores forçadas (§8.7), como no conserto A11Y-2 do hero: setas, pílulas e
+   bolinhas nas cores de sistema do botão, foco e ativo em Highlight, e o
+   contorno do cartão do centro em CanvasText. */
+@media (forced-colors: active) {
+  .catalogo__seta,
+  .catalogo__seta:hover,
+  .catalogo__tela-seta,
+  .catalogo__tela-seta:hover,
+  .catalogo__painel-seta,
+  .catalogo__painel-seta:hover,
+  .catalogo__fechar,
+  .catalogo__fechar:hover,
+  .catalogo__filtro button,
+  .catalogo__filtro button:hover {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  .catalogo__filtro button[aria-pressed="true"] {
+    border-color: Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .catalogo__bolinhas button {
+    forced-color-adjust: none;
+  }
+
+  .catalogo__bolinhas button::before {
+    background-color: ButtonText;
+  }
+
+  .catalogo__bolinhas button[aria-current="true"]::before {
+    background-color: Highlight;
+  }
+
+  .catalogo :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .catalogo[data-js="true"] .catalogo__cartao[data-pos="0"] .catalogo__superficie {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+
+  /* Painel aberto: a borda do painel, a aba ativa e a miniatura ativa. A
+     ativa e a com o mouse entram aqui também: fora do bloco, as regras delas
+     (0,2,0) pintariam o texto de branco sobre o Canvas. */
+  .catalogo__painel-superficie {
+    border-color: CanvasText;
+  }
+
+  .catalogo__fundo {
+    display: none;
+  }
+
+  .catalogo__aba,
+  .catalogo__aba:hover,
+  .catalogo__aba[aria-selected="true"] {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .catalogo__aba[aria-selected="true"] {
+    border-bottom-color: Highlight;
+  }
+
+  .catalogo__miniatura[aria-current="true"] .catalogo__miniatura-arte {
+    outline-color: Highlight;
+  }
+
+  /* A pista de rolagem esmaece para o Canvas, que é o fundo do painel aqui
+     (sem isto, o degradê sairia, e a pista com ele), com o mesmo perfil. */
+  .catalogo__painel-interior::after {
+    forced-color-adjust: none;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, Canvas 15%, transparent) calc(100% - 8px),
+      Canvas
+    );
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -2358,32 +3669,6 @@ textarea.field__input {
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-5);
-}
-
-/* Aplicativos: a tela do app no lugar do objeto, no palco (MASTER §8.13). O
-   palco é o topo do cartão (rente às bordas dele, como era o pôster) e deixa
-   uma moldura em volta da tela, onde aparecem a luz de estúdio e o contorno
-   ciano do chão; mais folga embaixo, no chão. A tela continua 16:9, então o
-   pôster e o vídeo ficam inteiros. */
-.project-card__palco {
-  padding: clamp(12px, 5%, var(--space-6)) clamp(12px, 5%, var(--space-6)) clamp(18px, 8%, var(--space-7));
-  border-radius: 0;
-}
-
-.project-card__palco .project-card__media {
-  border-radius: var(--radius-2);
-  box-shadow: var(--shadow-screen);
-}
-
-/* Sem o título "Outros projetos", a grade vem logo depois do .section-head:
-   o respiro é o dele (48 px), não os 96 px do portfólio antigo. */
-.aplicativos .portfolio__more {
-  margin-top: 0;
-}
-
-/* Selo acima do nome do app, sem encostar no título. */
-.project-card__body .selo {
-  margin-bottom: var(--space-3);
 }
 
 .chamada {
@@ -3223,39 +4508,4 @@ textarea.field__input {
 .hero-estudio__link:hover {
   color: var(--link-hover, #ffffff);
   text-decoration-thickness: 2px;
-}
-
-/* PRÉVIA v2.2 [S1-B]: Produtos, uma seção com os 3 cartões na parede (MASTER §5.2). */
-.produtos-secao .project-card {
-  scroll-margin-top: calc(var(--topbar-height) + var(--topbar-joint) + 16px);
-}
-
-.project-card__selos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.project-card__body .project-card__selos .selo {
-  margin-bottom: 0;
-}
-
-.project-card__cta {
-  margin-top: var(--space-4);
-}
-
-/* De 768 a 1023: o replay ocupa a linha de cima (palco ao lado do texto) e os 2 apps vêm embaixo. */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .produtos-secao .wall--3 > .project-card:first-child {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    align-items: center;
-    padding-bottom: 0;
-  }
-
-  .produtos-secao .wall--3 > .project-card:first-child .project-card__body {
-    padding: var(--space-5);
-  }
 }
