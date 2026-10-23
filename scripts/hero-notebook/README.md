@@ -152,10 +152,20 @@ node sondas.js --em-pe cur/media-retrato.png cur/portrait.png [390x844 360x740 3
   - O abajur fica baixo e com a poça em gaussiana (`lamp.gauss`, `[sigma, saia]` em graus): o centro no suporte, e as
     laterais do corte de 390 × 844 caem ao menos 30% (o `cena.test.ts` confere com o `corDaMesa`). O veio da mesa em pé
     (`veio`) varia o espaçamento e o contraste das faixas.
-  - Os montantes em pé têm 7 cm (`MONT_EM_PE`), com a face lateral clara e a quina do lado da cidade acesa (`montante`).
+  - Os montantes em pé têm 7 cm (`MONT_EM_PE`).
   - A cidade em pé (`bokehCol`): as janelas acesas e os discos desfocados ficam nas prumadas das torres
     (`janelasAcesas`, `discosDaCidade`), com tamanhos por coluna, até 4 discos por coluna e nenhum sobre um montante.
-  - A caixa do Replay escapa em parte do desfoque do fundo (o 4º número do `desfoque`, 0,45).
+- Em pé, ajuste de arte 2 (crítica da N3, rodada 2):
+  - A caixa do Replay, o objeto mais distante, fica no desfoque do fundo como o resto (nada escapa do `desfoque`: com a
+    máscara própria da rodada 1 ela saía mais nítida que o notebook e parecia colada por cima). A leitura vem da luz:
+    o LED aceso por inteiro (`ledK: 1`) com o halo maior e um reflexo da janela no alto da bola (`caixaLuz`).
+  - Os montantes (`coresDoMontante`) ficam um tom abaixo do vidro ao lado, como a esquadria da referência: a face da
+    frente entre o navy-950 e o 900, a lateral perto do 900 e só uma quina fina do lado da cidade (alfa 0,13).
+  - O brilho frio do celular (`brilhoDoCelular`) é fraco, com ~1,2× a largura do corpo, colado à frente do vazio, e o
+    núcleo morre em ~40 px de mídia: sobre a poça quente, é só um toque frio.
+  - A caneca vem mais perto e mais baixa (z 9, 8,2 cm), para a boca aparecer como uma elipse fina com o aro claro
+    (`boca`), com a cerâmica no navy-700 dessaturado da referência (`alb`). O brilho da tela do notebook na mesa e a
+    linha de oclusão dele passam atrás dela (`screenGlow`, em pé).
 
 ## 4. Instalar
 

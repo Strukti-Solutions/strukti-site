@@ -63,6 +63,8 @@ type Cena = {
   corDaMesa: (p: Vec) => Vec;
   discosDaCidade: (cam: Camera, o: object) => { p: [number, number]; r: number; torre: boolean; coluna: string }[];
   brilhoDaTela: (L: { x: number; z: number; w: number; d: number }) => { centro: Vec; semiZ: number };
+  brilhoDoCelular: (c: object) => { centro: Vec; semiX: number; semiZ: number; a: number };
+  coresDoMontante: (o: object) => { frente: Vec; lado: Vec; quina: [Vec, number] };
   shadowPt: (L: Vec, p: Vec, maxK?: number) => Vec;
   telaDoNotebook: (cam: string) => Tela;
   telaDoCelular: (cam: string) => Tela;
@@ -515,6 +517,62 @@ describe("cena do hero notebook", () => {
         const rs = discos.map((d) => d.r);
         expect(Math.max(...rs) / Math.min(...rs)).toBeGreaterThanOrEqual(2.5);
       }
+    });
+
+    // Ajuste de arte 2 (crítica da N3, rodada 2)
+    it("a caixa do Replay fica no desfoque da profundidade dela, e a leitura vem da luz: LED mais forte e reflexo na bola", () => {
+      for (const which of ["mediaRetrato", "portrait"] as const) {
+        const o = cena.CAMS[which] as { desfoque: number[]; ledK?: number; caixaLuz?: { halo: number; spec: number } };
+        // a caixa (z 55, o objeto mais distante) não escapa do desfoque: nada fica mais nítido que o notebook (z 29)
+        expect(o.desfoque[3] ?? 0).toBe(0);
+        // o LED acende mais que o padrão (0,82) e o halo dele cresce, e a bola tem um reflexo: desfocados, viram pontos de luz
+        expect(o.ledK).toBeGreaterThanOrEqual(0.95);
+        expect(o.caixaLuz?.halo).toBeGreaterThan(1);
+        expect(o.caixaLuz?.spec).toBeGreaterThan(0);
+      }
+    });
+
+    it("os montantes em pé ficam um tom abaixo do vidro ao lado, com só uma quina discreta do lado da cidade", () => {
+      const m = cena.coresDoMontante({ montante: true });
+      // o vidro ao lado dos montantes, na mídia em pé, mede ~rgb(13, 25, 37) (L ~23); o navy-900 é L ~26
+      const n900: Vec = [14, 28, 43];
+      expect(lum(m.frente)).toBeLessThan(22);
+      expect(lum(m.lado)).toBeLessThanOrEqual(lum(n900));
+      expect(m.quina[1]).toBeLessThanOrEqual(0.15);
+    });
+
+    it("o brilho frio da tela do celular: ~1× a largura do corpo, colado à frente do vazio, morre em ~40 px e é fraco", () => {
+      const o = { ...cena.CAMS.mediaRetrato } as Record<string, unknown>;
+      const w = cena.prepWorld(o) as unknown as MundoEmPe & {
+        celular: { w: number; suporte: { d: number } };
+      };
+      const cam = cena.makeCam(o);
+      const c = w.celular;
+      const b = cena.brilhoDoCelular(c);
+      // a frente do vazio: a chapa (centro em z + d/2 - 2), crescida `cresce` vezes
+      const zc = c.z + c.suporte.d / 2 - 2.0;
+      const frente = zc - (c.suporte.d / 2) * (cena.CAMS.mediaRetrato!.vazio!.cresce);
+      expect((2 * b.semiX) / c.w).toBeGreaterThanOrEqual(0.9);
+      expect((2 * b.semiX) / c.w).toBeLessThanOrEqual(1.5);
+      // começa colado à frente do vazio (a parte de trás encosta nele) e morre em ~40 px de mídia (o núcleo, ~2/3 do raio)
+      expect(b.centro[2] + b.semiZ).toBeGreaterThanOrEqual(frente);
+      expect(b.centro[2]).toBeLessThan(frente);
+      const yFrente = cam.P([c.x, 0, frente])[1];
+      const yFim = cam.P([c.x, 0, b.centro[2] - b.semiZ * 0.67])[1];
+      expect(yFim - yFrente).toBeLessThanOrEqual(45);
+      // fraco: metade do brilho da tela do notebook, no máximo (a tela mostra uma página navy)
+      expect(b.a).toBeLessThanOrEqual(0.12);
+    });
+
+    it("a boca da caneca aparece na mídia em pé: a elipse tem ao menos 22 px de altura e um aro claro", () => {
+      const { w, cam } = quadroEmPe("mediaRetrato");
+      const m = w.mug as Caneca & { boca?: { aro: number } };
+      const ys = Array.from({ length: 64 }, (_, i) => {
+        const a = (i / 64) * Math.PI * 2;
+        return cam.P([m.x + m.r * Math.cos(a), m.h, m.z + m.r * Math.sin(a)])[1];
+      });
+      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThanOrEqual(22);
+      expect(m.boca?.aro).toBeGreaterThan(0);
     });
   });
 

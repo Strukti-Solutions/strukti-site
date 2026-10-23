@@ -114,13 +114,16 @@
     celular: { x: 3, z: -8, tilt: 0, w: 7.1, sw: 6.5, sh: 6.5 * 844 / 390, top: 0.36, chin: 0.36, t: 0.85, r: 0.95, apoio: 1.4,
       suporte: { w: 7.8, d: 7.4, h: 0.55, r: 1.1, lip: 0.9 } },
     box: { x: -20, z: 55, rot: -14, w: 9.6, d: 4.6, h: 13, r: 1.25 },
-    mug: { x: 15, z: 13, r: 3.8, h: 8.8, alca: -30 },
+    // A caneca (ajuste de arte 2): mais perto e um pouco mais baixa, para a câmera (na altura da tela do celular) ver a boca
+    // como uma elipse fina com o aro claro (`boca.aro`, o alfa do aro); `alb`: a cerâmica puxada para o navy-700 dessaturado
+    // da caneca de referência (só com a luz ambiente fria, a cerâmica do deitado saía azul saturada).
+    mug: { x: 15, z: 9, r: 3.8, h: 8.2, alca: -30, alb: [48, 58, 70], boca: { aro: 0.3 } },
     // O abajur, fora do quadro à esquerda, baixo e fechado (ajuste de arte 1): a poça é localizada, com o centro no suporte, e
     // cai para o escuro nas laterais do corte de 390 x 844 (o cena.test.ts confere). A sombra longa vai para a direita.
     lamp: { base: [-100, 0, 20], elbow: [-108, 44, 24], head: [-16, 50, -10], target: [3, 0, -6.5], k: 0.8, gauss: [6.5, 30], sw: 0.05, cutZ: [-26, -12, 2, 24] }
   };
   // Os montantes em pé (ajuste de arte 1): 7 cm, a esquadria grossa do fundo de referência (com 3 cm, de frente e sobre as
-  // torres escuras, liam como cabos pendurados). `montante` na câmera: a face lateral pega a luz da cidade, com a quina clara.
+  // torres escuras, liam como cabos pendurados). `montante` na câmera: as cores de `coresDoMontante`.
   const MONT_EM_PE = [[-28, -21], [27, 34]];
   const CAMS = {
     // bg: a mesma direção da câmera media, mais aberta: o notebook fica atrás do cartão de 300 x 400 em P = 0 (a 1440x900, a tela
@@ -147,7 +150,10 @@
     // (`desfoque`: [z nítido, z desfocado, px], a mesa nítida na frente e o fundo desfocado atrás). pos e alvo: ver abaixo.
     mediaRetrato: { W: 720, H: 1280, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.8,
       bloom: 0, lampGlow: 0, grain: 5, lampBody: false, cone: false, titleBand: [540, 760, 0.6], bottomFade: [0.88, 0.97, 1.0, 0.5, 0.72],
-      semAparelho: true, aparelho: 'celular', desfoque: [10, 22, 5, 0.45],
+      semAparelho: true, aparelho: 'celular', desfoque: [10, 22, 5],
+      // a caixa do Replay (ajuste de arte 2) fica no desfoque da profundidade dela; a leitura vem da luz: o LED aceso por
+      // inteiro, com o halo maior, e um reflexo na bola (`caixaLuz`). Desfocados, viram pontos de luz, como os discos da cidade.
+      ledK: 1, caixaLuz: { halo: 1.8, spec: 0.85 },
       // o lugar vazio do suporte (ajuste de arte 1): sombra difusa, 15% maior que a chapa, borda de ~20 px, sem linha de contato
       vazio: { cresce: 1.15, transicao: 20, contato: false, a: 0.85 },
       veio: true, montante: true, bokehCol: [0.5, 0.8],
@@ -157,7 +163,7 @@
     // renderizado. F e shiftY: ver abaixo (a tela do celular do fundo fica atrás da do cartão a 390 x 844).
     portrait: { W: 1080, H: 1920, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.82,
       bloom: 0.25, lampGlow: 0, grain: 5, lampBody: false, cone: false, bottomFade: [0.8, 0.95, 1.0, 0.4, 0.62],
-      aparelho: 'celular', desfoque: [10, 22, 5, 0.45], veio: true, montante: true, bokehCol: [0.5, 0.8],
+      aparelho: 'celular', desfoque: [10, 22, 5], ledK: 1, caixaLuz: { halo: 1.8, spec: 0.85 }, veio: true, montante: true, bokehCol: [0.5, 0.8],
       world: Object.assign({ win: { mull: MONT_EM_PE } }, PT_WORLD),
       towers: [[-46, -7.5, 41, 1], [-7.5, -3.6, 12, 0], [4.2, 8, 14, 0], [8, 46, 46, 1]], centre: [-3.6, 4.2, -6] }
   };
@@ -482,6 +488,14 @@
     return cv;
   }
 
+  // As cores dos montantes em pé (ajuste de arte 2). Como no fundo de referência, a esquadria fica mais escura que o vidro:
+  // a face da frente um tom abaixo do vidro ao lado (que, em pé, tem as torres escuras atrás, ~rgb(13, 25, 37)), a lateral
+  // perto do navy-900 e só uma quina fina do lado da cidade, com alfa até 0,15. Sem `montante`, null (o deitado não muda).
+  function coresDoMontante(o) {
+    if (!o.montante) return null;
+    return { frente: mix(C.n950, C.n900, 0.45), lado: mix(C.n950, C.n900, 0.85),
+      quina: [mix(C.n400, C.n300, 0.4), 0.13], escura: [C.edge, 0.45] };
+  }
   // O x de cada montante no quadro, em função da altura y (a aresta vertical vira uma reta no quadro, levemente diagonal).
   function montantesNoQuadro(cam) {
     const z1 = W0.glassZ;
@@ -558,15 +572,16 @@
     { const a1 = P([w.x0, w.y0 + rl, fz]), a2 = P([w.x1, w.y0 + rl, fz]); ctx.strokeStyle = rgba(C.n400, 0.5); ctx.lineWidth = Math.max(1, cam.S([0, 0, fz]) * 0.16); ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke(); }
     for (const [a, b] of w.mull) {
       const zf = z1 - 4.5; const side = cam.pos[0] < a ? a : b; const sn = cam.pos[0] < a ? -1 : 1;
-      // `montante` (em pé): a face lateral pega a luz da cidade e a da frente fica um tom acima das torres escuras atrás
-      face([[side, w.y0 + rl, zf], [side, w.y0 + rl, z1], [side, top, z1], [side, top, zf]], o.montante ? mix(C.n700, C.n600, 0.35) : light(fA, [side, 40, 69], [sn, 0, 0], { wk: 0 }));
-      face([[a, w.y0 + rl, zf], [b, w.y0 + rl, zf], [b, top, zf], [a, top, zf]], o.montante ? mix(C.n900, C.n800, 0.6) : frameC);
+      // `montante` (em pé): as faces um tom abaixo do vidro ao lado (`coresDoMontante`)
+      const cm = coresDoMontante(o);
+      face([[side, w.y0 + rl, zf], [side, w.y0 + rl, z1], [side, top, z1], [side, top, zf]], cm ? cm.lado : light(fA, [side, 40, 69], [sn, 0, 0], { wk: 0 }));
+      face([[a, w.y0 + rl, zf], [b, w.y0 + rl, zf], [b, top, zf], [a, top, zf]], cm ? cm.frente : frameC);
       const linha = (x, col, lw) => { const e1 = P([x, w.y0 + rl, zf]), e2 = P([x, top, zf]); if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); } };
-      if (!o.montante) linha(a, rgba(mix(C.n600, C.n300, 0.25), 0.4), Math.max(1, cam.S([a, 40, zf]) * 0.25));
+      if (!cm) linha(a, rgba(mix(C.n600, C.n300, 0.25), 0.4), Math.max(1, cam.S([a, 40, zf]) * 0.25));
       else {
-        // a quina do lado da cidade (entre a face lateral e a da frente) clara, e a outra quina escura: a esquadria tem volume
-        linha(side, rgba(mix(C.n400, C.n300, 0.4), 0.32), Math.max(1.5, cam.S([side, 40, zf]) * 0.3));
-        linha(side === a ? b : a, rgba(C.edge, 0.55), Math.max(2, cam.S([a, 40, zf]) * 0.5));
+        // só uma quina fina e discreta do lado da cidade, e a outra escura: a esquadria tem volume sem virar coluna de luz
+        linha(side, rgba(cm.quina[0], cm.quina[1]), Math.max(1, cam.S([side, 40, zf]) * 0.18));
+        linha(side === a ? b : a, rgba(cm.escura[0], cm.escura[1]), Math.max(2, cam.S([a, 40, zf]) * 0.5));
       }
     }
     // peitoril: [u0, u1, a] (frações da largura do quadro). Do trilho ao bico do peitoril, escurece até `a` de u0 a u1 e segue
@@ -703,7 +718,14 @@
   function screenGlow(ctx, cam) {
     const L = W0.laptop, k = L.glow != null ? L.glow : 1, col = GLOW_C, P = cam.P;
     const fr = frameOf({ x: L.x, z: L.z, rot: 0 }), bt = brilhoDaTela(L);
-    ctx.save();
+    // em pé, a caneca fica à frente do notebook: o brilho e a linha de oclusão (desenhados depois dos objetos) passam atrás dela
+    const naFrente = W0.celular && W0.mug ? hull(mugPts().map(P)) : null;
+    const tiraDaFrente = () => {
+      if (!naFrente) return;
+      ctx.beginPath(); ctx.rect(0, 0, cam.W, cam.H);
+      naFrente.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.clip('evenodd');
+    };
+    ctx.save(); tiraDaFrente();
     ctx.beginPath(); ctx.rect(0, 0, cam.W, cam.H);
     rrect(L.w, L.d, L.r, 6).map(([u, v]) => P(fr(u, 0, v))).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
     ctx.clip('evenodd');
@@ -711,7 +733,7 @@
     ctx.fillStyle = radial(ctx, [[0, rgba(col, GLOW_A * k)], [0.4, rgba(col, GLOW_A * 0.47 * k)], [1, rgba(col, 0)]]);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx);
     ctx.restore();
-    ctx.save(); ctx.globalCompositeOperation = 'source-over';
+    ctx.save(); ctx.globalCompositeOperation = 'source-over'; tiraDaFrente();
     const s = cam.S(fr(0, 0, -L.d / 2)), e = 6 / s, dz = 2.6 / s;
     const a1 = P(fr(-L.w / 2 - e, 0, -L.d / 2 - dz)), a2 = P(fr(L.w / 2 + e, 0, -L.d / 2 - dz));
     ctx.filter = `blur(${Math.max(1, Math.round(s * 0.1))}px)`; ctx.lineCap = 'round';
@@ -871,10 +893,17 @@
     bloco(pr.x0, pr.x1, rs.z0, rs.z1, rs.y1);
   }
   // O brilho da tela do celular na mesa, à frente do suporte (fica também na mídia em pé, sem o celular).
-  // (ajuste de arte 1: mais largo e mais forte, para ler como luz da tela sobre a mesa à frente do vazio)
-  function brilhoDoCelular(c) { return { centro: [c.x, 0.05, c.z - c.suporte.lip - 2.8], semiX: c.w * 1.25, semiZ: 4.4, a: GLOW_A * 1.0 }; }
+  // Ajuste de arte 2: a tela mostra uma página navy, então o brilho é fraco (abaixo da borda da poça quente), estreito (~1,2x
+  // o corpo, o núcleo ~1x) e curto: começa colado à frente do vazio (a chapa crescida `cresce` vezes) e o núcleo morre em
+  // ~40 px de mídia.
+  function brilhoDoCelular(c) {
+    const s = c.suporte, zc = c.z + s.d / 2 - 2.0, frente = zc - s.d / 2 * CAMS.mediaRetrato.vazio.cresce;
+    return { centro: [c.x, 0.05, frente - 0.7], semiX: c.w * 0.6, semiZ: 1.7, a: GLOW_A * 0.4 };
+  }
   // Em pé: desfoca o que está atrás do celular (a mesa do fundo, o notebook, a caixa, a caneca, a janela). A máscara é
   // vertical: nítida até a linha da mesa em z = zN, desfocada a partir da linha de z = zD (o desfoque, `px` na F 1000).
+  // Nada escapa do desfoque (ajuste de arte 2): a caixa do Replay, o objeto mais distante, não pode sair mais nítida que o
+  // notebook; a leitura dela vem da luz (`caixaLuz`).
   function desfocaFundo(ctx, cam, o) {
     const [zN, zD, px] = o.desfoque, x = W0.celular ? W0.celular.x : 0;
     const yN = cam.P([x, 0, zN])[1], yD = cam.P([x, 0, zD])[1];
@@ -882,17 +911,11 @@
     bc.filter = `blur(${Math.max(1, Math.round(px * cam.F / 1000))}px)`; bc.drawImage(ctx.canvas, 0, 0); bc.filter = 'none';
     bc.globalCompositeOperation = 'destination-in';
     bc.fillStyle = lin(bc, [0, yD], [0, yN], [[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]); bc.fillRect(0, 0, cam.W, cam.H);
-    // o 4º número: quanto a caixa do Replay (o hardware da cena) escapa do desfoque, numa máscara macia em volta dela
-    if (o.desfoque[3] && W0.box) {
-      bc.globalCompositeOperation = 'destination-out'; bc.globalAlpha = o.desfoque[3]; bc.fillStyle = 'rgb(0,0,0)';
-      bc.filter = `blur(${Math.max(1, Math.round(px * cam.F / 1000))}px)`; path(bc, hull(boxPts().map(cam.P))); bc.fill();
-      bc.filter = 'none'; bc.globalAlpha = 1;
-    }
     ctx.drawImage(b, 0, 0);
   }
 
   // Replay box, modelled on the real render: dark rounded body, blue cap, four screws, light-grey hexagon, teal LED bar.
-  function drawBox(ctx, cam) {
+  function drawBox(ctx, cam, o) {
     const b = W0.box; if (!b) return null; const fr = frameOf(b), P = cam.P, hd = b.d / 2;
     const t = b.rot * Math.PI / 180, ua = [Math.cos(t), 0, Math.sin(t)], va = [-Math.sin(t), 0, Math.cos(t)];
     const outl = rrect(b.w, b.h, b.r, 8);
@@ -941,6 +964,12 @@
       ctx.lineWidth = 0.55; ctx.strokeStyle = rgba(C.n100, 0.07); ctx.beginPath(); ctx.arc(0, 0, 2.2, Math.PI * 0.58, Math.PI * 0.95); ctx.stroke();
       ctx.lineWidth = 0.2; ctx.strokeStyle = rgba(C.n100, 0.18); ctx.beginPath(); ctx.arc(0, 0, 2.25, Math.PI * 0.62, Math.PI * 0.9); ctx.stroke();
       ctx.lineWidth = 0.12; ctx.strokeStyle = rgba(C.e400, 0.25); ctx.beginPath(); ctx.arc(0, 0, 2.85, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      // em pé (`caixaLuz.spec`): um reflexo da janela no alto da bola, que desfocado vira um ponto de luz reconhecível
+      if (o && o.caixaLuz && o.caixaLuz.spec) {
+        const sp = ctx.createRadialGradient(-0.9, 1.0, 0, -0.9, 1.0, 1.3);
+        sp.addColorStop(0, rgba(C.n100, o.caixaLuz.spec)); sp.addColorStop(0.4, rgba(C.n200, o.caixaLuz.spec * 0.55)); sp.addColorStop(1, rgba(C.n200, 0));
+        ctx.beginPath(); ctx.arc(-0.9, 1.0, 1.3, 0, 7); ctx.fillStyle = sp; ctx.fill();
+      }
       ID(ctx); }
     // LED bar, unlit body (the emission is a separate pass)
     const ledPts = rrect(2.8, 0.42, 0.21, 4).map(([s, h]) => P(F(s, 1.95 + h)));
@@ -951,7 +980,7 @@
   function drawMug(ctx, cam) {
     const m = W0.mug; if (!m) return null; const P = cam.P, N = 72;
     const ring = (h, r) => { const a = []; for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2; a.push(P([m.x + r * Math.cos(t), h, m.z + r * Math.sin(t)])); } return a; };
-    const alb = [34, 50, 72];                  // matte navy-700 ceramic: recedes
+    const alb = m.alb || [34, 50, 72];         // matte navy-700 ceramic: recedes
     const hAng = (m.alca != null ? m.alca : -40) * Math.PI / 180, hd = [Math.cos(hAng), 0, Math.sin(hAng)];
     const hc = [m.x + hd[0] * (m.r + 1.3), m.h * 0.56, m.z + hd[2] * (m.r + 1.3)];
     const handle = () => {
@@ -979,6 +1008,11 @@
     const cof = ring(m.h - 1.3, m.r * 0.9); path(ctx, cof); ctx.fillStyle = rgba([16, 14, 14]); ctx.fill();
     const cp = P([m.x - 1.2, m.h - 1.3, m.z + 0.6]); glow(ctx, cp, cam.S([m.x, m.h, m.z]) * 1.2, C.lampW, 0.08 * LK);
     ctx.restore();
+    // em pé (`boca`): o aro claro da boca, uma elipse fina que a câmera na altura da tela vê de raspão
+    if (m.boca) {
+      path(ctx, ring(m.h, m.r * 0.95)); ctx.strokeStyle = rgba(mix(C.n300, C.n200, 0.4), m.boca.aro);
+      ctx.lineWidth = Math.max(1.5, cam.S([m.x, m.h, m.z]) * 0.32); ctx.stroke();
+    }
     if (handleFront) handle();
     return { top: [m.x, m.h, m.z] };
   }
@@ -1047,7 +1081,8 @@
       const c = add([b.x, 0.05, b.z], mul(va, -b.d / 2 - 2.2));
       discT(ctx, cam, c, [5, 0, 0], [0, 0, 3.2]);
       ctx.fillStyle = radial(ctx, [[0, rgba(C.c500, 0.13 * ledK)], [0.5, rgba(C.c500, 0.05 * ledK)], [1, rgba(C.c500, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx);
-      glow(ctx, P(info.led), cam.S(info.led) * 2.2, C.c500, 0.22 * ledK);
+      const halo = o.caixaLuz ? o.caixaLuz.halo : 1;
+      glow(ctx, P(info.led), cam.S(info.led) * 2.2 * halo, C.c500, 0.22 * ledK * Math.min(halo, 1.4));
     }
     if (o.lampGlow && P(L.open)[2] > 0) glow(ctx, P(L.open), cam.S(L.open) * 11, C.lampW, o.lampGlow * LK);
     ctx.restore();
@@ -1125,7 +1160,7 @@
     // os objetos de trás para a frente (z maior primeiro): deitado, caixa, notebook, caneca e celular; em pé, a caixa e a
     // caneca vêm à frente do notebook
     let info = null, mug = null;
-    const objetos = [[W0.box, () => { info = drawBox(ctx, cam); }], [W0.laptop, () => drawLaptop(ctx, cam, o)],
+    const objetos = [[W0.box, () => { info = drawBox(ctx, cam, o); }], [W0.laptop, () => drawLaptop(ctx, cam, o)],
       [W0.mug, () => { mug = drawMug(ctx, cam); }], [W0.phone, () => drawPhone(ctx, cam)]];
     objetos.filter(([ob]) => ob).sort((a, b) => b[0].z - a[0].z).forEach(([, desenha]) => desenha());
     lightEffects(ctx, cam, info, o, ledK, pass);
@@ -1138,6 +1173,6 @@
     return { cam };
   }
   G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt,
-    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular, corDaMesa, discosDaCidade };
+    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular, corDaMesa, discosDaCidade, coresDoMontante };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.FDE;
