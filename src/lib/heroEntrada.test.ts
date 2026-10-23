@@ -103,7 +103,8 @@ describe("camera: continuidade", () => {
       const atual = camera(i / 1000, v).tela;
       expect(Math.abs(atual.cx - anterior.cx)).toBeLessThan(limite);
       expect(Math.abs(atual.cy - anterior.cy)).toBeLessThan(limite);
-      expect(Math.abs(atual.s - anterior.s)).toBeLessThan(limite);
+      // s é adimensional (0..1): o que não pode saltar é a largura da tela, s·v.w.
+      expect(Math.abs(atual.s - anterior.s) * v.w).toBeLessThan(limite);
       anterior = atual;
     }
   });
