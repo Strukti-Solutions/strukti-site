@@ -448,11 +448,15 @@
     if (typeof o.grainBaixo === 'string') o.grainBaixo = o.grainBaixo.split(',').map(Number);
     prepLuz(o); const cam = makeCam(o); const ctx = canvas.getContext('2d');
     // 1. a cidade, desfocada (por baixo, sem desfoque: as bordas do desfoque não puxam preto)
-    const bg = layer(cam.W, cam.H), bx = bg.getContext('2d'); cidade(bx, cam, o);
-    const ex = `brightness(${o.cidadeExp || 1})`;
-    ctx.filter = ex; ctx.drawImage(bg, 0, 0);
-    ctx.filter = `${ex} blur(${o.cidadeBlur}px)`; ctx.drawImage(bg, 0, 0); ctx.filter = 'none';
-    bokeh(ctx, cam, o);
+    // (o loop da A5 mede a transmissão de cada pixel trocando a cidade por um cinza liso: ?cidadeCinza=64 e 192)
+    if (o.cidadeCinza != null) { ctx.fillStyle = `rgb(${o.cidadeCinza},${o.cidadeCinza},${o.cidadeCinza})`; ctx.fillRect(0, 0, cam.W, cam.H); }
+    else {
+      const bg = layer(cam.W, cam.H), bx = bg.getContext('2d'); cidade(bx, cam, o);
+      const ex = `brightness(${o.cidadeExp || 1})`;
+      ctx.filter = ex; ctx.drawImage(bg, 0, 0);
+      ctx.filter = `${ex} blur(${o.cidadeBlur}px)`; ctx.drawImage(bg, 0, 0); ctx.filter = 'none';
+      bokeh(ctx, cam, o);
+    }
     if (o.so === 'cidade') return { cam };
     vidro(ctx, cam, o);
     // 2. o painel, com as sombras (e o reflexo dele no pé do vidro); a moldura do para-brisa por cima do vidro

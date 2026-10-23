@@ -80,3 +80,45 @@ levemente à deriva no para-brisa), a A5.
 
 O render é determinístico (o mesmo PNG a cada vez), o que o loop da A5 usa: o
 quadro 0 dele é este cartão.
+
+## Loop de 5 s (Task A5)
+
+A cidade lá fora anda devagar no para-brisa (até 14 px para a direita no 800,
+10,5 px no 600, e volta); o carro, o suporte e o celular ficam parados. Passes
+e composição periódica, como o `composite2.js` do hero (`loop.js` desta pasta,
+composto pelo `../kit/loop.js`):
+
+| Placa | Como | O que dá |
+|---|---|---|
+| `cur/cartao.png` | o cartão | o quadro 0 |
+| `plates/C.png` | `cartao.html?so=cidade` | a cidade desfocada com o bokeh (a camada de baixo de tudo, sem acabamento) |
+| `plates/B64.png`, `plates/B192.png` | `cartao.html?cidadeCinza=64&noGrain=1` (e 192) | T = (B192 − B64) / 128: o quanto a cidade aparece em cada pixel (como o T do hero) |
+
+quadro(t) = cartão + T · (C(x − dx(t), y) − C(x, y)), com dx(t) = 14 · sobe(t)
+e sobe(t) = ½ − ½ cos(2πt / 5 s); C é amostrado em bilinear (a cidade já está
+desfocada em 7 px). dx(0) = 0: o quadro 0 é o cartão byte a byte. A
+transmissão é linear (o vidro, a serigrafia, a vinheta e o esmaecimento são
+misturas): B64 + T · (C − 64) refaz o cartão com erro de 2,4 (RMS, com o grão).
+`cidadeCinza` (sem padrão) troca a cidade por um cinza liso; sem ele o cartão
+não muda (mesmo md5).
+
+```sh
+../kit/shot.sh "cartao.html?so=cidade" plates/C.png 800 1200
+../kit/shot.sh "cartao.html?cidadeCinza=64&noGrain=1" plates/B64.png 800 1200
+../kit/shot.sh "cartao.html?cidadeCinza=192&noGrain=1" plates/B192.png 800 1200
+node ../kit/loop.js loop.js                       # plates/master.mkv
+../kit/encode.sh plates/master.mkv final 18 12
+../kit/vqa.sh final/cartao-loop.webm rota-webm 600:420:0:0 cur/cartao.png
+```
+
+| Medida (22/10/2026) | MP4 (H.264 crf 18) | WebM (VP9 crf 12) | Critério |
+|---|---|---|---|
+| Bytes | 228 250 | 179 696 | ≤ 600 000 |
+| Emenda 124 → 0 | 54,96 dB | 90,78 dB | ≥ 45 dB |
+| Pares seguidos idênticos (quadro inteiro) | 0 | 19 de 124 | — |
+| Quadro 0 × cartão (600 × 900) | 42,38 dB | 42,57 dB | a perda é só a da compressão |
+
+Os pares idênticos do WebM ficam nas voltas da deriva (quadros 1–11, 49–81 e
+122–124), onde a cidade anda menos de 0,1 px por quadro e o VP9 repete o
+quadro; no master sem perda são 4. Com 8 px de deriva eram 34; crf 4 só baixa
+para 20 (e custa 314 KB).
