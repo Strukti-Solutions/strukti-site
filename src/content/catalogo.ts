@@ -14,8 +14,9 @@
  * dado pendente, para o check:placeholders não falhar por eles.
  *
  * A arte e as telas apontam para `public/catalogo/<slug>/` (contrato da §6.1).
- * Hoje são arquivos provisórios; a arte final e as capturas reais trocam os
- * arquivos com os mesmos nomes, sem mexer aqui.
+ * A arte dos cartões é a final (22/10/2026, `scripts/catalogo-arte/`); as
+ * telas seguem ilustrativas (§5.4) até chegarem as capturas reais, que trocam
+ * os arquivos com os mesmos nomes, sem mexer aqui.
  */
 import type { Interest } from "@/lib/interest";
 import { landingContent, type ProductStatus, type Project } from "./landing";
@@ -244,7 +245,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     frase: "Para quadras de aluguel: o placar do jogo numa tela na parede, marcado pelo celular.",
     fase: "desenvolvimento",
     ficticio: true,
-    arte: arte("placar-conectado", "Um placar apagado na parede de uma quadra vazia à noite, na hora azul."),
+    arte: arte("placar-conectado", "Um placar de pontos acesos, suspenso diante da janela, com a cidade desfocada à noite."),
     painel: {
       paraQuem: "Arenas que querem um placar que todo mundo vê, da quadra e da arquibancada, sem placa de virar.",
       beneficios: [
@@ -276,7 +277,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     ficticio: true,
     arte: arte(
       "agenda-de-quadras",
-      "Um celular com a agenda da semana em blocos, sobre o balcão de uma arena à noite.",
+      "Um celular num suporte de mesa com a grade de horários das quadras, diante da janela, à noite.",
     ),
     painel: {
       paraQuem: "Arenas e quadras de aluguel que ainda marcam horário pelo WhatsApp, no caderno ou na planilha.",
@@ -308,7 +309,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     ficticio: true,
     arte: arte(
       "site-clinicas",
-      "Um navegador aberto com a página de uma clínica, num monitor de recepção à noite.",
+      "Um notebook aberto com a página de uma clínica, com as especialidades e o mapa, sobre a mesa à noite.",
     ),
     painel: {
       paraQuem: "Clínicas e consultórios que ainda não têm site, ou têm um que não funciona bem no celular.",
@@ -341,7 +342,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     frase: "Para academias: o aluno faz o check-in no totem da entrada, e a recepção vê quem chegou.",
     fase: "desenvolvimento",
     ficticio: true,
-    arte: arte("totem-check-in", "Um totem com a tela acesa na entrada de uma academia vazia à noite."),
+    arte: arte("totem-check-in", "Um totem de check-in com a tela acesa, de pé diante de uma parede de vidro, à noite."),
     painel: {
       paraQuem: "Academias e estúdios que controlam a entrada no caderno, na ficha de papel ou de cabeça.",
       beneficios: [
@@ -379,7 +380,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     ficticio: true,
     arte: arte(
       "estoque-oficinas",
-      "Um celular com a lista de peças em barras, sobre a bancada de uma oficina à noite.",
+      "Um celular com a lista de peças, encostado num gaveteiro de oficina sobre a mesa, à noite.",
     ),
     painel: {
       paraQuem: "Oficinas mecânicas que controlam as peças de memória, no caderno ou numa planilha que ninguém atualiza.",
@@ -412,7 +413,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     ficticio: true,
     arte: arte(
       "vitrine-lojas",
-      "Um navegador aberto com a vitrine de uma loja, num notebook sobre o balcão à noite.",
+      "Um tablet num suporte com a vitrine de uma loja e uma sacola de papel atrás, sobre a mesa à noite.",
     ),
     painel: {
       paraQuem:
@@ -444,7 +445,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     frase: "Para lojas: um sensor sobre a porta conta quem entra, hora a hora, e mostra no celular.",
     fase: "desenvolvimento",
     ficticio: true,
-    arte: arte("contador-de-fluxo", "Um sensor pequeno sobre a porta de vidro de uma loja fechada, à noite."),
+    arte: arte("contador-de-fluxo", "Um sensor sobre a porta de vidro de uma loja, com o leque de detecção ciano aceso, à noite."),
     painel: {
       paraQuem: "Lojas que querem saber os horários de mais movimento para montar a escala e as promoções.",
       beneficios: [

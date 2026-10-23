@@ -217,7 +217,7 @@ Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rot
 | `cartao-loop.webm` / `cartao-loop.mp4` | 600×900, 25 fps, **5 s** | ≤600 KB cada | os 3 reais |
 | `tela-1.svg` … `tela-3.svg` | moldura celular 360×720 ou navegador 960×600 | pequeno | todos |
 
-Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do tipo e telas de blocos) e um `LEIA-PROVISORIO.txt`. A arte final substitui tudo com os mesmos nomes.
+A **arte final** dos cartões (as cenas da §6.2 e os 3 loops) entrou em 22/10/2026 no lugar dos degradês provisórios, com os mesmos nomes, e o `LEIA-PROVISORIO.txt` saiu. As fontes ficam em `scripts/catalogo-arte/`. As `tela-N.svg` continuam ilustrativas (§5.4) até chegarem as capturas reais, que também só trocam os arquivos.
 
 ### 6.2 Direção (série no mundo do hero)
 

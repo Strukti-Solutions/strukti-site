@@ -1,9 +1,27 @@
 # Arte do catálogo
 
-Os cartões de `public/catalogo/<slug>/` (spec 2026-10-16, §6). Hoje há dois
-estados: os arquivos **provisórios** (degradê, `provisorio.sh`) e a **arte
-final** em produção (plano `docs/superpowers/plans/2026-10-22-catalogo-arte.md`),
-que troca os provisórios com os mesmos nomes, sem mexer no código.
+Os cartões de `public/catalogo/<slug>/` (spec 2026-10-16, §6). A **arte
+final** (plano `docs/superpowers/plans/2026-10-22-catalogo-arte.md`) está
+instalada desde 22/10/2026 no lugar dos degradês provisórios, com os mesmos
+nomes e sem mexer no código. As fontes ficam aqui; as saídas, fora do git.
+
+## Instalar
+
+Os arquivos finais de cada cena ficam em `<cena>/final/` (os 3 reais) e em
+`inventados/final/<slug>/` (os 7 inventados). Instalar é copiar com os mesmos
+nomes e conferir:
+
+```sh
+for s in replay rota-de-vendas fleet-analytics-bi; do cp scripts/catalogo-arte/$s/final/cartao* public/catalogo/$s/; done
+for s in placar-conectado totem-check-in contador-de-fluxo agenda-de-quadras estoque-oficinas site-clinicas vitrine-lojas; do
+  cp scripts/catalogo-arte/inventados/final/$s/cartao* public/catalogo/$s/
+done
+npx vitest run src/content/catalogo.assets.test.ts   # medidas e orçamento da §6.1
+node scripts/catalogo-arte/medir-contraste.mjs       # texto do cartão do centro >= 4,5:1
+```
+
+As `tela-N.svg` não são desta produção: continuam ilustrativas (§5.4) até
+chegarem as capturas reais.
 
 ## Arte final: cenas no mundo do hero
 
@@ -85,9 +103,9 @@ também fora.
 - Nada inventado sobre os 3 reais: sem cliente, quadra com nome, número ou marca.
 - Olhar cada render (inteiro e reduzido a 64 px) antes de dar por pronto.
 
-## Arte provisória
+## Arte provisória (histórico)
 
-`provisorio.sh` gera os arquivos **provisórios** de `public/catalogo/<slug>/`: um degradê da cor do tipo para o navy `#0e1c2b`, sem ruído, para caber no orçamento da spec (2026-10-16, §6.1). Não é arte final.
+`provisorio.sh` gerava os arquivos **provisórios** de `public/catalogo/<slug>/` antes da arte final (até 22/10/2026): um degradê da cor do tipo para o navy `#0e1c2b`, sem ruído, para caber no orçamento da spec (2026-10-16, §6.1). Fica para montar um item novo antes da arte dele; não é arte final.
 
 ```bash
 bash scripts/catalogo-arte/provisorio.sh <slug> <cor-do-tipo> [--loop]
@@ -100,7 +118,7 @@ bash scripts/catalogo-arte/provisorio.sh <slug> <cor-do-tipo> [--loop]
 | site (violeta suave) | `8b7ff0` | `provisorio.sh site-clinicas 8b7ff0` |
 
 - Gera `cartao.avif/.jpg` (800x1200) e `cartao-480.avif/.jpg` (480x720). Com `--loop` (só os 3 reais: `replay`, `rota-de-vendas`, `fleet-analytics-bi`), gera também `cartao-loop.webm/.mp4` (600x900, 25 fps, 5 s, o degradê respirando; o último quadro volta ao quadro 0).
-- Não mexe nas telas `tela-1..3.svg` nem no `LEIA-PROVISORIO.txt`.
+- Não mexe nas telas `tela-1..3.svg`. (O `LEIA-PROVISORIO.txt` que acompanhava os provisórios saiu com a arte final.)
 - Precisa de `ffmpeg` com `gradients`, `libaom-av1`, `libvpx-vp9` e `libx264`.
 - O teste `src/content/catalogo.assets.test.ts` confere medidas e orçamento.
 
@@ -108,4 +126,5 @@ bash scripts/catalogo-arte/provisorio.sh <slug> <cor-do-tipo> [--loop]
 
 `node scripts/catalogo-arte/medir-contraste.mjs` mede o texto do cartão do
 centro sobre a arte **instalada** em `public/catalogo/` (MASTER §3.4). Rode de
-novo quando a arte final entrar.
+novo a cada troca da arte. Com a arte final (22/10/2026): pior razão 10,17:1 a
+1440 × 900, 7,54:1 a 390 × 844 e 6,97:1 a 360 × 740 (exige 4,5:1).

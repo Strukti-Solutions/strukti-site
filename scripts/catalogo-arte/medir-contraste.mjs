@@ -10,8 +10,8 @@
 //
 // A geometria vem de uma medida no navegador (getBoundingClientRect do cartão
 // do centro, em frações da superfície). Refaça a medida se o layout do cartão
-// mudar (CSS de `.catalogo__info`), e rode este script de novo quando a arte
-// final entrar no lugar dos provisórios.
+// mudar (CSS de `.catalogo__info`), e rode este script de novo a cada troca
+// da arte (a final entrou em 22/10/2026).
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

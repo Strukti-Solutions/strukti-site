@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { readAvif } from "@/test/avif";
 import { CATALOGO } from "./catalogo";
 
-// Contrato de arquivos da spec (2026-10-16, §6.1): vale para os provisórios de
-// hoje e para a arte final, que troca os arquivos com os mesmos nomes.
+// Contrato de arquivos da spec (2026-10-16, §6.1): vale para a arte final
+// (22/10/2026) e para qualquer troca futura, que mantém os mesmos nomes.
 const PUBLIC_DIR = path.resolve(import.meta.dirname, "../../public");
 const LIMITE_LOOP = 600_000;
 const onDisk = (url: string) => path.join(PUBLIC_DIR, url);
