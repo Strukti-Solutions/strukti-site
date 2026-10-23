@@ -1,9 +1,15 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
- * - "expansao" (padrão): o quadro com o vídeo "Fim de expediente" cresce com
- *   a rolagem até quase a tela inteira, o fundo se apaga e o título se abre
- *   para os lados (MASTER §9.8, ADR-010); usa a barra do topo do "video".
+ * - "notebook" (protótipo, só no branch feat/hero-notebook, padrão dele): o
+ *   "expansao" com a entrada pelo notebook: depois da tela cheia, a câmera
+ *   se aproxima de um aparelho em caixas cinza (notebook deitado, celular em
+ *   pé) até a tela dele virar a página (spec 2026-10-23-hero-entrada-notebook-
+ *   design.md); usa a barra do "video";
+ * - "expansao" (padrão em produção): o quadro com o vídeo "Fim de expediente"
+ *   cresce com a rolagem até quase a tela inteira, o fundo se apaga e o
+ *   título se abre para os lados (MASTER §9.8, ADR-010); usa a barra do topo
+ *   do "video".
  *   Os passos do replay saíram do site na v2.2, com qualquer hero;
  * - "estudio": hero da v3 (MASTER §9.7): produto 3D em sequência de quadros
  *   guiada pela rolagem; usa a barra do "video";
@@ -12,7 +18,7 @@
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
  *   §9.1–9.5), escolhido em `siteConfig.heroVisual`.
  */
-export type HeroVariant = "expansao" | "estudio" | "video" | "classic";
+export type HeroVariant = "expansao" | "estudio" | "video" | "classic" | "notebook";
 
 /**
  * Peça de fundo do hero "classic". Trocar o visual é mudar este valor — ver
@@ -150,7 +156,7 @@ const ROTA_ENTARDECER: HeroVideoSource = {
 
 export const siteConfig = {
   brand: "Strukti Soluções",
-  heroVariant: "expansao" as HeroVariant,
+  heroVariant: "notebook" as HeroVariant,
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
   heroExpansao: FIM_DE_EXPEDIENTE,

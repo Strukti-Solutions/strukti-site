@@ -8,9 +8,10 @@ import Home from "./page";
 
 // Estrutura da home na v2.2 do texto (prévia aprovada para homologação em 13/10/2026):
 // 7 capítulos até o Contato, com Dúvidas antes dele e os 3 produtos numa seção só,
-// com o hero "expansao" (o padrão desde 15/10/2026) e o "estudio" (o hero de
-// marca da v2.2). (Antes: spec 2026-10-03 §4.) As âncoras rodam com as quatro
-// versões do topo, como o page.axe.test.tsx: os heros "video" e "classic"
+// com o hero "expansao" (o padrão desde 15/10/2026), o "estudio" (o hero de
+// marca da v2.2) e o "notebook" (o protótipo da entrada pelo notebook, que usa
+// o mesmo texto do "expansao"). (Antes: spec 2026-10-03 §4.) As âncoras rodam
+// com as cinco versões do topo, como o page.axe.test.tsx: os heros "video" e "classic"
 // seguem no código até a limpeza e também não podem apontar para uma seção
 // que saiu da página.
 const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
@@ -30,7 +31,7 @@ const PENDENTE = ["[A", "PREENCHER"].join(" ");
 /** Ordem das seções da v2.2 (a barra do topo e o rodapé ficam fora do <main>). */
 const SECTION_ORDER = ["inicio", "produtos", "sob-medida", "como-trabalhamos", "equipe", "duvidas", "contato"];
 
-describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura", (variant) => {
+describe.each(["expansao", "estudio", "notebook"] as const)("home v3 (hero %s) — estrutura", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });
@@ -88,7 +89,7 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
   it("os botões do hero levam a Produtos e ao WhatsApp com a mensagem geral", () => {
     const { container } = render(<Home />);
     const hero = within(container.querySelector<HTMLElement>("#inicio")!);
-    const { primaryCta, whatsappCta } = variant === "expansao" ? landingContent.heroExpansao : landingContent.heroEstudio;
+    const { primaryCta, whatsappCta } = variant === "estudio" ? landingContent.heroEstudio : landingContent.heroExpansao;
 
     expect(hero.getByRole("link", { name: primaryCta }).getAttribute("href")).toBe("#produtos");
     expect(hero.getByRole("link", { name: whatsappCta }).getAttribute("href")).toBe(
@@ -111,7 +112,7 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
   });
 });
 
-describe.each(["expansao", "estudio", "video", "classic"] as const)("home (hero %s) — variante e âncoras", (variant) => {
+describe.each(["expansao", "estudio", "video", "classic", "notebook"] as const)("home (hero %s) — variante e âncoras", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });
