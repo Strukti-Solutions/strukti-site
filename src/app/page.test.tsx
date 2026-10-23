@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { HeroVariant } from "@/config/site";
 import { siteConfig } from "@/config/site";
 import { landingContent } from "@/content/landing";
+import { CATALOGO } from "@/content/catalogo";
 import Home from "./page";
 
 // Estrutura da home na v2.2 do texto (prévia aprovada para homologação em 13/10/2026):
@@ -41,18 +42,15 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
     expect(container.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("o menu tem um link por produto, mais Equipe e Contato, e cada um aponta para algo da página", () => {
+  it("o menu tem Produtos, Equipe e Contato, e cada item (e cada produto do menu Produtos) aponta para algo da página", () => {
     const { container } = render(<Home />);
 
-    expect(landingContent.header.nav.map((item) => item.href)).toEqual([
-      "#replay",
-      "#rota-de-vendas",
-      "#fleet-analytics-bi",
-      "#equipe",
-      "#contato",
-    ]);
+    expect(landingContent.header.nav.map((item) => item.href)).toEqual(["#produtos", "#equipe", "#contato"]);
     for (const item of landingContent.header.nav) {
       expect(container.querySelector(`main ${item.href}`)).not.toBeNull();
+    }
+    for (const item of CATALOGO) {
+      expect(container.querySelector(`main #${item.slug}`)).not.toBeNull();
     }
   });
 
@@ -98,14 +96,14 @@ describe.each(["expansao", "estudio"] as const)("home v3 (hero %s) — estrutura
     );
   });
 
-  it('as chamadas marcam o assunto no formulário: "Pedir diagnóstico gratuito" (em cada app) → aplicativo; "Contar o meu problema" → outro', () => {
-    render(<Home />);
+  it('as chamadas marcam o assunto no formulário: "Quero saber mais" do Rota de Vendas (catálogo) → aplicativo; "Contar o meu problema" → outro', () => {
+    const { container } = render(<Home />);
     const select = screen.getByLabelText(landingContent.contato.form.fields.interest.label) as HTMLSelectElement;
     expect(select.value).toBe("");
 
-    const diagnostico = screen.getAllByRole("link", { name: landingContent.aplicativos.cta });
-    expect(diagnostico).toHaveLength(landingContent.aplicativos.projects.length);
-    fireEvent.click(diagnostico[0]!);
+    // O link fica no <details> do cartão (o painel sem JS), que a CSS esconde com JS.
+    const rota = within(container.querySelector<HTMLElement>("#rota-de-vendas")!);
+    fireEvent.click(rota.getByRole("link", { name: "Quero saber mais sobre Rota de Vendas", hidden: true }));
     expect(select.value).toBe("aplicativo");
 
     fireEvent.click(screen.getByRole("link", { name: landingContent.chamadaHardware.cta }));
@@ -142,6 +140,8 @@ describe.each(["expansao", "estudio", "video", "classic"] as const)("home (hero 
     const { container } = render(<Home />);
 
     expect(container.textContent).not.toMatch(/estacionamento/i);
-    expect(within(container).queryByText("Como funciona")).toBeNull();
+    // "Como funciona" agora só existe no conteúdo de cada produto do catálogo.
+    const foraDoCatalogo = [...container.querySelectorAll("main > section:not(#produtos)")];
+    expect(foraDoCatalogo.filter((secao) => within(secao as HTMLElement).queryByText("Como funciona"))).toEqual([]);
   });
 });

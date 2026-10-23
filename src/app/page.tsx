@@ -6,7 +6,7 @@ import { Hero } from "@/components/sections/Hero";
 import { HeroVideo } from "@/components/sections/HeroVideo";
 import { HeroSequence } from "@/components/sections/HeroSequence";
 import { HeroExpansao } from "@/components/sections/HeroExpansao";
-import { Produtos } from "@/components/sections/Produtos";
+import { Catalogo } from "@/components/sections/Catalogo";
 import { ChamadaHardware } from "@/components/sections/ChamadaHardware";
 import { ComoResolvemos } from "@/components/sections/ComoResolvemos";
 import { Equipe } from "@/components/sections/Equipe";
@@ -38,7 +38,7 @@ export default function Home() {
       {/* data-hero-variant: o check:browser lê daqui qual hero conferir. */}
       <main id="conteudo-principal" data-hero-variant={variant}>
         <HeroSection />
-        <Produtos />
+        <Catalogo />
         <ChamadaHardware />
         <ComoResolvemos />
         <Equipe />

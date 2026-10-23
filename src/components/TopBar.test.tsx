@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import axe from "axe-core";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { landingContent } from "@/content/landing";
+import { CATALOGO, catalogoUi } from "@/content/catalogo";
 import { TOPBAR_WIDE_QUERY, TopBar } from "./TopBar";
 import { LINK_BANCADA } from "@/lib/bancada/link";
 
@@ -25,7 +28,8 @@ describe("TopBar", () => {
 
     expect(screen.getByRole("img", { name: "Strukti Soluções" })).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: "Principal" });
-    for (const item of landingContent.header.nav) {
+    // "Produtos" é o botão do menu (describe "menu Produtos"); os outros, links.
+    for (const item of landingContent.header.nav.filter((entry) => entry.href !== "#produtos")) {
       const link = screen.getByRole("link", { name: item.label });
       expect(link.getAttribute("href")).toBe(item.href);
       expect(nav.contains(link)).toBe(true);
@@ -69,7 +73,7 @@ describe("TopBar", () => {
     const toggle = getToggle();
 
     fireEvent.click(toggle);
-    const firstLink = screen.getByRole("link", { name: landingContent.header.nav[0].label });
+    const firstLink = screen.getByRole("link", { name: "Equipe" });
     act(() => firstLink.focus());
     fireEvent.keyDown(document, { key: "Escape" });
 
@@ -82,7 +86,7 @@ describe("TopBar", () => {
     const toggle = getToggle();
 
     fireEvent.click(toggle);
-    fireEvent.click(screen.getByRole("link", { name: landingContent.header.nav[1].label }));
+    fireEvent.click(screen.getByRole("link", { name: "Equipe" }));
 
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
   });
@@ -94,7 +98,7 @@ describe("TopBar", () => {
     const toggle = getToggle();
     fireEvent.click(toggle);
     const whatsapp = screen.getByRole("link", { name: landingContent.header.whatsappButton });
-    const firstLink = screen.getByRole("link", { name: landingContent.header.nav[0].label });
+    const firstLink = screen.getByRole("link", { name: "Equipe" });
 
     fireEvent.focusOut(firstLink, { relatedTarget: whatsapp });
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
@@ -139,11 +143,171 @@ describe("TopBar", () => {
   });
 });
 
+// Spec do catálogo (2026-10-16, §3.5): os links de produto da v2.2 dão lugar
+// a um botão de divulgação "Produtos ▾" (padrão disclosure, não role=menu),
+// com os produtos agrupados por tipo. Na barra larga a lista abre como
+// popover; no painel do Menu, como sublista. A árvore é a mesma: só o CSS muda.
+describe("menu Produtos", () => {
+  const produtos = landingContent.header.nav.find((item) => item.href === "#produtos")!;
+  const GRUPOS = [
+    { rotulo: catalogoUi.filtros.hardware, tipo: "hardware" },
+    { rotulo: catalogoUi.filtros.aplicativo, tipo: "aplicativo" },
+    { rotulo: catalogoUi.filtros.site, tipo: "site" },
+  ] as const;
+
+  function getProdutos() {
+    return screen.getByRole("button", { name: produtos.label });
+  }
+
+  function getLista() {
+    return document.getElementById(getProdutos().getAttribute("aria-controls")!)!;
+  }
+
+  it("a barra tem 'Produtos' (botão com aria-expanded=false), 'Equipe' e 'Contato'; nenhum link #replay à mostra", () => {
+    render(<TopBar />);
+    const nav = screen.getByRole("navigation", { name: "Principal" });
+
+    expect(landingContent.header.nav.map((item) => item.href)).toEqual(["#produtos", "#equipe", "#contato"]);
+    const botao = getProdutos();
+    expect(nav.contains(botao)).toBe(true);
+    expect(botao.classList.contains("topbar__produtos")).toBe(true);
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("link", { name: "Equipe" }).getAttribute("href")).toBe("#equipe");
+    expect(screen.getByRole("link", { name: "Contato" }).getAttribute("href")).toBe("#contato");
+    expect(screen.queryByRole("link", { name: "Replay" })).toBeNull();
+    expect(screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "#replay")).toEqual([]);
+  });
+
+  it("sem JS, a barra tem o link 'Produtos' para #produtos (HTML do servidor); depois de montar, vira o botão do menu", () => {
+    const servidor = document.createElement("div");
+    servidor.innerHTML = renderToString(<TopBar />);
+    const navServidor = servidor.querySelector("nav")!;
+    const link = navServidor.querySelector<HTMLAnchorElement>('a[href="#produtos"]');
+    expect(link?.textContent).toBe(produtos.label);
+    expect(navServidor.querySelector("button.topbar__produtos")).toBeNull();
+
+    render(<TopBar />);
+    const nav = screen.getByRole("navigation", { name: "Principal" });
+    const botao = getProdutos();
+    expect(botao.classList.contains("topbar__produtos")).toBe(true);
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(nav.querySelector('a[href="#produtos"]')).toBeNull();
+  });
+
+  it("clicar em 'Produtos' abre 3 grupos (Hardware, Aplicativos, Sites) com os 10 links #slug", () => {
+    render(<TopBar />);
+    const botao = getProdutos();
+
+    fireEvent.click(botao);
+    expect(botao.getAttribute("aria-expanded")).toBe("true");
+    const lista = getLista();
+    expect(lista.classList.contains("topbar__produtos-menu")).toBe(true);
+    expect(lista.hidden).toBe(false);
+    // Disclosure: links comuns, sem role=menu/menuitem.
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    const rotulos = [...lista.querySelectorAll("p")].map((p) => p.textContent);
+    expect(rotulos).toEqual(GRUPOS.map((grupo) => grupo.rotulo));
+    for (const grupo of GRUPOS) {
+      const ul = within(lista).getByRole("list", { name: grupo.rotulo });
+      const esperados = CATALOGO.filter((item) => item.tipo === grupo.tipo);
+      expect(within(ul).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual(
+        esperados.map((item) => [item.nome, `#${item.slug}`]),
+      );
+    }
+    expect(lista.querySelectorAll('a[href^="#"]')).toHaveLength(CATALOGO.length);
+
+    fireEvent.click(botao);
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(lista.hidden).toBe(true);
+  });
+
+  it("Esc fecha e devolve o foco ao botão; clique fora fecha", () => {
+    render(<TopBar />);
+    const botao = getProdutos();
+
+    fireEvent.click(botao);
+    const link = within(getLista()).getByRole("link", { name: "Rota de Vendas" });
+    act(() => link.focus());
+    fireEvent.keyDown(link, { key: "Escape" });
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(botao);
+
+    fireEvent.click(botao);
+    fireEvent.pointerDown(getLista());
+    expect(botao.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.pointerDown(document.body);
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("com o painel do Menu aberto, o 1º Esc fecha só a lista de produtos; o 2º, o painel", () => {
+    render(<TopBar />);
+    const toggle = getToggle();
+    const botao = getProdutos();
+
+    fireEvent.click(toggle);
+    fireEvent.click(botao);
+    act(() => botao.focus());
+    fireEvent.keyDown(botao, { key: "Escape" });
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(botao);
+
+    fireEvent.keyDown(botao, { key: "Escape" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("o foco saindo da lista de produtos (para Equipe ou para fora da barra) fecha a lista; andando dentro dela, não", () => {
+    render(<TopBar />);
+    const botao = getProdutos();
+    fireEvent.click(botao);
+    const [primeiro, segundo] = within(getLista()).getAllByRole("link") as [HTMLElement, HTMLElement];
+
+    fireEvent.focusOut(botao, { relatedTarget: primeiro });
+    fireEvent.focusOut(primeiro, { relatedTarget: segundo });
+    expect(botao.getAttribute("aria-expanded")).toBe("true");
+
+    fireEvent.focusOut(segundo, { relatedTarget: screen.getByRole("link", { name: "Equipe" }) });
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+
+    const fora = document.createElement("button");
+    document.body.appendChild(fora);
+    fireEvent.click(botao);
+    fireEvent.focusOut(botao, { relatedTarget: fora });
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    fora.remove();
+  });
+
+  it("escolher 'Rota de Vendas' fecha o menu e o painel do Menu, e o link aponta para #rota-de-vendas", () => {
+    render(<TopBar />);
+    const toggle = getToggle();
+    const botao = getProdutos();
+
+    fireEvent.click(toggle);
+    fireEvent.click(botao);
+    const rota = within(getLista()).getByRole("link", { name: "Rota de Vendas" });
+    expect(rota.getAttribute("href")).toBe("#rota-de-vendas");
+    fireEvent.click(rota);
+
+    expect(botao.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("axe sem violações com o menu aberto", async () => {
+    const { container } = render(<TopBar />);
+    fireEvent.click(getToggle());
+    fireEvent.click(getProdutos());
+    expect((await axe.run(container)).violations).toEqual([]);
+  });
+});
+
 // N1/N2 (docs/superpowers/specs/2026-10-15-hero-triangulo-3d-design.md): a
-// barra recolhe numa cápsula ao rolar, e o link do trecho visível ganha
+// barra recolhe numa cápsula ao rolar, e o item do trecho visível ganha
 // aria-current. A troca de visual (cápsula) é CSS, por data-scrolled; aqui
-// só o estado que o CSS lê. Na v2.2 os links de produto apontam para os
-// cartões (#replay…), dentro de #produtos: a posição vem do retângulo na tela.
+// só o estado que o CSS lê. Desde o catálogo (spec 2026-10-16, §3.5), os
+// alvos são as seções #produtos, #equipe e #contato; os produtos (#slug)
+// ficam no menu "Produtos ▾", e quem ganha aria-current é o botão dele.
 describe("barra ao rolar", () => {
   let mockedSections: HTMLElement[] = [];
 
@@ -164,25 +328,19 @@ describe("barra ao rolar", () => {
     Object.defineProperty(window, "scrollY", { configurable: true, value });
   }
 
+  /** Os itens da barra com aria-current: o href dos links e "#produtos" para o botão. */
   function current() {
-    return landingContent.header.nav
-      .filter((item) => screen.getByRole("link", { name: item.label }).getAttribute("aria-current") === "true")
-      .map((item) => item.href);
+    const nav = screen.getByRole("navigation", { name: "Principal" });
+    return [...nav.querySelectorAll('[aria-current="true"]')].map((el) =>
+      el.classList.contains("topbar__produtos") ? "#produtos" : el.getAttribute("href"),
+    );
   }
 
-  // Onde o clique na barra deixa os alvos (globals.css, barra larga): o
-  // scroll-padding-top do html (barra de 72 px + 16) e, nos cartões de
-  // Produtos, mais o scroll-margin-top deles (60 + 3 + 16). Sem isso, no
-  // jsdom os dois valem 0.
+  // Onde o clique na barra deixa as seções (globals.css, barra larga): o
+  // scroll-padding-top do html (barra de 72 px + 16). Sem isso, no jsdom vale 0.
   const PADDING = 88;
-  const CARD_MARGIN = 79;
 
-  function withScrollOffsets(cards: HTMLElement[]) {
-    document.documentElement.style.setProperty("scroll-padding-top", `${PADDING}px`);
-    for (const card of cards) card.style.setProperty("scroll-margin-top", `${CARD_MARGIN}px`);
-  }
-
-  /** O que o clique num link da barra faz: a âncora na URL e a página parada com o alvo em `landing`. */
+  /** O que o clique num item da barra faz: a âncora na URL e a página parada com o alvo em `landing`. */
   function landOn(href: string, top: number, landing: number) {
     window.history.replaceState(null, "", href);
     setScrollY(top - landing);
@@ -192,14 +350,12 @@ describe("barra ao rolar", () => {
     });
   }
 
-  /** Os 3 cartões lado a lado (mesmo topo, 1000 px), a Equipe e o Contato. */
+  /** Produtos (o catálogo, 1000 a 1800), a Equipe e o Contato. */
   function mockPage() {
-    const [replay, rota, fleet, equipe, contato] = landingContent.header.nav;
-    const cards = [replay, rota, fleet].map((item) => mockSection(item.href.slice(1), 1000, 600));
-    mockSection(equipe.href.slice(1), 3000);
-    mockSection(contato.href.slice(1), 4500);
-    withScrollOffsets(cards);
-    return { replay, rota, fleet, equipe, contato };
+    mockSection("produtos", 1000, 800);
+    mockSection("equipe", 3000);
+    mockSection("contato", 4500);
+    document.documentElement.style.setProperty("scroll-padding-top", `${PADDING}px`);
   }
 
   afterEach(() => {
@@ -210,7 +366,7 @@ describe("barra ao rolar", () => {
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
   });
 
-  it("sem rolar, data-scrolled é false e nenhum link tem aria-current", () => {
+  it("sem rolar, data-scrolled é false e nenhum item tem aria-current", () => {
     for (const item of landingContent.header.nav) mockSection(item.href.slice(1), 1000);
     const { container } = render(<TopBar />);
     act(() => fireEvent.scroll(window));
@@ -227,73 +383,47 @@ describe("barra ao rolar", () => {
   });
 
   it("o link do trecho visível ganha aria-current; os outros, não", () => {
-    const [primeiro, segundo] = landingContent.header.nav;
-    mockSection(primeiro.href.slice(1), 0);
-    mockSection(segundo.href.slice(1), 900);
+    mockSection("produtos", 0);
+    mockSection("equipe", 900);
 
     render(<TopBar />);
     setScrollY(950);
     act(() => fireEvent.scroll(window));
 
-    expect(current()).toEqual([segundo.href]);
+    expect(current()).toEqual(["#equipe"]);
   });
 
-  it("o link clicado na barra fica marcado onde a página para (scroll-padding do html + scroll-margin do alvo)", () => {
-    const { replay, rota, fleet, equipe, contato } = mockPage();
+  it("o botão 'Produtos' ganha aria-current quando #produtos cruza a linha da barra (mesma conta de antes)", () => {
+    mockPage();
     render(<TopBar />);
 
-    // Cartão a 88 + 79 = 167 px do topo; seção a 88 px. Com a linha fixa de
-    // 96 px de antes, nenhum produto ficava marcado logo depois do clique.
-    for (const [item, top, landing] of [
-      [replay, 1000, PADDING + CARD_MARGIN],
-      [rota, 1000, PADDING + CARD_MARGIN],
-      [fleet, 1000, PADDING + CARD_MARGIN],
-      [equipe, 3000, PADDING],
-      [contato, 4500, PADDING],
-    ] as const) {
-      landOn(item.href, top, landing);
-      expect(current()).toEqual([item.href]);
-    }
+    // A seção a 88 px do topo (onde o clique a deixa): cruza a linha (88 + 1).
+    landOn("#produtos", 1000, PADDING);
+    expect(current()).toEqual(["#produtos"]);
+    expect(screen.getByRole("button", { name: "Produtos" }).getAttribute("aria-current")).toBe("true");
 
-    // Meio pixel abaixo da linha (arredondamento da rolagem) ainda vale.
-    landOn(fleet.href, 1000, PADDING + CARD_MARGIN + 0.5);
-    expect(current()).toEqual([fleet.href]);
+    // Meio pixel abaixo da linha (arredondamento da rolagem) ainda vale; 2 px, não.
+    landOn("#produtos", 1000, PADDING + 0.5);
+    expect(current()).toEqual(["#produtos"]);
+    landOn("#produtos", 1000, PADDING + 2);
+    expect(current()).toEqual([]);
+
+    // O painel de um produto aberto pelo menu (#slug), com a página 300 px
+    // dentro do catálogo: o slug não é alvo da barra, e o botão segue marcado.
+    landOn("#rota-de-vendas", 1000, PADDING - 300);
+    expect(current()).toEqual(["#produtos"]);
+
+    // Equipe e Contato continuam como antes.
+    landOn("#equipe", 3000, PADDING);
+    expect(current()).toEqual(["#equipe"]);
+    landOn("#contato", 4500, PADDING);
+    expect(current()).toEqual(["#contato"]);
   });
 
-  it("clique ou âncora #fleet-analytics-bi com os cartões lado a lado: marca o Fleet, não o Replay, e segue marcado ao rolar", () => {
-    const { replay, rota, fleet } = mockPage();
+  it("entre os alvos (ex.: Sob medida), nada fica marcado", () => {
+    mockPage();
     render(<TopBar />);
 
-    landOn(fleet.href, 1000, PADDING + CARD_MARGIN);
-    expect(current()).toEqual([fleet.href]);
-
-    // Mais 120 px de roda: os 3 cartões ainda cruzam a linha; vale a âncora.
-    setScrollY(window.scrollY + 120);
-    act(() => fireEvent.scroll(window));
-    expect(current()).toEqual([fleet.href]);
-
-    // Outro produto com a página já parada nos cartões: só a URL muda, sem
-    // rolar (o hashchange basta).
-    window.history.replaceState(null, "", rota.href);
-    act(() => fireEvent(window, new HashChangeEvent("hashchange")));
-    expect(current()).toEqual([rota.href]);
-    expect(current()).not.toContain(replay.href);
-  });
-
-  it("com os cartões lado a lado e sem âncora de produto na URL, vale o primeiro do menu; entre os alvos, nenhum fica marcado", () => {
-    const { replay, equipe } = mockPage();
-    render(<TopBar />);
-
-    setScrollY(1200);
-    act(() => fireEvent.scroll(window));
-    expect(current()).toEqual([replay.href]);
-
-    // Âncora de outro trecho (ex.: veio de #equipe e rolou para cima).
-    window.history.replaceState(null, "", equipe.href);
-    act(() => fireEvent(window, new HashChangeEvent("hashchange")));
-    expect(current()).toEqual([replay.href]);
-
-    // Depois dos cartões e antes da Equipe (ex.: Sob medida), nada marcado.
     setScrollY(2000);
     act(() => fireEvent.scroll(window));
     expect(current()).toEqual([]);

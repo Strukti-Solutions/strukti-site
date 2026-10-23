@@ -1,7 +1,7 @@
 # Catálogo de produtos ("segundo ato") — spec
 
-**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41), **ainda não implementada**.
-**Branch:** `feat/catalogo-produtos`, empilhado em `feat/hero-expansao` (PR #8 ainda aberto). O PR deste trabalho aponta para `feat/hero-expansao`; quando o #8 entrar, muda o destino para `homologacao`.
+**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41); implementada no branch `feat/catalogo-produtos` (decisões de 22/10 anotadas nas seções 4, 3.5 e 8).
+**Branch:** `feat/catalogo-produtos`, criado a partir de `main`. O PR #8 já entrou; o PR deste trabalho aponta para `homologacao`.
 **Referência de formato:** um "3D coverflow carousel" do 21st.dev mostrado pelo dono. É só referência visual: o componente não declara licença, então nenhum código dele entra (ADR-005), e três comportamentos dele ficam de fora de propósito: girar sozinho, capturar as setas do teclado na página inteira e carregar imagens de CDN externa (CSP, ADR-008).
 
 ---
@@ -25,7 +25,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
 | Q4/Q29 | Arte nova só no cartão fechado; no painel entram os vídeos de demonstração atuais. Arte final já para os 3 reais; os inventados com arte mais simples. |
 | Q5 | Painel com: vídeo, para quem é, benefícios, como funciona, telas, fase e link do site. **Sem WhatsApp.** |
 | Q6 | Link direto `#produto` abre o painel daquele produto; o voltar do navegador fecha. |
-| Q7 | PR empilhado no `feat/hero-expansao`. |
+| Q7 | PR empilhado no `feat/hero-expansao`. *Superada (22/10): o PR #8 entrou antes, e o PR deste trabalho aponta para `homologacao` (cabeçalho e §13, passo 5).* |
 | Q9 | Só o clique abre (Enter e espaço também). Passar o mouse é só uma dica (leve destaque). |
 | Q11/Q27 | No celular, o mesmo gesto: cartões deslizando para o lado; tocar abre o painel na largura toda, com a fita embaixo. |
 | Q13 | Começa com todos os cartões fechados. |
@@ -121,6 +121,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
   - Fecha com Esc, com clique fora ou ao escolher um item.
   - O botão recebe `aria-current` quando o catálogo está na faixa da barra, como hoje.
 - **Celular:** no painel do Menu, "Produtos" vira uma sublista expansível com os mesmos grupos.
+- **Sem JS (decisão de 22/10, Task 8b):** na barra larga, "Produtos" é um link para `#produtos` (o botão de divulgação precisa de JS para abrir). Com JS, vira o botão "Produtos ▾".
 - A cápsula ao rolar e o resto da barra ficam como estão.
 
 ### 3.6 "Quero saber mais"
@@ -137,6 +138,7 @@ Trocar a parede de cartões abertos de Produtos (v2.2: 3 cartões com vídeo, se
 - A seção (título, filtro, palco e bolinhas, ou título, filtro, painel e fita) ocupa **`clamp(600px, 80svh, 860px)`** nos dois estados. Ao abrir, fechar ou trocar, nada abaixo se mexe. O `check:browser` mede o topo da seção seguinte antes e depois.
 - O painel ocupa a altura que sobra, descontados a fita (~110 px) e os espaçamentos. A Visão geral precisa caber nessa altura sem rolagem: daí os limites de texto da §5.3.
 - **Exceção de acessibilidade:** em telas muito baixas (paisagem de celular, zoom de 200–400%, espaçamento de texto 1.4.12), a acessibilidade vence a constância. A seção pode crescer, ou o painel ganha rolagem interna, para todo o conteúdo continuar alcançável (WCAG 1.4.10 e 1.4.12). Documentar na MASTER.
+- **Celular e telas baixas (decisão de 22/10, na Task 6; aguarda o dono):** abaixo de 768 px de largura, o vídeo e o texto da Visão geral empilham e não cabem na altura da seção (a 390×844, ~755 px de conteúdo para ~420 px de painel), mesmo com os limites da §5.3. O mesmo vale para alturas de tela abaixo de ~800 px (a 1366×768, só o texto já passa ~20 px). Nesses casos, a seção mantém a altura e o painel rola por dentro (a fita e o que vem abaixo não se mexem). Encolher o vídeo ou recolher texto no celular foi descartado: o vídeo ficaria pequeno demais para ver e o texto recolhido esconderia o "Quero saber mais". A partir de 1280×800, a Visão geral cabe sem rolar: a mídia tem um teto de altura que acompanha a altura da seção.
 
 ## 5. Conteúdo
 
@@ -215,7 +217,7 @@ Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rot
 | `cartao-loop.webm` / `cartao-loop.mp4` | 600×900, 25 fps, **5 s** | ≤600 KB cada | os 3 reais |
 | `tela-1.svg` … `tela-3.svg` | moldura celular 360×720 ou navegador 960×600 | pequeno | todos |
 
-Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do tipo e telas de blocos) e um `LEIA-PROVISORIO.txt`. A arte final substitui tudo com os mesmos nomes.
+A **arte final** dos cartões (as cenas da §6.2 e os 3 loops) entrou em 22/10/2026 no lugar dos degradês provisórios, com os mesmos nomes, e o `LEIA-PROVISORIO.txt` saiu. As fontes ficam em `scripts/catalogo-arte/`. As `tela-N.svg` continuam ilustrativas (§5.4) até chegarem as capturas reais, que também só trocam os arquivos.
 
 ### 6.2 Direção (série no mundo do hero)
 
@@ -253,8 +255,8 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
 ## 8. Acessibilidade
 
 1. **Carrossel** no padrão APG:
-   - região com `aria-roledescription="carrossel"` e rótulo "Produtos";
-   - cada cartão é um `group` com `aria-roledescription="produto"` e rótulo "3 de 10: Rota de Vendas";
+   - região com `aria-roledescription="carrossel"` e rótulo "Catálogo de produtos" (e não "Produtos", que é o nome da `section#produtos` e repetiria o landmark: os rótulos de região têm de ser únicos);
+   - cada cartão é um `<div role="group">` (decisão de 22/10: o ARIA in HTML não permite `role="group"` em `<article>`) com `aria-roledescription="produto"` e rótulo "3 de 10: Rota de Vendas";
    - os escondidos (±3 em diante) ficam `inert`;
    - setas ‹ › com nome ("Produto anterior" e "Próximo produto");
    - bolinhas com nome ("Ir para Rota de Vendas").
@@ -272,7 +274,8 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
    - 1.4.3: contraste do texto sobre a arte (medir como no hero, MASTER §3.4);
    - 1.4.10 e 1.4.12: ver a §4;
    - 2.4.7: foco visível em cartões, setas, miniaturas e abas;
-   - 2.5.5: alvos de no mínimo 44 px (setas, miniaturas e pílulas).
+   - 2.5.5: alvos de no mínimo 44 px (setas, miniaturas e pílulas);
+   - 2.5.8: as bolinhas de paginação têm 44 px de largura quando cabem e, com muitos itens numa tela estreita, encolhem até **24 px** (o mínimo do 2.5.8), sem quebrar a linha (decisão de 22/10; os 44 px ficam para setas, miniaturas e pílulas).
 7. **Cores forçadas:** setas, contornos e ícones visíveis, como no conserto A11Y-2 do hero.
 
 ## 9. Técnico
@@ -355,6 +358,6 @@ Hoje já existem **arquivos provisórios** com esses nomes (degradê na cor do t
 2. **Código, ao mesmo tempo que a arte:** implementação (§3–§9) com testes e documentos; depois a etapa do `check:browser`. Commits só de código, sem `public/catalogo/`.
 3. **Integração:** arte final no lugar, QA visual em 360, 390, 768, 1024 e 1440 (fechado, aberto e trocando, com e sem movimento reduzido), todos os gates e o commit da mídia.
 4. **Revisão adversarial:** acessibilidade ao vivo, código e ADRs, fidelidade à spec e visual, docs e testes. Depois céticos, correção e conferência final.
-5. **Publicação:** push e PR empilhado no `feat/hero-expansao`, com prévia na Vercel. O merge é do dono.
+5. **Publicação:** push e PR para `homologacao` (o PR #8 já entrou; a Q7 foi superada), com prévia na Vercel. O merge é do dono.
 
 Sempre no máximo 2 agentes ao mesmo tempo, com a trava de processos pesados, por causa da RAM.
