@@ -66,17 +66,38 @@ grão de 0,33–0,40 no topo (desvio de alta frequência), contra 0,7 no Fleet; 
 crf 5 fica em 0,49–0,70 e o maior 480 AVIF tem 34,5 KB (limite 45). No crf 4 o
 contador já pulava para 42,5 KB.
 
-## Medidas (22/10/2026, depois da rodada 1 de ajuste)
+## Rodada de série (A6, 22/10/2026)
+
+Os 10 cartões vistos juntos (prancha, coverflow simulado, fita a 64 px e cada um com o texto do cartão do
+centro por cima). O que destoava da série e mudou:
+
+- **contador-de-fluxo:** a parede era cinza-ardósia, fora do navy do hero (`amb.paredeAlb` [24, 36, 56]); a luz
+  de teto caiu para k 0,42 com cone largo (não lê mais como foco/orbe); a caixa do sensor ganhou luz ambiente e o
+  fio de cima; o hexágono ficou com ~60% do tamanho e em baixo-relevo (lia como logo); o leque de detecção ganhou
+  preenchimento e bordas mais firmes; os montantes e a travessa da porta ganharam um friso frio (`amb.friso`).
+- **placar-conectado:** era o quadro mais aceso da série: pips ~15% menores e ~30% menos emissão, halo e véu
+  menores, a equipe da esquerda num ciano frio puxado para o elétrico claro. A parede sobe até 58 cm sob a janela,
+  para o bokeh da cidade não continuar atrás do texto do cartão.
+- **totem-check-in:** cabeça ~19% maior (`E` em `montaTotem`) e coluna mais larga, com a luz da tela descendo
+  pela frente dela: a 64 px era o objeto de menor massa e lia como "algo num poste".
+- **estoque-oficinas:** o celular girado mais 12° (não repete o de pé, de frente, da agenda e do Rota) e um
+  contraluz frio nas arestas do gaveteiro.
+- **agenda-de-quadras:** `telaLuz` 1,0 (era 1,6) e menos brilho da tela na mesa: o p90 da metade de baixo era o
+  mais alto da série.
+- **vitrine-lojas:** as fotos dos produtos eram quatro ovais iguais (ar de placeholder): agora uma bolsa, um
+  frasco, uma caixa e uma peça dobrada, desfocados; a alça da sacola pega contraluz.
+
+## Medidas (22/10/2026, depois da rodada de série)
 
 | Slug | Objeto (y0–y1 %) | Baixo p90 | Pior canto (Y) | avif | jpg | 480 avif | 480 jpg |
 |---|---|---|---|---|---|---|---|
-| placar-conectado | 19,5–44,2 | 24,9 | 18,8 | 93 464 | 95 160 | 34 982 | 23 787 |
-| totem-check-in | 16,7–59,1 | 35,9 | 23,2 | 82 212 | 78 011 | 27 749 | 14 644 |
-| contador-de-fluxo | 20,0–27,7 | 20,8 | 14,4 | 79 567 | 72 758 | 25 851 | 12 134 |
-| agenda-de-quadras | 25,8–54,3 | 40,8 | 20,8 | 86 932 | 86 172 | 31 445 | 19 055 |
-| estoque-oficinas | 28,1–58,6 | 36,0 | 18,5 | 86 825 | 87 195 | 31 568 | 20 264 |
+| placar-conectado | 19,5–44,2 | 24,5 | 18,8 | 93 928 | 94 796 | 34 713 | 23 153 |
+| totem-check-in | 16,0–59,1 | 35,9 | 23,2 | 81 941 | 78 717 | 28 069 | 15 088 |
+| contador-de-fluxo | 20,0–27,7 | 20,8 | 14,7 | 79 978 | 73 441 | 25 721 | 11 907 |
+| agenda-de-quadras | 25,8–54,3 | 36,5 | 20,8 | 86 816 | 85 838 | 30 817 | 18 721 |
+| estoque-oficinas | 28,0–59,1 | 35,6 | 18,5 | 87 871 | 88 504 | 32 377 | 20 782 |
 | site-clinicas | 27,9–59,9 | 38,0 | 18,2 | 88 165 | 83 876 | 31 408 | 17 962 |
-| vitrine-lojas | 28,9–54,9 | 37,0 | 18,3 | 86 717 | 82 461 | 31 310 | 16 829 |
+| vitrine-lojas | 28,9–54,9 | 37,0 | 18,3 | 86 895 | 83 098 | 31 598 | 17 264 |
 
 Critérios: objeto entre 15% e 60%; p90 da metade de baixo ≤ 60 (0–255);
 cantos ≤ 25,5 (navy-900); orçamento §6.1 (120 / 200 / 45 / 70 KB).

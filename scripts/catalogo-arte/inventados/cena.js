@@ -43,7 +43,9 @@
 
   const ITENS = {
     'placar-conectado': { tipo: 'hardware',
-      amb: Object.assign({}, MESA, { barras: [[-78, -75, 1.7, 300], [75, 78, 1.7, 300]] }),
+      // rodada de série (A6): a parede sobe até 58 cm (o vidro começava no tampo e o bokeh da cidade ia até o pé do
+      // quadro, atrás do texto do cartão); a metade de baixo fica na parede lisa
+      amb: Object.assign({}, MESA, { aberturas: [[-170, 170, 58, 230]], barras: [[-78, -75, 58, 300], [75, 78, 58, 300]] }),
       cam: { pos: [-30, 104, -135], target: [0, 114, 40], F: 960, shiftY: -150, towers: [[-40, -14, 32, 1], [-14, -8, 9, 0], [9, 14, 10, 0], [14, 40, 30, 1]], centre: [-8, 9, -2] },
       abajur: { pos: [-90, 110, 0], alvo: [-5, 0, 34], k: 0.8 },
       placar: { x: 0, y: 100, z: 32, w: 100, h: 46, d: 11, rot: 10 } },
@@ -57,23 +59,26 @@
       totem: { x: 2, z: 46, rot: -10 } },
     'contador-de-fluxo': { tipo: 'hardware',
       amb: { sup: { alb: [40, 42, 47], veio: false, piso: true, z0: -400, x0: -400, x1: 400 }, peitoril: false,
-        aberturas: [[-58, 58, 0, 218]], barras: [[-58, -52, 0, 218], [52, 58, 0, 218], [-4.6, -0.5, 0, 210], [0.5, 4.6, 0, 210]], travessas: [[-58, 58, 210, 218], [-52, 52, 0, 16]], trilho: 0, porta: true, paredeAmb: 1.0 },
+        aberturas: [[-58, 58, 0, 218]], barras: [[-58, -52, 0, 218], [52, 58, 0, 218], [-4.6, -0.5, 0, 210], [0.5, 4.6, 0, 210]], travessas: [[-58, 58, 210, 218], [-52, 52, 0, 16]], trilho: 0, porta: true, paredeAmb: 1.0,
+        // rodada de série (A6): parede no navy (era cinza-ardósia) e um friso frio nos montantes, para a porta ler a 64 px
+        paredeAlb: [24, 36, 56], friso: 0.3 },
       // rodada 1 de ajuste: câmera mais perto e mais baixa (o sensor com ~2,2x a largura), e a porta some num degradê
       // para o navy-950 a partir de ~49% (puxadores e quadro antes de 60%); a cidade aparece no vidro de cima
       cam: { pos: [-6, 196, -84], target: [0, 196, 64], F: 1250, shiftY: -40, towers: [[-40, -3, 30, 1], [-3, 2, 7, 0], [9, 14, 9, 0], [14, 40, 26, 1]], centre: [2, 9, -1], refl: 0.06, vigR: [0.24, 0.78], leque: 0.45, linhaPiso: 0, cityGain: 1.5, bokehP: 0.05 },
       escurecer: [0.49, 0.62, 0.97],
-      teto: { pos: [0, 300, 30], alvo: [0, 200, 64], k: 0.7, cone: [0.75, 0.96] },
+      teto: { pos: [0, 300, 30], alvo: [0, 200, 64], k: 0.42, cone: [0.45, 0.97] },
       sensor: { x: 0, y: 223, z: 58.5, w: 34, h: 8, d: 10 } },
     'agenda-de-quadras': { tipo: 'aplicativo',
       amb: Object.assign({}, MESA, { barras: [[-38, -35, 1.7, 300], [27, 30, 1.7, 300]] }),
-      cam: { pos: [-3, 15, -30], target: [0, 9.5, 20], F: 1150, shiftY: -150 },
+      cam: { pos: [-3, 15, -30], target: [0, 9.5, 20], F: 1150, shiftY: -150, telaLuz: 1.0 },
       abajur: { pos: [-60, 70, 0], alvo: [-2, 0, 22], k: 0.75 },
-      celular: { x: 0.5, z: 19, rot: -9, tilt: 14, ui: 'agenda' } },
+      celular: { x: 0.5, z: 19, rot: -9, tilt: 14, ui: 'agenda', brilhoK: 0.6 } },   // rodada de série (A6): menos tela na mesa
     'estoque-oficinas': { tipo: 'aplicativo',
       amb: Object.assign({}, MESA, { barras: [[-36, -33, 1.7, 300], [30, 33, 1.7, 300]] }),
       cam: { pos: [-6, 17, -30], target: [1, 9, 22], F: 1100, shiftY: -150 },
       abajur: { pos: [-62, 72, 2], alvo: [-2, 0, 22], k: 1 },
-      celular: { x: -3, z: 12.4, rot: -7, tilt: 19, ui: 'estoque' },
+      // rodada de série (A6): o celular girado ~12° a mais, para não repetir o de frente da agenda e do Rota
+      celular: { x: -3.6, z: 12.4, rot: -19, tilt: 19, ui: 'estoque' },
       gaveteiro: { x: 2.2, z: 24, rot: 8, w: 15.5, h: 17, d: 13 } },
     'site-clinicas': { tipo: 'site',
       cam: { pos: [-8, 36, -52], target: [0, 15, 30], F: 1100, shiftY: -150 },
@@ -173,7 +178,7 @@
   // ---------------- superfície e parede (por pixel; os vãos ficam transparentes) ----------------
   function basePass(cam, o, amb) {
     const { W, H } = cam, cv = layer(W, H), ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), D = img.data;
-    const pos = cam.pos, sp = amb.sup, R = rng(7), wallA = [44, 50, 62];
+    const pos = cam.pos, sp = amb.sup, R = rng(7), wallA = amb.paredeAlb || [44, 50, 62];
     const vao = (x, y) => amb.aberturas.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
     for (let sy = 0; sy < H; sy++) {
       for (let sx = 0; sx < W; sx++) {
@@ -234,7 +239,7 @@
       const ny = cam.pos[1] < h0 ? h0 : h1, sn = cam.pos[1] < h0 ? -1 : 1;
       face([[a, ny, zf], [b, ny, zf], [b, ny, VZ], [a, ny, VZ]], luz(fA, [0, ny, 69], [0, sn, 0], { wk: sn > 0 ? 0.6 : 0, amb: 0.8 }));
       face([[a, h0, zf], [b, h0, zf], [b, h1, zf], [a, h1, zf]], frameC);
-      const e1 = P([a, h1, zf]), e2 = P([b, h1, zf]); ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25), 0.35); ctx.lineWidth = Math.max(1, cam.S([0, h1, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
+      const e1 = P([a, h1, zf]), e2 = P([b, h1, zf]); ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25 + (amb.friso || 0) * 0.5), 0.35 + (amb.friso || 0)); ctx.lineWidth = Math.max(1, cam.S([0, h1, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
     }
     // montantes (verticais): o lado que a câmera vê, a frente e um fio claro na aresta
     for (const [a, b, h0, h1] of amb.barras) {
@@ -242,7 +247,7 @@
       if (!(cam.pos[0] > a && cam.pos[0] < b)) face([[side, h0, zf], [side, h0, VZ], [side, h1, VZ], [side, h1, zf]], luz(fA, [side, 40, 69], [sn, 0, 0], { wk: 0 }));
       face([[a, h0, zf], [b, h0, zf], [b, h1, zf], [a, h1, zf]], frameC);
       const ex = cam.pos[0] < a ? a : b, e1 = P([ex, h0, zf]), e2 = P([ex, Math.min(h1, 400), zf]);
-      if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25), 0.4); ctx.lineWidth = Math.max(1, cam.S([a, 40, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); }
+      if (e1[2] > 0 && e2[2] > 0) { ctx.strokeStyle = rgba(mix(C.n600, C.n300, 0.25 + (amb.friso || 0) * 0.5), 0.4 + (amb.friso || 0)); ctx.lineWidth = Math.max(1, cam.S([a, 40, zf]) * 0.25); ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); }
     }
   }
   // o vidro da porta: um reflexo diagonal fraco da sala (faixas largas), por cima da cidade
@@ -531,10 +536,15 @@
       rr(x, x0, y0, w, h, 22, rgba(BL));
       x.save(); x.beginPath(); x.roundRect(x0 + 16, y0 + 16, w - 32, 430, 16); x.clip();
       x.fillStyle = rgba(FOTO); x.fillRect(x0, y0, w, 470);
+      // rodada de série (A6): as fotos eram quatro ovais iguais (ar de placeholder); agora são silhuetas diferentes,
+      // desfocadas: uma bolsa aqui e, nos três menores, um frasco alto, uma caixa e uma peça dobrada
       mancha(x, x0 + w * 0.5, y0 + 240, 270, 220, C.n700, 0.9);
-      mancha(x, x0 + w * 0.5, y0 + 384, 150, 28, C.n950, 0.7);
-      mancha(x, x0 + w * 0.48, y0 + 250, 90, 140, C.n500, 0.85);
-      mancha(x, x0 + w * 0.45, y0 + 196, 38, 66, C.n400, 0.45);
+      mancha(x, x0 + w * 0.5, y0 + 384, 170, 26, C.n950, 0.7);
+      x.save(); x.filter = 'blur(7px)';
+      x.beginPath(); x.moveTo(x0 + 190, y0 + 210); x.lineTo(x0 + 410, y0 + 210); x.lineTo(x0 + 440, y0 + 380); x.lineTo(x0 + 160, y0 + 380); x.closePath(); x.fillStyle = rgba(C.n500, 0.9); x.fill();
+      x.beginPath(); x.arc(x0 + 300, y0 + 214, 74, Math.PI, 0); x.strokeStyle = rgba(C.n500, 0.85); x.lineWidth = 16; x.stroke();
+      x.beginPath(); x.moveTo(x0 + 200, y0 + 222); x.lineTo(x0 + 400, y0 + 222); x.lineTo(x0 + 412, y0 + 290); x.lineTo(x0 + 188, y0 + 290); x.closePath(); x.fillStyle = rgba(C.n400, 0.35); x.fill();
+      x.restore();
       x.restore();
       for (let i = 0; i < 4; i++) circ(x, x0 + w / 2 - 33 + i * 22, y0 + 426, 4.5, rgba(i === 0 ? C.n400 : C.n600, 0.9));
       rr(x, x0 + 28, y0 + 478, 300, 16, 8, rgba(C.n100, 0.78)); rr(x, x0 + 28, y0 + 506, 200, 10, 5, rgba(C.n600, 0.9));
@@ -546,7 +556,12 @@
       const x0 = 664, y0 = 140 + i * 224, w = 496, h = 204, tom = [C.n500, C.n600, C.n500][i];
       rr(x, x0, y0, w, h, 20, rgba(BL));
       x.save(); x.beginPath(); x.roundRect(x0 + 14, y0 + 14, 176, 176, 14); x.clip(); x.fillStyle = rgba(FOTO); x.fillRect(x0, y0, 200, h);
-      mancha(x, x0 + 102, y0 + 104, [44, 62, 50][i], [62, 40, 56][i], tom, 0.8); mancha(x, x0 + 102, y0 + 160, 60, 12, C.n950, 0.55); x.restore();
+      mancha(x, x0 + 102, y0 + 160, 60, 12, C.n950, 0.55);
+      x.filter = 'blur(5px)';
+      if (i === 0) { rr(x, x0 + 80, y0 + 66, 44, 96, 12, rgba(tom, 0.9)); rr(x, x0 + 92, y0 + 42, 20, 28, 5, rgba(C.n400, 0.7)); }                 // frasco alto
+      else if (i === 1) { rr(x, x0 + 52, y0 + 76, 100, 82, 6, rgba(tom, 0.95)); rr(x, x0 + 52, y0 + 76, 100, 18, 4, rgba(C.n400, 0.45)); }        // caixa
+      else { x.beginPath(); x.moveTo(x0 + 40, y0 + 156); x.lineTo(x0 + 60, y0 + 112); x.quadraticCurveTo(x0 + 102, y0 + 92, x0 + 144, y0 + 112); x.lineTo(x0 + 164, y0 + 156); x.closePath(); x.fillStyle = rgba(tom, 0.9); x.fill(); }   // peça dobrada
+      x.filter = 'none'; x.restore();
       rr(x, x0 + 214, y0 + 42, [190, 150, 210][i], 12, 6, rgba(C.n400, 0.9)); rr(x, x0 + 214, y0 + 66, 120, 9, 4.5, rgba(C.n600, 0.9));
       rr(x, x0 + 214, y0 + 132, 90, 22, 6, rgba(C.n500, 0.75));
       x.beginPath(); x.arc(x0 + w - 44, y0 + 143, 18, 0, 7); x.strokeStyle = rgba(C.n600); x.lineWidth = 2; x.stroke();
@@ -586,6 +601,10 @@
           quad(u0 + gw * 0.2, u1 - gw * 0.2, h1 - 1.9, h1 - 0.9); ctx.fillStyle = rgba(C.n500, 0.35); ctx.fill();
           { const a = Pf(u0, h1), z = Pf(u1, h1); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(z[0], z[1]); ctx.strokeStyle = rgba(C.n300, 0.14); ctx.lineWidth = 1; ctx.stroke(); }
         }
+        // rodada de série (A6): um contraluz frio nas arestas verticais e no topo, para o gaveteiro sair do escuro
+        if (fc.frente) { const S = fc.frente.S; ctx.save(); ctx.lineCap = 'round';
+          for (const [p0, p1] of [[S[0], S[3]], [S[1], S[2]]]) { ctx.strokeStyle = lin(ctx, p0, p1, [[0, rgba(mix(C.n300, C.e300, 0.3), 0.4)], [1, rgba(C.n300, 0.05)]]); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); }
+          ctx.restore(); }
         // a sombra do celular na frente do gaveteiro (do abajur) e a oclusão onde ele encosta
         if (ABAJUR && fc.frente) {
           const L = ABAJUR.pos, P0 = Fx.P(0, 0, -b.d / 2), proj = q => { const t = dot(n, sub(P0, L)) / dot(n, sub(q, L)); return add(L, mul(sub(q, L), t)); };
@@ -609,7 +628,7 @@
       telaNoPlano(ctx, cam, F, [-CEL.w / 2 + 0.28, CEL.w / 2 - 0.28, 0.3, CEL.h - 0.3], -CEL.d / 2 - 0.005, T, 0.75);
       if (base) caixa3d(ctx, cam, F, { u: [-3.0, 3.0], h: [-0.3, 0.35], v: [-CEL.d / 2 - 0.5, -CEL.d / 2 - 0.05], alb: plast, aresta: 0.22 });
     }
-    return { objeto, sombras, tela: Object.assign(tela, { alcance: 16, k: 1 }), desenhar, brilhoMesa: { c: [c.x, 0.02, c.z - 3], rx: 16, rz: 7 } };
+    return { objeto, sombras, tela: Object.assign(tela, { alcance: 16, k: 1 }), desenhar, brilhoMesa: { c: [c.x, 0.02, c.z - 3], rx: 16, rz: 7, k: c.brilhoK || 1 } };
   }
   function montaNotebook(it) {
     const nb = it.notebook, Fb = Fr({ x: nb.x, y: 0, z: nb.z, rot: nb.rot });
@@ -652,7 +671,7 @@
         caixa3d(sx, cam, Fs, Object.assign({ alb: [40, 45, 58], aresta: 0.1, esc: 0.75 }, sac));
         const fz = -5.05 * k; caixa3d(sx, cam, Fs, { u: [-8.5 * k, 8.5 * k], h: [16.8 * k, 19 * k], v: [fz - 0.05, fz + 0.05], alb: [46, 51, 64], esc: 0.95 });
         for (const vv of [-4.6 * k, 4.6 * k]) { const pts = []; for (let i = 0; i <= 16; i++) { const a = Math.PI * i / 16; pts.push(cam.P(Fs.P(-3.2 * k * Math.cos(a), 19 * k + 7 * k * Math.sin(a), vv))); }
-          sx.beginPath(); pts.forEach((p, i) => i ? sx.lineTo(p[0], p[1]) : sx.moveTo(p[0], p[1])); sx.strokeStyle = rgba(luz([32, 36, 46], Fs.P(0, 24 * k, vv), [0, 1, -0.5]), 1); sx.lineWidth = Math.max(1.2, cam.S(Fs.P(0, 22 * k, vv)) * 0.35); sx.lineCap = 'round'; sx.stroke(); }
+          sx.beginPath(); pts.forEach((p, i) => i ? sx.lineTo(p[0], p[1]) : sx.moveTo(p[0], p[1])); sx.strokeStyle = rgba(mix(luz([32, 36, 46], Fs.P(0, 24 * k, vv), [0, 1, -0.5]), C.n300, 0.35), 1); /* rodada de série (A6): contraluz na alça */ sx.lineWidth = Math.max(1.2, cam.S(Fs.P(0, 22 * k, vv)) * 0.35); sx.lineCap = 'round'; sx.stroke(); }
         ctx.save(); ctx.filter = `blur(${sc.blur || 0}px)`; ctx.drawImage(sl, 0, 0); ctx.restore(); }
       caixa3d(ctx, cam, Fb, Object.assign({ alb: plast, aresta: 0.2 }, base));
       caixa3d(ctx, cam, F, { u: [-4, 4], h: [-0.6, 10], v: [TB.d / 2, TB.d / 2 + 0.5], alb: plast });
@@ -666,35 +685,44 @@
   }
   function montaTotem(it) {
     const t = it.totem, Fb = Fr({ x: t.x, y: 0, z: t.z, rot: t.rot });
-    const base = { u: [-17, 17], h: [0, 2.2], v: [-12, 12] }, col = { u: [-5, 5], h: [2.2, 92], v: [0.5, 7] };
-    const topo = Fb.P(0, 88, 3.8), Fh = Fr({ x: topo[0], y: topo[1], z: topo[2], rot: t.rot, tilt: 13 });
-    const cab = { w: 32, h: 46, d: 4, r: 2 };
+    // rodada de série (A6): a cabeça ~19% maior (tela de ~21" em vez de ~15") e a coluna mais larga: a 64 px o totem
+    // era o objeto de menor massa da série e lia como "algo num poste"; E escala as medidas da cabeça
+    const E = 1.19;
+    const base = { u: [-18, 18], h: [0, 2.2], v: [-12, 12] }, col = { u: [-6, 6], h: [2.2, 86], v: [0.5, 7] };
+    const topo = Fb.P(0, 82, 3.8), Fh = Fr({ x: topo[0], y: topo[1], z: topo[2], rot: t.rot, tilt: 13 });
+    const cab = { w: 32 * E, h: 46 * E, d: 4, r: 2 * E };
     const objeto = pontosLaje(Fh, cab).concat(pontosCaixa(Fb, base));
-    const tela = { c: Fh.P(0, 28, -cab.d / 2), n: Fh.R([0, 0, -1]), alcance: 34, k: 1.0 };
-    const leitor = Fh.P(0, 6.8, -cab.d / 2 - 0.05);
+    const tela = { c: Fh.P(0, 28 * E, -cab.d / 2), n: Fh.R([0, 0, -1]), alcance: 34 * E, k: 1.0 };
+    const leitor = Fh.P(0, 6.8 * E, -cab.d / 2 - 0.05);
     function desenhar(ctx, cam, o) {
       const corpo = [46, 52, 64];
       caixa3d(ctx, cam, Fb, Object.assign({ alb: corpo, aresta: 0.2, esc: 0.75 }, base));
-      caixa3d(ctx, cam, Fb, Object.assign({ alb: corpo, esc: 0.6 }, col));
+      const fc = caixa3d(ctx, cam, Fb, Object.assign({ alb: corpo, esc: 0.6 }, col));
+      // a luz da tela desce pela frente da coluna (um filete frio que some até o meio dela), para a silhueta sair do vidro
+      if (fc.frente) { const S = fc.frente.S, a = cam.P(Fb.P(0, col.h[1], col.v[0])), z = cam.P(Fb.P(0, col.h[1] * 0.45, col.v[0]));
+        ctx.save(); path(ctx, S); ctx.clip(); ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = lin(ctx, a, z, [[0, rgba(C.e400, 0.16 * o.telaBrilho)], [1, rgba(C.e400, 0)]]); ctx.fillRect(0, 0, cam.W, cam.H);
+        for (const k of [0, 1]) { const p0 = S[k], p1 = S[3 - k]; ctx.strokeStyle = lin(ctx, p0, p1, [[0, rgba(C.n300, 0.35)], [0.6, rgba(C.n300, 0)]]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); }
+        ctx.restore(); }
       const L = laje(ctx, cam, Fh, Object.assign({ alb: corpo, frente: [16, 21, 29], aro: 0.32, aroW: 0.04 }, cab));
       const [w, h, f] = UIS.totem; const T = tex(w, h, 0.62, f);
-      telaNoPlano(ctx, cam, Fh, [-13.8, 13.8, 13.4, 44.0], -cab.d / 2 - 0.01, T, 0.6);
+      telaNoPlano(ctx, cam, Fh, [-13.8 * E, 13.8 * E, 13.4 * E, 44.0 * E], -cab.d / 2 - 0.01, T, 0.6 * E);
       // o leitor: aro escuro, a placa e o anel de LED ciano (o detalhe da Strukti), e o hexágono da marca
       const ua = Fh.R([1, 0, 0]), ha = Fh.R([0, 1, 0]), Fp = (u, h) => Fh.P(u, h, -cab.d / 2 - 0.03);
       const disc = (u, h, r, fill) => { discT(ctx, cam, Fp(u, h), mul(ua, r), mul(ha, r)); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = fill; ctx.fill(); ID(ctx); };
-      disc(0, 6.8, 4.6, rgba([8, 12, 18]));
-      disc(0, 6.8, 3.7, rgba(mix(C.c600, C.n900, 0.55)));
-      disc(0, 6.8, 3.0, rgba([12, 17, 25]));
-      { discT(ctx, cam, Fp(-12, 2.6), ua, ha); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 0.75, y = Math.sin(a) * 0.75; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.45); ctx.fill(); ID(ctx); }
+      disc(0, 6.8 * E, 4.6 * E, rgba([8, 12, 18]));
+      disc(0, 6.8 * E, 3.7 * E, rgba(mix(C.c600, C.n900, 0.55)));
+      disc(0, 6.8 * E, 3.0 * E, rgba([12, 17, 25]));
+      { discT(ctx, cam, Fp(-12 * E, 2.6 * E), ua, ha); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 0.75, y = Math.sin(a) * 0.75; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.45); ctx.fill(); ID(ctx); }
       return { ua, ha, Fp };
     }
     function emissao(ctx, cam, o, info) {
       const k = o.ledK; if (!(k > 0)) return;
       const { ua, ha, Fp } = info;
       ctx.save(); ctx.globalCompositeOperation = 'screen';
-      discT(ctx, cam, Fp(0, 6.8), mul(ua, 1), mul(ha, 1)); ctx.beginPath(); ctx.arc(0, 0, 3.7, 0, 7); ctx.arc(0, 0, 3.05, 0, 7, true); ctx.fillStyle = rgba(C.c500, 0.9 * k); ctx.fill(); ID(ctx);
-      glow(ctx, cam.P(Fp(0, 6.8)), cam.S(Fp(0, 6.8)) * 6, C.c500, 0.2 * k);
-      glow(ctx, cam.P(Fp(0, 6.8)), cam.S(Fp(0, 6.8)) * 14, C.c400, 0.05 * k);
+      discT(ctx, cam, Fp(0, 6.8 * E), mul(ua, E), mul(ha, E)); ctx.beginPath(); ctx.arc(0, 0, 3.7, 0, 7); ctx.arc(0, 0, 3.05, 0, 7, true); ctx.fillStyle = rgba(C.c500, 0.9 * k); ctx.fill(); ID(ctx);
+      glow(ctx, cam.P(Fp(0, 6.8 * E)), cam.S(Fp(0, 6.8 * E)) * 6 * E, C.c500, 0.2 * k);
+      glow(ctx, cam.P(Fp(0, 6.8 * E)), cam.S(Fp(0, 6.8 * E)) * 14 * E, C.c400, 0.05 * k);
       ctx.restore();
     }
     return { objeto, sombras: [objeto.concat(pontosCaixa(Fb, col))], tela, desenhar, emissao, leds: [{ pos: add(leitor, mul(Fh.R([0, 0, -1]), 2)), k: 0.25, alcance: 9, eixo: Fh.R([0, 0, -1]) }],
@@ -713,7 +741,7 @@
       // rodada 1 de ajuste: um brilho fraco por trás (a luz dos painéis na parede de vidro), a moldura de alumínio com
       // o fio de luz no topo e o reflexo ciano fraco na borda de baixo
       { const c = cam.P(F.P(0, p.h / 2, p.d / 2)); ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.translate(c[0], c[1]); ctx.scale(1, 0.55);
-        glow(ctx, [0, 0], cam.S(F.P(0, p.h / 2, 0)) * p.w * 0.62, C.c600, 0.07 * o.ledK); ctx.restore(); }
+        glow(ctx, [0, 0], cam.S(F.P(0, p.h / 2, 0)) * p.w * 0.62, C.c600, 0.05 * o.ledK); ctx.restore(); }
       caixa3d(ctx, cam, F, Object.assign({ alb: [40, 46, 58], aresta: 0.6, esc: 0.62, albF: { frente: [74, 82, 96] } }, cx));
       const Fp = (u, h) => F.P(u, h, -p.d / 2 - 0.05), ua = F.R([1, 0, 0]), ha = [0, 1, 0];
       const quad = (u0, u1, h0, h1, fill) => { path(ctx, [[u0, h0], [u1, h0], [u1, h1], [u0, h1]].map(([u, h]) => cam.P(Fp(u, h)))); ctx.fillStyle = fill; ctx.fill(); };
@@ -727,10 +755,12 @@
       const disc = (u, h, r, fill) => { discT(ctx, cam, Fp(u, h), mul(ua, r), mul(ha, r)); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = fill; ctx.fill(); ID(ctx); };
       for (const lado of [-1, 1]) for (let i = 0; i < 20; i++) for (let j = 0; j < 17; j++) disc(lado * (6.2 + i * 2.05), 5.4 + j * 2.05, 0.42, rgba(C.n800, 0.55));
       // os pips: o brilho dos acesos varia 10-15% (LEDs de verdade não são iguais) e cada um tem a lente mais clara no meio
-      const ON = mix(mix(C.c400, C.c200, 0.2), C.n300, 0.3);
-      pips.forEach((q, i) => { disc(q.u, q.h, 3.0, rgba([7, 11, 16]));
-        if (!q.on) { disc(q.u, q.h, 2.3, rgba(mix(C.n800, C.n700, 0.25))); return; }
-        const v = 0.86 + 0.14 * ((i * 37 + 11) % 7) / 6; disc(q.u, q.h, 2.3, rgba(mul(ON, v))); disc(q.u - 0.35, q.h + 0.45, 1.05, rgba(C.c200, 0.18 * v)); });
+      // rodada de série (A6): o quadro mais aceso da série; pips ~15% menores, ~30% menos emissão, e a equipe da
+      // esquerda num ciano mais frio (puxado para o elétrico claro), para o ciano cheio ficar só na barra do tempo
+      const ON = mul(mix(mix(C.c400, C.c200, 0.2), C.n300, 0.42), 0.82), ONL = mix(ON, mul(C.e300, 0.8), 0.5);
+      pips.forEach((q, i) => { disc(q.u, q.h, 2.6, rgba([7, 11, 16]));
+        if (!q.on) { disc(q.u, q.h, 1.95, rgba(mix(C.n800, C.n700, 0.25))); return; }
+        const v = 0.86 + 0.14 * ((i * 37 + 11) % 7) / 6; disc(q.u, q.h, 1.95, rgba(mul(q.lado < 0 ? ONL : ON, v))); disc(q.u - 0.3, q.h + 0.4, 0.9, rgba(C.c200, 0.12 * v)); });
       disc(0, 27, 1.1, rgba(C.c300, 0.9)); disc(0, 17, 1.1, rgba(C.c300, 0.9));
       // a barra do tempo (embaixo, no meio) e o hexágono da marca
       quad(-1.2, 1.2, 6, 11.5, rgba(C.n700, 0.9)); quad(-1.2, 1.2, 6, 9.2, rgba(C.c400, 0.85));
@@ -740,9 +770,9 @@
     function emissao(ctx, cam, o, info) {
       const k = o.ledK; if (!(k > 0)) return; const { Fp } = info;
       ctx.save(); ctx.globalCompositeOperation = 'screen';
-      for (const q of pips) if (q.on) { const c = Fp(q.u, q.h); glow(ctx, cam.P(c), cam.S(c) * 5, C.c500, 0.12 * k); }
+      for (const q of pips) if (q.on) { const c = Fp(q.u, q.h); glow(ctx, cam.P(c), cam.S(c) * 4.2, q.lado < 0 ? C.e400 : C.c500, 0.07 * k); }
       // o véu de luz ciano dos painéis no ar à frente (fraco e largo)
-      glow(ctx, cam.P(fr), cam.S(fr) * 70, C.c500, 0.05 * k);
+      glow(ctx, cam.P(fr), cam.S(fr) * 70, C.c500, 0.03 * k);
       ctx.restore();
     }
     return { objeto, sombras: [], desenhar, emissao,   // suspenso: sem sombra no tampo
@@ -755,13 +785,14 @@
     function desenhar(ctx, cam, o) {
       // o suporte na parede (uma chapa) e a caixa do sensor
       caixa3d(ctx, cam, F, { u: [-s.w / 2 + 2, s.w / 2 - 2], h: [1, s.h + 3], v: [s.d / 2, PZ - s.z], alb: [36, 41, 52], esc: 0.75 });
-      const f = caixa3d(ctx, cam, F, Object.assign({ alb: [52, 58, 72], aresta: 0.35, esc: 0.72 }, cx));
+      // rodada de série (A6): com a luz de teto mais fraca, a caixa ganha luz ambiente e o fio de cima, para se separar da parede
+      const f = caixa3d(ctx, cam, F, Object.assign({ alb: [56, 64, 80], aresta: 0.6, esc: 0.7, k: { amb: 1.6 } }, cx));
       // embaixo: as duas lentes (escuras, com aro ciano apagado); na frente: o hexágono e o LED
       const Fd = (u, v) => F.P(u, -0.03, v), ua = [1, 0, 0], va = [0, 0, 1];
       const discB = (u, v, r, fill) => { discT(ctx, cam, Fd(u, v), mul(ua, r), mul(va, r)); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fillStyle = fill; ctx.fill(); ID(ctx); };
       if (f.base) { for (const u of [-5.5, 5.5]) { discB(u, 0, 2.6, rgba([8, 12, 18])); discB(u, 0, 1.7, rgba(mix(C.c600, C.n900, 0.5))); discB(u, 0, 1.1, rgba([5, 8, 13])); } }
       const Fp = (u, h) => F.P(u, h, -s.d / 2 - 0.04);
-      { discT(ctx, cam, Fp(-s.w / 2 + 3.2, s.h / 2), ua, [0, 1, 0]); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 1.1, y = Math.sin(a) * 1.1; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.5); ctx.fill(); ID(ctx); }
+      { discT(ctx, cam, Fp(-s.w / 2 + 3.2, s.h / 2), ua, [0, 1, 0]); ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * 60 + 90) * RAD; const x = Math.cos(a) * 0.66, y = Math.sin(a) * 0.66; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fillStyle = rgba(C.n300, 0.16); ctx.fill(); ID(ctx); }
       path(ctx, rrect(9, 0.9, 0.45, 4).map(([u, h]) => cam.P(Fp(u + 4, 2.2 + h)))); ctx.fillStyle = rgba(mix(C.c600, C.n900, 0.7)); ctx.fill();
       return { Fp, Fd, discB };
     }
@@ -774,9 +805,9 @@
       const fim = o.leque || 0.52, yF = cam.H * fim;
       const pts = [a[0], a[1], pe[1], pe[0]];
       path(ctx, hull(pts.concat([pe[2], pe[3]])));
-      ctx.fillStyle = lin(ctx, [0, yS], [0, yF], [[0, rgba(C.c400, 0.13 * k)], [0.35, rgba(C.c400, 0.055 * k)], [1, rgba(C.c400, 0)]]); ctx.fill();
+      ctx.fillStyle = lin(ctx, [0, yS], [0, yF], [[0, rgba(C.c400, 0.15 * k)], [0.3, rgba(C.c400, 0.09 * k)], [0.7, rgba(C.c400, 0.055 * k)], [1, rgba(C.c400, 0)]]); ctx.fill();
       // as bordas do leque, um fio
-      for (const [p0, p1] of [[a[0], pe[0]], [a[1], pe[1]]]) { const t = (yF - p0[1]) / (p1[1] - p0[1]); const q = [p0[0] + (p1[0] - p0[0]) * t, yF]; ctx.strokeStyle = lin(ctx, p0, q, [[0, rgba(C.c300, 0.3 * k)], [1, rgba(C.c300, 0)]]); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); }
+      for (const [p0, p1] of [[a[0], pe[0]], [a[1], pe[1]]]) { const t = (yF - p0[1]) / (p1[1] - p0[1]); const q = [p0[0] + (p1[0] - p0[0]) * t, yF]; ctx.strokeStyle = lin(ctx, p0, q, [[0, rgba(C.c300, 0.42 * k)], [1, rgba(C.c300, 0)]]); ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); }
       // as lentes e o LED acesos
       for (const u of [-5.5, 5.5]) glow(ctx, cam.P(Fd(u, 0)), cam.S(Fd(u, 0)) * 3.2, C.c400, 0.35 * k);
       path(ctx, rrect(9, 0.9, 0.45, 4).map(([u, h]) => cam.P(Fp(u + 4, 2.2 + h)))); ctx.fillStyle = rgba(C.c500, 0.9 * k); ctx.fill();
