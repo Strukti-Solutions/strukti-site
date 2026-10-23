@@ -37,8 +37,8 @@
  * "Roda de mouse suave" abaixo): progresso p de 0 a 1; a roda soma deltaY ×
  * 0,0007 (o original: 0,0009); o toque soma deltaY × 0,0039 para expandir e
  * × 0,0062 para recolher (o original: 0,005 e 0,008); expandido, roda para
- * cima (ou arrasto de mais de 20 px para baixo) com scrollY ≤ 5 recolhe; o conteúdo aparece em p = 1 e some abaixo
- * de 0,75; o quadro vai de 300 × 400 a 1550 × 800 px (950 × 600 abaixo de
+ * cima (ou arrasto de mais de 20 px para baixo) com scrollY ≤ 5 recolhe; o
+ * conteúdo aparece em p = 1 e some abaixo de 0,75; o quadro vai de 300 × 400 a 1550 × 800 px (950 × 600 abaixo de
  * 768 px), até 95vw × 85vh (e nunca sob a barra fixa, ver abaixo); o fundo
  * some (1 − p); o título e as legendas se abrem p × 150vw (180vw abaixo de
  * 768 px). Mudanças:
@@ -50,7 +50,7 @@
  *   original. O teclado não mudou (seta 0,1, página 0,34): são passos
  *   discretos, com transição, e já pedem 10 setas ou 3 páginas.
  * - Roda de mouse suave (23/10/2026): um clique de roda (deltaY de ~100 px)
- *   pulava 7 a 9% do progresso num quadro só, enquanto o trackpad e o toque
+ *   pulava 9 a 11% do progresso num quadro só, enquanto o trackpad e o toque
  *   mandam passos pequenos e já pareciam contínuos. O clique agora move um
  *   progresso-alvo, e um requestAnimationFrame leva o progresso desenhado
  *   até ele por suavização exponencial no tempo (fator 1 − e^(−dt/τ), τ =
@@ -153,8 +153,12 @@ const TOUCH_GAIN_BACK = 0.0062;
 const WHEEL_NOTCH_PX = 40;
 /** Roda de mouse: constante de tempo da suavização (o desenhado anda 1 − e^(−dt/τ) do que falta). */
 const WHEEL_SMOOTH_TAU_MS = 120;
-/** Mais perto do alvo do que isto, o desenhado encosta nele e a animação para (0,0005 ≈ 0,6 px). */
-const WHEEL_SMOOTH_SNAP = 0.0005;
+/**
+ * Mais perto do alvo do que isto, o desenhado encosta nele e a animação para
+ * (0,004 ≈ 5 px de crescimento, invisível). Encurta a cauda exponencial: de
+ * 0,99 a 1 são ~110 ms, e não ~360 ms com a página presa e o quadro já pronto.
+ */
+const WHEEL_SMOOTH_SNAP = 0.004;
 /** O 1º quadro de uma animação (sem quadro anterior para medir) vale 1/60 s. */
 const FIRST_FRAME_MS = 1000 / 60;
 /** Um quadro mais longo do que isso (aba em segundo plano, engasgo) conta só isto. */
