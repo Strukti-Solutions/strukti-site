@@ -4784,12 +4784,14 @@ textarea.field__input {
   }
 }
 
-/* Teclado e saltos (âncora, foco): as camadas novas ganham a transição
-   curta do expansao, com a mesma curva (tela e aparelho seguem alinhados).
-   A tela não transiciona em p = 1: a página rola de uma vez na liberação e
-   na volta, e a tela tem de acompanhar no mesmo quadro. */
+/* Saltos (âncora, foco, a montagem: data-input "auto"): as camadas novas
+   ganham a transição curta do expansao, com a mesma curva (tela e aparelho
+   seguem alinhados). O teclado não entra aqui: no modo entrada ele anima
+   pelo JavaScript, como o clique da roda (data-input "wheel"). A tela não
+   transiciona em p = 1: a página rola de uma vez na liberação e na volta,
+   e a tela tem de acompanhar no mesmo quadro. */
 @media (prefers-reduced-motion: no-preference) {
-  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__midia {
+  .hero-expansao--entrada[data-input="auto"] .hero-expansao__midia {
     transition:
       width 300ms var(--ease-out),
       height 300ms var(--ease-out),
@@ -4797,23 +4799,21 @@ textarea.field__input {
       box-shadow 300ms var(--ease-out);
   }
 
-  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"])
-    :is(.hero-expansao__poster, .hero-expansao__video) {
+  .hero-expansao--entrada[data-input="auto"] :is(.hero-expansao__poster, .hero-expansao__video) {
     transition:
       transform 300ms var(--ease-out),
       filter 300ms var(--ease-out);
   }
 
-  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__aparelho {
+  .hero-expansao--entrada[data-input="auto"] .hero-expansao__aparelho {
     transition: transform 300ms var(--ease-out);
   }
 
-  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]):not([data-progress="1.00"])
-    .hero-expansao__conteudo {
+  .hero-expansao--entrada[data-input="auto"]:not([data-progress="1.00"]) .hero-expansao__conteudo {
     transition: transform 300ms var(--ease-out);
   }
 
-  .hero-expansao--entrada:is([data-input="key"], [data-input="auto"]) .hero-expansao__linha {
+  .hero-expansao--entrada[data-input="auto"] .hero-expansao__linha {
     transition:
       transform 300ms var(--ease-out),
       opacity 300ms var(--ease-out);

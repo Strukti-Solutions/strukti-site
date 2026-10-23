@@ -290,12 +290,17 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     expect(hxp()).toBeCloseTo((100 * 0.0039 - 20 * 0.0062) / ENTRADA.ganho, 6);
   });
 
-  it("teclado: segue por P total (seta 0,1, página 0,34)", async () => {
+  it("teclado: segue por P total (seta 0,1, página 0,34), animado como o clique da roda", async () => {
     await mount();
 
     key("ArrowDown");
+    expect(hxp()).toBeGreaterThan(0);
+    expect(hxp()).toBeLessThan(0.1);
+    expect(hero().dataset.input).toBe("wheel");
+    settle();
     expect(state().progress).toBe("0.10");
     key("PageDown");
+    settle();
     expect(state().progress).toBe("0.44");
   });
 
@@ -373,6 +378,7 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
   it("volta pelo toque e pelo teclado no topo da tela", async () => {
     await mount();
     key("End");
+    settle();
     expect(state().expanded).toBe("true");
     setScrollY(PALCO + 3);
     expect(key("Home").prevented).toBe(true);
@@ -380,11 +386,112 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
 
     setScrollY(0);
     key("End");
+    settle();
     expect(state().expanded).toBe("true");
     setScrollY(PALCO);
     touch("touchstart", 300);
     expect(touch("touchmove", 330).defaultPrevented).toBe(true);
     expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+  });
+
+  it("teclado: o passo que chega a 1 anima a aproximação até o fim, e a liberação vem só no último quadro (como a roda)", async () => {
+    await mount();
+    key("PageDown");
+    key("PageDown");
+    settle();
+    expect(hxp()).toBeCloseTo(0.68, 6);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+
+    // O 3º Page Down (0,68 + 0,34 ≥ 1): logo depois da tecla, nada soltou.
+    let notPrevented = true;
+    act(() => {
+      notPrevented = fireEvent.keyDown(document.body, { key: "PageDown" });
+    });
+    expect(notPrevented).toBe(false);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    // Quadro a quadro: o desenhado sobe até 1 sem soltar nem rolar no caminho.
+    let quadros = 0;
+    let anterior = hxp();
+    while (state().progress !== "1.00") {
+      expect(state().expanded).toBe("false");
+      expect(scrollTo).not.toHaveBeenCalled();
+      frame();
+      expect(hxp()).toBeGreaterThanOrEqual(anterior);
+      anterior = hxp();
+      if (++quadros > 200) throw new Error("não chegou a 1");
+    }
+    // Uma animação de verdade, não um salto.
+    expect(quadros).toBeGreaterThan(5);
+    expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith({ top: PALCO, left: 0, behavior: "instant" });
+    expect(expandidoNoScroll).toEqual(["true"]);
+  });
+
+  it("teclado: End e a última seta também animam até o fim; Home anima de volta a 0", async () => {
+    await mount();
+    act(() => {
+      fireEvent.keyDown(document.body, { key: "End" });
+    });
+    expect(state().expanded).toBe("false");
+    settle();
+    expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00" });
+    cleanup();
+
+    scrollTo.mockClear();
+    await mount();
+    for (let index = 0; index < 9; index++) key("ArrowDown");
+    settle();
+    expect(hxp()).toBeCloseTo(0.9, 6);
+    act(() => {
+      fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    });
+    expect(state().expanded).toBe("false");
+    expect(scrollTo).not.toHaveBeenCalled();
+    settle();
+    expect(state()).toMatchObject({ pin: "false", expanded: "true" });
+
+    // De volta no topo da tela: Home recolhe (P fica em 1) e o próximo leva a 0, animado.
+    setScrollY(PALCO);
+    expect(key("Home").prevented).toBe(true);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+    setScrollY(0);
+    key("Home");
+    expect(hxp()).toBeGreaterThan(0);
+    settle();
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "0.00" });
+  });
+
+  it("teclado: a volta a partir de P = 1 solto segue como antes (recolhe em 1, depois desce por página)", async () => {
+    await mount();
+    key("End");
+    settle();
+    expect(state().expanded).toBe("true");
+    scrollTo.mockClear();
+    expandidoNoScroll = [];
+
+    // Abaixo do topo da tela, a tecla é da página.
+    setScrollY(PALCO + 200);
+    expect(key("PageUp").prevented).toBe(false);
+    expect(state().expanded).toBe("true");
+
+    setScrollY(PALCO);
+    expect(key("PageUp").prevented).toBe(true);
+    expect(state()).toEqual({ pin: "true", expanded: "false", progress: "1.00", content: "visible" });
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "instant" });
+    expect(expandidoNoScroll).toEqual(["false"]);
+    setScrollY(0);
+
+    key("PageUp");
+    settle();
+    expect(hxp()).toBeCloseTo(0.66, 6);
+    key("PageUp");
+    settle();
+    expect(hxp()).toBeCloseTo(0.32, 6);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+    expect(scrollTo).toHaveBeenCalledTimes(1);
   });
 
   it("volta pela barra de rolagem (ou o Home do navegador): expandido, rolar para acima do topo da tela recolhe com P em 1", async () => {

@@ -137,7 +137,12 @@
  *   hero "notebook"); sem ela, nada aqui muda. O mesmo p passa a cobrir três
  *   fases (expansão, pausa e a aproximação até a tela do aparelho, em
  *   `src/lib/heroEntrada.ts`), com os ganhos da roda e do toque ÷
- *   `ENTRADA.ganho` (o teclado segue por p: seta 0,1, página 0,34). O
+ *   `ENTRADA.ganho` (o teclado segue por p: seta 0,1, página 0,34). As
+ *   teclas animam como o clique da roda (o alvo anda e o desenhado o
+ *   persegue), e não pela transição do CSS: a liberação acontece no quadro
+ *   em que o desenhado chega a 1, e a transição seria cortada por ela já no
+ *   keydown (achado da revisão final, 23/10/2026); o Tab ("auto") segue
+ *   completando na hora (Q21). O
  *   `paint()` escreve a câmera (`camera()`) em variáveis CSS (`--hx-e`,
  *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x`,
  *   `--hx-linha2-x`, `--hx-titulo-saida`); a janela útil (largura da seção,
@@ -685,12 +690,19 @@ export function ScrollExpandMedia({
       else smoothFrameRef.current = requestAnimationFrame(smoothStep);
     };
 
-    /** Clique de roda de mouse: move o alvo; o desenhado segue do ponto em que está. */
-    const aimProgress = (delta: number) => {
+    /**
+     * Leva o alvo a `next`; o desenhado segue do ponto em que está, quadro a
+     * quadro. É o caminho do clique de roda e, no modo entrada, o das teclas
+     * (`data-input` "wheel" nos dois: sem transição do CSS por cima).
+     */
+    const aimAt = (next: number) => {
       section.dataset.input = "wheel";
-      targetRef.current = clampProgress(targetRef.current + delta);
+      targetRef.current = clampProgress(next);
       if (smoothFrameRef.current === null) smoothFrameRef.current = requestAnimationFrame(smoothStep);
     };
+
+    /** Clique de roda de mouse: move o alvo. */
+    const aimProgress = (delta: number) => aimAt(targetRef.current + delta);
 
     armedRef.current = true;
     expandedRef.current = false;
@@ -770,7 +782,13 @@ export function ScrollExpandMedia({
       }
       event.preventDefault();
       // Do alvo: no meio de uma animação da roda, a tecla parte de onde ela ia.
-      setProgress(step === Infinity ? 1 : step === -Infinity ? 0 : targetRef.current + step, "key");
+      const alvo = step === Infinity ? 1 : step === -Infinity ? 0 : targetRef.current + step;
+      // Modo entrada: a tecla anima como o clique da roda, e o desenhado só
+      // chega a 1 (e solta a página) no fim da aproximação. Pelo CSS, a
+      // liberação viria no próprio keydown, antes de qualquer quadro da
+      // transição, e cortaria a aproximação.
+      if (entrada) aimAt(alvo);
+      else setProgress(alvo, "key");
     };
 
     /**
