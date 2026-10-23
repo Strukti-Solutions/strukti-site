@@ -69,7 +69,7 @@
 // rolagem clássica) e 320×640 (celular), em que a linha de apoio e a dica
 // não podem passar por baixo do controle do vídeo nem sair da largura; e o
 // toque de verdade a 390×844 (celular, toque emulado): um dedo arrastado
-// 100 px expande metade e segura, e uma pinça amplia a página sem mexer no
+// 100 px expande 0,39 e segura, e uma pinça amplia a página sem mexer no
 // hero. Só usa os ganchos estáveis do hero (data-pin, data-expanded,
 // data-progress, data-content, --hx-p e as classes .hero-expansao__*).
 //
@@ -226,9 +226,13 @@ const EXPANSAO_SIZES = [
   { width: 360, height: 740 },
   { width: 740, height: 360 },
 ];
-// Roda: muitos passos pequenos (40 px = 0,036 de progresso no original); o
-// orçamento sobra para expandir (~28 eventos).
+// Roda: muitos passos de 40 px (× 0,0007 = 0,028 de progresso; 0,036 no
+// original, antes de o hero ficar ~30% mais lento). 40 px já conta como
+// clique de roda de mouse, que é suavizado (o quadro desliza até o alvo):
+// cada amostra espera a animação assentar (expSettle). O orçamento sobra
+// para expandir (~36 eventos).
 const EXP_WHEEL_DELTA = 40;
+const EXP_WHEEL_GAIN = 0.0007;
 const EXP_WHEEL_BUDGET = 80;
 // Produto que o passo de âncoras do "expansao" escolhe no menu "Produtos ▾"
 // da barra (catálogo, §3.5): o link é #slug e a página para no topo da seção
@@ -1102,6 +1106,33 @@ async function isPaused(cdp, selector) {
 const expState = (cdp) => evalValue(cdp, EXP_STATE_EXPR, { awaitPromise: true });
 const expWaitOpacity = (cdp, selector, options) =>
   evalValue(cdp, expWaitOpacityExpr(selector, options), { awaitPromise: true });
+/**
+ * Espera a animação da roda de mouse assentar: o --hx-p parado por 3 quadros
+ * seguidos (até `ms`). O clique da roda (deltaMode em linhas ou |deltaY| ≥
+ * 40 px) leva o quadro até o alvo em ~0,5 s (τ = 120 ms); sem esperar, a
+ * amostra pega o quadro a caminho. Devolve se assentou.
+ */
+const expSettle = (cdp, ms = 2500) =>
+  evalValue(
+    cdp,
+    `new Promise((resolve) => {
+  const root = document.querySelector(${JSON.stringify(HERO_EXP_SELECTOR)});
+  if (!root) return resolve(false);
+  const start = performance.now();
+  let last = null;
+  let still = 0;
+  const tick = () => {
+    const now = root.style.getPropertyValue("--hx-p");
+    still = now === last ? still + 1 : 0;
+    last = now;
+    if (still >= 3) return resolve(true);
+    if (performance.now() - start > ${ms}) return resolve(false);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+})`,
+    { awaitPromise: true },
+  );
 const area = (box) => (box ? box.w * box.h : 0);
 const fixed2 = (n) => (typeof n === "number" ? n.toFixed(2) : String(n));
 /** Preso de verdade: o palco cobre a tela inteira, parado no topo (os atributos sozinhos podem mentir). */
@@ -1252,9 +1283,17 @@ async function expWheelPass(cdp, ctx, staticHeight) {
 
   const samples = [s0];
   let wheels = 0;
+  let unsettled = 0;
   while (wheels < EXP_WHEEL_BUDGET && samples.at(-1).expanded !== "true") {
     for (let k = 0; k < 4; k++, wheels++) await wheelAt(cdp, x, y, EXP_WHEEL_DELTA);
+    if (!(await expSettle(cdp))) unsettled++;
     samples.push(await expState(cdp));
+  }
+  if (unsettled > 0) ctx.fail(`roda: a animação da roda não assentou em ${unsettled} amostra(s) (o --hx-p seguiu mudando por 2,5 s)`);
+  // O ganho, na roda de verdade: 4 cliques de 40 px, já assentados.
+  const firstStep = 4 * EXP_WHEEL_DELTA * EXP_WHEEL_GAIN;
+  if (samples[1] && samples[1].hxp !== null && Math.abs(samples[1].hxp - firstStep) > 0.02) {
+    ctx.fail(`roda: 4 eventos de ${EXP_WHEEL_DELTA}px levaram o progresso a ${samples[1].hxp.toFixed(4)} (esperado ${firstStep.toFixed(3)}, × ${EXP_WHEEL_GAIN})`);
   }
   expCheckForward(ctx, "roda", samples);
   for (let i = 1; i < samples.length; i++) {
@@ -1345,6 +1384,7 @@ async function expWheelPass(cdp, ctx, staticHeight) {
   const backSamples = [unexpanded];
   for (let ups = 0; ups < 60 && Number(backSamples.at(-1).progress) > 0.3; ups += 4) {
     for (let k = 0; k < 4; k++) await wheelAt(cdp, x, y, -EXP_WHEEL_DELTA);
+    await expSettle(cdp);
     backSamples.push(await expState(cdp));
   }
   const back = backSamples.at(-1);
@@ -1751,7 +1791,7 @@ async function expSpacingPass(cdp, ctx, { mobile, dsf = 1, spaced = true }) {
 
 /**
  * 9. Toque de verdade (celular com toque emulado, Input.dispatchTouchEvent):
- * um dedo arrastado 100 px para cima expande metade (× 0,005) e segura; uma
+ * um dedo arrastado 100 px para cima expande 0,39 (× 0,0039, na hora) e segura; uma
  * pinça (dois dedos se abrindo) amplia a página e não mexe no hero, nem pela
  * rolagem que o zoom causa.
  */
@@ -1770,8 +1810,8 @@ async function expTouchPass(cdp, ctx) {
     }
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     const dragged = await expState(cdp);
-    if (Math.abs(Number(dragged.progress) - 0.5) > 0.02 || dragged.pin !== "true" || !holdsViewport(dragged)) {
-      ctx.fail(`toque: um dedo, 100 px para cima: progresso ${dragged.progress}, data-pin=${dragged.pin}, scrollY ${dragged.scrollY} (esperado 0.50 e preso)`);
+    if (Math.abs(Number(dragged.progress) - 0.39) > 0.02 || dragged.pin !== "true" || !holdsViewport(dragged)) {
+      ctx.fail(`toque: um dedo, 100 px para cima: progresso ${dragged.progress}, data-pin=${dragged.pin}, scrollY ${dragged.scrollY} (esperado 0.39 e preso)`);
     }
 
     if (!(await expLoadPinned(cdp, ctx, "pinça"))) return;
