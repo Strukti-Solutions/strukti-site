@@ -31,11 +31,16 @@ type Mundo = {
   win: { y0: number };
   wallZ: number;
 };
+type MundoEmPe = Omit<Mundo, "phone"> & {
+  laptop: Mundo["laptop"];
+  phone: null;
+  celular: { x: number; z: number; tilt: number };
+};
 type Camera = { P: (p: Vec) => Vec };
 type Cena = {
   BASE: Record<string, unknown> & {
     notebook?: unknown;
-    laptop: { x: number; z: number };
+    laptop: { x: number; z: number; tilt: number };
     phone: { x: number; z: number };
     box: { x: number; z: number };
     mug: { x: number; z: number };
@@ -43,11 +48,22 @@ type Cena = {
   };
   CAMS: Record<
     string,
-    { W: number; H: number; semAparelho?: boolean; peitoril?: unknown; sombraMax?: number; world?: Record<string, unknown> }
+    {
+      W: number;
+      H: number;
+      semAparelho?: boolean;
+      aparelho?: string;
+      desfoque?: unknown;
+      peitoril?: unknown;
+      sombraMax?: number;
+      world?: Record<string, unknown>;
+    }
   >;
   brilhoDaTela: (L: { x: number; z: number; w: number; d: number }) => { centro: Vec; semiZ: number };
   shadowPt: (L: Vec, p: Vec, maxK?: number) => Vec;
   telaDoNotebook: (cam: string) => Tela;
+  telaDoCelular: (cam: string) => Tela;
+  laptopGeo: (L: object) => { lidH: number; at: (u: number, v: number, off?: number) => Vec };
   prepWorld: (o: object) => Mundo;
   makeCam: (o: object) => Camera;
   frameOf: (o: { x: number; z: number; rot: number }) => (u: number, h: number, v: number) => Vec;
@@ -300,9 +316,136 @@ describe("cena do hero notebook", () => {
     });
   });
 
+  describe("a cena em pé (N3): o celular num suporte, na frente e no centro", () => {
+    const EM_PE = { w: 390, h: 844 };
+    const quadroEmPe = (which: "mediaRetrato" | "portrait") => {
+      const o = { ...cena.CAMS[which] } as Record<string, unknown>;
+      const w = cena.prepWorld(o) as unknown as MundoEmPe;
+      const cam = cena.makeCam(o);
+      const caixa = (pts: Vec[]) => {
+        const q = pts.map((p) => cam.P(p));
+        const xs = q.map((p) => p[0]);
+        const ys = q.map((p) => p[1]);
+        return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+      };
+      return { w, cam, caixa };
+    };
+
+    it("duas câmeras novas: a mídia em pé 720 × 1280 sem o celular e o fundo em pé 1080 × 1920 com ele", () => {
+      expect(cena.CAMS.mediaRetrato).toMatchObject({ W: 720, H: 1280, semAparelho: true, aparelho: "celular" });
+      expect(cena.CAMS.portrait).toMatchObject({ W: 1080, H: 1920, aparelho: "celular" });
+      expect(cena.CAMS.portrait?.semAparelho).toBeFalsy();
+    });
+
+    it("o mesmo mundo: o notebook fica onde está, o celular sai da mesa e fica de pé à frente dele, no x da câmera", () => {
+      for (const which of ["mediaRetrato", "portrait"] as const) {
+        const { w } = quadroEmPe(which);
+        expect(w.laptop).toMatchObject({ x: cena.BASE.laptop.x, z: cena.BASE.laptop.z });
+        expect(w.phone).toBeNull();
+        expect(w.celular).toBeDefined();
+        expect(w.celular.z).toBeLessThan(w.laptop.z - w.laptop.d / 2);
+        expect(w.celular.tilt).toBeCloseTo(cena.BASE.laptop.tilt, 6);
+      }
+    });
+
+    it("a tela do celular na mídia em pé é um retângulo de frente, na proporção de 390 × 844, no centro do quadro", () => {
+      const t = cena.telaDoCelular("mediaRetrato");
+      expect(t.altura / t.largura).toBeCloseTo(EM_PE.h / EM_PE.w, 2);
+      const xs = t.cantos.map((c) => c[0]);
+      const ys = t.cantos.map((c) => c[1]);
+      const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
+      const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+      for (const [x, y] of t.cantos) {
+        expect(Math.min(Math.abs(x - x0), Math.abs(x - x1))).toBeLessThan(0.5);
+        expect(Math.min(Math.abs(y - y0), Math.abs(y - y1))).toBeLessThan(0.5);
+      }
+      expect(Math.abs(t.cx - 360)).toBeLessThanOrEqual(2);
+      // O centro do título na pausa cai no meio da altura da mídia (o cover em pé enche a altura).
+      expect(Math.abs(t.cy - 640)).toBeLessThanOrEqual(15);
+      expect(t.largura).toBeGreaterThanOrEqual(160);
+      expect(t.largura).toBeLessThanOrEqual(230);
+    });
+
+    it("o geo.js imprime o retângulo da tela do celular em px da mídia 720 × 1280", () => {
+      const saida = execFileSync(process.execPath, [join(PASTA, "geo.js"), "{}", "mediaRetrato"], { encoding: "utf8" });
+      const geo = JSON.parse(saida) as { tela: Omit<Tela, "cantos">; suporte: { pe: number } };
+      const t = cena.telaDoCelular("mediaRetrato");
+      expect(geo.tela.cx).toBeCloseTo(t.cx, 1);
+      expect(geo.tela.cy).toBeCloseTo(t.cy, 1);
+      expect(geo.tela.largura).toBeCloseTo(t.largura, 1);
+      expect(geo.tela.altura).toBeCloseTo(t.altura, 1);
+      // O pé do suporte na mesa, abaixo da tela: o vetor da N4 encosta nele.
+      expect(geo.suporte.pe).toBeGreaterThan(t.cy + t.altura / 2);
+    });
+
+    it("o notebook fica atrás do celular, cortado por ele (e desfocado), com a tampa acima da tela", () => {
+      const { w, caixa } = quadroEmPe("mediaRetrato");
+      const L = w.laptop;
+      const g = cena.laptopGeo({ ...L, tilt: cena.BASE.laptop.tilt });
+      const tampa = caixa([g.at(-L.w / 2, 0), g.at(L.w / 2, 0), g.at(-L.w / 2, g.lidH), g.at(L.w / 2, g.lidH)]);
+      const t = cena.telaDoCelular("mediaRetrato");
+      expect(tampa.y0).toBeLessThan(t.cy - t.altura / 2);
+      // O celular cobre o meio da tampa.
+      expect(tampa.x0).toBeLessThan(t.cx - t.largura / 2);
+      expect(tampa.x1).toBeGreaterThan(t.cx + t.largura / 2);
+      expect(cena.CAMS.mediaRetrato?.desfoque).toBeDefined();
+    });
+
+    it("caixa do Replay e caneca nas laterais do celular, sem encostar nele", () => {
+      const { w, caixa } = quadroEmPe("mediaRetrato");
+      const t = cena.telaDoCelular("mediaRetrato");
+      const fr = cena.frameOf(w.box);
+      const pts: Vec[] = [];
+      for (const u of [-w.box.w / 2, w.box.w / 2]) for (const v of [-w.box.d / 2, w.box.d / 2]) for (const hh of [0, w.box.h]) pts.push(fr(u, hh, v));
+      const box = caixa(pts);
+      const m = w.mug;
+      const aro = Array.from({ length: 32 }, (_, i): Vec => {
+        const a = (i / 32) * Math.PI * 2;
+        return [m.x + m.r * Math.cos(a), m.h, m.z + m.r * Math.sin(a)];
+      });
+      const mug = caixa(aro);
+      // Um de cada lado, fora da moldura do celular (a borda é ~5% da largura da tela).
+      expect(box.x1).toBeLessThan(t.cx - t.largura * 0.6);
+      expect(mug.x0).toBeGreaterThan(t.cx + t.largura * 0.6);
+      // E ao menos em parte dentro do corte de 390 × 844 (o cover mostra x 64-656 da mídia).
+      const corte = (720 - EM_PE.w / (EM_PE.h / 1280)) / 2;
+      expect(box.x1).toBeGreaterThan(corte + 20);
+      expect(mug.x0).toBeLessThan(720 - corte - 20);
+    });
+
+    it("o fundo em pé: a 390 × 844, a tela do celular renderizado fica atrás da tela do cartão de 300 × 400", () => {
+      // O cartão (centrado) cobre a mídia em pé com cover 50% 50% (ENTRADA.midia.emPe); o fundo cobre a janela com cover 50% 75%.
+      const tm = cena.telaDoCelular("mediaRetrato");
+      const mc = Math.max(300 / 720, 400 / 1280);
+      const noCartao = {
+        cx: EM_PE.w / 2 + (tm.cx - 360) * mc,
+        cy: (EM_PE.h - 400) / 2 + (400 - 1280 * mc) * 0.5 + tm.cy * mc,
+        largura: tm.largura * mc,
+      };
+      const tb = cena.telaDoCelular("portrait");
+      const k = Math.max(EM_PE.w / 1080, EM_PE.h / 1920);
+      const ox = (EM_PE.w - 1080 * k) * 0.5;
+      const oy = (EM_PE.h - 1920 * k) * 0.75;
+      expect(ox + tb.cx * k).toBeCloseTo(noCartao.cx, 0);
+      expect(Math.abs(oy + tb.cy * k - noCartao.cy)).toBeLessThanOrEqual(2);
+      expect((tb.largura * k) / noCartao.largura).toBeCloseTo(1, 1);
+    });
+  });
+
   it("o pipeline não usa nada do hero-expansao em tempo de execução", () => {
     const fontes = readdirSync(PASTA).filter((f) => /\.(js|html|sh)$/.test(f));
-    expect(fontes).toEqual(expect.arrayContaining(["scene.js", "geo.js", "bg.html", "media.html", "shot.sh", "stills.sh"]));
+    expect(fontes).toEqual(
+      expect.arrayContaining([
+        "scene.js",
+        "geo.js",
+        "bg.html",
+        "media.html",
+        "portrait.html",
+        "media-retrato.html",
+        "shot.sh",
+        "stills.sh",
+      ]),
+    );
     for (const f of fontes) expect(readFileSync(join(PASTA, f), "utf8")).not.toMatch(/hero-expansao/);
   });
 });

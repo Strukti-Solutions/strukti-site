@@ -99,6 +99,19 @@
     // o abajur baixo na ponta: a poça pega de leve a caixa e o celular (como no fundo de referência, onde ela pousava no caderno)
     lamp: { base: [-100, 0, 50], elbow: [-108, 46, 56], head: [-84, 33, 38], target: [-52, 0, 30], k: 0.66, openK: 0.33 }
   };
+  // Em pé (spec §6): o celular de pé num suporte, na frente e no centro; o notebook atrás, no mesmo lugar do BASE (desfocado e
+  // cortado pelo celular); caixa do Replay e caneca nas laterais. O celular deitado sai da mesa: é o mesmo celular, agora de pé.
+  // `celular`: o meio da borda de baixo da face da frente em (x, apoio, z); corpo w x (chin + sh + top) x t, tela sw x sh na
+  // proporção de 390 x 844, inclinado para trás `tilt` graus (o do notebook, que é o da câmera em pé: a tela fica paralela ao
+  // quadro). `suporte`: a chapa na mesa (w x d x h, raio r), a prateleira sob o celular e o ressalto `lip` à frente dele.
+  const PT_WORLD = {
+    phone: null,
+    celular: { x: 3, z: -8, tilt: 0, w: 7.1, sw: 6.5, sh: 6.5 * 844 / 390, top: 0.36, chin: 0.36, t: 0.85, r: 0.95, apoio: 1.4,
+      suporte: { w: 7.8, d: 7.4, h: 0.55, r: 1.1, lip: 0.9 } },
+    box: { x: -20, z: 55, rot: -14, w: 9.6, d: 4.6, h: 13, r: 1.25 },
+    mug: { x: 15, z: 13, r: 3.8, h: 8.8, alca: -30 },
+    lamp: { base: [-100, 0, 20], elbow: [-108, 44, 24], head: [-42, 80, -10], target: [-5, 0, -4], k: 1.15, c0: 0.91, c1: 0.99, s0: 0.8, s1: 0.95, sw: 0.45, cutZ: [-26, -12, 2, 24] }
+  };
   const CAMS = {
     // bg: a mesma direção da câmera media, mais aberta: o notebook fica atrás do cartão de 300 x 400 em P = 0 (a 1440x900, a tela
     // dele no fundo cai quase no mesmo lugar e no mesmo tamanho da tela no cartão), sem dois notebooks empilhados.
@@ -117,10 +130,66 @@
       // o peitoril escurece à direita da tela (rampa escondida atrás do notebook): a linha 2 do título fica sobre uma superfície só
       peitoril: [0.45, 0.6, 0.64],
       world: { win: { mull: [[-43, -40], [46, 49]] },
-        lamp: { head: [-40, 95, 16], target: [-30, 0, 24], k: 1.6, c0: 0.88, c1: 0.985, s0: 0.78, s1: 0.94, sw: 0.4, cutZ: [3, 22, 24, 54] } } }
+        lamp: { head: [-40, 95, 16], target: [-30, 0, 24], k: 1.6, c0: 0.88, c1: 0.985, s0: 0.78, s1: 0.94, sw: 0.4, cutZ: [3, 22, 24, 54] } } },
+    // mediaRetrato (720 x 1280, o quadro em pé que a câmera atravessa): de frente para a tela do celular, a `dist` cm dela, com a
+    // tela no centro do quadro (o centro do título na pausa: o cover em pé enche a altura). `semAparelho` com `aparelho:
+    // 'celular'` tira o celular e o suporte (ficam a sombra e o brilho na mesa); o notebook atrás é desenhado e desfocado
+    // (`desfoque`: [z nítido, z desfocado, px], a mesa nítida na frente e o fundo desfocado atrás). pos e alvo: ver abaixo.
+    mediaRetrato: { W: 720, H: 1280, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.8,
+      bloom: 0, lampGlow: 0, grain: 5, lampBody: false, cone: false, titleBand: [540, 760, 0.6], bottomFade: [0.88, 0.97, 1.0, 0.5, 0.72],
+      semAparelho: true, aparelho: 'celular', desfoque: [10, 22, 5],
+      world: Object.assign({ win: { mull: [[-26, -23], [29, 32]] } }, PT_WORLD),
+      towers: [[-46, -7.5, 41, 1], [-7.5, -3.6, 12, 0], [4.2, 8, 14, 0], [8, 46, 46, 1]], centre: [-3.6, 4.2, -6] },
+    // portrait (fundo em pé, 1080 x 1920, visto em volta do cartão em P = 0): a mesma câmera, mais aberta, com o celular
+    // renderizado. F e shiftY: ver abaixo (a tela do celular do fundo fica atrás da do cartão a 390 x 844).
+    portrait: { W: 1080, H: 1920, F: 800, dist: 27.2, cityBlur: 9, bokeh: 22, bokehP: 0.035, discA: 0.1, refl: 0.08, dof: 0, vig: 0.82,
+      bloom: 0.25, lampGlow: 0, grain: 5, lampBody: false, cone: false, bottomFade: [0.8, 0.95, 1.0, 0.4, 0.62],
+      aparelho: 'celular', desfoque: [10, 22, 5],
+      world: Object.assign({ win: { mull: [[-26, -23], [29, 32]] } }, PT_WORLD),
+      towers: [[-46, -7.5, 41, 1], [-7.5, -3.6, 12, 0], [4.2, 8, 14, 0], [8, 46, 46, 1]], centre: [-3.6, 4.2, -6] }
   };
   // A tampa do notebook inclina para trás o mesmo ângulo da câmera media (sem guinada: x da câmera = x do alvo).
   { const m = CAMS.media, f = norm(sub(m.target, m.pos)); BASE.laptop.tilt = Math.asin(-f[1]) * 180 / Math.PI; }
+  // Em pé: o celular inclina o mesmo ângulo, e as duas câmeras em pé olham de frente para o centro da tela dele (a `dist` cm).
+  // O fundo em pé tem a mesma câmera, com F e o centro do quadro acertados para, a 390 x 844 (fundo em cover 50% 75%), a tela
+  // do celular renderizado cair atrás da tela do cartão de 300 x 400 (a mídia em pé cobre o cartão com cover 50% 50%:
+  // ENTRADA.midia.emPe, a tela do celular fica no meio do cartão e, nos tablets em pé, no meio da janela).
+  {
+    const c = PT_WORLD.celular; c.tilt = BASE.laptop.tilt;
+    const t = c.tilt * Math.PI / 180, f = [0, -Math.sin(t), Math.cos(t)], alvo = celularGeo(c).centroTela;
+    for (const k of ['mediaRetrato', 'portrait']) { const m = CAMS[k]; m.target = alvo; m.pos = sub(alvo, mul(f, m.dist)); }
+    const m = CAMS.mediaRetrato, p = CAMS.portrait, J = [390, 844];
+    const mc = Math.max(300 / m.W, 400 / m.H), k = Math.max(J[0] / p.W, J[1] / p.H);
+    p.F = m.F * mc / k;
+    const yCartao = (J[1] - 400) / 2 + (400 - m.H * mc) * 0.5 + (m.H / 2 + (m.shiftY || 0)) * mc;
+    p.shiftY = (yCartao - (J[1] - p.H * k) * 0.75) / k - p.H / 2;
+  }
+
+  // ---------------- o celular em pé: geometria ----------------
+  // A face da frente é um plano gerado por `dir` (x) e `up` (sobe e recua `tilt`), a partir do meio da borda de baixo.
+  function celularGeo(c) {
+    const t = c.tilt * Math.PI / 180, up = [0, Math.cos(t), Math.sin(t)], dir = [1, 0, 0], nrm = [0, Math.sin(t), -Math.cos(t)];
+    const pe = [c.x, c.apoio, c.z], h = c.chin + c.sh + c.top;
+    const at = (u, v, off = 0) => add(add(add(pe, mul(dir, u)), mul(up, v)), mul(nrm, off));   // off < 0: para trás
+    const tela = [[-c.sw / 2, c.chin + c.sh], [c.sw / 2, c.chin + c.sh], [c.sw / 2, c.chin], [-c.sw / 2, c.chin]].map(([u, v]) => at(u, v, 0.02));
+    return { up, dir, nrm, pe, h, at, tela, centroTela: at(0, c.chin + c.sh / 2, 0.02) };
+  }
+  // O suporte: a chapa na mesa (o meio dela um pouco atrás da face do celular), a prateleira sob a borda de baixo e o ressalto.
+  function suporteGeo(c) {
+    const s = c.suporte, zc = c.z + s.d / 2 - 2.0;
+    return { chapa: { x: c.x, z: zc, rot: 0, w: s.w, d: s.d, h: s.h, r: s.r },
+      prateleira: { x0: c.x - s.w / 2 + 0.3, x1: c.x + s.w / 2 - 0.3, z0: c.z - s.lip, z1: c.z + c.t + 0.4, y1: c.apoio },
+      ressalto: { z0: c.z - s.lip, z1: c.z - s.lip + 0.4, y1: c.apoio + 0.5 } };
+  }
+  // O retângulo da tela do celular na câmera `which`, em px do quadro (como telaDoNotebook).
+  function telaDoCelular(which, extra) {
+    const o = Object.assign({}, CAMS[which], extra || {}), prev = W0;
+    const w = prepWorld(o); W0 = prev;
+    const cam = makeCam(o), q = celularGeo(w.celular).tela.map(p => cam.P(p));
+    const xs = q.map(p => p[0]), ys = q.map(p => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, largura: x1 - x0, altura: y1 - y0, cantos: q.map(p => [p[0], p[1]]) };
+  }
 
   // ---------------- o notebook: geometria ----------------
   // A tampa é um plano gerado por `dir` (x) e `up` (sobe e recua `tilt`), a partir da dobradiça no fundo da base.
@@ -476,12 +545,20 @@
     for (const u of [-L.w / 2, L.w / 2]) for (const v of [0, g.lidH]) r.push(g.at(u, v));
     return r;
   }
+  // O celular em pé com o suporte, para as sombras: a chapa (chão e tampo), os cantos do corpo (frente e costas) e o encosto.
+  function celularPts() {
+    const c = W0.celular, g = celularGeo(c), sg = suporteGeo(c), r = slabPts(sg.chapa);
+    for (const u of [-c.w / 2, c.w / 2]) for (const v of [0, g.h]) for (const off of [0, -c.t]) r.push(g.at(u, v, off));
+    for (const u of [-c.w / 2 + 1.2, c.w / 2 - 1.2]) r.push(g.at(u, g.h * 0.6, -c.t - 0.5));
+    return r;
+  }
   function drawShadows(ctx, cam, o = {}) {
     const { W, H } = cam, L = W0.lamp.bulb, P = cam.P;
     const sh = layer(W, H), s = sh.getContext('2d');
     s.fillStyle = 'rgb(0,0,0)';
     const lp = W0.laptop ? laptopPts() : null;
     const sets = []; if (W0.box) sets.push(boxPts()); if (W0.mug) sets.push(mugPts()); if (W0.phone) sets.push(slabPts(W0.phone));
+    if (W0.celular) sets.push(celularPts());
     const todos = lp ? sets.concat([lp]) : sets;
     const castOf = pts => hull(pts.map(p => p[1] > 0.05 ? shadowPt(L, p, o.sombraMax) : p).concat(pts.filter(p => p[1] <= 0.05)).map(P));
     const k = cam.S([0, 0, 30]);
@@ -554,10 +631,12 @@
     ctx.restore();
   }
 
+  // O aparelho da frente da câmera: o notebook (deitado) ou o celular (`aparelho: 'celular'`, em pé). `semAparelho` tira só ele.
+  const semOAparelho = (o, qual) => !!o.semAparelho && (o.aparelho || 'notebook') === qual;
   // O notebook aberto: base de alumínio grafite com teclado (teclas sem legenda) e trackpad, tampa com moldura preta e a
-  // tela só no navy da página. Não é desenhado com `semAparelho` (câmera media).
+  // tela só no navy da página. Não é desenhado com `semAparelho` na câmera dele (media); em pé, ele fica atrás do celular.
   function drawLaptop(ctx, cam, o) {
-    const L = W0.laptop; if (!L || o.semAparelho) return;
+    const L = W0.laptop; if (!L || semOAparelho(o, 'notebook')) return;
     const P = cam.P, g = laptopGeo(L), fr = frameOf({ x: L.x, z: L.z, rot: 0 });
     const alu = [31, 34, 41], glowC = GLOW_C;
     const D = (u, v, h = L.h) => P(fr(u, h, v));          // base: u de um lado ao outro, v da frente (-) para o fundo (+)
@@ -658,6 +737,62 @@
     // glass sheen
     { const g = ctx.createLinearGradient(-HX, -HY, HX * 0.2, HY); g.addColorStop(0, rgba(C.n300, 0.07)); g.addColorStop(0.5, rgba(C.n300, 0.015)); g.addColorStop(1, rgba(C.n300, 0)); ctx.fillStyle = g; ctx.fillRect(-HX, -HY, sh, sw); }
     ctx.restore();
+  }
+
+  // O celular de pé no suporte: só no fundo em pé (na mídia em pé ele é vetor por cima, no site). O suporte é de alumínio
+  // grafite, como o notebook: a chapa na mesa, a prateleira sob o celular e o ressalto à frente dele. O celular é de vidro
+  // preto com a borda de alumínio, e a tela fica só no navy da página, com um brilho suave no meio (sem elementos de interface).
+  function drawCelularEmPe(ctx, cam, o) {
+    const c = W0.celular; if (!c || semOAparelho(o, 'celular')) return;
+    const P = cam.P, g = celularGeo(c), sg = suporteGeo(c), alu = [31, 34, 41];
+    const lado = (p, n) => rgba(mix(light(alu, p, n, { amb: 0.9 }), C.black, 0.12));
+    // a chapa, com a quina da frente pegando a luz
+    const ch = sg.chapa, frc = frameOf(ch);
+    slab(ctx, cam, ch, lado(frc(0, ch.h / 2, -ch.d / 2), [0, 0, -1]), rgba(light(alu, [ch.x, ch.h, ch.z], [0, 1, 0])), ch.r);
+    { const e1 = P(frc(-ch.w / 2 + ch.r, ch.h, -ch.d / 2)), e2 = P(frc(ch.w / 2 - ch.r, ch.h, -ch.d / 2));
+      ctx.strokeStyle = lin(ctx, e1, e2, [[0, rgba(mix(C.n300, C.lampW, 0.5), 0.36)], [1, rgba(C.n400, 0.14)]]); ctx.lineWidth = Math.max(1, cam.S(frc(0, ch.h, -ch.d / 2)) * 0.1);
+      ctx.beginPath(); ctx.moveTo(e1[0], e1[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke(); }
+    // um bloco (face da frente e de cima), do tampo da chapa até y1
+    const bloco = (x0, x1, z0, z1, y1) => {
+      const y0 = ch.h;
+      path(ctx, [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]].map(P)); ctx.fillStyle = lado([(x0 + x1) / 2, (y0 + y1) / 2, z0], [0, 0, -1]); ctx.fill();
+      path(ctx, [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]].map(P)); ctx.fillStyle = rgba(light(alu, [(x0 + x1) / 2, y1, (z0 + z1) / 2], [0, 1, 0])); ctx.fill();
+      const a1 = P([x0, y1, z0]), a2 = P([x1, y1, z0]);   // a quina de cima pega a luz: o bloco não lê como um furo preto
+      ctx.strokeStyle = lin(ctx, a1, a2, [[0, rgba(mix(C.n300, C.lampW, 0.5), 0.32)], [1, rgba(C.n400, 0.12)]]); ctx.lineWidth = Math.max(1, cam.S([x0, y1, z0]) * 0.08);
+      ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke();
+    };
+    const pr = sg.prateleira, rs = sg.ressalto;
+    bloco(pr.x0, pr.x1, pr.z0, pr.z1, pr.y1);
+    // o celular: as laterais e as costas (escuras), a face da frente de vidro preto e a borda de alumínio
+    const out = rrect(c.w, g.h, c.r, 6);
+    const front = out.map(([u, v]) => P(g.at(u, v + g.h / 2, 0))), back = out.map(([u, v]) => P(g.at(u, v + g.h / 2, -c.t)));
+    path(ctx, hull(front.concat(back))); ctx.fillStyle = lado(g.at(c.w / 2, g.h / 2, -c.t / 2), [1, 0, 0]); ctx.fill();
+    path(ctx, front); ctx.fillStyle = rgba([9, 11, 15]); ctx.fill();
+    ctx.strokeStyle = rgba(mix(light(alu, g.at(0, g.h, 0), g.nrm, { amb: 1.2 }), C.n400, 0.3), 0.85); ctx.lineWidth = Math.max(1, cam.S(g.centroTela) * 0.07); ctx.stroke();
+    const sq = g.tela.map(p => P(p));
+    path(ctx, sq); ctx.fillStyle = rgba(C.n950); ctx.fill();
+    ctx.save(); path(ctx, sq); ctx.clip();
+    { const c0 = P(g.centroTela), cx1 = P(g.at(c.sw / 2, c.chin + c.sh / 2, 0.02)), cy1 = P(g.at(0, c.chin, 0.02));
+      ctx.setTransform(cx1[0] - c0[0], 0, 0, cy1[1] - c0[1], c0[0], c0[1]); }
+    ctx.fillStyle = radial(ctx, [[0, rgba(mix(C.n900, C.n800, 0.5), 0.95)], [0.6, rgba(C.n900, 0.5)], [1, rgba(C.n950, 0)]], 1.15); ctx.fillRect(-1, -1, 2, 2);
+    ID(ctx);
+    { const a1 = P(g.at(-c.sw / 2, c.chin + c.sh)), a2 = P(g.at(c.sw / 4, c.chin)); ctx.fillStyle = lin(ctx, a1, a2, [[0, rgba(C.n300, 0.07)], [0.5, rgba(C.n300, 0.02)], [1, rgba(C.n300, 0)]]); ctx.fillRect(0, 0, cam.W, cam.H); }
+    ctx.restore();
+    // o ressalto à frente da borda de baixo
+    bloco(pr.x0, pr.x1, rs.z0, rs.z1, rs.y1);
+  }
+  // O brilho da tela do celular na mesa, à frente do suporte (fica também na mídia em pé, sem o celular).
+  function brilhoDoCelular(c) { return { centro: [c.x, 0.05, c.z - c.suporte.lip - 2.6], semiX: c.w * 1.05, semiZ: 3.4 }; }
+  // Em pé: desfoca o que está atrás do celular (a mesa do fundo, o notebook, a caixa, a caneca, a janela). A máscara é
+  // vertical: nítida até a linha da mesa em z = zN, desfocada a partir da linha de z = zD (o desfoque, `px` na F 1000).
+  function desfocaFundo(ctx, cam, o) {
+    const [zN, zD, px] = o.desfoque, x = W0.celular ? W0.celular.x : 0;
+    const yN = cam.P([x, 0, zN])[1], yD = cam.P([x, 0, zD])[1];
+    const b = layer(cam.W, cam.H), bc = b.getContext('2d');
+    bc.filter = `blur(${Math.max(1, Math.round(px * cam.F / 1000))}px)`; bc.drawImage(ctx.canvas, 0, 0); bc.filter = 'none';
+    bc.globalCompositeOperation = 'destination-in';
+    bc.fillStyle = lin(bc, [0, yD], [0, yN], [[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]); bc.fillRect(0, 0, cam.W, cam.H);
+    ctx.drawImage(b, 0, 0);
   }
 
   // Replay box, modelled on the real render: dark rounded body, blue cap, four screws, light-grey hexagon, teal LED bar.
@@ -806,6 +941,8 @@
       }
     }
     if (W0.laptop) { screenGlow(ctx, cam); toqueFrio(ctx, cam); }
+    if (W0.celular) { const bc = brilhoDoCelular(W0.celular); discT(ctx, cam, bc.centro, [bc.semiX, 0, 0], [0, 0, bc.semiZ]);
+      ctx.fillStyle = radial(ctx, [[0, rgba(GLOW_C, GLOW_A * 0.8)], [0.45, rgba(GLOW_C, GLOW_A * 0.35)], [1, rgba(GLOW_C, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
     if (W0.phone) { const ph = W0.phone; discT(ctx, cam, [ph.x, 0.05, ph.z], [15, 0, 0], [0, 0, 15]);
       ctx.fillStyle = radial(ctx, [[0, rgba(C.e400, 0.09)], [0.5, rgba(C.e500, 0.03)], [1, rgba(C.e500, 0)]]); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); ID(ctx); }
     if (info && info.led && ledK > 0) {
@@ -889,16 +1026,22 @@
     calmaPeitoril(ctx, cam, o);
     drawShadows(ctx, cam, o);
     if (o.lampBody !== false) drawLamp(ctx, cam, o);
-    const info = drawBox(ctx, cam);
-    drawLaptop(ctx, cam, o);
-    const mug = drawMug(ctx, cam);
-    drawPhone(ctx, cam);
+    // os objetos de trás para a frente (z maior primeiro): deitado, caixa, notebook, caneca e celular; em pé, a caixa e a
+    // caneca vêm à frente do notebook
+    let info = null, mug = null;
+    const objetos = [[W0.box, () => { info = drawBox(ctx, cam); }], [W0.laptop, () => drawLaptop(ctx, cam, o)],
+      [W0.mug, () => { mug = drawMug(ctx, cam); }], [W0.phone, () => drawPhone(ctx, cam)]];
+    objetos.filter(([ob]) => ob).sort((a, b) => b[0].z - a[0].z).forEach(([, desenha]) => desenha());
     lightEffects(ctx, cam, info, o, ledK, pass);
     if (pass === 'full' && mug && o.steam !== false) steam(ctx, cam, mug.top);
+    // em pé: o fundo desfoca, e o celular no suporte vem nítido por cima
+    if (o.desfoque) desfocaFundo(ctx, cam, o);
+    drawCelularEmPe(ctx, cam, o);
     finish(ctx, cam, o, { noGrain: !!o.noGrain, noBloom: false });   // plates share the same static grain, so it cancels in B-A, C-A, A-D
     LK = 1;
     return { cam };
   }
-  G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt };
+  G.FDE = { render, makeCam, prepWorld, CAMS, BASE, rng, frameOf, laptopGeo, telaDoNotebook, brilhoDaTela, shadowPt,
+    celularGeo, suporteGeo, telaDoCelular, brilhoDoCelular };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined') module.exports = globalThis.FDE;

@@ -1,13 +1,19 @@
 // node sondas.js <media 1280x720> [<bg 1920x1080>] [LxA ...]
+// node sondas.js --em-pe <mídia em pé 720x1280> [<fundo em pé 1080x1920>] [LxA ...]   (padrão 390x844, 360x740 e 375x667)
 // 1. A faixa do título na pausa: as metades ladeiam a tela do notebook (geo.js, câmera media). Para cada janela LxA
 //    (padrão 1440x900 e 1366x768), a conta é a do telaNaCena (src/lib/heroEntrada.ts) com e = 1: a mídia cobre o palco
 //    (object-fit: cover, object-position: 50% 100%). A linha 1 fica à esquerda da tela, a linha 2 à direita, cada uma
 //    de 16 px da borda da janela até 24 px (tituloFolga) da borda da tela, na altura medida no site (h1 centrado no
 //    palco: duas linhas de 1,05 × a fonte, com 16 px entre elas). Luminância BT.709 (0-255), percentil 90: até 60.
+//    Em pé (--em-pe), a tela é a do celular (câmera mediaRetrato), a mídia é a 720 x 1280 e o cover é 50% 50%. Além da faixa larga (`linha1`,
+//    `linha2`), sai a caixa de cada metade como o site a desenha na pausa (`metade1`, `metade2`): a escala do
+//    posicaoDoTitulo (src/lib/heroEntrada.ts), com as larguras do h1 a 60 px (688 e 323) na fonte da janela, em volta
+//    da borda que encosta na tela e do meio vertical de cada linha.
 // 2. Os cantos (24 x 24 px) de cada imagem: a média não passa do navy-900 (#0e1c2b) em nenhum canal.
 const { execFileSync } = require('child_process');
 const F = require('./scene.js');
-const args = process.argv.slice(2);
+const emPe = process.argv.includes('--em-pe');
+const args = process.argv.slice(2).filter(a => a !== '--em-pe');
 const imgs = args.filter(a => !/^\d+x\d+$/.test(a)), views = args.filter(a => /^\d+x\d+$/.test(a));
 const decode = f => {
   const [W, H] = execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', f]).toString().trim().split(',').map(Number);
@@ -16,25 +22,34 @@ const decode = f => {
 const Y = (im, x, y) => { const i = (y * im.W + x) * 3; return 0.2126 * im.b[i] + 0.7152 * im.b[i + 1] + 0.0722 * im.b[i + 2]; };
 const pct = (a, p) => { const s = Float64Array.from(a).sort(); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const midia = decode(imgs[0]);
-const tela = F.telaDoNotebook('media');
+const tela = emPe ? F.telaDoCelular('mediaRetrato') : F.telaDoNotebook('media');
+const MW = midia.W, MH = midia.H;
 const FOLGA = 24, MARGEM = 16;
 // o h1 no site (medido a 1440x900 e 1366x768): fonte clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem)
 const fonte = w => Math.min(60, Math.max(24, Math.min(19.2 + 0.036 * w, 0.086 * w - 4)));
 const out = { tela: { cx: +tela.cx.toFixed(1), cy: +tela.cy.toFixed(1), largura: +tela.largura.toFixed(1), altura: +tela.altura.toFixed(1) }, faixa: {}, cantos: {} };
-for (const v of (views.length ? views : ['1440x900', '1366x768'])) {
+for (const v of (views.length ? views : emPe ? ['390x844', '360x740', '375x667'] : ['1440x900', '1366x768'])) {
   const [w, h] = v.split('x').map(Number);
-  const m = Math.max(w / 1280, h / 720), ox = (w - 1280 * m) * 0.5, oy = (h - 720 * m) * 1;
+  // o cover da mídia: 50% 100% deitado e 50% 50% em pé (ENTRADA.midia)
+  const m = Math.max(w / MW, h / MH), ox = (w - MW * m) * 0.5, oy = (h - MH * m) * (emPe ? 0.5 : 1);
   const cx = ox + tela.cx * m, cy = oy + tela.cy * m, meia = tela.largura * m / 2;
   const lh = fonte(w) * 1.05, gap = 16, topo = h / 2 - (2 * lh + gap) / 2;
   const regs = { linha1: [MARGEM, cx - meia - FOLGA, topo, topo + lh], linha2: [cx + meia + FOLGA, w - MARGEM, topo + lh + gap, topo + 2 * lh + gap] };
+  // as metades como o site as desenha na pausa (posicaoDoTitulo): a escala do pior lado, em volta da borda junto da tela
+  const [l1, l2] = [688, 323].map(x => x * fonte(w) / 60);
+  const esc = Math.max(0, Math.min(1, (cx - meia - FOLGA - MARGEM) / l1, (w - cx - meia - FOLGA - MARGEM) / l2));
+  const c1 = topo + lh / 2, c2 = topo + lh + gap + lh / 2, mh = lh * esc / 2;
+  regs.metade1 = [cx - meia - FOLGA - l1 * esc, cx - meia - FOLGA, c1 - mh, c1 + mh];
+  regs.metade2 = [cx + meia + FOLGA, cx + meia + FOLGA + l2 * esc, c2 - mh, c2 + mh];
   const res = {};
   for (const [k, [x0, x1, y0, y1]] of Object.entries(regs)) {
     const toM = (x, y) => [(x - ox) / m, (y - oy) / m];
     const [mx0, my0] = toM(x0, y0), [mx1, my1] = toM(x1, y1);
     const vals = [];
-    for (let y = Math.max(0, Math.round(my0)); y < Math.min(720, Math.round(my1)); y++) for (let x = Math.max(0, Math.round(mx0)); x < Math.min(1280, Math.round(mx1)); x++) vals.push(Y(midia, x, y));
+    for (let y = Math.max(0, Math.round(my0)); y < Math.min(MH, Math.round(my1)); y++) for (let x = Math.max(0, Math.round(mx0)); x < Math.min(MW, Math.round(mx1)); x++) vals.push(Y(midia, x, y));
     res[k] = { janela: [x0, x1, y0, y1].map(n => +n.toFixed(1)), midia: [mx0, mx1, my0, my1].map(n => +n.toFixed(1)), p90: +pct(vals, 0.9).toFixed(1), max: +pct(vals, 1).toFixed(1), ok: pct(vals, 0.9) <= 60 };
   }
+  res.escala = +esc.toFixed(3);
   out.faixa[v] = res;
 }
 const NAVY900 = [14, 28, 43];

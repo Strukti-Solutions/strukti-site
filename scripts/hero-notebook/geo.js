@@ -1,5 +1,7 @@
-// node geo.js '<json>' [media|bg]  -> o retângulo da tela do notebook (px do quadro) e caixas (%) dos objetos, pontos da mesa
-// O `tela` (cx, cy, largura e altura, em px; na câmera media, px da mídia 1280x720) alimenta o ENTRADA.aparelho.deitado.
+// node geo.js '<json>' [media|bg|mediaRetrato|portrait]  -> o retângulo da tela do aparelho (px do quadro) e caixas (%) dos
+// objetos, pontos da mesa. O `tela` (cx, cy, largura e altura, em px) é a tela do notebook nas câmeras deitadas e a do celular
+// nas em pé: na media (px da mídia 1280x720) alimenta o ENTRADA.aparelho.deitado; na mediaRetrato (px da mídia 720x1280), o
+// ENTRADA.aparelho.emPe. Em pé saem também o corpo do celular e o suporte (`celular`, `suporte`), para o vetor.
 // json: { "world": {...}, "cam": {...}, "pts": [[px, py], ...] }
 const F = require('./scene.js');
 const ov = process.argv[2] ? JSON.parse(process.argv[2]) : {};
@@ -21,6 +23,18 @@ if (W.laptop) {
   out.base = { frenteEsq: px(fr(-L.w / 2, L.h, -L.d / 2)), frenteDir: px(fr(L.w / 2, L.h, -L.d / 2)), fundoEsq: px(fr(-L.w / 2, L.h, L.d / 2)), fundoDir: px(fr(L.w / 2, L.h, L.d / 2)), chaoFrente: r1(cam.P(fr(0, 0, -L.d / 2))[1]) };
   out.tampa = { esq: r1(cam.P(g.at(-L.w / 2, 0))[0]), dir: r1(cam.P(g.at(L.w / 2, 0))[0]), topo: r1(cam.P(g.at(0, g.lidH))[1]), pe: r1(cam.P(g.at(0, 0))[1]) };
   out.laptop = bb(slab(Object.assign({ rot: 0 }, L), L.h).concat([g.at(-L.w / 2, g.lidH), g.at(L.w / 2, g.lidH)]));
+}
+if (W.celular) {
+  // em pé, a tela é a do celular; a do notebook (atrás dele) fica em `telaNotebook`
+  out.telaNotebook = out.tela;
+  const t = F.telaDoCelular(which, Object.assign({}, ov.cam || {}, { world: o.world }));
+  out.tela = { cx: r1(t.cx), cy: r1(t.cy), largura: r1(t.largura), altura: r1(t.altura), proporcao: +(t.largura / t.altura).toFixed(4) };
+  const c = W.celular, g = F.celularGeo(c), sg = F.suporteGeo(c), ch = sg.chapa, fr = F.frameOf(ch);
+  const px = p => cam.P(p).slice(0, 2).map(r1);
+  // o corpo: a face da frente (esquerda, direita, topo e pé); o suporte: a quina da frente da chapa na mesa (o `pe`) e no tampo
+  out.celular = { esq: r1(cam.P(g.at(-c.w / 2, 0))[0]), dir: r1(cam.P(g.at(c.w / 2, 0))[0]), topo: r1(cam.P(g.at(0, g.h))[1]), pe: r1(cam.P(g.at(0, 0))[1]) };
+  out.suporte = { frenteEsq: px(fr(-ch.w / 2, ch.h, -ch.d / 2)), frenteDir: px(fr(ch.w / 2, ch.h, -ch.d / 2)), fundoEsq: px(fr(-ch.w / 2, ch.h, ch.d / 2)), fundoDir: px(fr(ch.w / 2, ch.h, ch.d / 2)),
+    ressalto: r1(cam.P([c.x, sg.ressalto.y1, sg.ressalto.z0])[1]), pe: r1(cam.P(fr(0, 0, -ch.d / 2))[1]) };
 }
 if (W.phone) out.phone = bb(slab(W.phone, W.phone.h));
 if (W.box) { const b = W.box; const fr = F.frameOf(b), r = []; for (const u of [-b.w / 2, b.w / 2]) for (const v of [-b.d / 2, b.d / 2]) for (const hh of [0, b.h]) r.push(fr(u, hh, v)); out.box = bb(r); }

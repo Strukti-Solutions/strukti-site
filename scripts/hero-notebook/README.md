@@ -23,6 +23,13 @@ notebook mostra a página de longe (o bloco de chamada em barras e dois botões)
 - **Mídia** (`media`, 1280 × 720, o quadro que a câmera atravessa): **sem** o
   notebook (`semAparelho: true` em `CAMS.media`). Ficam a sombra dele e o
   brilho da tela na mesa; o aparelho é vetor por cima, no site.
+- **Em pé** (spec §6: o celular de pé num suporte, na frente e no centro; o
+  notebook atrás, desfocado e cortado; caixa do Replay e caneca nas laterais),
+  as mesmas duas peças: o **fundo em pé** (`portrait`, 1080 × 1920) com o
+  celular renderizado, e a **mídia em pé** (`mediaRetrato`, 720 × 1280) sem o
+  celular nem o suporte (`semAparelho` com `aparelho: 'celular'`; ficam a
+  sombra e o brilho da tela dele na mesa). O notebook atrás é desenhado nas
+  duas e desfocado (`desfoque`).
 
 ## Precisa de
 
@@ -37,18 +44,22 @@ Rode tudo de dentro desta pasta (`cd scripts/hero-notebook`).
 mkdir -p cur
 ./shot.sh bg.html cur/bg.png 1920 1080        # fundo largo, com o notebook
 ./shot.sh media.html cur/media.png 1280 720   # a mídia parada, sem o notebook
+./shot.sh portrait.html cur/portrait.png 1080 1920              # fundo em pé, com o celular
+./shot.sh media-retrato.html cur/media-retrato.png 720 1280     # a mídia em pé, sem o celular
 ```
 
-O mundo (`BASE` no `scene.js`) e as câmeras (`CAMS`) valem para as duas
-fotos: mexeu num objeto, renderize as duas. O enquadramento em pé (o celular
-num suporte) e os passes do loop de 10 s ainda não estão aqui.
+O mundo (`BASE` no `scene.js`) e as câmeras (`CAMS`) valem para as quatro
+fotos: mexeu num objeto, renderize todas. Os passes do loop de 10 s ainda não
+estão aqui.
 
 ## 2. O retângulo da tela e as sondas
 
 ```sh
 node geo.js            # câmera media (px da mídia 1280 × 720)
 node geo.js '{}' bg    # câmera bg
+node geo.js '{}' mediaRetrato   # em pé (px da mídia 720 × 1280)
 node sondas.js cur/media.png cur/bg.png [1440x900 1366x768]
+node sondas.js --em-pe cur/media-retrato.png cur/portrait.png [390x844 360x740 375x667]
 ```
 
 - `geo.js` imprime `tela` (`cx`, `cy`, `largura` e `altura` da tela do
@@ -61,12 +72,20 @@ node sondas.js cur/media.png cur/bg.png [1440x900 1366x768]
   no `scene.js`): a tela fica paralela ao quadro e vira um retângulo alinhado
   aos eixos, sem trapézio. Por isso o `x` do notebook é o da câmera, sem
   guinada.
+- Nas câmeras em pé, o `tela` do `geo.js` é a tela do celular e alimenta o
+  `ENTRADA.aparelho.emPe` (a mídia em pé é o `ENTRADA.midia.emPe`, 720 × 1280,
+  cortada em 50% 50%). Saem também o corpo do celular (`celular`) e o suporte
+  (`suporte`: a quina da frente da chapa no tampo e o `pe` na mesa), para o
+  vetor; a tela do notebook fica em `telaNotebook`.
 - `sondas.js` mede, na mídia, a faixa do título na pausa: com a conta do
   `telaNaCena` (e = 1, `cover` em 50% 100%), a linha 1 do título fica à
   esquerda da tela (de 16 px da borda da janela até 24 px da tela) e a linha 2
   à direita, na altura do h1 no site. O percentil 90 da luminância (BT.709,
   0 a 255) precisa ficar até 60 (MASTER §3.4). Também mede os cantos de cada
   imagem (24 × 24 px), que não passam do navy-900 (#0e1c2b) em nenhum canal.
+  Com `--em-pe`, a conta é a da mídia em pé (cover 50% 50%) com a tela do
+  celular, e saem também as caixas das metades como o site as desenha na
+  pausa (`metade1`, `metade2`, na escala do `posicaoDoTitulo`).
 
 ## 3. Diferenças para o expansao
 
@@ -111,6 +130,20 @@ node sondas.js cur/media.png cur/bg.png [1440x900 1366x768]
   abajur são curtas (`sombraMax`, `sombraA`) e a poça pega de leve a caixa; a tela do
   notebook é só o navy da página, sem barras nem botões.
 
+- Em pé (`PT_WORLD`, o mesmo mundo encenado para a câmera em pé): o celular deitado
+  sai da mesa e fica de pé num suporte (`celular`: tela na proporção de 390 × 844,
+  inclinada o mesmo ângulo da tampa do notebook, que é o da câmera em pé: a tela
+  vira um retângulo de frente), à frente do notebook, que fica onde está. As duas
+  câmeras em pé olham de frente para o centro da tela do celular, a `dist` cm: na
+  `mediaRetrato` ela fica no centro do quadro; o `portrait` tem F e centro acertados
+  para, a 390 × 844, o celular do fundo ficar atrás do celular do cartão em P = 0.
+  A caixa do Replay fica ao fundo, à esquerda, junto da janela, e a caneca à frente,
+  à direita: as duas fora da faixa das metades do título (a caixa à frente punha o
+  botão azul atrás da linha 1). O abajur, fora do quadro, faz a poça no suporte e
+  morre antes do pé do quadro (`cutZ`). Os objetos são desenhados de trás para a
+  frente (pelo `z`), e `desfocaFundo` desfoca o que fica atrás do celular antes de
+  desenhá-lo nítido.
+
 ## 4. Instalar
 
 As fotos viram `fundo.*` e `midia-poster.*` em `public/hero/notebook/` pelo
@@ -119,5 +152,7 @@ os limites estão nas Global Constraints do plano da arte. O pôster definitivo
 sai do quadro 0 do loop, quando os passes estiverem prontos.
 
 Instaladas em 23/10/2026: `fundo.*` (de `cur/bg.png`) e `midia-poster.*` (de
-`cur/media.png`), ambas com crf 11 e `-q:v` 3. O `src/config/heroNotebook.assets.test.ts`
+`cur/media.png`), ambas com crf 11 e `-q:v` 3; em pé, `fundo-retrato.*` (de
+`cur/portrait.png`) e `midia-retrato-poster.*` (de `cur/media-retrato.png`), com
+os mesmos números. O `src/config/heroNotebook.assets.test.ts`
 confere os tamanhos e os limites dos arquivos que o `siteConfig.heroNotebook` usa.
