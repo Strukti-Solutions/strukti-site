@@ -77,6 +77,28 @@ const { heroExpansao, whatsappMessages } = landingContent;
 let scrollTo: ReturnType<typeof vi.fn>;
 let play: ReturnType<typeof vi.fn>;
 
+// Os quadros (requestAnimationFrame) ficam numa fila, com um relógio falso:
+// `frame()` roda os que estão na fila com o tempo `ms` adiante (o que for
+// pedido durante o quadro fica para o próximo, como no navegador), e
+// `settle()` roda quadros até a fila esvaziar (a animação da roda assentou).
+let frameQueue = new Map<number, FrameRequestCallback>();
+let lastFrameId = 0;
+let frameClock = 0;
+
+function frame(ms = 16) {
+  frameClock += ms;
+  const due = [...frameQueue.values()];
+  frameQueue = new Map();
+  act(() => {
+    for (const callback of due) callback(frameClock);
+  });
+}
+
+function settle(limit = 200) {
+  for (let i = 0; i < limit && frameQueue.size > 0; i++) frame();
+  if (frameQueue.size > 0) throw new Error(`a animação não assentou em ${limit} quadros`);
+}
+
 function setScrollY(y: number) {
   Object.defineProperty(window, "scrollY", { configurable: true, value: y });
 }
@@ -86,12 +108,13 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn(reducedMotion.matchMedia));
   setScrollY(0);
   window.history.replaceState(null, "", "/");
-  // A pintura (requestAnimationFrame) roda na hora, como no HeroSequence.test.
+  frameQueue = new Map();
+  frameClock = 0;
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-    callback(0);
-    return 1;
+    frameQueue.set(++lastFrameId, callback);
+    return lastFrameId;
   });
-  vi.stubGlobal("cancelAnimationFrame", () => {});
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frameQueue.delete(id));
   scrollTo = vi.fn();
   vi.stubGlobal("scrollTo", scrollTo);
   SpyIntersectionObserver.instances = [];
@@ -119,6 +142,8 @@ afterEach(() => {
 });
 
 const hero = () => document.getElementById("inicio") as HTMLElement;
+/** O progresso desenhado, como número (o `--hx-p` da seção). */
+const hxp = () => Number(hero().style.getPropertyValue("--hx-p"));
 const state = () => ({
   pin: hero().dataset.pin,
   expanded: hero().dataset.expanded,
@@ -144,15 +169,24 @@ async function mount(extra?: ReactNode) {
     </>,
   );
   await act(async () => {});
+  settle();
   return result;
 }
 
+/** Um evento de roda e o quadro seguinte (a pintura; na roda de mouse, o 1º passo da animação). */
 function wheel(deltaY: number, init: WheelEventInit = {}, target: EventTarget = window) {
   const event = new WheelEvent("wheel", { deltaY, cancelable: true, bubbles: true, ...init });
   act(() => {
     target.dispatchEvent(event);
   });
+  frame();
   return event;
+}
+
+/** Cliques de roda de mouse (deltaY 100) até expandir, e a animação assentada. */
+function expandWithWheel() {
+  for (let index = 0; index < 15; index++) wheel(100);
+  settle();
 }
 
 /** Toque com um dedo em `clientY` (ou nenhum, no touchend). */
@@ -171,6 +205,7 @@ function touches(
   act(() => {
     target.dispatchEvent(event);
   });
+  frame();
   return event;
 }
 
@@ -179,6 +214,7 @@ function key(keyName: string, target: Element = document.body, init: KeyboardEve
   act(() => {
     notPrevented = fireEvent.keyDown(target, { key: keyName, ...init });
   });
+  frame();
   return { prevented: !notPrevented };
 }
 
@@ -187,6 +223,7 @@ function scrollPage(y: number) {
   act(() => {
     window.dispatchEvent(new Event("scroll"));
   });
+  frame();
 }
 
 describe("<HeroExpansao /> — HTML do servidor (estado parado)", () => {
@@ -301,15 +338,24 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toEqual({ pin: "true", expanded: "false", progress: "0.00", content: "hidden" });
   });
 
-  it("a roda soma deltaY × 0,0009, segura a página e expande em p = 1; depois a página volta a rolar", async () => {
+  it("roda de mouse: cada clique (deltaY 100) soma 0,07 ao alvo (× 0,0007) e segura a página; 15 cliques expandem, e a página volta a rolar", async () => {
     await mount();
 
     const first = wheel(100);
     expect(first.defaultPrevented).toBe(true);
-    expect(state()).toMatchObject({ pin: "true", progress: "0.09", content: "hidden" });
-    expect(hero().style.getPropertyValue("--hx-p")).toMatch(/^0\.09/);
+    // Um quadro depois, o quadro desenhado está a caminho do alvo, sem saltar.
+    expect(hxp()).toBeGreaterThan(0);
+    expect(hxp()).toBeLessThan(0.07);
+    expect(hero().dataset.input).toBe("wheel");
+    settle();
+    expect(hxp()).toBe(0.07);
+    expect(state()).toMatchObject({ pin: "true", progress: "0.07", content: "hidden" });
 
-    for (let index = 0; index < 11; index++) wheel(100);
+    for (let index = 0; index < 13; index++) wheel(100);
+    settle();
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "0.98" });
+    wheel(100);
+    settle();
     expect(state()).toEqual({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
 
     // Expandido: rolar para baixo é a página (sem preventDefault).
@@ -317,31 +363,168 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state().expanded).toBe("true");
   });
 
+  it("roda de mouse: suavização exponencial pelo tempo (τ = 120 ms), que assenta no alvo e para de pedir quadros", async () => {
+    await mount();
+
+    // O 1º quadro da animação vale 1/60 s (não há quadro anterior para medir).
+    wheel(100);
+    const p1 = hxp();
+    expect(p1).toBeCloseTo(0.07 * (1 - Math.exp(-1000 / 60 / 120)), 5);
+    // Depende do tempo, não do número de quadros: um quadro de 100 ms anda
+    // o mesmo que seis de 16,7 ms.
+    frame(100);
+    expect(hxp()).toBeCloseTo(p1 + (0.07 - p1) * (1 - Math.exp(-100 / 120)), 5);
+
+    let frames = 0;
+    while (frameQueue.size > 0 && frames < 100) {
+      frame();
+      frames++;
+    }
+    expect(hxp()).toBe(0.07);
+    expect(frameQueue.size).toBe(0);
+    // Menos de ~0,7 s no total (o resto do caminho abaixo de 0,0005 encosta).
+    expect(16 + 100 + frames * 16).toBeLessThan(700);
+  });
+
+  it("roda de mouse: dois cliques seguidos redirecionam do ponto atual (sem voltar nem recomeçar); um clique para cima no meio volta dali", async () => {
+    await mount();
+
+    wheel(100);
+    frame();
+    frame();
+    const before = hxp();
+    wheel(100);
+    const path = [hxp()];
+    expect(path[0]).toBeGreaterThan(before);
+    expect(path[0]).toBeLessThan(0.14);
+    while (frameQueue.size > 0) {
+      frame();
+      path.push(hxp());
+    }
+    for (let i = 1; i < path.length; i++) expect(path[i]).toBeGreaterThanOrEqual(path[i - 1]!);
+    expect(path.at(-1)).toBe(0.14);
+
+    // Para cima no meio da subida: o desenhado desce dali, sem pular para o alvo.
+    wheel(100);
+    frame();
+    const mid = hxp();
+    wheel(-100);
+    frame();
+    expect(hxp()).toBeLessThan(mid);
+    expect(hxp()).toBeGreaterThan(0.14);
+    settle();
+    expect(hxp()).toBe(0.14);
+  });
+
+  it("trackpad (passos de menos de 40 px) anda na hora, sem animação; 40 px ou mais, ou em linhas e páginas, é clique de mouse (suavizado)", async () => {
+    await mount();
+
+    wheel(4); // trackpad: 4 px × 0,0007, já no quadro seguinte
+    expect(hxp()).toBeCloseTo(0.0028, 6);
+    expect(frameQueue.size).toBe(0);
+    wheel(39); // ainda trackpad
+    expect(hxp()).toBeCloseTo(0.0301, 6);
+    expect(frameQueue.size).toBe(0);
+
+    wheel(40); // clique de mouse
+    expect(hxp()).toBeGreaterThan(0.0301);
+    expect(hxp()).toBeLessThan(0.0581);
+    expect(frameQueue.size).toBe(1);
+    settle();
+    expect(hxp()).toBeCloseTo(0.0581, 6);
+
+    wheel(1, { deltaMode: 1 }); // 1 linha = 16 px, mas em linhas: mouse (Firefox)
+    expect(hxp()).toBeLessThan(0.0693);
+    settle();
+    expect(hxp()).toBeCloseTo(0.0693, 6);
+
+    wheel(-0.05, { deltaMode: 2 }); // páginas: × innerHeight (768 no jsdom)
+    expect(hxp()).toBeGreaterThan(0.0424);
+    settle();
+    expect(hxp()).toBeCloseTo(0.0693 - 0.05 * 768 * 0.0007, 6);
+  });
+
+  it("trackpad: 1429 px para expandir (36 passos de 39 px não bastam; o 37º expande na hora)", async () => {
+    await mount();
+
+    for (let index = 0; index < 36; index++) wheel(39);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "0.98" });
+    wheel(39);
+    expect(frameQueue.size).toBe(0);
+    expect(state()).toEqual({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
+  });
+
+  it("trackpad no meio da animação da roda divide o mesmo alvo: soma na hora, sem saltar para o alvo, e tudo assenta na soma", async () => {
+    await mount();
+
+    wheel(100);
+    const p1 = hxp();
+    wheel(20); // +0,014 direto, e a animação continua
+    expect(hxp()).toBeGreaterThan(p1 + 0.014);
+    expect(hxp()).toBeLessThan(0.084);
+    settle();
+    expect(hxp()).toBeCloseTo(0.084, 6);
+  });
+
+  it("data-expanded só vira true quando o quadro desenhado chega a 1: com o alvo já em 1 e o quadro crescendo, a página continua segura", async () => {
+    await mount();
+
+    for (let index = 0; index < 16; index++) wheel(100);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", content: "hidden" });
+    expect(hxp()).toBeLessThan(1);
+    // Mais um clique para baixo ainda é do hero: a página não rola com o quadro crescendo.
+    expect(wheel(100).defaultPrevented).toBe(true);
+
+    let frames = 0;
+    while (state().progress !== "1.00" && frames < 200) {
+      expect(state()).toMatchObject({ pin: "true", expanded: "false" });
+      frame();
+      frames++;
+    }
+    expect(state()).toEqual({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
+    expect(frameQueue.size).toBe(0);
+  });
+
   it("roda em linhas (Firefox) vale 16 px por linha; Ctrl + roda (zoom) e o painel aberto do menu ficam com o navegador", async () => {
     const { container } = await mount(openMenu);
 
-    wheel(3, { deltaMode: 1 }); // 48 px × 0,0009
-    expect(state().progress).toBe("0.04");
+    wheel(3, { deltaMode: 1 }); // 48 px × 0,0007
+    settle();
+    expect(state().progress).toBe("0.03");
+    expect(hxp()).toBeCloseTo(0.0336, 6);
 
     expect(wheel(100, { ctrlKey: true }).defaultPrevented).toBe(false);
     expect(wheel(100, {}, container.querySelector(".topbar__nav a")!).defaultPrevented).toBe(false);
-    expect(state().progress).toBe("0.04");
+    settle();
+    expect(hxp()).toBeCloseTo(0.0336, 6);
   });
 
   it("roda só de lado (o gesto de voltar e avançar do trackpad) fica com o navegador e não mexe no hero", async () => {
     await mount();
     wheel(100);
+    settle();
     const input = hero().dataset.input;
 
     const sideways = wheel(0, { deltaX: 100 });
     expect(sideways.defaultPrevented).toBe(false);
-    expect(state()).toMatchObject({ pin: "true", progress: "0.09" });
+    expect(state()).toMatchObject({ pin: "true", progress: "0.07" });
     expect(hero().dataset.input).toBe(input);
+  });
+
+  it("teclado no meio da animação da roda: parte do alvo, com a transição do CSS, e a animação da roda para", async () => {
+    await mount();
+
+    wheel(100);
+    expect(hxp()).toBeLessThan(0.07);
+    key("ArrowDown");
+    expect(hero().dataset.input).toBe("key");
+    expect(hxp()).toBeCloseTo(0.17, 6);
+    expect(frameQueue.size).toBe(0);
   });
 
   it("expandido, roda para cima no topo recolhe (de volta ao topo, instantâneo) e as próximas voltam o progresso", async () => {
     await mount();
-    for (let index = 0; index < 12; index++) wheel(100);
+    expandWithWheel();
     expect(state().expanded).toBe("true");
 
     // Fora do topo, roda para cima é só a página subindo.
@@ -356,14 +539,16 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     setScrollY(0);
 
     wheel(-100);
-    expect(state()).toMatchObject({ progress: "0.91", content: "visible" });
-    for (let index = 0; index < 2; index++) wheel(-100);
-    expect(state()).toMatchObject({ progress: "0.73", content: "hidden" });
+    settle();
+    expect(state()).toMatchObject({ progress: "0.93", content: "visible" });
+    for (let index = 0; index < 3; index++) wheel(-100);
+    settle();
+    expect(state()).toMatchObject({ progress: "0.72", content: "hidden" });
   });
 
   it("expandido e rolado além de uma tela, a roda e o touchmove (não passivos) saem da window; voltam antes do topo", async () => {
     await mount();
-    for (let index = 0; index < 12; index++) wheel(100);
+    expandWithWheel();
     expect(state().expanded).toBe("true");
     const removed = vi.spyOn(window, "removeEventListener");
     const added = vi.spyOn(window, "addEventListener");
@@ -384,16 +569,19 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ pin: "true", expanded: "false" });
   });
 
-  it("toque: arrastar para cima expande (× 0,005) e para baixo recolhe (× 0,008); expandido, puxar mais de 20 px no topo recolhe", async () => {
+  it("toque: arrastar para cima expande (× 0,0039) e para baixo recolhe, mais rápido (× 0,0062), na hora; expandido, puxar mais de 20 px no topo recolhe", async () => {
     await mount();
 
     touch("touchstart", 500);
-    const move = touch("touchmove", 400); // +100 px × 0,005
+    const move = touch("touchmove", 400); // +100 px × 0,0039, sem animação
     expect(move.defaultPrevented).toBe(true);
-    expect(state().progress).toBe("0.50");
-    touch("touchmove", 425); // −25 px × 0,008
-    expect(state().progress).toBe("0.30");
-    touch("touchmove", 270); // +155 px × 0,005 → 1
+    expect(hxp()).toBeCloseTo(0.39, 6);
+    expect(frameQueue.size).toBe(0);
+    touch("touchmove", 420); // −20 px × 0,0062
+    expect(hxp()).toBeCloseTo(0.266, 6);
+    touch("touchmove", 232); // +188 px × 0,0039 = 0,7332: 0,9992, ainda não
+    expect(state()).toMatchObject({ expanded: "false", progress: "0.99" });
+    touch("touchmove", 231); // +1 px → 1
     expect(state()).toMatchObject({ expanded: "true", content: "visible" });
     touch("touchend");
 
@@ -403,8 +591,8 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(touch("touchmove", 330).defaultPrevented).toBe(true); // −30 px no topo: recolhe
     expect(state()).toMatchObject({ pin: "true", expanded: "false" });
     // Como no original: o início do toque não andou enquanto expandido.
-    touch("touchmove", 340); // −40 px × 0,008
-    expect(state()).toMatchObject({ progress: "0.68", content: "hidden" });
+    touch("touchmove", 350); // −50 px × 0,0062
+    expect(state()).toMatchObject({ progress: "0.69", content: "hidden" });
   });
 
   it("toque: o touchcancel esquece o início, e um toque que começa no painel aberto do menu fica com o navegador", async () => {
@@ -520,13 +708,27 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     expect(state()).toMatchObject({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
   });
 
-  it("uma rolagem que o hero não causou (âncora, barra de rolagem, busca) completa a expansão, sem voltar ao topo", async () => {
+  it("uma rolagem que o hero não causou (âncora, barra de rolagem, busca) completa a expansão, sem voltar ao topo, e cancela a animação da roda", async () => {
     await mount();
     wheel(100);
+    expect(frameQueue.size).toBe(1);
 
     scrollPage(640);
     expect(state()).toEqual({ pin: "false", expanded: "true", progress: "1.00", content: "visible" });
+    expect(hero().dataset.input).toBe("auto");
+    expect(frameQueue.size).toBe(0);
+    for (let index = 0; index < 5; index++) frame();
+    expect(hxp()).toBe(1);
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("desmontar no meio da animação da roda cancela o quadro pendente", async () => {
+    const { unmount } = await mount();
+    wheel(100);
+    expect(frameQueue.size).toBe(1);
+
+    unmount();
+    expect(frameQueue.size).toBe(0);
   });
 
   it("link direto para uma âncora fora do hero (/#contato): começa expandido, sem prender", async () => {
@@ -589,10 +791,13 @@ describe("<HeroExpansao /> — expansão com roda, toque e teclado", () => {
     const video = container.querySelector("video") as HTMLVideoElement;
     act(() => SpyIntersectionObserver.fire(video, true));
     expect(video.paused).toBe(false);
+    // A roda no meio da animação: desarmar cancela o quadro pendente.
     wheel(100);
-    expect(state()).toMatchObject({ pin: "true", progress: "0.09" });
+    expect(state()).toMatchObject({ pin: "true", progress: "0.01" });
+    expect(frameQueue.size).toBe(1);
 
     act(() => reducedMotion.set(true));
+    expect(frameQueue.size).toBe(0);
     expect(state()).toEqual({ pin: "false", expanded: "false", progress: "0.00", content: "visible" });
     expect(hero().style.getPropertyValue("--hx-p")).toBe("");
     expect(wheel(100).defaultPrevented).toBe(false);

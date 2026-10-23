@@ -4405,7 +4405,8 @@ textarea.field__input {
 
 /* As transições do original: fundo 0,1 s, sombra 0,2 s, conteúdo 0,7 s. A
    roda e o toque mexem no quadro e no título sem transição (como no
-   original); teclado e os saltos (âncora, foco) ganham uma curta. */
+   original; o clique da roda de mouse é suavizado no JavaScript, quadro a
+   quadro, e não aqui); teclado e os saltos (âncora, foco) ganham uma curta. */
 @media (prefers-reduced-motion: no-preference) {
   .hero-expansao__fundo {
     transition: opacity 100ms ease;
