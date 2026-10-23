@@ -7,6 +7,7 @@ import {
   camera,
   cenaDe,
   fases,
+  molduraNaPausa,
   posicaoDoTitulo,
   quadro,
   suave,
@@ -282,80 +283,184 @@ describe("camera: a sala", () => {
 });
 
 /**
- * As metades do título na pausa: a linha 1 escala em volta da borda direita
- * (a que encosta na tela) e a linha 2 em volta da esquerda; no layout, cada
- * uma é centrada na janela.
+ * As metades do título na pausa, com a pose do `posicaoDoTitulo`: no layout,
+ * cada linha é centrada na janela, com o centro vertical medido (`centros`).
+ * Deitado, a linha 1 escala em volta da borda direita (a que fica junto do
+ * aparelho) e a linha 2 em volta da esquerda; em pé, as duas em volta do
+ * meio. Na vertical, em volta do meio.
  */
-function metadesNaPausa(v: Viewport, larguras: [number, number]) {
-  const { x, escala } = posicaoDoTitulo(v, larguras);
-  const direita1 = v.w / 2 + larguras[0] / 2 + x[0];
-  const esquerda2 = v.w / 2 - larguras[1] / 2 + x[1];
-  return {
-    escala,
-    linha1: { left: direita1 - larguras[0] * escala, right: direita1 },
-    linha2: { left: esquerda2, right: esquerda2 + larguras[1] * escala },
+function metadesNaPausa(v: Viewport, larguras: [number, number], medida = layoutDoTitulo(v)) {
+  const { x, y, escala } = posicaoDoTitulo(v, larguras, medida);
+  const caixa = (i: 0 | 1) => {
+    const l = larguras[i];
+    const esquerda = v.w / 2 - l / 2;
+    const origem = v.emPe ? v.w / 2 : i === 0 ? esquerda + l : esquerda;
+    const left = origem + (esquerda - origem) * escala + x[i];
+    const cy = medida.centros[i] + y[i];
+    const meia = (medida.alturas[i] * escala) / 2;
+    return { left, right: left + l * escala, top: cy - meia, bottom: cy + meia, cy };
   };
+  return { escala, linha1: caixa(0), linha2: caixa(1) };
 }
 
 /** As larguras das metades com a fonte de 60 px, medidas no navegador (relatório da Task 3 da fase 1). */
 const TITULO_60PX: [number, number] = [688, 323];
+/** A altura de cada metade com a fonte de 60 px (line-height 1,05). */
+const ALTURA_60PX = 63;
 
-describe("posicaoDoTitulo", () => {
-  it("sem medida (jsdom) não desloca nem escala nada", () => {
-    expect(posicaoDoTitulo(NOTEBOOK_GRANDE, [0, 0])).toEqual({ x: [0, 0], escala: 1 });
-  });
+/**
+ * O layout do título: o h1 centrado no palco, as duas linhas com o gap de 16
+ * px entre elas (o `.hero-expansao__titulo h1`).
+ */
+function layoutDoTitulo(v: Viewport, altura = ALTURA_60PX) {
+  return {
+    centros: [v.h / 2 - 8 - altura / 2, v.h / 2 + 8 + altura / 2] as [number, number],
+    alturas: [altura, altura] as [number, number],
+  };
+}
 
-  it("a linha 1 termina tituloFolga à esquerda da tela e a 2 começa à direita", () => {
-    const v = NOTEBOOK_GRANDE;
-    const larguras: [number, number] = [400, 300];
-    const [dx1, dx2] = posicaoDoTitulo(v, larguras).x;
-    const { tela } = camera(ENTRADA.E, v);
-    const esq = tela.cx - (tela.s * v.w) / 2;
-    const dir = tela.cx + (tela.s * v.w) / 2;
-    // No layout cada linha é centrada na janela.
-    const bordaDireitaDaLinha1 = v.w / 2 + larguras[0] / 2 + dx1;
-    const bordaEsquerdaDaLinha2 = v.w / 2 - larguras[1] / 2 + dx2;
-    expect(Math.abs(bordaDireitaDaLinha1 - (esq - 24))).toBeLessThanOrEqual(0.5);
-    expect(Math.abs(bordaEsquerdaDaLinha2 - (dir + 24))).toBeLessThanOrEqual(0.5);
+/** A folga entre as metades e a moldura: a maior entre a fixa e 4% da largura da moldura. */
+function folgaDa(m: { esquerda: number; direita: number }) {
+  return Math.max(ENTRADA.tituloFolga, ENTRADA.tituloFolgaRelativa * (m.direita - m.esquerda));
+}
+
+const DEITADOS: Viewport[] = [
+  NOTEBOOK_GRANDE,
+  { w: 1366, h: 768, emPe: false },
+  NOTEBOOK_COM_BARRA,
+  { w: 2560, h: 1080, emPe: false },
+  { w: 1920, h: 1080, emPe: false },
+];
+/** Em pé: o celular (390 × 844, fonte de 29,5 px), um menor (360 × 740, 27 px) e o tablet (768 × 1024, 46,8 px). */
+const EM_PE: { v: Viewport; larguras: [number, number]; altura: number }[] = [
+  { v: CELULAR, larguras: [338.3, 158.8], altura: 31 },
+  { v: { w: 360, h: 740, emPe: true }, larguras: [309.6, 145.3], altura: 28.4 },
+  { v: { w: 768, h: 1024, emPe: true }, larguras: [536.6, 251.9], altura: 49.1 },
+];
+
+describe("molduraNaPausa", () => {
+  it.each([NOTEBOOK_GRANDE, CELULAR])("é a borda e o aro em volta da tela, e o pé do aparelho abaixo dela ($w × $h)", (v) => {
+    const tela = telaNaCena(1, v);
+    // A cena do enquadramento, com a moldura e o pé do ENTRADA (o tipo da Cena os deixa opcionais).
+    const aparelho = ENTRADA.aparelho[v.emPe ? "emPe" : "deitado"];
+    const px = (tela.s * v.w) / aparelho.largura;
+    const m = molduraNaPausa(v);
+    const { lado, topo, aro } = aparelho.moldura;
+    expect(m.esquerda).toBeCloseTo(tela.cx - (tela.s * v.w) / 2 - (lado + aro / 2) * px, 9);
+    expect(m.direita).toBeCloseTo(tela.cx + (tela.s * v.w) / 2 + (lado + aro / 2) * px, 9);
+    expect(m.topo).toBeCloseTo(tela.cy - (tela.s * v.h) / 2 - (topo + aro / 2) * px, 9);
+    expect(m.pe).toBeCloseTo(tela.cy + (tela.s * v.h) / 2 + aparelho.pe * px, 9);
   });
 });
 
-describe("posicaoDoTitulo: o título inteiro na pausa", () => {
-  it("cabe sem escala quando sobra espaço dos dois lados", () => {
-    expect(posicaoDoTitulo(NOTEBOOK_GRANDE, [300, 200]).escala).toBe(1);
+describe("posicaoDoTitulo", () => {
+  it("sem medida (jsdom) não desloca nem escala nada", () => {
+    expect(posicaoDoTitulo(NOTEBOOK_GRANDE, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1 });
+    expect(posicaoDoTitulo(CELULAR, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1 });
+  });
+
+  it("com a largura e sem a altura (sem layout), desloca só na horizontal", () => {
+    const { y } = posicaoDoTitulo(NOTEBOOK_GRANDE, TITULO_60PX);
+    expect(y).toEqual([0, 0]);
+  });
+});
+
+describe("posicaoDoTitulo deitado: as metades ladeiam a moldura (Q19)", () => {
+  it.each(DEITADOS)("a $w × $h, a linha 1 termina e a 2 começa a folga da moldura, dentro da janela útil", (v) => {
+    const { linha1, linha2, escala } = metadesNaPausa(v, TITULO_60PX);
+    const m = molduraNaPausa(v);
+    const folga = folgaDa(m);
+    expect(folga).toBeGreaterThanOrEqual(ENTRADA.tituloFolga);
+    expect(linha1.right).toBeCloseTo(m.esquerda - folga, 6);
+    expect(linha2.left).toBeCloseTo(m.direita + folga, 6);
+    expect(escala).toBeLessThanOrEqual(1);
+    for (const linha of [linha1, linha2]) {
+      expect(linha.left).toBeGreaterThanOrEqual(ENTRADA.tituloMargem - 1e-6);
+      expect(linha.right).toBeLessThanOrEqual(v.w - ENTRADA.tituloMargem + 1e-6);
+    }
+  });
+
+  it("a 21:9 a folga cresce com a moldura (4% da largura dela), acima da fixa", () => {
+    const m = molduraNaPausa({ w: 2560, h: 1080, emPe: false });
+    expect(ENTRADA.tituloFolgaRelativa).toBe(0.04);
+    expect(folgaDa(m)).toBeCloseTo(0.04 * (m.direita - m.esquerda), 9);
+    expect(folgaDa(m)).toBeGreaterThan(ENTRADA.tituloFolga);
   });
 
   it("a escala é min(1, espaço livre ÷ largura), com o pior dos dois lados", () => {
     const v = NOTEBOOK_GRANDE;
-    const tela = telaNaCena(1, v);
-    const meia = (tela.s * v.w) / 2;
-    const livreEsq = tela.cx - meia - ENTRADA.tituloFolga - ENTRADA.tituloMargem;
-    const livreDir = v.w - (tela.cx + meia) - ENTRADA.tituloFolga - ENTRADA.tituloMargem;
+    const m = molduraNaPausa(v);
+    const folga = folgaDa(m);
+    const livreEsq = m.esquerda - folga - ENTRADA.tituloMargem;
+    const livreDir = v.w - m.direita - folga - ENTRADA.tituloMargem;
     expect(ENTRADA.tituloMargem).toBe(16);
-    expect(posicaoDoTitulo(v, TITULO_60PX).escala).toBeCloseTo(Math.min(livreEsq / 688, livreDir / 323), 9);
-    // A linha 2 mais larga manda.
+    expect(posicaoDoTitulo(v, TITULO_60PX).escala).toBeCloseTo(Math.min(1, livreEsq / 688, livreDir / 323), 9);
     expect(posicaoDoTitulo(v, [100, 900]).escala).toBeCloseTo(livreDir / 900, 9);
+    expect(posicaoDoTitulo(v, [300, 200]).escala).toBe(1);
   });
 
-  it.each([NOTEBOOK_GRANDE, { w: 1366, h: 768, emPe: false }, NOTEBOOK_COM_BARRA])(
-    "a $w × $h, as duas metades ficam dentro de [16, v.w − 16], ao lado da tela",
-    (v) => {
-      const { escala, linha1, linha2 } = metadesNaPausa(v, TITULO_60PX);
-      expect(escala).toBeLessThan(1);
-      const folga = 1e-6;
-      for (const linha of [linha1, linha2]) {
-        expect(linha.left).toBeGreaterThanOrEqual(16 - folga);
-        expect(linha.right).toBeLessThanOrEqual(v.w - 16 + folga);
-      }
-      const tela = telaNaCena(1, v);
-      const meia = (tela.s * v.w) / 2;
-      expect(linha1.right).toBeCloseTo(tela.cx - meia - ENTRADA.tituloFolga, 6);
-      expect(linha2.left).toBeCloseTo(tela.cx + meia + ENTRADA.tituloFolga, 6);
-    },
-  );
+  it.each(DEITADOS)("a $w × $h, o centro de cada metade fica na altura da mídia de ENTRADA.aparelho.deitado.tituloY", (v) => {
+    const { linha1, linha2 } = metadesNaPausa(v, TITULO_60PX);
+    const { midia } = cenaDe(v);
+    const { tituloY } = ENTRADA.aparelho.deitado;
+    const m = Math.max(v.w / midia.w, v.h / midia.h);
+    const naJanela = (y: number) => (v.h - midia.h * m) * midia.posY + y * m;
+    expect(linha1.cy).toBeCloseTo(naJanela(tituloY[0]), 6);
+    expect(linha2.cy).toBeCloseTo(naJanela(tituloY[1]), 6);
+  });
+
+  it("a 1440 × 900 (a proporção da arte) a altura das metades é a do layout de antes (±1 px)", () => {
+    const { y } = posicaoDoTitulo(NOTEBOOK_GRANDE, TITULO_60PX, layoutDoTitulo(NOTEBOOK_GRANDE));
+    expect(Math.abs(y[0])).toBeLessThanOrEqual(1);
+    expect(Math.abs(y[1])).toBeLessThanOrEqual(1);
+  });
+
+  it("a 21:9 a linha 1 fica toda acima da caixa do Replay (o topo dela na mídia, y 368), no vidro escuro da janela", () => {
+    const v: Viewport = { w: 2560, h: 1080, emPe: false };
+    const { linha1 } = metadesNaPausa(v, TITULO_60PX);
+    const m = Math.max(v.w / 1280, v.h / 720);
+    const topoDaCaixa = v.h - 720 * m + 368 * m;
+    expect(linha1.bottom).toBeLessThan(topoDaCaixa);
+  });
 
   it("nunca vira escala negativa numa janela estreita demais", () => {
     expect(posicaoDoTitulo({ w: 200, h: 900, emPe: false }, TITULO_60PX).escala).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("posicaoDoTitulo em pé: as metades acima e abaixo do celular", () => {
+  it.each(EM_PE)(
+    "a $v.w × $v.h, a linha 1 fica a folga acima da moldura e a 2 entre o suporte e o pé do palco, centradas",
+    ({ v, larguras, altura }) => {
+      const medida = layoutDoTitulo(v, altura);
+      const { x, escala } = posicaoDoTitulo(v, larguras, medida);
+      const { linha1, linha2 } = metadesNaPausa(v, larguras, medida);
+      const m = molduraNaPausa(v);
+      const folga = folgaDa(m);
+      expect(x).toEqual([0, 0]);
+      expect(escala).toBe(1);
+      expect(linha1.bottom).toBeCloseTo(m.topo - folga, 6);
+      // A linha 2 no meio da mesa escura, entre o pé do suporte e o pé do palco (longe da luz do abajur, que bate
+      // junto do suporte), mas nunca a menos da folga do suporte.
+      expect(linha2.cy).toBeCloseTo(Math.max(m.pe + folga + linha2.bottom - linha2.cy, (m.pe + v.h) / 2), 6);
+      expect(linha2.top).toBeGreaterThanOrEqual(m.pe + folga - 1e-6);
+      // Acima do controle do vídeo (44 px, a um gutter do pé).
+      expect(linha2.bottom).toBeLessThanOrEqual(v.h - 44 - 16);
+      for (const linha of [linha1, linha2]) {
+        expect(linha.left).toBeGreaterThanOrEqual(ENTRADA.tituloMargem - 1e-6);
+        expect(linha.right).toBeLessThanOrEqual(v.w - ENTRADA.tituloMargem + 1e-6);
+        expect(linha.top).toBeGreaterThanOrEqual(0);
+        expect(linha.bottom).toBeLessThanOrEqual(v.h);
+      }
+      // O corpo do h1 fica de pé: nada de legenda de 9 px ao lado do celular.
+      expect((altura / 1.05) * escala).toBeGreaterThanOrEqual(27);
+    },
+  );
+
+  it("uma linha mais larga que a janela útil escala para caber entre as margens", () => {
+    const v = CELULAR;
+    const { escala } = posicaoDoTitulo(v, [500, 158.8], layoutDoTitulo(v, 31));
+    expect(escala).toBeCloseTo((v.w - 2 * ENTRADA.tituloMargem) / 500, 9);
   });
 });
 

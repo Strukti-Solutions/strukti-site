@@ -145,13 +145,13 @@
  *   completando na hora (Q21). Recolher pelo toque zera o início do
  *   arrasto: o resto do gesto anda só o que o dedo andou depois. O
  *   `paint()` escreve a câmera (`camera()`) em variáveis CSS (`--hx-e`,
- *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x`,
- *   `--hx-linha2-x`, `--hx-titulo-s`, `--hx-titulo-saida`); a janela útil
- *   (largura da seção, altura do palco), a orientação (`data-orientacao`) e a largura das
- *   metades do título são medidas depois de montar e de novo a cada resize
- *   ou giro, e cada medida pede um quadro. A escala das metades na pausa
- *   (`--hx-titulo-s`, fase 2 da arte, 23/10/2026) as deixa inteiras entre a
- *   tela e a borda da janela. Com a tela cobrindo a sala (`k` a partir de
+ *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x/-y`,
+ *   `--hx-linha2-x/-y`, `--hx-titulo-s`, `--hx-titulo-saida`); a janela útil
+ *   (largura da seção, altura do palco), a orientação (`data-orientacao`) e a largura,
+ *   a altura e o centro no palco das metades do título são medidos depois de montar e de
+ *   novo a cada resize ou giro, e cada medida pede um quadro. A pose das metades na pausa
+ *   (`posicaoDoTitulo`, fase 2 da arte, 23/10/2026) as deixa inteiras ao lado da
+ *   moldura do notebook ou, em pé, acima e abaixo do celular. Com a tela cobrindo a sala (`k` a partir de
  *   `ENTRADA.salaCobertaK`, e em P = 1 solto ou recolhido), a mídia recebe
  *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
  *   sala pausa. O conteúdo é a tela do aparelho:
@@ -282,6 +282,8 @@ const VARIAVEIS_DA_CENA = [
   "--hx-quadro-h",
   "--hx-linha1-x",
   "--hx-linha2-x",
+  "--hx-linha1-y",
+  "--hx-linha2-y",
   "--hx-titulo-s",
   "--hx-titulo-saida",
 ] as const;
@@ -319,6 +321,8 @@ function pintarCena(section: HTMLElement, p: number, { v, titulo: pose }: Medida
     "--hx-quadro-h": px(q.h),
     "--hx-linha1-x": px(pose.x[0]),
     "--hx-linha2-x": px(pose.x[1]),
+    "--hx-linha1-y": px(pose.y[0]),
+    "--hx-linha2-y": px(pose.y[1]),
     "--hx-titulo-s": String(pose.escala),
     "--hx-titulo-saida": String(titulo.saida),
   };
@@ -632,8 +636,21 @@ export function ScrollExpandMedia({
     const palco = palcoRef.current;
     if (!section || !palco) return;
     const emPeQuery = typeof window.matchMedia === "function" ? window.matchMedia(ORIENTACAO_EM_PE_QUERY) : null;
-    const largura = (linha: 1 | 2) =>
-      section.querySelector<HTMLElement>(`.hero-expansao__linha--${linha}`)?.offsetWidth ?? 0;
+    const linhaEl = (linha: 1 | 2) => section.querySelector<HTMLElement>(`.hero-expansao__linha--${linha}`);
+    const largura = (linha: 1 | 2) => linhaEl(linha)?.offsetWidth ?? 0;
+    const altura = (linha: 1 | 2) => linhaEl(linha)?.offsetHeight ?? 0;
+    // O centro da linha no palco, pelo layout (os offsets ignoram o transform):
+    // soma os offsetTop até o palco, que é posicionado.
+    const centro = (linha: 1 | 2) => {
+      let el: HTMLElement | null = linhaEl(linha);
+      const meia = (el?.offsetHeight ?? 0) / 2;
+      let topo = 0;
+      while (el && el !== palco) {
+        topo += el.offsetTop;
+        el = el.offsetParent as HTMLElement | null;
+      }
+      return topo + meia;
+    };
 
     const medir = () => {
       const v: Viewport = {
@@ -641,7 +658,13 @@ export function ScrollExpandMedia({
         h: palco.clientHeight || window.innerHeight,
         emPe: emPeQuery?.matches === true,
       };
-      medidaRef.current = { v, titulo: posicaoDoTitulo(v, [largura(1), largura(2)]) };
+      medidaRef.current = {
+        v,
+        titulo: posicaoDoTitulo(v, [largura(1), largura(2)], {
+          centros: [centro(1), centro(2)],
+          alturas: [altura(1), altura(2)],
+        }),
+      };
       setOrientacao(v.emPe ? "em-pe" : "deitado");
       schedulePaint();
     };

@@ -627,6 +627,20 @@ describe("cena do hero notebook", () => {
       expect(Math.abs(emPe.altura - geo("mediaRetrato").tela.altura)).toBeLessThanOrEqual(0.1);
     });
 
+    it("a moldura e o pé do aparelho do ENTRADA (as metades do título ficam fora deles) são os do vetor", () => {
+      const vetor = (require("./vetor.js") as () => Vetor)();
+      const { deitado, emPe } = ENTRADA.aparelho;
+      const { lado, topo, queixo, aro } = vetor.notebook.tampa;
+      expect(deitado.moldura).toEqual({ lado, topo, queixo, aro });
+      const c = vetor.celular.corpo;
+      expect(emPe.moldura).toEqual({ lado: c.lado, topo: c.topo, queixo: c.queixo, aro: c.aro });
+      // O pé: o fundo da caixa da base e do suporte (a sombra de contato), abaixo do pé da tela.
+      const [, by, , bh] = vetor.notebook.base.caixa;
+      expect(deitado.pe).toBe(by + bh);
+      const [, sy, , sh] = vetor.celular.suporte.caixa;
+      expect(emPe.pe).toBe(sy + sh);
+    });
+
     it("a tampa é a da arte em volta da tela: bordas e queixo com 0,1 px", () => {
       const { tela, tampa } = geo("media");
       const t = (require("./vetor.js") as () => Vetor)().notebook.tampa;

@@ -10,9 +10,19 @@
 //   `caixa` = [x, y, largura, altura] (o viewBox). O site prende a tela pelo pé da tela da arte (ENTRADA.aparelho, `cy +
 //   altura / 2`), então a base e o suporte caem sempre no lugar vazio da mesa.
 // - A sombra de contato (`contato`) é nova: uma elipse escura sob o pé, para a base e o suporte pousarem na mesa.
+// - O grão (`grao`, ajuste de arte r1): a cena pintada tem grão e o vetor liso parecia colado por cima. Três ladrilhos
+//   de pontos claros e escuros, fixos (sorteio com semente), de lados primos entre si (GRAO_LADOS, em px da mídia): o site
+//   repete cada um num <pattern> por cima da base e do suporte, com pouca opacidade, e a soma só se repete a cada 1001 px
+//   (um ladrilho só formava uma grade à vista). A moldura fica sem grão: no vidro escuro ele não aparece, e por cima do
+//   furo ele sujaria a tela no estado parado.
 const F = require('./scene.js');
 const { C } = F;
-const ALU = [31, 34, 41], VIDRO = [9, 11, 15];
+// O vidro da borda e a dobradiça: o navy mais escuro da cena (C.edge, rgb 5 11 19), e não o quase preto neutro (ajuste
+// de arte r1: a referência é navy). O navy-950 que a crítica sugeriu é o fundo da própria tela (surface-space): com
+// ele, a borda e a tela viravam uma coisa só.
+const ALU = [31, 34, 41], VIDRO = C.edge;
+const NAVY_800 = [21, 39, 59], NAVY_950 = [8, 18, 29];
+const GRAO_LADOS = [7, 11, 13], GRAO_PONTOS = [4, 6, 8];
 
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100;
 const mix = (a, b, t) => a.map((x, i) => x + (b[i] - x) * t);
@@ -35,6 +45,21 @@ const semCorpo = (x0, x1, pe, r, [cx, cy, cw, ch]) => {
     `M${a(x0)} ${cy}V${a(pe - r)}C${a(x0)} ${a(pe - r + k)} ${a(x0 + r - k)} ${a(pe)} ${a(x0 + r)} ${a(pe)}` +
     `H${a(x1 - r)}C${a(x1 - r + k)} ${a(pe)} ${a(x1)} ${a(pe - r + k)} ${a(x1)} ${a(pe - r)}V${cy}Z`;
 };
+
+// Os ladrilhos do grão: em cada um, GRAO_PONTOS quadradinhos claros e outros tantos escuros, de 0,5 a 0,9 px, num
+// caminho só cada.
+function grao() {
+  let semente = 20261023;
+  const sorteio = () => { semente = (semente * 1103515245 + 12345) % 2147483648; return semente / 2147483648; };
+  const pontos = (lado, n) => Array.from({ length: n }, () => {
+    const l = r2(0.5 + 0.4 * sorteio()), x = r2(sorteio() * (lado - l)), y = r2(sorteio() * (lado - l));
+    return `M${x} ${y}h${l}v${l}h${-l}Z`;
+  }).join('');
+  return {
+    ladrilhos: GRAO_LADOS.map((lado, i) => ({ lado, claro: pontos(lado, GRAO_PONTOS[i]), escuro: pontos(lado, GRAO_PONTOS[i]) })),
+    cores: { claro: cor([199, 204, 207], 0.04), escuro: cor([0, 0, 0], 0.1) }
+  };
+}
 
 function notebook() {
   const o = Object.assign({}, F.CAMS.media), W = F.prepWorld(o), cam = F.makeCam(o);
@@ -88,7 +113,8 @@ function notebook() {
       dobradica: d(dobradica),
       // os degradês: o tampo da esquerda (dl) para a direita (dr); a luz fria da tela do fundo (junto da dobradiça) para a frente
       tampoX: [r2(D(-L.w / 2, 0)[0]), r2(D(L.w / 2, 0)[0])],
-      brilhoY: [r2(D(0, L.d / 2)[1]), r2(D(0, -L.d / 2)[1])],
+      // (o brilho começa no pé da dobradiça, que cobre o que fica acima dele)
+      brilhoY: [r2(Math.max(...dobradica.map(p => p[1]))), r2(D(0, -L.d / 2)[1])],
       quina: quina(e1, e2, Math.max(1, cam.S(fr(0, L.h, -L.d / 2)) * 0.12), cor(mix(C.n300, C.lampW, 0.5), 0.38), cor(C.n400, 0.14)),
       contato,
       cores: {
@@ -96,7 +122,8 @@ function notebook() {
         tampoEsq: cor(dl), tampoDir: cor(dr),
         tecla: cor([13, 15, 20], 0.88),
         trackpad: cor(mix(mix(dl, dr, 0.5), C.black, 0.1)), trackpadAro: cor(C.n400, 0.22),
-        brilho: cor(F.GLOW_C), brilhoA: [0.17, 0.06, 0.02],
+        // o brilho frio da tela no topo do teclado (Q18): forte junto da dobradiça, quase nada a 35% da base
+        brilho: cor(F.GLOW_C), brilhoA: [0.42, 0.1, 0],
         dobradica: cor(VIDRO), contato: contatoCor
       }
     }
@@ -129,8 +156,10 @@ function celular() {
     return {
       frente: d([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]].map(P)),
       topo: d([[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]].map(P)),
-      quina: quina(P([x0, y1, z0]), P([x1, y1, z0]), Math.max(1, cam.S([x0, y1, z0]) * 0.08), cor(mix(C.n300, C.lampW, 0.5), 0.32), cor(C.n400, 0.12)),
-      cores: { frente: cor(lado([(x0 + x1) / 2, (y0 + y1) / 2, z0], [0, 0, -1])), topo: cor(F.light(ALU, [(x0 + x1) / 2, y1, (z0 + z1) / 2], [0, 1, 0])) }
+      quina: quina(P([x0, y1, z0]), P([x1, y1, z0]), Math.max(1, cam.S([x0, y1, z0]) * 0.08), cor(mix(C.n300, C.lampW, 0.5), 0.5), cor(C.n400, 0.18)),
+      // a frente do ressalto com volume (ajuste de arte r1: chapada, parecia um furo): um degradê do navy-800, no alto,
+      // que pega a luz, ao navy-950 junto da chapa
+      cores: { frente: cor(NAVY_800), frentePe: cor(NAVY_950), topo: cor(F.light(ALU, [(x0 + x1) / 2, y1, (z0 + z1) / 2], [0, 1, 0])) }
     };
   };
   const pr = sg.prateleira, rs = sg.ressalto;
@@ -161,6 +190,6 @@ function celular() {
   };
 }
 
-function vetor() { return { notebook: notebook(), celular: celular() }; }
+function vetor() { return { notebook: notebook(), celular: celular(), grao: grao() }; }
 module.exports = vetor;
 if (require.main === module) process.stdout.write(JSON.stringify(vetor(), null, 2) + '\n');

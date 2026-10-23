@@ -272,6 +272,8 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
       "--hx-quadro-h",
       "--hx-linha1-x",
       "--hx-linha2-x",
+      "--hx-linha1-y",
+      "--hx-linha2-y",
       "--hx-titulo-s",
       "--hx-titulo-saida",
     ]) {
@@ -843,6 +845,38 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     expect(variavel("--hx-titulo-s")).toBe(String(escala));
     expect(variavel("--hx-linha1-x")).toBe(`${x[0]}px`);
     expect(variavel("--hx-linha2-x")).toBe(`${x[1]}px`);
+    // Sem layout (o jsdom), nada na vertical.
+    expect(variavel("--hx-linha1-y")).toBe("0px");
+    expect(variavel("--hx-linha2-y")).toBe("0px");
+  });
+
+  it("na vertical, as metades vão à altura do posicaoDoTitulo, com o centro de cada uma medido no palco", async () => {
+    // O título fica 300 px abaixo do topo do palco; cada linha tem 63 px, a 2ª 79 px abaixo da 1ª.
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__linha--1")) return 688;
+      if (this.classList.contains("hero-expansao__linha--2")) return 323;
+      return 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("hero-expansao__linha") ? 63 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__titulo")) return 300;
+      if (this.classList.contains("hero-expansao__linha--2")) return 79;
+      return 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetParent", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__linha")) return this.closest(".hero-expansao__titulo");
+      if (this.classList.contains("hero-expansao__titulo")) return this.closest(".hero-expansao__palco");
+      return null;
+    });
+    await mount();
+
+    const v = { w: window.innerWidth, h: window.innerHeight, emPe: false };
+    const { y } = posicaoDoTitulo(v, [688, 323], { centros: [331.5, 410.5], alturas: [63, 63] });
+    expect(y[0]).not.toBe(0);
+    expect(variavel("--hx-linha1-y")).toBe(`${y[0]}px`);
+    expect(variavel("--hx-linha2-y")).toBe(`${y[1]}px`);
   });
 
   it("uma metade do título que muda de largura (a fonte que carrega depois, o espaçamento do 1.4.12) mede de novo e segue a escala", async () => {

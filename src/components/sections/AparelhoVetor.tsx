@@ -23,9 +23,13 @@ import geometria from "./aparelhoVetor.json";
  * e o suporte são SVG presos ao pé da tela, que fica sempre no pé da tela da
  * arte (`telaNaCena`): eles caem no lugar vazio da mesa em qualquer janela.
  * Sem texto, sem imagem e sem nada focável.
+ *
+ * Por cima da base e do suporte vai o grão da cena (três ladrilhos de pontos
+ * do vetor.js, de lados primos entre si, em `<pattern>` de cada SVG): liso, o
+ * vetor parecia colado na sala pintada.
  */
 export function AparelhoVetor() {
-  const { notebook, celular } = geometria;
+  const { notebook, celular, grao } = geometria;
   const { base } = notebook;
   const { suporte } = celular;
 
@@ -57,11 +61,15 @@ export function AparelhoVetor() {
               x2={0}
               y2={base.brilhoY[1]}
             >
-              {[0, 0.55, 1].map((offset, i) => (
+              {[0, 0.35, 1].map((offset, i) => (
                 <stop key={offset} offset={offset} stopColor={base.cores.brilho} stopOpacity={base.cores.brilhoA[i]} />
               ))}
             </linearGradient>
             {degrade("aparelho-vetor-quina", base.quina)}
+            {ladrilhos("aparelho-vetor-grao-base", grao)}
+            <clipPath id="aparelho-vetor-contorno-base">
+              <path d={base.lateral} />
+            </clipPath>
           </defs>
           <ellipse className="aparelho-vetor__contato" {...base.contato} fill="url(#aparelho-vetor-contato)" />
           <path className="aparelho-vetor__lateral" d={base.lateral} fill={base.cores.lateral} />
@@ -80,6 +88,7 @@ export function AparelhoVetor() {
             fill="url(#aparelho-vetor-brilho)"
             style={{ mixBlendMode: "screen" }}
           />
+          {camadaDeGrao("aparelho-vetor-grao-base", "aparelho-vetor-contorno-base", base.caixa, grao)}
           {linha("aparelho-vetor__quina", "aparelho-vetor-quina", base.quina)}
           <path className="aparelho-vetor__dobradica" d={base.dobradica} fill={base.cores.dobradica} />
         </svg>
@@ -96,6 +105,16 @@ export function AparelhoVetor() {
             </radialGradient>
             {degrade("aparelho-vetor-chapa-quina", suporte.chapa.quina)}
             {degrade("aparelho-vetor-ressalto-quina", suporte.ressalto.quina)}
+            {/* A frente do ressalto: clara no alto, onde pega a luz, e escura junto da chapa. */}
+            <linearGradient id="aparelho-vetor-ressalto-frente" x1={0} y1={0} x2={0} y2={1}>
+              <stop offset={0} stopColor={suporte.ressalto.cores.frente} />
+              <stop offset={1} stopColor={suporte.ressalto.cores.frentePe} />
+            </linearGradient>
+            {ladrilhos("aparelho-vetor-grao-suporte", grao)}
+            <clipPath id="aparelho-vetor-contorno-suporte">
+              <path d={suporte.chapa.lateral} />
+              <path d={suporte.ressalto.frente} />
+            </clipPath>
             {/* A chapa fica atrás do celular: o corpo a recorta. */}
             <clipPath id="aparelho-vetor-sem-corpo">
               <path d={suporte.semCorpo} clipRule="evenodd" />
@@ -109,13 +128,47 @@ export function AparelhoVetor() {
           </g>
           {/* O ressalto, à frente da borda de baixo do celular. */}
           <g className="aparelho-vetor__ressalto">
-            <path className="aparelho-vetor__lateral" d={suporte.ressalto.frente} fill={suporte.ressalto.cores.frente} />
+            <path
+              className="aparelho-vetor__lateral"
+              d={suporte.ressalto.frente}
+              fill="url(#aparelho-vetor-ressalto-frente)"
+            />
             <path d={suporte.ressalto.topo} fill={suporte.ressalto.cores.topo} />
             {linha(undefined, "aparelho-vetor-ressalto-quina", suporte.ressalto.quina)}
+          </g>
+          {/* O grão da chapa e do ressalto; atrás do celular, a chapa some, e o grão também. */}
+          <g clipPath="url(#aparelho-vetor-sem-corpo)">
+            {camadaDeGrao("aparelho-vetor-grao-suporte", "aparelho-vetor-contorno-suporte", suporte.caixa, grao)}
           </g>
         </svg>
       </div>
     </div>
+  );
+}
+
+type Grao = {
+  ladrilhos: { lado: number; claro: string; escuro: string }[];
+  cores: { claro: string; escuro: string };
+};
+
+/** Os ladrilhos do grão (px da mídia): os pontos claros e os escuros de cada um, do vetor.js. */
+function ladrilhos(prefixo: string, g: Grao) {
+  return g.ladrilhos.map(({ lado, claro, escuro }) => (
+    <pattern key={lado} id={`${prefixo}-${lado}`} width={lado} height={lado} patternUnits="userSpaceOnUse">
+      <path d={claro} fill={g.cores.claro} />
+      <path d={escuro} fill={g.cores.escuro} />
+    </pattern>
+  ));
+}
+
+/** O grão por cima de uma peça: a caixa do SVG coberta pelos ladrilhos, recortada pelo contorno da peça. */
+function camadaDeGrao(prefixo: string, contorno: string, [x, y, w, h]: number[], g: Grao) {
+  return (
+    <g className="aparelho-vetor__grao" clipPath={`url(#${contorno})`}>
+      {g.ladrilhos.map(({ lado }) => (
+        <rect key={lado} x={x} y={y} width={w} height={h} fill={`url(#${prefixo}-${lado})`} />
+      ))}
+    </g>
   );
 }
 

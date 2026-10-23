@@ -109,7 +109,21 @@ das mídias, em px da mídia, com a origem no meio do pé da tela:
   corpo, `semCorpo`) e o ressalto. A prateleira fica inteira atrás do
   ressalto e não sai;
 - uma sombra de contato sob o pé (`contato`), nova: a base e o suporte pousam
-  na mesa.
+  na mesa;
+- o grão (`grao`): três ladrilhos de pontos claros e escuros, de 7, 11 e 13 px
+  da mídia (primos entre si: a soma só se repete a cada 1001 px; um ladrilho
+  só formava uma grade à vista), por cima da base e do suporte, com 4% e 10%
+  de opacidade. A moldura fica sem grão.
+
+O vidro da borda é o navy mais escuro da cena (`C.edge`), e não o navy-950: o
+navy-950 é o fundo da tela (`surface-space`), e a borda sumiria nele. O brilho
+frio da tela começa no pé da dobradiça e cai a quase nada em 35% da base; a
+frente do ressalto do suporte é um degradê do navy-800 ao navy-950.
+
+As metades do título na pausa dependem do aparelho: o `ENTRADA.aparelho` tem a
+moldura (`moldura`: as mesmas espessuras e o aro daqui) e o pé (`pe`: o fundo
+da `caixa` da base ou do suporte), e o `cena.test.ts` confere que batem com o
+`vetor.js`.
 
 O site prende a tela pelo pé da tela da arte (`ENTRADA.aparelho`, `cy +
 altura / 2`, no `telaNaCena`): numa janela mais larga que a arte a tampa fica

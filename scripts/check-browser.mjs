@@ -80,14 +80,16 @@
 // clássica, a 1366×768 com a tela a 125% (deviceScaleFactor 1,25) e a
 // 390×844 em pé, com toque:
 //   1. sem JavaScript (e com reduced motion): a pose da pausa em tela cheia,
-//      o h1 inteiro à vista, a tela (o bloco de chamada) no fluxo logo abaixo
+//      o h1 inteiro à vista e fora da moldura (a ENTRADA.tituloFolga dela,
+//      como na pausa), a tela (o bloco de chamada) no fluxo logo abaixo
 //      da cena, sem transform, com os botões clicáveis, e a altura do hero
 //      igual à com JavaScript (±2 px);
 //   2. a roda até expandir: o progresso só sobe, o palco fica preso, sem
 //      rolagem de lado, a tela no furo do aparelho em toda amostra e, entre
 //      E e E + Pa (a pausa: --hx-e = 1 e --hx-k = 0), parada (±1 px), com
 //      as metades do título inteiras na janela útil (a ENTRADA.tituloMargem
-//      da borda, ±1 px) e ao lado da tela (a ENTRADA.tituloFolga dela);
+//      da borda, ±1 px) e fora da moldura, a ENTRADA.tituloFolga dela
+//      (deitado, dos lados; em pé, acima e abaixo do celular);
 //   3. no quadro da liberação (lido no MutationObserver de data-expanded): a
 //      tela igual à janela útil {0, 0, clientWidth, innerHeight} (±1 px; uma
 //      tela mais alta que a janela começa nela e passa do pé) e scrollY
@@ -2149,6 +2151,21 @@ const entStaticExpr = (scriptsOn) => `(async () => {
       if (r.left < -0.5 || r.right > s.cw + 0.5) problems.push("a linha '" + linha.textContent.trim() + "' do título passa da largura (x " + px(r.left) + "–" + px(r.right) + ")");
       if (r.top < barBottom - 0.5 || r.bottom > s.vh + 0.5) problems.push("a linha '" + linha.textContent.trim() + "' do título não está à vista (y " + px(r.top) + "–" + px(r.bottom) + ", barra até " + px(barBottom) + ")");
     }
+    // O pôster da pausa (§7): as metades fora da moldura, como na pausa (o
+    // entProblemasDoTitulo; sem JavaScript não há data-orientacao, vale a
+    // media query).
+    const [l1, l2] = s.linhas;
+    const mo = s.moldura;
+    const folga = ${ENT_TITULO_FOLGA};
+    if (l1 && l2 && mo) {
+      if (matchMedia("(orientation: portrait)").matches) {
+        if (l1.bottom > mo.top - folga + 1) problems.push("a linha 1 do título termina em y " + px(l1.bottom) + ", a menos de " + folga + "px da moldura (y " + px(mo.top) + ")");
+        if (l2.top < mo.bottom + folga - 1) problems.push("a linha 2 do título começa em y " + px(l2.top) + ", a menos de " + folga + "px da moldura (y " + px(mo.bottom) + ")");
+      } else {
+        if (l1.right > mo.left - folga + 1) problems.push("a linha 1 do título termina em x " + px(l1.right) + ", a menos de " + folga + "px da moldura (x " + px(mo.left) + ")");
+        if (l2.left < mo.right + folga - 1) problems.push("a linha 2 do título começa em x " + px(l2.left) + ", a menos de " + folga + "px da moldura (x " + px(mo.right) + ")");
+      }
+    }
   }
 
   const tela = root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)});
@@ -2246,32 +2263,53 @@ async function entIda(cdp, ctx, what, avancar, budget) {
 }
 
 /**
- * O título inteiro na pausa (fase 2 da arte): nas amostras da pausa, as duas
- * metades ficam dentro da janela útil com a margem do ENTRADA e ao lado da
- * tela, sem cobri-la (a linha 1 termina a folga antes da borda esquerda da
- * tela, a linha 2 começa a folga depois da direita), com 1 px de tolerância.
- * O arrasto do toque anda em passos largos e pode pular a pausa: aí só anota.
+ * As metades do título fora da moldura do aparelho (fase 2 da arte, ajuste
+ * de arte r1 da N4): dentro da janela útil com a margem do ENTRADA e a folga
+ * da moldura (a caixa da tampa ou do corpo), com 1 px de tolerância. Deitado,
+ * a linha 1 termina antes da borda esquerda e a 2 começa depois da direita
+ * (Q19); em pé, a linha 1 fica acima da moldura e a 2 abaixo dela. Devolve os
+ * problemas (vazio: tudo certo).
+ */
+function entProblemasDoTitulo(s) {
+  const [l1, l2] = s.linhas;
+  const m = s.moldura;
+  const problemas = [];
+  for (const [nome, l] of [["linha 1", l1], ["linha 2", l2]]) {
+    if (l.left < ENT_TITULO_MARGEM - 1 || l.right > s.cw - ENT_TITULO_MARGEM + 1) {
+      problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${ENT_TITULO_MARGEM}px da janela (${s.cw})`);
+    }
+  }
+  if (s.orientacao === "em-pe") {
+    if (l1.bottom > m.top - ENT_TITULO_FOLGA + 1) {
+      problemas.push(`a linha 1 termina em y ${l1.bottom.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (y ${m.top.toFixed(1)})`);
+    }
+    if (l2.top < m.bottom + ENT_TITULO_FOLGA - 1) {
+      problemas.push(`a linha 2 começa em y ${l2.top.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (y ${m.bottom.toFixed(1)})`);
+    }
+  } else {
+    if (l1.right > m.left - ENT_TITULO_FOLGA + 1) {
+      problemas.push(`a linha 1 termina em x ${l1.right.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (x ${m.left.toFixed(1)})`);
+    }
+    if (l2.left < m.right + ENT_TITULO_FOLGA - 1) {
+      problemas.push(`a linha 2 começa em x ${l2.left.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (x ${m.right.toFixed(1)})`);
+    }
+  }
+  return problemas;
+}
+
+/**
+ * O título inteiro na pausa: nas amostras da pausa, as metades seguem o
+ * entProblemasDoTitulo. O arrasto do toque anda em passos largos e pode pular
+ * a pausa: aí só anota.
  */
 function entCheckTituloNaPausa(ctx, what, samples) {
-  const pausas = samples.filter((s) => entPausa(s) && s.aparelho && s.linhas?.length === 2);
+  const pausas = samples.filter((s) => entPausa(s) && s.moldura && s.linhas?.length === 2);
   if (pausas.length === 0) {
     ctx.log(`${what}: nenhuma amostra na pausa; o título na pausa não foi conferido aqui`);
     return;
   }
   for (const s of pausas) {
-    const [l1, l2] = s.linhas;
-    const problemas = [];
-    for (const [nome, l] of [["linha 1", l1], ["linha 2", l2]]) {
-      if (l.left < ENT_TITULO_MARGEM - 1 || l.right > s.cw - ENT_TITULO_MARGEM + 1) {
-        problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${ENT_TITULO_MARGEM}px da janela (${s.cw})`);
-      }
-    }
-    if (l1.right > s.aparelho.left - ENT_TITULO_FOLGA + 1) {
-      problemas.push(`a linha 1 termina em x ${l1.right.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da tela (x ${s.aparelho.left.toFixed(1)})`);
-    }
-    if (l2.left < s.aparelho.right + ENT_TITULO_FOLGA - 1) {
-      problemas.push(`a linha 2 começa em x ${l2.left.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da tela (x ${s.aparelho.right.toFixed(1)})`);
-    }
+    const problemas = entProblemasDoTitulo(s);
     if (problemas.length > 0) {
       ctx.fail(`${what}: na pausa (${entDesc(s)}), ${problemas.join("; ")}`);
       return;
@@ -2279,7 +2317,7 @@ function entCheckTituloNaPausa(ctx, what, samples) {
   }
   const [l1, l2] = pausas[0].linhas;
   ctx.log(
-    `${what}: título na pausa em ${pausas.length} amostra(s): linha 1 x ${l1.left.toFixed(1)}–${l1.right.toFixed(1)}, tela x ${pausas[0].aparelho.left.toFixed(1)}–${pausas[0].aparelho.right.toFixed(1)}, linha 2 x ${l2.left.toFixed(1)}–${l2.right.toFixed(1)}`,
+    `${what}: título na pausa em ${pausas.length} amostra(s): linha 1 ${entRect(l1)}, moldura ${entRect(pausas[0].moldura)}, linha 2 ${entRect(l2)}`,
   );
 }
 

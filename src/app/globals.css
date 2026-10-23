@@ -4488,8 +4488,10 @@ textarea.field__input {
   --hx-palco-h: 100vh;
   /* A largura da mídia da sala com cover (1280 × 720) no palco inteiro. */
   --hx-midia-largura: max(100cqw, var(--hx-palco-h) * 16 / 9);
-  /* ENTRADA.tituloFolga: das metades do título até a borda da tela. */
+  /* ENTRADA.tituloFolga: das metades do título até a moldura do aparelho;
+     ENTRADA.tituloMargem: delas até a borda do palco. */
   --hx-titulo-folga: 24px;
+  --hx-titulo-margem: 16px;
   --hx-e: 0;
   --hx-k: 0;
   --hx-quadro-w: 300px;
@@ -4509,6 +4511,8 @@ textarea.field__input {
   --hx-sala-blur: 0px;
   --hx-linha1-x: 0px;
   --hx-linha2-x: 0px;
+  --hx-linha1-y: 0px;
+  --hx-linha2-y: 0px;
   /* A escala das metades na pausa (posicaoDoTitulo): 1 até medir. */
   --hx-titulo-s: 1;
   --hx-titulo-saida: 0;
@@ -4604,25 +4608,37 @@ textarea.field__input {
   z-index: 5;
 }
 
-/* As metades do título abrem até o lado da tela na pausa e, na
-   aproximação, saem pelas bordas e somem. A data e a dica saem na
-   expansão, como no expansao. Na pausa, as duas encolhem por igual
-   (--hx-titulo-s, de 1 no cartão até a escala da pausa, com a expansão)
-   em volta da borda que encosta na tela: a direita da linha 1 e a
-   esquerda da linha 2 ficam a --hx-titulo-folga dela, e o resto cabe até a
-   borda da janela. */
+/* As metades do título vão, com a expansão, à pose da pausa
+   (posicaoDoTitulo: --hx-linha*-x/-y e --hx-titulo-s) e, na aproximação,
+   saem pelas bordas e somem. A data e a dica saem na expansão, como no
+   expansao. Deitado, as metades ladeiam a moldura do notebook (Q19) e
+   encolhem por igual em volta da borda junto dela: a direita da linha 1 e
+   a esquerda da linha 2. Em pé, ficam centradas, acima e abaixo do celular,
+   e encolhem em volta do meio. */
 .hero-expansao--entrada .hero-expansao__linha--1 {
   opacity: calc(1 - var(--hx-titulo-saida));
   transform-origin: 100% 50%;
-  transform: translateX(calc(var(--hx-e) * var(--hx-linha1-x) - var(--hx-titulo-saida) * 60vw))
+  transform: translate(
+      calc(var(--hx-e) * var(--hx-linha1-x) - var(--hx-titulo-saida) * 60vw),
+      calc(var(--hx-e) * var(--hx-linha1-y))
+    )
     scale(calc(1 - var(--hx-e) * (1 - var(--hx-titulo-s))));
 }
 
 .hero-expansao--entrada .hero-expansao__linha--2 {
   opacity: calc(1 - var(--hx-titulo-saida));
   transform-origin: 0 50%;
-  transform: translateX(calc(var(--hx-e) * var(--hx-linha2-x) + var(--hx-titulo-saida) * 60vw))
+  transform: translate(
+      calc(var(--hx-e) * var(--hx-linha2-x) + var(--hx-titulo-saida) * 60vw),
+      calc(var(--hx-e) * var(--hx-linha2-y))
+    )
     scale(calc(1 - var(--hx-e) * (1 - var(--hx-titulo-s))));
+}
+
+@media (orientation: portrait) {
+  .hero-expansao--entrada .hero-expansao__linha {
+    transform-origin: 50% 50%;
+  }
 }
 
 .hero-expansao--entrada .hero-expansao__data {
@@ -4787,22 +4803,52 @@ textarea.field__input {
     --hx-sala-tx: 0px !important;
     --hx-sala-ty: 0px !important;
     --hx-sala-blur: 0px !important;
-    /* As metades, centradas no palco, a folga de cada borda da tela (o
-       50% é meia largura da própria linha), mas nunca além do gutter: o
-       palco corta, e este estado não passa. Se a linha não cabe ao lado
-       da tela (1440 × 900, em pé), ela encosta no gutter e cobre um pouco
-       o aparelho, inteira e legível. */
+    /* As metades do título na pose da pausa (spec §7: o pôster da pausa;
+       a mesma regra do posicaoDoTitulo, só com CSS). 1 px da mídia
+       (a tela tem ENTRADA.aparelho.deitado.largura px da mídia), a meia
+       largura da moldura (a meia tela, a borda e meio aro de
+       ENTRADA.aparelho.deitado.moldura) e a folga até ela (a fixa ou 4% da
+       largura da moldura). */
+    --hx-parado-px: calc(var(--hx-tela-s) * 100cqw / 295.2);
+    --hx-parado-moldura: calc(50cqw * var(--hx-tela-s) + (15.78 + 1.69 / 2) * var(--hx-parado-px));
+    --hx-parado-folga: max(var(--hx-titulo-folga), 0.08 * var(--hx-parado-moldura));
+    /* O espaço de cada lado, entre a folga e a margem do palco: a fonte do
+       h1 encolhe até as metades caberem nele (abaixo). */
+    --hx-parado-livre: calc(50cqw - var(--hx-parado-moldura) - var(--hx-parado-folga) - var(--hx-titulo-margem));
+    /* A linha 1 termina e a 2 começa a folga da moldura (o 50% é meia
+       largura da própria linha); nunca passam da margem: o palco corta. */
     --hx-linha1-x: max(
-      calc(-50cqw * var(--hx-tela-s) - var(--hx-titulo-folga) - 50%),
-      calc(-50cqw + 50% + var(--gutter))
+      calc(-1 * (var(--hx-parado-moldura) + var(--hx-parado-folga)) - 50%),
+      calc(-50cqw + 50% + var(--hx-titulo-margem))
     ) !important;
     --hx-linha2-x: min(
-      calc(50cqw * var(--hx-tela-s) + var(--hx-titulo-folga) + 50%),
-      calc(50cqw - 50% - var(--gutter))
+      calc(var(--hx-parado-moldura) + var(--hx-parado-folga) + 50%),
+      calc(50cqw - 50% - var(--hx-titulo-margem))
     ) !important;
-    /* Sem medir, sem escala: a linha que não cabe encosta no gutter. */
+    /* Na altura, o centro de cada metade vai ao ENTRADA.aparelho.deitado.
+       tituloY da mídia (a mídia corta por baixo: o y fica (720 - y)/1280
+       da largura dela acima do pé do palco); no layout, o h1 fica centrado
+       no palco, com meio gap e meia linha (1,05em) de cada lado do meio. */
+    --hx-linha1-y: calc(
+      var(--hx-palco-h) - (720 - 328.4) * var(--hx-midia-largura) / 1280 - var(--hx-palco-h) / 2 + var(--space-4) / 2 + 0.525em
+    ) !important;
+    --hx-linha2-y: calc(
+      var(--hx-palco-h) - (720 - 391.6) * var(--hx-midia-largura) / 1280 - var(--hx-palco-h) / 2 - var(--space-4) / 2 - 0.525em
+    ) !important;
+    /* Sem medir, sem escala: quem encolhe é a fonte. */
     --hx-titulo-s: 1 !important;
     --hx-titulo-saida: 0 !important;
+  }
+
+  /* A fonte do h1 de sempre, até as metades caberem no espaço livre: o
+     espaço dividido pela largura de cada metade em em (688 e 323 px com a
+     fonte de 60 px, as do heroEntrada.test.ts). */
+  .hero-expansao--entrada .hero-expansao__titulo h1 {
+    font-size: min(
+      clamp(1.5rem, min(1.2rem + 3.6vw, 8.6vw - 0.25rem), 3.75rem),
+      var(--hx-parado-livre) / 11.47,
+      var(--hx-parado-livre) / 5.38
+    );
   }
 
   .hero-expansao--entrada :is(.aparelho-vetor__notebook, .aparelho-vetor__celular) {
@@ -4816,6 +4862,25 @@ textarea.field__input {
     /* A mídia em pé corta em volta do meio; o pé da tela do celular fica
        (640 + 413,78/2 − 640)/720 da largura da mídia abaixo do meio do palco. */
     --hx-tela-y: calc(var(--hx-palco-h) / 2 + 0.2873472 * var(--hx-midia-largura) - var(--hx-tela-s) * var(--hx-palco-h)) !important;
+    /* As metades acima e abaixo do celular, como na pausa em pé: centradas,
+       a linha 1 com o pé a folga acima da moldura (o topo da tela menos a
+       borda e meio aro de ENTRADA.aparelho.emPe.moldura) e a linha 2 no meio
+       da mesa, entre o pé do suporte (ENTRADA.aparelho.emPe.pe) e o pé do
+       palco, nunca a menos da folga dele. No layout, o pé da linha 1 fica
+       meio gap acima do meio do palco, e o centro da 2, meio gap e meia linha
+       (1,05em) abaixo. */
+    --hx-parado-px: calc(var(--hx-tela-s) * 100cqw / 191.2);
+    --hx-parado-moldura: calc(50cqw * var(--hx-tela-s) + (8.75 + 2.06 / 2) * var(--hx-parado-px));
+    --hx-parado-livre: calc(100cqw - 2 * var(--hx-titulo-margem));
+    --hx-linha1-x: 0px !important;
+    --hx-linha2-x: 0px !important;
+    --hx-linha1-y: calc(
+      var(--hx-tela-y) - (10.43 + 2.06 / 2) * var(--hx-parado-px) - var(--hx-parado-folga) - var(--hx-palco-h) / 2 + var(--space-4) / 2
+    ) !important;
+    --hx-parado-pe: calc(var(--hx-tela-y) + var(--hx-tela-s) * var(--hx-palco-h) + 92 * var(--hx-parado-px));
+    --hx-linha2-y: calc(
+      max(var(--hx-parado-pe) + var(--hx-parado-folga) + 0.525em, (var(--hx-parado-pe) + var(--hx-palco-h)) / 2) - var(--hx-palco-h) / 2 - var(--space-4) / 2 - 0.525em
+    ) !important;
   }
 }
 
@@ -4865,6 +4930,10 @@ textarea.field__input {
   .hero-expansao--entrada .aparelho-vetor__lateral {
     stroke: CanvasText;
     stroke-width: 1.5;
+  }
+
+  .hero-expansao--entrada .aparelho-vetor__grao {
+    display: none;
   }
 
   .hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"])
