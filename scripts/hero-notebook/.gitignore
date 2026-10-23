@@ -1,0 +1,18 @@
+# Saídas da produção: nada disto vai para o git. A mídia final vai para
+# public/hero/notebook/ (ver README.md).
+cur/
+plates2/
+final2/
+fpv/
+review/
+qa/
+prof/
+*.png
+*.mkv
+*.mp4
+*.webm
+*.avif
+*.jpg
+graph.txt
+# A fonte das prévias (Geologica, OFL) fica fora do git.
+geologica.woff2
