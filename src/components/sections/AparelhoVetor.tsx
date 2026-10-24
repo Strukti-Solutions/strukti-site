@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 import geometria from "./aparelhoVetor.json";
 
 /**
@@ -27,8 +27,16 @@ import geometria from "./aparelhoVetor.json";
  * Por cima da base e do suporte vai o grão da cena (três ladrilhos de pontos
  * do vetor.js, de lados primos entre si, em `<pattern>` de cada SVG): liso, o
  * vetor parecia colado na sala pintada.
+ *
+ * Os ids dos degradês, recortes e ladrilhos levam o `useId` (m4 da revisão
+ * final da fase 2): com duas instâncias no mesmo documento (uma prévia com
+ * dois heros), os `url(#…)` de cada uma apontam para o próprio SVG.
  */
 export function AparelhoVetor() {
+  // Só letras, dígitos, "-" e "_": o id do React traz pontuação que o url(#…) não aceita sem escape.
+  const unico = useId().replace(/[^A-Za-z0-9_-]/g, "");
+  const idDe = (nome: string) => `aparelho-vetor-${unico}-${nome}`;
+  const urlDe = (nome: string) => `url(#${idDe(nome)})`;
   const { notebook, celular, grao } = geometria;
   const { base } = notebook;
   const { suporte } = celular;
@@ -38,11 +46,11 @@ export function AparelhoVetor() {
       <div className="aparelho-vetor__notebook" style={moldura(notebook.tela.largura, notebook.tampa, notebook.cores)}>
         <svg className="aparelho-vetor__base" viewBox={base.caixa.join(" ")} style={caixa(base.caixa)} focusable="false">
           <defs>
-            <radialGradient id="aparelho-vetor-contato">
+            <radialGradient id={idDe("contato")}>
               {sombra(base.cores.contato)}
             </radialGradient>
             <linearGradient
-              id="aparelho-vetor-tampo"
+              id={idDe("tampo")}
               gradientUnits="userSpaceOnUse"
               x1={base.tampoX[0]}
               y1={0}
@@ -54,7 +62,7 @@ export function AparelhoVetor() {
             </linearGradient>
             {/* A luz fria da tela no tampo e no teclado, mais forte junto da dobradiça (Q18). */}
             <linearGradient
-              id="aparelho-vetor-brilho"
+              id={idDe("brilho")}
               gradientUnits="userSpaceOnUse"
               x1={0}
               y1={base.brilhoY[0]}
@@ -65,15 +73,15 @@ export function AparelhoVetor() {
                 <stop key={offset} offset={offset} stopColor={base.cores.brilho} stopOpacity={base.cores.brilhoA[i]} />
               ))}
             </linearGradient>
-            {degrade("aparelho-vetor-quina", base.quina)}
-            {ladrilhos("aparelho-vetor-grao-base", grao)}
-            <clipPath id="aparelho-vetor-contorno-base">
+            {degrade(idDe("quina"), base.quina)}
+            {ladrilhos(idDe("grao-base"), grao)}
+            <clipPath id={idDe("contorno-base")}>
               <path d={base.lateral} />
             </clipPath>
           </defs>
-          <ellipse className="aparelho-vetor__contato" {...base.contato} fill="url(#aparelho-vetor-contato)" />
+          <ellipse className="aparelho-vetor__contato" {...base.contato} fill={urlDe("contato")} />
           <path className="aparelho-vetor__lateral" d={base.lateral} fill={base.cores.lateral} />
-          <path className="aparelho-vetor__tampo" d={base.tampo} fill="url(#aparelho-vetor-tampo)" />
+          <path className="aparelho-vetor__tampo" d={base.tampo} fill={urlDe("tampo")} />
           <path className="aparelho-vetor__teclas" d={base.teclas} fill={base.cores.tecla} />
           <path
             className="aparelho-vetor__trackpad"
@@ -85,11 +93,11 @@ export function AparelhoVetor() {
           <path
             className="aparelho-vetor__brilho"
             d={base.tampo}
-            fill="url(#aparelho-vetor-brilho)"
+            fill={urlDe("brilho")}
             style={{ mixBlendMode: "screen" }}
           />
-          {camadaDeGrao("aparelho-vetor-grao-base", "aparelho-vetor-contorno-base", base.caixa, grao)}
-          {linha("aparelho-vetor__quina", "aparelho-vetor-quina", base.quina)}
+          {camadaDeGrao(idDe("grao-base"), idDe("contorno-base"), base.caixa, grao)}
+          {linha("aparelho-vetor__quina", idDe("quina"), base.quina)}
           <path className="aparelho-vetor__dobradica" d={base.dobradica} fill={base.cores.dobradica} />
         </svg>
         <div className="aparelho-vetor__tampa">
@@ -102,61 +110,61 @@ export function AparelhoVetor() {
         </div>
         <svg className="aparelho-vetor__suporte" viewBox={suporte.caixa.join(" ")} style={caixa(suporte.caixa)} focusable="false">
           <defs>
-            <radialGradient id="aparelho-vetor-contato-celular">
+            <radialGradient id={idDe("contato-celular")}>
               {sombra(suporte.cores.contato)}
             </radialGradient>
-            {degrade("aparelho-vetor-chapa-quina", suporte.chapa.quina)}
-            {degrade("aparelho-vetor-ressalto-quina", suporte.ressalto.quina)}
+            {degrade(idDe("chapa-quina"), suporte.chapa.quina)}
+            {degrade(idDe("ressalto-quina"), suporte.ressalto.quina)}
             {/* A frente do ressalto: clara no alto, onde pega a luz, e escura junto da chapa. */}
-            <linearGradient id="aparelho-vetor-ressalto-frente" x1={0} y1={0} x2={0} y2={1}>
+            <linearGradient id={idDe("ressalto-frente")} x1={0} y1={0} x2={0} y2={1}>
               <stop offset={0} stopColor={suporte.ressalto.cores.frente} />
               <stop offset={1} stopColor={suporte.ressalto.cores.frentePe} />
             </linearGradient>
             {/* A luz quente da luminária na frente da aba, vinda da esquerda (crítica de arte N6 r1). */}
-            <linearGradient id="aparelho-vetor-ressalto-quente" x1={0} y1={0} x2={1} y2={0}>
+            <linearGradient id={idDe("ressalto-quente")} x1={0} y1={0} x2={1} y2={0}>
               <stop offset={0} stopColor={suporte.ressalto.cores.quente} stopOpacity={suporte.ressalto.cores.quenteA} />
               <stop offset={0.7} stopColor={suporte.ressalto.cores.quente} stopOpacity={0} />
             </linearGradient>
             {/* A sombra da aba na chapa: escura junto da frente, some para a frente da chapa. */}
-            <linearGradient id="aparelho-vetor-sombra-aba" x1={0} y1={0} x2={0} y2={1}>
+            <linearGradient id={idDe("sombra-aba")} x1={0} y1={0} x2={0} y2={1}>
               <stop offset={0} stopColor={suporte.cores.contato} />
               <stop offset={1} stopColor={suporte.cores.contato} stopOpacity={0} />
             </linearGradient>
-            {ladrilhos("aparelho-vetor-grao-suporte", grao)}
-            <clipPath id="aparelho-vetor-contorno-suporte">
+            {ladrilhos(idDe("grao-suporte"), grao)}
+            <clipPath id={idDe("contorno-suporte")}>
               <path d={suporte.chapa.lateral} />
               <path d={suporte.ressalto.frente} />
             </clipPath>
             {/* A chapa fica atrás do celular: o corpo a recorta. */}
-            <clipPath id="aparelho-vetor-sem-corpo">
+            <clipPath id={idDe("sem-corpo")}>
               <path d={suporte.semCorpo} clipRule="evenodd" />
             </clipPath>
           </defs>
-          <ellipse className="aparelho-vetor__contato" {...suporte.contato} fill="url(#aparelho-vetor-contato-celular)" />
-          <g className="aparelho-vetor__chapa" clipPath="url(#aparelho-vetor-sem-corpo)">
+          <ellipse className="aparelho-vetor__contato" {...suporte.contato} fill={urlDe("contato-celular")} />
+          <g className="aparelho-vetor__chapa" clipPath={urlDe("sem-corpo")}>
             <path className="aparelho-vetor__lateral" d={suporte.chapa.lateral} fill={suporte.chapa.cores.lateral} />
             <path d={suporte.chapa.topo} fill={suporte.chapa.cores.topo} />
-            {linha(undefined, "aparelho-vetor-chapa-quina", suporte.chapa.quina)}
+            {linha(undefined, idDe("chapa-quina"), suporte.chapa.quina)}
           </g>
           <path
             className="aparelho-vetor__sombra-aba"
             d={suporte.ressalto.sombraAba}
-            fill="url(#aparelho-vetor-sombra-aba)"
+            fill={urlDe("sombra-aba")}
           />
           {/* O ressalto, a aba que abraça a borda de baixo do celular, à frente dela. */}
           <g className="aparelho-vetor__ressalto">
             <path
               className="aparelho-vetor__lateral"
               d={suporte.ressalto.frente}
-              fill="url(#aparelho-vetor-ressalto-frente)"
+              fill={urlDe("ressalto-frente")}
             />
-            <path d={suporte.ressalto.frente} fill="url(#aparelho-vetor-ressalto-quente)" />
+            <path d={suporte.ressalto.frente} fill={urlDe("ressalto-quente")} />
             <path d={suporte.ressalto.topo} fill={suporte.ressalto.cores.topo} />
-            {linha(undefined, "aparelho-vetor-ressalto-quina", suporte.ressalto.quina)}
+            {linha(undefined, idDe("ressalto-quina"), suporte.ressalto.quina)}
           </g>
           {/* O grão da chapa e do ressalto; atrás do celular, a chapa some, e o grão também. */}
-          <g clipPath="url(#aparelho-vetor-sem-corpo)">
-            {camadaDeGrao("aparelho-vetor-grao-suporte", "aparelho-vetor-contorno-suporte", suporte.caixa, grao)}
+          <g clipPath={urlDe("sem-corpo")}>
+            {camadaDeGrao(idDe("grao-suporte"), idDe("contorno-suporte"), suporte.caixa, grao)}
           </g>
         </svg>
       </div>

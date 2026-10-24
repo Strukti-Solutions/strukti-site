@@ -85,7 +85,7 @@ describe("<AparelhoVetor />", () => {
     const host = montar();
     const frente = host.querySelector(".aparelho-vetor__ressalto .aparelho-vetor__lateral");
     expect(frente?.getAttribute("fill")).toMatch(/^url\(#aparelho-vetor-/);
-    const brilho = host.querySelector("#aparelho-vetor-brilho");
+    const brilho = host.querySelector('[id^="aparelho-vetor-"][id$="-brilho"]');
     expect([...(brilho?.querySelectorAll("stop") ?? [])].map((s) => s.getAttribute("offset"))).toEqual(["0", "0.35", "1"]);
   });
 
@@ -129,18 +129,39 @@ describe("<AparelhoVetor />", () => {
   it("a frente da aba recebe a luz quente da luminária, da esquerda, e deixa uma sombra macia na chapa", () => {
     const host = montar();
     const { ressalto } = geometria.celular.suporte as { ressalto: { frente: string; cores: { quente?: string } } };
-    const quente = host.querySelector("#aparelho-vetor-ressalto-quente");
+    const quente = host.querySelector('[id^="aparelho-vetor-"][id$="-ressalto-quente"]');
     expect(quente?.tagName.toLowerCase()).toBe("lineargradient");
     // da esquerda para a direita
     expect([quente?.getAttribute("x1"), quente?.getAttribute("x2"), quente?.getAttribute("y2")]).toEqual(["0", "1", "0"]);
     const paradas = [...(quente?.querySelectorAll("stop") ?? [])];
     expect(paradas[0]?.getAttribute("stop-color")).toBe(ressalto.cores.quente);
     expect(Number(paradas.at(-1)?.getAttribute("stop-opacity"))).toBe(0);
-    const camada = host.querySelector('.aparelho-vetor__ressalto [fill="url(#aparelho-vetor-ressalto-quente)"]');
+    const camada = host.querySelector(`.aparelho-vetor__ressalto [fill="url(#${quente?.id})"]`);
     expect(camada?.getAttribute("d")).toBe(ressalto.frente);
     // a sombra da aba na chapa: uma faixa logo abaixo da frente, que some para a frente
     const sombra = host.querySelector(".aparelho-vetor__suporte .aparelho-vetor__sombra-aba");
-    expect(sombra?.getAttribute("fill")).toBe("url(#aparelho-vetor-sombra-aba)");
+    expect(sombra?.getAttribute("fill")).toMatch(/^url\(#aparelho-vetor-.+-sombra-aba\)$/);
+  });
+
+  it("duas instâncias no mesmo documento não dividem ids: cada url(#…) aponta para o próprio SVG (m4)", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(
+      <>
+        <AparelhoVetor />
+        <AparelhoVetor />
+      </>,
+    );
+    const ids = [...host.querySelectorAll("[id]")].map((el) => el.id);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const svg of host.querySelectorAll("svg")) {
+      for (const el of svg.querySelectorAll("[fill^='url('], [stroke^='url('], [clip-path^='url(']")) {
+        for (const attr of ["fill", "stroke", "clip-path"]) {
+          const alvo = el.getAttribute(attr)?.match(/^url\(#(.+)\)$/)?.[1];
+          if (alvo) expect(svg.querySelector(`[id="${alvo}"]`), `${attr} ${alvo}`).not.toBeNull();
+        }
+      }
+    }
   });
 
   it("a tela do vetor é a do ENTRADA (a escala do furo é a largura da tela da arte)", () => {
