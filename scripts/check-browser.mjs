@@ -315,6 +315,9 @@ const ENT_TITULO_FOLGA = entradaNumero("tituloFolga");
 const ENT_TITULO_MARGEM = entradaNumero("tituloMargem");
 const ENT_TITULO_FOLGA_LADO = entradaNumero("tituloFolgaLado");
 const ENT_TITULO_MARGEM_LADO = entradaNumero("tituloMargemLado");
+// O piso da fonte efetiva das metades na pausa, em rem (I2 da revisão final
+// da fase 2): deitado, abaixo dele as metades empilham como em pé.
+const ENT_TITULO_PISO_REM = entradaNumero("tituloPisoRem");
 // Produto que o passo de âncoras do "expansao" escolhe no menu "Produtos ▾"
 // da barra (catálogo, §3.5): o link é #slug e a página para no topo da seção
 // #produtos (§3.4), não no cartão.
@@ -1988,6 +1991,11 @@ const ENT_READ_FN = `(() => {
     aparelho: rect(root.querySelector(${JSON.stringify(ENT_APARELHO_SELECTOR)})),
     moldura: rect(moldura),
     linhas: [...root.querySelectorAll(".hero-expansao__linha")].map(rect),
+    // A fonte efetiva de cada metade (o font-size vezes a escala do transform, pela altura) e o rem.
+    linhasFonte: [...root.querySelectorAll(".hero-expansao__linha")].map((el) =>
+      el.offsetHeight > 0 ? (parseFloat(getComputedStyle(el).fontSize) * el.getBoundingClientRect().height) / el.offsetHeight : null,
+    ),
+    rem: parseFloat(getComputedStyle(doc).fontSize),
     notebook: shown(root.querySelector(".aparelho-vetor__notebook")),
     celular: shown(root.querySelector(".aparelho-vetor__celular")),
   };
@@ -2273,7 +2281,14 @@ async function entIda(cdp, ctx, what, avancar, budget) {
  * de arte r1 da N4): dentro da janela útil com a margem do ENTRADA e a folga
  * da moldura (a caixa da tampa ou do corpo), com 1 px de tolerância. Deitado,
  * a linha 1 termina antes da borda esquerda e a 2 começa depois da direita
- * (Q19); em pé, a linha 1 fica acima da moldura e a 2 abaixo dela. Devolve os
+ * (Q19); em pé, a linha 1 fica acima da moldura e a 2 abaixo dela.
+ *
+ * Deitado, a fonte efetiva não fica abaixo do piso (`tituloPisoRem`); quando
+ * ele venceria, vale a disposição de reserva (I2 da revisão final da fase
+ * 2): as metades empilhadas como em pé, centradas, com a margem de em pé,
+ * dentro da janela, a linha 1 acima da 2, e a folga da moldura, exceto
+ * quando a janela, baixa demais, a encosta na margem do topo ou do pé (aí a
+ * metade pode passar sobre a moldura, como no estado parado). Devolve os
  * problemas (vazio: tudo certo).
  */
 function entProblemasDoTitulo(s) {
@@ -2281,18 +2296,39 @@ function entProblemasDoTitulo(s) {
   const m = s.moldura;
   const problemas = [];
   const emPe = s.orientacao === "em-pe";
-  const margem = emPe ? ENT_TITULO_MARGEM : ENT_TITULO_MARGEM_LADO;
+  // A reserva deitada: as duas metades no meio da janela (ao lado do notebook, nenhuma fica).
+  const noMeio = (l) => Math.abs((l.left + l.right) / 2 - s.cw / 2) <= 1;
+  const reserva = !emPe && noMeio(l1) && noMeio(l2);
+  const empilhado = emPe || reserva;
+  const margem = empilhado ? ENT_TITULO_MARGEM : ENT_TITULO_MARGEM_LADO;
   const folga = emPe ? ENT_TITULO_FOLGA : ENT_TITULO_FOLGA_LADO;
   for (const [nome, l] of [["linha 1", l1], ["linha 2", l2]]) {
     if (l.left < margem - 1 || l.right > s.cw - margem + 1) {
       problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${margem}px da janela (${s.cw})`);
     }
+    if (reserva && (l.top < margem - 1 || l.bottom > s.vh - margem + 1)) {
+      problemas.push(`a ${nome} (y ${l.top.toFixed(1)}–${l.bottom.toFixed(1)}) passa da margem de ${margem}px da janela (${s.vh})`);
+    }
   }
-  if (emPe) {
-    if (l1.bottom > m.top - folga + 1) {
+  if (!emPe) {
+    const piso = ENT_TITULO_PISO_REM * (s.rem || 16);
+    for (const [nome, fonte] of [["linha 1", s.linhasFonte?.[0]], ["linha 2", s.linhasFonte?.[1]]]) {
+      if (fonte != null && fonte < piso - 0.5) {
+        problemas.push(`a ${nome} tem ${fonte.toFixed(1)}px de fonte efetiva, abaixo do piso de ${piso}px (${ENT_TITULO_PISO_REM}rem)`);
+      }
+    }
+  }
+  if (reserva && l1.bottom > l2.top + 1) {
+    problemas.push(`a linha 1 (y ${l1.top.toFixed(1)}–${l1.bottom.toFixed(1)}) cobre a linha 2 (y ${l2.top.toFixed(1)}–${l2.bottom.toFixed(1)})`);
+  }
+  if (empilhado) {
+    // Na reserva, a janela manda sobre a folga: a metade encostada na margem do topo ou do pé pode passar sobre a moldura.
+    const noTopo = reserva && Math.abs(l1.top - margem) <= 1;
+    const noPe = reserva && Math.abs(l2.bottom - (s.vh - margem)) <= 1;
+    if (!noTopo && l1.bottom > m.top - folga + 1) {
       problemas.push(`a linha 1 termina em y ${l1.bottom.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.top.toFixed(1)})`);
     }
-    if (l2.top < m.bottom + folga - 1) {
+    if (!noPe && l2.top < m.bottom + folga - 1) {
       problemas.push(`a linha 2 começa em y ${l2.top.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.bottom.toFixed(1)})`);
     }
   } else {
@@ -2325,8 +2361,9 @@ function entCheckTituloNaPausa(ctx, what, samples) {
     }
   }
   const [l1, l2] = pausas[0].linhas;
+  const fonte = (pausas[0].linhasFonte ?? []).map((f) => (f == null ? "?" : f.toFixed(1))).join(" e ");
   ctx.log(
-    `${what}: título na pausa em ${pausas.length} amostra(s): linha 1 ${entRect(l1)}, moldura ${entRect(pausas[0].moldura)}, linha 2 ${entRect(l2)}`,
+    `${what}: título na pausa em ${pausas.length} amostra(s): linha 1 ${entRect(l1)}, moldura ${entRect(pausas[0].moldura)}, linha 2 ${entRect(l2)}; fonte efetiva ${fonte}px`,
   );
 }
 

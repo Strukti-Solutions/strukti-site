@@ -55,6 +55,13 @@ export const ENTRADA = {
   tituloFolgaLado: 40,
   tituloMargemLado: 48,
   /**
+   * O piso da fonte efetiva das metades na pausa, em rem (I2 da revisão final
+   * da fase 2; o mesmo do estado parado, WCAG 1.4.4): deitado, quando a escala
+   * ao lado do notebook a deixaria abaixo dele (zoom, janela quase quadrada),
+   * as metades vão para a disposição em pé (ver `posicaoDoTitulo`).
+   */
+  tituloPisoRem: 1.5,
+  /**
    * A mídia da sala de cada enquadramento, com o `object-position` do cover
    * (`--hx-midia-pos`). Deitado, a do notebook, 1280 × 720, cortada por
    * baixo (50% 100%: o pé da mídia emenda na página). Em pé, a do celular
@@ -275,8 +282,12 @@ export function molduraNaPausa(
   };
 }
 
-/** O que o layout dá de cada metade do título: o centro vertical (px do palco) e a altura, sem transform. */
-export type LayoutDoTitulo = { centros: [number, number]; alturas: [number, number] };
+/**
+ * O que o layout dá de cada metade do título: o centro vertical (px do palco)
+ * e a altura, sem transform; e, para o piso da fonte na pausa, o `font-size`
+ * das metades e o do `html` (o rem), em px. Sem `fonte`, não há piso.
+ */
+export type LayoutDoTitulo = { centros: [number, number]; alturas: [number, number]; fonte?: number; rem?: number };
 
 /**
  * As metades do título na pausa: o deslocamento X e Y (px) de cada uma e a
@@ -294,46 +305,65 @@ export type LayoutDoTitulo = { centros: [number, number]; alturas: [number, numb
  *   `tituloY` da mídia (a linha 1 no vidro escuro da janela, acima da caixa
  *   do Replay), em qualquer proporção.
  * - **Em pé:** ao lado do celular não cabe um h1 legível (sobravam ~9 px de
- *   corpo a 390 px). As metades ficam centradas, a linha 1 a folga acima da
- *   moldura (na janela escura) e a linha 2 no meio da mesa entre o pé do
- *   suporte e o pé do palco (longe da luz do abajur, que bate junto do
- *   suporte), nunca a menos da folga dele; a escala só encolhe a que não
- *   cabe entre as margens (o CSS põe a origem no meio).
+ *   corpo a 390 px). As metades ficam empilhadas: centradas, a linha 1 a
+ *   folga acima da moldura (na janela escura) e a linha 2 no meio da mesa
+ *   entre o pé do suporte e o pé do palco (longe da luz do abajur, que bate
+ *   junto do suporte), nunca a menos da folga dele; a escala só encolhe a
+ *   que não cabe entre as margens (o CSS põe a origem no meio).
+ * - **Deitado, com o piso (I2 da revisão final da fase 2):** se a escala ao
+ *   lado do notebook deixaria a fonte efetiva (`layout.fonte` × escala)
+ *   abaixo de `tituloPisoRem` (com zoom, ou numa janela deitada quase
+ *   quadrada), as metades ficam empilhadas como em pé, acima da moldura e
+ *   abaixo da base. O CSS deitado segue escalando em volta das bordas (a
+ *   direita da linha 1, a esquerda da 2): o x compensa e as deixa no meio.
  *
- * Largura não medida (zero, como no jsdom) não desloca essa linha nem pede
- * escala; altura não medida não desloca na vertical.
+ * Empilhadas, as metades ficam dentro da janela útil, a `tituloMargem` do
+ * topo e do pé (numa janela baixa, a janela manda sobre a folga). Largura não
+ * medida (zero, como no jsdom) não desloca essa linha nem pede escala; altura
+ * não medida não desloca na vertical; sem a fonte medida, não há piso.
  */
 export function posicaoDoTitulo(
   v: Viewport,
   larguras: [number, number],
   layout: LayoutDoTitulo = { centros: [0, 0], alturas: [0, 0] },
   cena: Cena = cenaDe(v),
-): { x: [number, number]; y: [number, number]; escala: number } {
-  const { tituloFolga, tituloFolgaLado, tituloFolgaRelativa, tituloMargem, tituloMargemLado } = ENTRADA;
+): { x: [number, number]; y: [number, number]; escala: number; empilhado: boolean } {
+  const { tituloFolga, tituloFolgaLado, tituloFolgaRelativa, tituloMargem, tituloMargemLado, tituloPisoRem } = ENTRADA;
   const moldura = molduraNaPausa(v, cena);
   const folga = Math.max(v.emPe ? tituloFolga : tituloFolgaLado, tituloFolgaRelativa * (moldura.direita - moldura.esquerda));
   const [larguraLinha1, larguraLinha2] = larguras;
-  const { centros, alturas } = layout;
+  const { centros, alturas, fonte = 0, rem = 16 } = layout;
   const cabe = (livre: number, largura: number) => (largura > 0 ? livre / largura : 1);
 
-  if (v.emPe) {
+  const empilhadas = () => {
     const livre = v.w - 2 * tituloMargem;
     const escala = Math.max(0, Math.min(1, cabe(livre, larguraLinha1), cabe(livre, larguraLinha2)));
+    const meia = (i: 0 | 1) => (alturas[i] * escala) / 2;
+    const naJanela = (centro: number, i: 0 | 1) =>
+      Math.min(Math.max(centro, tituloMargem + meia(i)), v.h - tituloMargem - meia(i));
+    const centro1 = moldura.topo - folga - meia(0);
+    const centro2 = Math.max(moldura.pe + folga + meia(1), (moldura.pe + v.h) / 2);
     return {
-      x: [0, 0],
+      // Deitado, a origem do transform fica na borda junto do aparelho: o x devolve o meio da linha ao meio da janela.
+      x: (v.emPe ? [0, 0] : [(larguraLinha1 * (escala - 1)) / 2, (larguraLinha2 * (1 - escala)) / 2]) as [number, number],
       y: [
-        alturas[0] > 0 ? moldura.topo - folga - (alturas[0] * escala) / 2 - centros[0] : 0,
-        alturas[1] > 0
-          ? Math.max(moldura.pe + folga + (alturas[1] * escala) / 2, (moldura.pe + v.h) / 2) - centros[1]
-          : 0,
-      ],
+        alturas[0] > 0 ? naJanela(centro1, 0) - centros[0] : 0,
+        alturas[1] > 0 ? naJanela(centro2, 1) - centros[1] : 0,
+      ] as [number, number],
       escala,
+      empilhado: true,
     };
-  }
+  };
+
+  if (v.emPe) return empilhadas();
 
   const livreEsquerda = moldura.esquerda - folga - tituloMargemLado;
   const livreDireita = v.w - moldura.direita - folga - tituloMargemLado;
-  const escala = Math.min(1, cabe(livreEsquerda, larguraLinha1), cabe(livreDireita, larguraLinha2));
+  const escala = Math.max(0, Math.min(1, cabe(livreEsquerda, larguraLinha1), cabe(livreDireita, larguraLinha2)));
+  if (fonte > 0 && escala * fonte < tituloPisoRem * rem) {
+    const reserva = empilhadas();
+    if (reserva.escala > escala) return reserva;
+  }
   const alvo = cena.aparelho.tituloY;
   return {
     x: [
@@ -344,6 +374,7 @@ export function posicaoDoTitulo(
       alvo && alturas[0] > 0 ? yNaJanela(alvo[0], v, cena) - centros[0] : 0,
       alvo && alturas[1] > 0 ? yNaJanela(alvo[1], v, cena) - centros[1] : 0,
     ],
-    escala: Math.max(0, escala),
+    escala,
+    empilhado: false,
   };
 }

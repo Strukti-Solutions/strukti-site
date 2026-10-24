@@ -114,6 +114,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  for (const estilo of document.querySelectorAll("style[data-teste]")) estilo.remove();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   setScrollY(0);
@@ -121,6 +122,20 @@ afterEach(() => {
 });
 
 const hero = () => document.getElementById("inicio") as HTMLElement;
+
+/**
+ * Dá às metades do título o font-size `px` e ao html 16 px (o rem), para o
+ * piso da fonte na pausa (I2): sem CSS, o jsdom responde 16 px. Sai no afterEach.
+ */
+function fonteDasMetades(px: number) {
+  const estilo = document.createElement("style");
+  estilo.dataset.teste = "";
+  estilo.textContent = `html { font-size: 16px; } .hero-expansao__linha { font-size: ${px}px; }`;
+  document.head.append(estilo);
+}
+
+/** O piso não vale com esta fonte (≈ 0,36 × 120 px ≈ 43 px a 1024 px de largura): a pose ao lado do notebook. */
+const FONTE_SEM_PISO = 120;
 const variavel = (nome: string) => hero().style.getPropertyValue(nome);
 /** O progresso desenhado, como número (o `--hx-p` da seção). */
 const hxp = () => Number(variavel("--hx-p"));
@@ -835,6 +850,7 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
       if (this.classList.contains("hero-expansao__linha--2")) return 323;
       return 0;
     });
+    fonteDasMetades(FONTE_SEM_PISO);
     await mount();
 
     // O jsdom não faz layout: a janela útil é a da window (1024 × 768).
@@ -870,6 +886,7 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
       if (this.classList.contains("hero-expansao__titulo")) return this.closest(".hero-expansao__palco");
       return null;
     });
+    fonteDasMetades(FONTE_SEM_PISO);
     await mount();
 
     const v = { w: window.innerWidth, h: window.innerHeight, emPe: false };
@@ -906,6 +923,7 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
         }
       },
     );
+    fonteDasMetades(FONTE_SEM_PISO);
     const { unmount } = await mount();
     expect([...observados].map((el) => el.className)).toEqual([
       "hero-expansao__linha hero-expansao__linha--1",
@@ -921,6 +939,25 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
 
     unmount();
     expect(observados.size).toBe(0);
+  });
+
+  it("mede a fonte das metades e o rem para o piso da pausa: abaixo de 1,5rem ao lado do notebook, as metades empilham (I2)", async () => {
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("hero-expansao__linha--1")) return 688;
+      if (this.classList.contains("hero-expansao__linha--2")) return 323;
+      return 0;
+    });
+    fonteDasMetades(60);
+    await mount();
+
+    const v = { w: window.innerWidth, h: window.innerHeight, emPe: false };
+    const comPiso = posicaoDoTitulo(v, [688, 323], { centros: [0, 0], alturas: [0, 0], fonte: 60, rem: 16 });
+    // A 1024 × 768 do jsdom, ao lado do notebook a fonte ficaria abaixo de 24 px.
+    expect(posicaoDoTitulo(v, [688, 323]).escala * 60).toBeLessThan(24);
+    expect(comPiso.empilhado).toBe(true);
+    expect(variavel("--hx-titulo-s")).toBe(String(comPiso.escala));
+    expect(variavel("--hx-linha1-x")).toBe(`${comPiso.x[0]}px`);
+    expect(variavel("--hx-linha2-x")).toBe(`${comPiso.x[1]}px`);
   });
 
   it("sem largura medida, o título não escala (--hx-titulo-s 1)", async () => {

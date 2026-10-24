@@ -359,8 +359,8 @@ describe("molduraNaPausa", () => {
 
 describe("posicaoDoTitulo", () => {
   it("sem medida (jsdom) não desloca nem escala nada", () => {
-    expect(posicaoDoTitulo(NOTEBOOK_GRANDE, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1 });
-    expect(posicaoDoTitulo(CELULAR, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1 });
+    expect(posicaoDoTitulo(NOTEBOOK_GRANDE, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1, empilhado: false });
+    expect(posicaoDoTitulo(CELULAR, [0, 0])).toEqual({ x: [0, 0], y: [0, 0], escala: 1, empilhado: true });
   });
 
   it("com a largura e sem a altura (sem layout), desloca só na horizontal", () => {
@@ -447,6 +447,87 @@ describe("posicaoDoTitulo deitado: as metades ladeiam a moldura (Q19)", () => {
 
   it("nunca vira escala negativa numa janela estreita demais", () => {
     expect(posicaoDoTitulo({ w: 200, h: 900, emPe: false }, TITULO_60PX).escala).toBeGreaterThanOrEqual(0);
+  });
+});
+
+/**
+ * O piso da fonte na pausa (I2 da revisão final da fase 2): deitado, a escala
+ * ao lado do notebook não deixa a fonte efetiva abaixo de 1,5rem (24 px, o
+ * piso do estado parado, WCAG 1.4.4). Quando o piso venceria, as metades
+ * caem na disposição em pé: centradas, acima da moldura e abaixo da base,
+ * dentro da janela.
+ */
+describe("posicaoDoTitulo deitado: o piso da fonte na pausa (1,5rem)", () => {
+  /** A medida do layout com a fonte de `fonte` px: larguras e alturas proporcionais às de 60 px. */
+  const comFonte = (v: Viewport, fonte: number) => {
+    const r = fonte / 60;
+    const larguras: [number, number] = [TITULO_60PX[0] * r, TITULO_60PX[1] * r];
+    return { larguras, medida: { ...layoutDoTitulo(v, ALTURA_60PX * r), fonte } };
+  };
+
+  it("o piso é 1,5rem", () => {
+    expect(ENTRADA.tituloPisoRem).toBe(1.5);
+  });
+
+  it.each([
+    // 1366 × 768 a 200%: a fonte do h1 é 1,2rem + 3,6vw = 43,8 px.
+    { v: { w: 683, h: 384, emPe: false }, fonte: 43.8 },
+    // Deitado, quase quadrado: 1,2rem + 3,6vw = 48 px.
+    { v: { w: 800, h: 700, emPe: false }, fonte: 48 },
+    { v: { w: 600, h: 500, emPe: false }, fonte: 40.8 },
+  ])("a $v.w × $v.h (fonte de $fonte px), a fonte efetiva fica ≥ 24 px e as metades, empilhadas e dentro da janela", ({ v, fonte }) => {
+    const { larguras, medida } = comFonte(v, fonte);
+    const pose = posicaoDoTitulo(v, larguras, medida);
+    // Ao lado do notebook, a escala deixaria a fonte abaixo do piso.
+    const m = molduraNaPausa(v);
+    const folga = folgaDa(m);
+    const aoLado = Math.min(
+      (m.esquerda - folga - ENTRADA.tituloMargemLado) / larguras[0],
+      (v.w - m.direita - folga - ENTRADA.tituloMargemLado) / larguras[1],
+    );
+    expect(aoLado * fonte).toBeLessThan(24);
+
+    expect(pose.empilhado).toBe(true);
+    expect(pose.escala * fonte).toBeGreaterThanOrEqual(24);
+    const { linha1, linha2 } = metadesNaPausa(v, larguras, medida);
+    for (const linha of [linha1, linha2]) {
+      // Centradas na janela (a origem do transform deitado fica na borda junto do aparelho: o x a compensa).
+      expect((linha.left + linha.right) / 2).toBeCloseTo(v.w / 2, 6);
+      expect(linha.left).toBeGreaterThanOrEqual(ENTRADA.tituloMargem - 1e-6);
+      expect(linha.right).toBeLessThanOrEqual(v.w - ENTRADA.tituloMargem + 1e-6);
+      expect(linha.top).toBeGreaterThanOrEqual(ENTRADA.tituloMargem - 1e-6);
+      expect(linha.bottom).toBeLessThanOrEqual(v.h - ENTRADA.tituloMargem + 1e-6);
+    }
+    // A linha 1 acima da moldura, a 2 abaixo dela (fora da tampa).
+    expect(linha1.bottom).toBeLessThanOrEqual(m.topo - folga + 1e-6);
+    expect(linha2.top).toBeGreaterThan(linha1.bottom);
+  });
+
+  it("a 800 × 700, a linha 2 fica abaixo do pé da base", () => {
+    const v: Viewport = { w: 800, h: 700, emPe: false };
+    const { larguras, medida } = comFonte(v, 48);
+    const { linha2 } = metadesNaPausa(v, larguras, medida);
+    expect(linha2.top).toBeGreaterThanOrEqual(molduraNaPausa(v).pe);
+  });
+
+  it.each([
+    { v: NOTEBOOK_GRANDE, fonte: 60 },
+    { v: { w: 1366, h: 768, emPe: false }, fonte: 60 },
+    { v: NOTEBOOK_COM_BARRA, fonte: 60 },
+  ])("a $v.w × $v.h a 100%, nada muda: ao lado do notebook, a mesma pose de sem o piso", ({ v, fonte }) => {
+    const medida = layoutDoTitulo(v);
+    const comPiso = posicaoDoTitulo(v, TITULO_60PX, { ...medida, fonte });
+    expect(comPiso).toEqual(posicaoDoTitulo(v, TITULO_60PX, medida));
+    expect(comPiso.empilhado).toBe(false);
+    expect(comPiso.escala * fonte).toBeGreaterThanOrEqual(24);
+  });
+
+  it("o piso acompanha o rem da pessoa (com o rem de 30 px, 1,5rem é 45 px)", () => {
+    const v = NOTEBOOK_GRANDE;
+    const medida = layoutDoTitulo(v);
+    // 60 px × ~0,61 ≈ 36,6 px: acima de 24 px, abaixo de 1,5 × 30 = 45 px.
+    expect(posicaoDoTitulo(v, TITULO_60PX, { ...medida, fonte: 60 }).empilhado).toBe(false);
+    expect(posicaoDoTitulo(v, TITULO_60PX, { ...medida, fonte: 60, rem: 30 }).empilhado).toBe(true);
   });
 });
 

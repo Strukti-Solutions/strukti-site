@@ -151,7 +151,9 @@
  *   a altura e o centro no palco das metades do título são medidos depois de montar e de
  *   novo a cada resize ou giro, e cada medida pede um quadro. A pose das metades na pausa
  *   (`posicaoDoTitulo`, fase 2 da arte, 23/10/2026) as deixa inteiras ao lado da
- *   moldura do notebook ou, em pé, acima e abaixo do celular. Com a tela cobrindo a sala (`k` a partir de
+ *   moldura do notebook ou, em pé, acima e abaixo do celular; deitado, se ao lado a fonte
+ *   efetiva ficaria abaixo de 1,5rem (zoom, janela quase quadrada), empilhadas como em pé
+ *   (o font-size das metades e o do html também são medidos). Com a tela cobrindo a sala (`k` a partir de
  *   `ENTRADA.salaCobertaK`, e em P = 1 solto ou recolhido), a mídia recebe
  *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
  *   sala pausa. O conteúdo é a tela do aparelho:
@@ -651,6 +653,9 @@ export function ScrollExpandMedia({
       }
       return topo + meia;
     };
+    // O font-size, em px (0 sem medida, como no jsdom sem CSS): o das metades
+    // e o do html (o rem), para o piso da fonte na pausa (`tituloPisoRem`).
+    const fonteDe = (el: Element | null) => (el ? Number.parseFloat(getComputedStyle(el).fontSize) || 0 : 0);
 
     const medir = () => {
       const v: Viewport = {
@@ -663,6 +668,8 @@ export function ScrollExpandMedia({
         titulo: posicaoDoTitulo(v, [largura(1), largura(2)], {
           centros: [centro(1), centro(2)],
           alturas: [altura(1), altura(2)],
+          fonte: fonteDe(linhaEl(1)),
+          rem: fonteDe(document.documentElement) || undefined,
         }),
       };
       setOrientacao(v.emPe ? "em-pe" : "deitado");
