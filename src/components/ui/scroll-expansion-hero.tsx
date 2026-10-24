@@ -156,7 +156,9 @@
  *   (o font-size das metades e o do html também são medidos). Com a tela cobrindo a sala (`k` a partir de
  *   `ENTRADA.salaCobertaK`, e em P = 1 solto ou recolhido), a mídia recebe
  *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
- *   sala pausa. O conteúdo é a tela do aparelho:
+ *   sala pausa; a seção ganha `data-coberta="true"`, e o CSS tira o controle
+ *   do vídeo, que não faria nada, da tela, da leitura e do Tab (I1 da revisão
+ *   final da fase 2). O conteúdo é a tela do aparelho:
  *   sempre à vista (`data-content` "visible"), no fluxo, logo abaixo do
  *   palco; o aparelho vai no quadro, `aria-hidden`. Liberação no topo da
  *   tela: no quadro em que o desenhado chega a 1, `data-expanded` vira
@@ -1035,6 +1037,9 @@ export function ScrollExpandMedia({
       // Modo entrada: o conteúdo é a tela do aparelho, sempre à vista.
       data-content={entrada || !armed || contentShown ? "visible" : "hidden"}
       data-orientacao={orientacao}
+      // Modo entrada: a tela cobre a sala (o mesmo valor do MidiaCobertaContext):
+      // o CSS tira o controle do vídeo, que não faria nada (I1 da revisão final da fase 2).
+      data-coberta={entrada ? (midiaCoberta ? "true" : "false") : undefined}
       onFocus={onFocus}
     >
       <div ref={palcoRef} className="hero-expansao__palco">

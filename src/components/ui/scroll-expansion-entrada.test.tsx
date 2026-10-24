@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, type ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ENTRADA, posicaoDoTitulo } from "@/lib/heroEntrada";
+import { HeroVideoClip, HeroVideoProvider, HeroVideoToggle } from "@/components/sections/HeroVideoMedia";
 import { useMidiaCoberta } from "./midia-coberta";
 import { ScrollExpandMedia } from "./scroll-expansion-hero";
 
@@ -1010,5 +1013,136 @@ describe("<ScrollExpandMedia entrada /> — fases, liberação e volta", () => {
     it("no limiar: salaCobertaK é 0,98", () => {
       expect(ENTRADA.salaCobertaK).toBe(0.98);
     });
+  });
+});
+
+/**
+ * O controle do vídeo com a sala coberta (I1 da revisão final da fase 2): o
+ * provedor pausa o vídeo que ninguém vê, e o controle, que não faria nada
+ * (o rótulo viraria "Tocar" sozinho e o clique não tocaria), some: a seção
+ * ganha `data-coberta="true"` e o CSS o deixa `visibility: hidden` (fora da
+ * leitura e do Tab). Descoberta, ele volta, e a escolha da pessoa segue
+ * valendo. Aqui com o provedor, o clipe e o controle de verdade, e a regra
+ * do globals.css.
+ */
+describe("<ScrollExpandMedia entrada /> — o controle do vídeo com a sala coberta", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
+  const CLIPE = { webm: "/t/sala.webm", mp4: "/t/sala.mp4", posterAvif: "/t/sala.avif", posterJpg: "/t/sala.jpg", width: 1280, height: 720 };
+  const CLIPE_RETRATO = { ...CLIPE, webm: "/t/sala-retrato.webm", mp4: "/t/sala-retrato.mp4", width: 720, height: 1280 };
+  let play: ReturnType<typeof vi.fn>;
+
+  /** A regra do controle coberto, tirada do globals.css e posta no documento (o jsdom não carrega o CSS do site). */
+  function regraDoControleCoberto() {
+    const cabeca = '.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle {';
+    const i = css.indexOf(cabeca);
+    expect(i, cabeca).toBeGreaterThan(-1);
+    const estilo = document.createElement("style");
+    estilo.dataset.teste = "";
+    estilo.textContent = css.slice(i, css.indexOf("}", i) + 1);
+    document.head.append(estilo);
+    expect(estilo.textContent).toMatch(/visibility:\s*hidden/);
+  }
+
+  beforeEach(() => {
+    // O vídeo "na tela" logo ao observar, e play/pause como num navegador (o jsdom não toca mídia).
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(private callback: IntersectionObserverCallback) {}
+        observe(target: Element) {
+          this.callback([{ target, isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+        }
+        unobserve() {}
+        disconnect() {}
+        takeRecords() {
+          return [];
+        }
+      },
+    );
+    play = vi.fn(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, "paused", { configurable: true, value: false });
+      this.dispatchEvent(new Event("playing"));
+      return Promise.resolve();
+    });
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(play as never);
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, "paused", { configurable: true, value: true });
+      this.dispatchEvent(new Event("pause"));
+    } as never);
+  });
+
+  function HeroComVideo() {
+    return (
+      <HeroVideoProvider>
+        <ScrollExpandMedia
+          id="inicio"
+          titleId="hero-title"
+          title={["Tecnologia que trabalha", "em silêncio"]}
+          background={<div className="fundo-cinza" />}
+          media={<HeroVideoClip clip={CLIPE} clipRetrato={CLIPE_RETRATO} posterClassName="poster" videoClassName="video" />}
+          mediaLabel="A sala"
+          mediaControl={<HeroVideoToggle labels={{ videoPause: "Pausar", videoPlay: "Tocar" }} className="hero-expansao__toggle" />}
+          entrada={{ aparelho: <div className="cinza" /> }}
+        >
+          <h2>A chamada</h2>
+        </ScrollExpandMedia>
+      </HeroVideoProvider>
+    );
+  }
+
+  async function montarComVideo() {
+    regraDoControleCoberto();
+    render(<HeroComVideo />);
+    await act(async () => {});
+    settle();
+  }
+
+  /** Expande e recolhe: P = 1 recolhido, a tela cobrindo a janela (o estado de repouso do achado). */
+  function cobrir() {
+    expandWithWheel();
+    setScrollY(PALCO);
+    wheel(-100);
+    setScrollY(0);
+    expect(state()).toMatchObject({ pin: "true", expanded: "false", progress: "1.00" });
+  }
+
+  /** Um clique para trás: k abaixo do limiar, a sala de novo à vista. */
+  function descobrir() {
+    wheel(-100);
+    settle();
+    expect(Number(variavel("--hx-k"))).toBeLessThan(ENTRADA.salaCobertaK);
+  }
+
+  const controle = () => document.querySelector<HTMLButtonElement>(".hero-expansao__controle button")!;
+
+  it("coberta, o controle sai da leitura (visibility: hidden); descoberta, volta com o vídeo tocando de novo", async () => {
+    await montarComVideo();
+    expect(hero().dataset.coberta).toBe("false");
+    expect(screen.getByRole("button", { name: "Pausar" })).toBe(controle());
+
+    cobrir();
+    expect(hero().dataset.coberta).toBe("true");
+    expect(getComputedStyle(controle()).visibility).toBe("hidden");
+    expect(screen.queryByRole("button", { name: /Pausar|Tocar/ })).toBeNull();
+
+    descobrir();
+    expect(hero().dataset.coberta).toBe("false");
+    expect(getComputedStyle(controle()).visibility).not.toBe("hidden");
+    // A pessoa não pausou: o vídeo volta a tocar e o controle diz "Pausar".
+    expect(screen.getByRole("button", { name: "Pausar" })).toBe(controle());
+  });
+
+  it("pausado pela pessoa antes de cobrir, descoberto segue pausado, com o controle em \"Tocar\"", async () => {
+    await montarComVideo();
+    fireEvent.click(screen.getByRole("button", { name: "Pausar" }));
+    expect(screen.getByRole("button", { name: "Tocar" })).toBe(controle());
+    const tocadas = play.mock.calls.length;
+
+    cobrir();
+    expect(screen.queryByRole("button", { name: /Pausar|Tocar/ })).toBeNull();
+
+    descobrir();
+    expect(play).toHaveBeenCalledTimes(tocadas);
+    expect(screen.getByRole("button", { name: "Tocar" })).toBe(controle());
   });
 });

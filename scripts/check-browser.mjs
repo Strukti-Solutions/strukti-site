@@ -1996,6 +1996,12 @@ const ENT_READ_FN = `(() => {
       el.offsetHeight > 0 ? (parseFloat(getComputedStyle(el).fontSize) * el.getBoundingClientRect().height) / el.offsetHeight : null,
     ),
     rem: parseFloat(getComputedStyle(doc).fontSize),
+    // O controle do vídeo: some com a sala coberta (data-coberta, I1 da revisão final da fase 2).
+    coberta: root.dataset.coberta ?? null,
+    controle: (() => {
+      const botao = root.querySelector(".hero-expansao__controle button");
+      return botao ? getComputedStyle(botao).visibility : null;
+    })(),
     notebook: shown(root.querySelector(".aparelho-vetor__notebook")),
     celular: shown(root.querySelector(".aparelho-vetor__celular")),
   };
@@ -2426,6 +2432,10 @@ async function entVolta(cdp, ctx, what, { recolher, recuar, budget, s0, pausaIda
   const salto = [...rec.marks, ...rec.frames, depois].find((s) => !entNaJanela(s));
   if (salto) ctx.fail(`${what}: ao recolher, um quadro com a tela em ${entRect(salto.tela)} (${entDesc(salto)}); esperado a janela inteira, sem salto`);
   ctx.log(`${what}: recolheu sem salto (${rec.frames.length} quadros gravados com a tela na janela), ${entDesc(depois)}`);
+  // P = 1 recolhido: a tela cobre a sala, o vídeo fica pausado e o controle, que não faria nada, some (I1).
+  if (depois.coberta !== "true" || depois.controle !== "hidden") {
+    ctx.fail(`${what}: recolhido em P = 1, data-coberta=${depois.coberta} e o controle do vídeo com visibility ${depois.controle} (esperado "true" e hidden: a sala está coberta)`);
+  }
 
   const samples = [depois];
   for (let i = 0; i < budget && samples.at(-1).progress !== "0.00"; i++) {
@@ -2455,6 +2465,10 @@ async function entVolta(cdp, ctx, what, { recolher, recuar, budget, s0, pausaIda
     if (outra) ctx.fail(`${what}: voltando, na pausa a tela está em ${entRect(outra.tela)}; na ida, em ${entRect(pausaIda)} (não é o mesmo caminho)`);
   }
   if (!entSame(last.tela, s0.tela)) ctx.fail(`${what}: de volta a 0, a tela está em ${entRect(last.tela)}; no começo, em ${entRect(s0.tela)}`);
+  if (last.coberta !== "false" || last.controle !== "visible") {
+    ctx.fail(`${what}: de volta a 0, data-coberta=${last.coberta} e o controle do vídeo com visibility ${last.controle} (esperado "false" e visible)`);
+  }
+  ctx.log(`${what}: recolhido em P = 1, o controle do vídeo fora da tela (visibility ${depois.controle}); de volta a 0, à vista (${last.controle})`);
   ctx.log(`${what}: voltou a 0 pelo mesmo caminho (${samples.map((s) => s.progress).join(" → ")}; ${pausa.length} amostra(s) na pausa)`);
 }
 
@@ -4638,7 +4652,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
-    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela; no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
+    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela (ou, se ao lado a fonte ficaria abaixo de 1,5rem, empilhadas e acima do piso); no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto (em P = 1 recolhido, com a sala coberta, sem o controle do vídeo à vista) e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
     "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +

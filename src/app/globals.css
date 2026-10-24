@@ -4633,6 +4633,14 @@ textarea.field__input {
   z-index: 5;
 }
 
+/* Com a tela cobrindo a sala (data-coberta, k ≥ ENTRADA.salaCobertaK e P = 1
+   solto ou recolhido), o vídeo fica pausado pelo provedor e não há vídeo à
+   vista: o controle, que não faria nada, sai da tela, da leitura e do Tab
+   (I1 da revisão final da fase 2). Descoberta, ele volta. */
+.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle {
+  visibility: hidden;
+}
+
 /* As metades do título vão, com a expansão, à pose da pausa
    (posicaoDoTitulo: --hx-linha*-x/-y e --hx-titulo-s) e, na aproximação,
    saem pelas bordas e somem. A data e a dica saem na expansão, como no
