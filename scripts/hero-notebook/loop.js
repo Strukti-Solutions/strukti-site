@@ -40,7 +40,6 @@
       ]
     }
   };
-  const VAPOR_EM = {};
 
   const SAIDA = { media: 'midia', mediaRetrato: 'midia-retrato' };
   const PASTA = { media: 'plates2', mediaRetrato: 'plates2-retrato' };
@@ -62,9 +61,7 @@
       const yN = c.P([cx, 0, zN])[1], yD = c.P([cx, 0, zD])[1], peso = Math.min(1, Math.max(0, (yN - p[1]) / (yN - yD)));
       desfoque = peso > 0.5 ? Math.max(1, Math.round(px * o.F / 1000)) : 0;
     }
-    const aj = VAPOR_EM[cam] || {}, fase = aj.fase || 0, opacidade = aj.opacidade != null ? aj.opacidade : 1;
-    if (aj.desfoque) desfoque = Math.max(desfoque, aj.desfoque);
-    let vapor = { x, y, w, h, desfoque, fase, opacidade };
+    let vapor = { x, y, w, h, desfoque };
     let entradas = ['A.png', 'T.png', 'city2x.png', 'E.png', 'Lp.png', 'strip.png', 'mask.png'];
     const col = COLUNA[cam];
     if (col) {
@@ -72,7 +69,7 @@
       const caneca = c.P([m.x, 0, m.z])[1] - p[1], alto = Math.round(col.altura * caneca);
       const hc = alto + 20, yc = Math.round(p[1] - col.acima * s) - hc + 1, xc = Math.round(p[0]) - col.cx;
       const coluna = Object.assign({}, col, { caneca: num(caneca), pe: hc - 1, cx: col.cx + (p[0] - Math.round(p[0])) });
-      vapor = { x: xc, y: yc, w: col.w, h: hc, desfoque, fase: 0, opacidade: 1, coluna };
+      vapor = { x: xc, y: yc, w: col.w, h: hc, desfoque, coluna };
       entradas = entradas.slice(0, 5).concat(col.arquivo);
     }
     const rx = Math.max(0, vapor.x - vapor.w / 2), ry = Math.max(0, vapor.y - 3);
@@ -84,7 +81,7 @@
       cidade: '8-trunc(8*pow(sin(PI*t/10),2)+0.5)',
       led: `${num(k0)}${k1 >= k0 ? '+' : '-'}${num(Math.abs(k1 - k0))}*(0.5-0.5*cos(2*PI*T/10))`,
       abajur: `${ABAJUR}*sin(2*PI*T/10)`,
-      vapor: `trunc(mod(t*1200/10${fase ? `+${fase}` : ''},400))`
+      vapor: 'trunc(mod(t*1200/10,400))'
     };
     if (col) delete curvas.vapor;
     return {
@@ -103,7 +100,7 @@
       : [
         `[5]format=gbrp,split[s1][s2];[s1][s2]vstack,crop=96:240:0:'${k.vapor}'[sc]`,
         `[6]format=gbrp[m]`,
-        `[sc][m]blend=all_mode=multiply,scale=${v.w}:${v.h}:flags=lanczos${v.opacidade < 1 ? `,colorchannelmixer=rr=${v.opacidade}:gg=${v.opacidade}:bb=${v.opacidade}` : ''},pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`
+        `[sc][m]blend=all_mode=multiply,scale=${v.w}:${v.h}:flags=lanczos,pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`
       ];
     return [
       '[0]format=gbrp[A]', '[1]format=gbrp[T]', '[3]format=gbrp[E]', '[4]format=gbrp[Lp]',

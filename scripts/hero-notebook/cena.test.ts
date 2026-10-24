@@ -711,8 +711,6 @@ describe("cena do hero notebook", () => {
         w: number;
         h: number;
         desfoque: number;
-        fase: number;
-        opacidade: number;
         coluna?: Coluna;
       };
       entradas: string[];
@@ -917,7 +915,6 @@ describe("cena do hero notebook", () => {
         const d = loop.quadro("media");
         expect(d.vapor.coluna).toBeUndefined();
         expect(d.vapor.desfoque).toBe(0);
-        expect({ fase: d.vapor.fase, opacidade: d.vapor.opacidade }).toEqual({ fase: 0, opacidade: 1 });
         expect(d.curvas.vapor).toBe("trunc(mod(t*1200/10,400))");
         expect(d.entradas).toEqual(["A.png", "T.png", "city2x.png", "E.png", "Lp.png", "strip.png", "mask.png"]);
         expect(loop.grafo("media")).not.toContain("colorchannelmixer");
