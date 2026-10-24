@@ -10,7 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { ENTRADA } from "../../src/lib/heroEntrada";
+import { ENTRADA, posicaoDoTitulo, type Viewport } from "../../src/lib/heroEntrada";
 
 type Vec = [number, number, number];
 type Tela = {
@@ -716,7 +716,7 @@ describe("cena do hero notebook", () => {
       entradas: string[];
       led: [number, number];
       recorteVapor: { x: number; y: number; w: number; h: number };
-      curvas: { cidade: string; led: string; abajur: string; vapor: string };
+      curvas: { cidade: string; led: string; abajur: string; vapor?: string };
     };
     type Fio = { periodo: number; peso: number; largura: [number, number] };
     type Coluna = {
@@ -770,60 +770,32 @@ describe("cena do hero notebook", () => {
       }
     });
 
-    // em pé, a coluna é gerada (abaixo); deitado, a faixa do hero na escala da caneca
-    it.each(ENQ.slice(0, 1))("%s: o vapor sobe da boca da caneca, na escala dela", (cam) => {
+    // a coluna, em px do quadro: linha a linha, o máximo (em x e em 50 quadros) e o x do centro de massa
+    const perfil = (cam: string) => {
       const q = loop.quadro(cam);
-      const o = Object.assign({}, cena.CAMS[cam]);
-      const mundo = cena.prepWorld(o);
-      const c = cena.makeCam(o) as Camera & { S: (p: Vec) => number };
-      const top: Vec = [mundo.mug.x, mundo.mug.h, mundo.mug.z];
-      const [px, py] = c.P(top);
-      const s = c.S(top) / loop.VAPOR.S;
-      const { x, y, w, h } = q.vapor;
-      expect(Math.abs(x + w / 2 - px)).toBeLessThanOrEqual(1);
-      expect(y + h).toBeLessThanOrEqual(py);
-      expect(y + h).toBeGreaterThanOrEqual(py - 8 * s);
-      expect(Math.abs(w - loop.VAPOR.w * s)).toBeLessThanOrEqual(2);
-      expect(Math.abs(h - loop.VAPOR.h * s)).toBeLessThanOrEqual(2);
-      expect(x).toBeGreaterThanOrEqual(0);
-      expect(y).toBeGreaterThanOrEqual(0);
-      expect(x + w).toBeLessThanOrEqual(q.W);
-      // a conferência do vapor (vqa.sh) recorta em volta dele
-      const r = q.recorteVapor;
-      expect(r.x).toBeLessThanOrEqual(x);
-      expect(r.x + r.w).toBeGreaterThanOrEqual(x + w);
-      expect(r.y).toBeLessThanOrEqual(y);
-      expect(r.y + r.h).toBeGreaterThanOrEqual(y + h);
-      expect(r.x).toBeGreaterThanOrEqual(0);
-      expect(r.x + r.w).toBeLessThanOrEqual(q.W);
-    });
-
-    describe("em pé, o vapor é uma coluna gerada quadro a quadro (crítica N5 r2)", () => {
-      // a coluna, em px do quadro: linha a linha, o máximo (em x e em 50 quadros) e o x do centro de massa
-      const perfil = (cam: string) => {
-        const q = loop.quadro(cam);
-        const c = q.vapor.coluna as Coluna;
-        const { w, h } = q.vapor;
-        const maxLinha = new Float64Array(h);
-        const centros: number[][] = Array.from({ length: h }, () => []);
-        for (let k = 0; k < 250; k += 5) {
-          const f = loop.colunaDeVapor(cam, k);
-          for (let y = 0; y < h; y++) {
-            let s = 0;
-            let sx = 0;
-            for (let x = 0; x < w; x++) {
-              const v = f[y * w + x] as number;
-              if (v > (maxLinha[y] as number)) maxLinha[y] = v;
-              s += v;
-              sx += v * x;
-            }
-            if (s > 1e-3) (centros[y] as number[]).push(sx / s - c.cx);
+      const c = q.vapor.coluna as Coluna;
+      const { w, h } = q.vapor;
+      const maxLinha = new Float64Array(h);
+      const centros: number[][] = Array.from({ length: h }, () => []);
+      for (let k = 0; k < 250; k += 5) {
+        const f = loop.colunaDeVapor(cam, k);
+        for (let y = 0; y < h; y++) {
+          let s = 0;
+          let sx = 0;
+          for (let x = 0; x < w; x++) {
+            const v = f[y * w + x] as number;
+            if (v > (maxLinha[y] as number)) maxLinha[y] = v;
+            s += v;
+            sx += v * x;
           }
+          if (s > 1e-3) (centros[y] as number[]).push(sx / s - c.cx);
         }
-        // a linha a `u` alturas da caneca acima do pé da coluna
-        const linha = (u: number) => Math.round(c.pe - u * c.caneca);
-        return { q, c, maxLinha, centros, linha };
-      };
+      }
+      // a linha a `u` alturas da caneca acima do pé da coluna
+      const linha = (u: number) => Math.round(c.pe - u * c.caneca);
+      return { q, c, maxLinha, centros, linha };
+    };
+    describe("em pé, o vapor é uma coluna gerada quadro a quadro (crítica N5 r2)", () => {
       let P: ReturnType<typeof perfil>;
       beforeAll(() => {
         P = perfil("mediaRetrato");
@@ -910,14 +882,120 @@ describe("cena do hero notebook", () => {
         for (let i = 0; i < a.length; i++) dmax = Math.max(dmax, Math.abs((a[i] as number) - (b[i] as number)));
         expect(dmax * 255).toBeGreaterThan(2);
       });
+    });
 
-      it("deitado fica como foi aprovado: a faixa do hero, sem coluna, o mesmo grafo", () => {
-        const d = loop.quadro("media");
-        expect(d.vapor.coluna).toBeUndefined();
-        expect(d.vapor.desfoque).toBe(0);
-        expect(d.curvas.vapor).toBe("trunc(mod(t*1200/10,400))");
-        expect(d.entradas).toEqual(["A.png", "T.png", "city2x.png", "E.png", "Lp.png", "strip.png", "mask.png"]);
-        expect(loop.grafo("media")).not.toContain("colorchannelmixer");
+    describe("deitado, o vapor também é uma coluna gerada (crítica de arte N6 r1)", () => {
+      let P: ReturnType<typeof perfil>;
+      beforeAll(() => {
+        P = perfil("media");
+      });
+      const media = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+
+      it("sai da metade direita da boca da caneca, num vapor.mkv próprio, em foco e sem a faixa do hero", () => {
+        const o = Object.assign({}, cena.CAMS.media);
+        const mundo = cena.prepWorld(o);
+        const cam = cena.makeCam(Object.assign({}, cena.CAMS.media));
+        const boca = cam.P([mundo.mug.x, mundo.mug.h, mundo.mug.z]);
+        const pe = cam.P([mundo.mug.x, 0, mundo.mug.z]);
+        const { q, c, centros, linha } = P;
+        expect(c.arquivo).toBe("vapor.mkv");
+        expect(q.entradas).toEqual(["A.png", "T.png", "city2x.png", "E.png", "Lp.png", "vapor.mkv"]);
+        expect(q.curvas.vapor).toBeUndefined();
+        expect(c.caneca).toBeCloseTo(pe[1] - boca[1], 0);
+        expect(Math.abs(q.vapor.x + c.cx - boca[0])).toBeLessThanOrEqual(1);
+        expect(boca[1] - (q.vapor.y + c.pe)).toBeGreaterThanOrEqual(0);
+        expect(boca[1] - (q.vapor.y + c.pe)).toBeLessThanOrEqual(12);
+        // em foco (a caneca está na mesa nítida): sem desfoque
+        expect(q.vapor.desfoque).toBe(0);
+        const g = loop.grafo("media");
+        expect(g).not.toContain("gblur");
+        expect(g).not.toContain("vstack");
+        // o pé fica na metade direita da boca (o meio dela fica sob o fim da metade 2 do título)
+        const noPe = media(centros[linha(0.1)] as number[]);
+        expect(noPe).toBeGreaterThanOrEqual(15);
+        expect(noPe).toBeLessThanOrEqual(35);
+      });
+
+      it("some entre 0,8 e 1× a altura da caneca, com a opacidade caindo do meio da coluna para cima", () => {
+        const { c, maxLinha, linha } = P;
+        expect(c.altura).toBeGreaterThanOrEqual(0.8);
+        expect(c.altura).toBeLessThanOrEqual(1);
+        const m = (u: number) => maxLinha[linha(u)] as number;
+        for (let y = 0; y <= linha(1); y++) expect(maxLinha[y]).toBeLessThan(0.5 / 255);
+        // do meio (0,5) para cima, cai sempre (os fios finos, em foco, oscilam alguns % abaixo do meio)
+        for (let u = 0.5; u < c.altura - 0.05; u += 0.05) expect(m(u + 0.05)).toBeLessThan(m(u));
+        expect(m(0.75)).toBeLessThan(0.5 * m(0.3));
+      });
+
+      it("deriva para a direita (longe do título), de 8 a 15 px no topo, em todos os quadros", () => {
+        const { c, centros, linha } = P;
+        expect(c.deriva).toBeGreaterThanOrEqual(8);
+        expect(c.deriva).toBeLessThanOrEqual(15);
+        const topo = centros[linha(0.9 * c.altura)] as number[];
+        const pe = media(centros[linha(0.1)] as number[]);
+        expect(topo.length).toBeGreaterThan(40);
+        expect(media(topo) - pe).toBeGreaterThanOrEqual(0.6 * c.deriva);
+        // nenhum quadro volta para a esquerda do pé no topo
+        for (const x of topo) expect(x).toBeGreaterThan(pe - 2);
+      });
+
+      it("o pico fica limitado e os fios têm 10 s e 5 s, pesos 1 e 0,6; o quadro 250 é o 0 e cada quadro muda", () => {
+        const { c, maxLinha } = P;
+        expect(Math.max(...maxLinha)).toBeLessThanOrEqual(c.pico + 1e-6);
+        expect(c.fios.map((f) => [f.periodo, f.peso])).toEqual([
+          [10, 1],
+          [5, 0.6],
+        ]);
+        const igual = (a: Float32Array, b: Float32Array) => a.every((v, i) => Math.abs(v - (b[i] as number)) < 1e-6);
+        expect(igual(loop.colunaDeVapor("media", 250), loop.colunaDeVapor("media", 0))).toBe(true);
+        expect(igual(loop.colunaDeVapor("media", 125, 1), loop.colunaDeVapor("media", 0, 1))).toBe(true);
+        expect(igual(loop.colunaDeVapor("media", 125, 0), loop.colunaDeVapor("media", 0, 0))).toBe(false);
+        const a = loop.colunaDeVapor("media", 10);
+        const b = loop.colunaDeVapor("media", 11);
+        let dmax = 0;
+        for (let i = 0; i < a.length; i++) dmax = Math.max(dmax, Math.abs((a[i] as number) - (b[i] as number)));
+        expect(dmax * 255).toBeGreaterThan(2);
+      });
+
+      it.each([
+        [1366, 768],
+        [1440, 900],
+        [1920, 1080],
+        [2560, 1080],
+      ])("a %i × %i, o vapor visível fica a 24 px ou mais da metade 2 do título na pausa, nos 250 quadros", (w, h) => {
+        // A metade 2 como o posicaoDoTitulo a põe (fonte de 60 px: 323 px de largura e 63 de altura de linha), levada
+        // para a mídia pelo cover (50% 100%).
+        const v: Viewport = { w, h, emPe: false };
+        const { x, escala } = posicaoDoTitulo(v, [688, 323]);
+        const m = Math.max(w / 1280, h / 720);
+        const ox = (w - 1280 * m) / 2;
+        const oy = h - 720 * m;
+        const esquerda = w / 2 - 323 / 2 + x[1];
+        const caixa = {
+          x0: (esquerda - ox) / m,
+          x1: (esquerda + 323 * escala - ox) / m,
+          y0: ENTRADA.aparelho.deitado.tituloY[1] - (63 * escala) / 2 / m,
+          y1: ENTRADA.aparelho.deitado.tituloY[1] + (63 * escala) / 2 / m,
+        };
+        expect(oy).toBeLessThanOrEqual(0);
+        const { q } = P;
+        const { w: vw, h: vh } = q.vapor;
+        // visível: ao menos 4 níveis de 8 bits somados (a cor do vapor, 223 no vermelho, vezes a opacidade)
+        const limiar = 4 / 223;
+        let pior = Infinity;
+        for (let k = 0; k < 250; k++) {
+          const f = loop.colunaDeVapor("media", k);
+          for (let yy = 0; yy < vh; yy++)
+            for (let xx = 0; xx < vw; xx++) {
+              if ((f[yy * vw + xx] as number) < limiar) continue;
+              const X = q.vapor.x + xx + 0.5;
+              const Y = q.vapor.y + yy + 0.5;
+              const dx = Math.max(caixa.x0 - X, 0, X - caixa.x1);
+              const dy = Math.max(caixa.y0 - Y, 0, Y - caixa.y1);
+              pior = Math.min(pior, Math.hypot(dx, dy) * m);
+            }
+        }
+        expect(pior).toBeGreaterThanOrEqual(24);
       });
     });
 

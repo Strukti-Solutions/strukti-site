@@ -10,14 +10,15 @@
 // - k(t): o LED respira 18%, a partir do brilho da foto parada (`ledK` da câmera; 0,82 se ela não diz), para o quadro 0
 //   ser a foto (o pôster sai do quadro 0);
 // - j(t): o abajur oscila 3%;
-// - vapor(t): deitado, a faixa do steam2.html (em 2x, período de 400 px) sobe três períodos por volta, na boca da caneca
-//   e na escala dela. Em pé, a caneca fica 2,2× maior e no desfoque do fundo, e a faixa do hero virava uma coluna reta
-//   e alta ao lado do montante da janela: ali o vapor é uma coluna gerada quadro a quadro (COLUNA, colunaDeVapor).
+// - vapor(t): uma coluna gerada quadro a quadro (COLUNA, colunaDeVapor), na boca da caneca. A faixa do hero (o
+//   steam2.html do expansao) saiu dos dois enquadramentos: em pé ela virava uma coluna reta e alta ao lado do montante
+//   da janela (crítica da N5), e deitado subia 1,1× a caneca e cruzava a metade 2 do título (crítica da N6 r1).
 // O brilho frio da tela do aparelho na mesa fica parado (spec §12: a tela é o site, sem animação): ele está no passe A
 // (e no D, porque não depende do abajur), e nenhum termo o modula.
 (function (G) {
   const F = typeof module !== 'undefined' && typeof require === 'function' ? require('./scene.js') : G.FDE;
-  // A faixa do vapor (steam2.html) foi desenhada para uma boca de caneca vista a 8,56 px/cm (o vapor ocupa 48 x 120 px do
+  // A escala do vapor: a faixa do hero (steam2.html, que saiu) foi desenhada para uma boca de caneca vista a 8,56 px/cm
+  // (48 x 120 px do
   // quadro, ~14 cm de altura); o pé da faixa fica 4 px acima da boca. Noutra escala, a faixa cresce na mesma proporção.
   const VAPOR = { w: 48, h: 120, S: 8.56, acima: 4 };
   // Em pé (crítica da N5, rodada 2), o vapor é uma coluna gerada, e não a faixa do hero: com a faixa, ele subia reto,
@@ -30,8 +31,17 @@
   //   espelhados), o peso (1 e 0,6), a largura no pé e no topo (σ em px; o de trás alarga com a altura), o lugar na
   //   boca (`x0`, px do meio dela; `dx`, quanto anda até o topo) e a forma (as ondulações e os sopros de densidade, em
   //   harmônicos do comprimento `L`, que fecham em 10 s).
-  // Deitado fica como foi aprovado (o vapor do hero).
+  // Deitado (crítica de arte N6 r1), a mesma receita: a faixa do hero subia 1,1× a caneca, reta, com os fios fechando
+  // "olhos", e cruzava a metade 2 do título a 1366 (o "o" de "silêncio" fica sobre o meio da boca). A coluna sai da
+  // metade direita da boca (`x0` de +20 e +27 px) e deriva para a direita, longe do título; em foco, os fios são finos.
   const COLUNA = {
+    media: {
+      arquivo: 'vapor.mkv', altura: 0.9, deriva: 12, pico: 0.28, forca: 0.21, w: 120, cx: 40, acima: 2,
+      fios: [
+        { periodo: 10, peso: 1, largura: [2, 4.5], x0: 22, L: 440, onda: [[3, 5, 0.4], [5, 2.5, 2.1], [7, 1.2, 4.0]], sopro: [6, 1.3, 0.4] },
+        { periodo: 5, peso: 0.6, largura: [3, 9], x0: 29, dx: -4, L: 440, onda: [[2, 5, 2.6], [5, 2, 0.9]], sopro: [5, 4.4, 0.4] }
+      ]
+    },
     mediaRetrato: {
       arquivo: 'vapor.mkv', altura: 0.9, deriva: 12, pico: 0.3, forca: 0.24, w: 168, cx: 76, acima: 2,
       fios: [
@@ -136,7 +146,8 @@
         let onda = 0;
         for (const [n, a, ph] of f.onda) onda += a * Math.sin((2 * Math.PI * n * sv) / f.L + ph);
         const xc = c.cx + (f.x0 || 0) + (f.dx || 0) * u + deriva + onda * (0.25 + 0.75 * u);
-        const [n, ph] = f.sopro, dens = 0.25 + 0.75 * Math.pow(0.5 + 0.5 * Math.sin((2 * Math.PI * n * sv) / f.L + ph), 2);
+        const [n, ph, base = 0.25] = f.sopro;
+        const dens = base + (1 - base) * Math.pow(0.5 + 0.5 * Math.sin((2 * Math.PI * n * sv) / f.L + ph), 2);
         const sg = f.largura[0] + (f.largura[1] - f.largura[0]) * u, a = c.forca * f.peso * env * dens, i0 = y * v.w;
         const x0 = Math.max(0, Math.floor(xc - 4 * sg)), x1 = Math.min(v.w - 1, Math.ceil(xc + 4 * sg));
         for (let x = x0; x <= x1; x++) out[i0 + x] += a * Math.exp(-((x - xc) ** 2) / (2 * sg * sg));
