@@ -30,6 +30,14 @@ notebook mostra a página de longe (o bloco de chamada em barras e dois botões)
   celular nem o suporte (`semAparelho` com `aparelho: 'celular'`; ficam a
   sombra e o brilho da tela dele na mesa). O notebook atrás é desenhado nas
   duas e desfocado (`desfoque`).
+- **O cartão (P = 0) no site:** o h1 fica no meio do palco, por cima do
+  cartão e do fundo largo. Dois véus de CSS (`globals.css`, crítica de arte
+  N6 r1) mantêm a faixa dele escura sem mexer na arte: a tela do aparelho
+  leva um véu do navy dela (0,9 até e ≈ 0,65, 0 no fim da expansão; o bloco
+  de chamada em miniatura ficava atrás do h1) e o fundo largo, um véu local
+  em elipse na faixa do título (a caixa do Replay e a caneca ficavam atrás do
+  h1 a 2560). Mexeu no fundo ou no cartão, meça a faixa em P = 0 também (a
+  prancha da N6 mede P = 0 e a pausa).
 
 ## Precisa de
 
@@ -131,14 +139,18 @@ geometria e a mesma luz do `drawLaptop` e do `drawCelularEmPe` pelas câmeras
 das mídias, em px da mídia, com a origem no meio do pé da tela:
 
 - a moldura (a tampa, o corpo): as espessuras da borda em volta da tela
-  (`lado`, `topo`, `queixo`), o raio, o aro, o ponto da câmera e as cores. No
-  site ela é uma borda CSS de espessura fixa em volta da tela HTML, que tem a
-  proporção da janela;
+  (`lado`, `topo`, `queixo`), o raio, o aro, o ponto da câmera (nos dois: no
+  celular, um quarto da borda de cima) e as cores. No site ela é uma borda CSS
+  de espessura fixa em volta da tela HTML, que tem a proporção da janela; no
+  celular, um filete de luz fria (o brilho da tela) contorna o furo;
 - o que fica abaixo do pé da tela, em SVG (`caixa` é o viewBox): a base com o
   teclado (seis fileiras sem legenda), o trackpad, o brilho frio da tela no
   tampo, a quina da frente e a dobradiça; a chapa do suporte (recortada pelo
-  corpo, `semCorpo`) e o ressalto. A prateleira fica inteira atrás do
-  ressalto e não sai;
+  corpo, `semCorpo`) e o ressalto, que é uma aba: a frente sobe sobre o
+  queixo do celular até 55% dele (`ABA`), mais fina que no `scene.js`, para o
+  topo não chegar à tela, com a luz quente da luminária vinda da esquerda
+  (`quente`) e uma sombra macia na chapa logo abaixo (`sombraAba`). A
+  prateleira fica inteira atrás do ressalto e não sai;
 - uma sombra de contato sob o pé (`contato`), nova: a base e o suporte pousam
   na mesa;
 - o grão (`grao`): três ladrilhos de pontos claros e escuros, de 7, 11 e 13 px
@@ -257,7 +269,8 @@ os mesmos números. O `src/config/heroNotebook.assets.test.ts`
 confere os tamanhos e os limites dos arquivos que o `siteConfig.heroNotebook` usa.
 
 Instalados em 23/10/2026 (N5): `midia.{webm,mp4}` e `midia-retrato.{webm,mp4}`,
-com os pôsteres refeitos do quadro 0 de cada loop.
+com os pôsteres refeitos do quadro 0 de cada loop. Em 24/10/2026 (N6), o em pé
+com a coluna de vapor e, depois da crítica de arte r1, o deitado com a coluna.
 
 ## 5. O loop de 10 s
 
@@ -273,16 +286,14 @@ mkdir -p plates2 plates2-retrato final2
 # deitado
 ./shot.sh plates.html plates2/tiles.png 2560 1440        # A, B, C e D num mosaico
 ./shot.sh city2x.html plates2/city2x.png 2576 1440       # a cidade em 2x (o balanço de meio pixel)
-./shot.sh steam2.html plates2/steam2.png 520 420         # o vapor (faixa e máscara, em 2x)
-ffmpeg -y -v error -i plates2/steam2.png -vf crop=96:400:0:0 plates2/strip.png
-ffmpeg -y -v error -i plates2/steam2.png -vf crop=96:240:100:0 plates2/mask.png
 ./derive.sh plates2 1280 720
+node loop.js vapor media                                 # -> plates2/vapor.mkv (a coluna, ffv1, 251 quadros)
 node composite2.js media                                 # -> plates2/master.mkv (ffv1, 251 quadros)
 ./encode.sh plates2/master.mkv final2 20 10 midia
 ffmpeg -y -v error -i plates2/master.mkv -frames:v 1 final2/poster-master.png
 ./stills.sh final2/poster-master.png final2/midia-poster 11 3
 ./vqa.sh final2/midia.webm d-webm media && ./vqa.sh final2/midia.mp4 d-mp4 media
-# em pé (o vapor é uma coluna gerada, não a faixa)
+# em pé
 ./shot.sh plates-retrato.html plates2-retrato/tiles.png 1440 2560
 ./shot.sh city2x-retrato.html plates2-retrato/city2x.png 1456 2560
 ./derive.sh plates2-retrato 720 1280
@@ -301,27 +312,33 @@ ffmpeg -y -v error -i plates2-retrato/master.mkv -frames:v 1 final2/poster-retra
   10 s: o quadro 250 é igual ao 0. A cidade balança meio pixel, o LED respira
   18% a partir do brilho da foto parada (0,82 deitado, 1 em pé: o quadro 0 é a
   foto) e o abajur oscila 3%.
-- Deitado, o vapor é o do expansao: a faixa do `steam2.html` (desenhada para
-  uma boca vista a 8,56 px/cm) na boca da caneca e na escala dela (1,5×), três
-  períodos por volta.
-- Em pé, a caneca fica 2,2× maior e no desfoque do fundo, e a faixa virava uma
-  coluna reta e alta ao lado do montante da janela, com dois fios que fechavam
-  "olhos" simétricos (crítica da N5). Ali o vapor é uma **coluna gerada** no
-  Node (`COLUNA` e `colunaDeVapor` no `loop.js`; `node loop.js vapor
-  mediaRetrato` grava o `vapor.mkv`, uma entrada a mais do `composite2.js`):
+- O vapor é uma **coluna gerada** no Node nos dois enquadramentos (`COLUNA` e
+  `colunaDeVapor` no `loop.js`; `node loop.js vapor <media|mediaRetrato>`
+  grava o `vapor.mkv`, a entrada do vapor no `composite2.js`). A faixa do
+  `steam2.html` (a do expansao) saiu: em pé (crítica da N5), a caneca fica
+  2,2× maior e no desfoque, e a faixa virava uma coluna reta e alta ao lado do
+  montante da janela, com dois fios que fechavam "olhos" simétricos; deitado
+  (crítica da N6 r1), ela subia 1,1× a caneca e cruzava o "o" de "silêncio" a
+  1366 px. A coluna:
   - some a 0,9× a altura da caneca no quadro, com a opacidade caindo do meio
     da coluna para cima;
-  - deriva 12 px para um lado só no topo (para a direita, o vidro, longe do
-    montante), crescendo com a altura;
+  - deriva 12 px para um lado só no topo, a direita (em pé, o vidro, longe do
+    montante; deitado, longe da metade 2 do título), crescendo com a altura;
   - o pico é limitado por uma saturação suave (`pico`), para nenhum trecho
     virar um traço claro onde os fios se cruzam;
   - dois fios, cada um uma linha gaussiana em x cuja forma (ondulações e
-    sopros de densidade) sobe pela coluna: o da frente com período de 10 s e
-    peso 1, o de trás com 5 s e peso 0,6, e o de trás alarga com a altura (σ
-    de 7 a 20 px). Em velocidades diferentes, os fios não se reencontram
-    espelhados; os dois fecham no quadro 250, que é igual ao 0;
-  - por cima, o desfoque do fundo (4 px, o mesmo da caneca).
-  O `cena.test.ts` confere cada um desses pontos na coluna gerada.
+    sopros de densidade, com a densidade mínima em `sopro[2]`) sobe pela
+    coluna: o da frente com período de 10 s e peso 1, o de trás com 5 s e
+    peso 0,6, e o de trás alarga com a altura. Em velocidades diferentes, os
+    fios não se reencontram espelhados; os dois fecham no quadro 250, que é
+    igual ao 0;
+  - em pé, por cima, o desfoque do fundo (4 px, o mesmo da caneca), e os fios
+    largos (σ de 5 a 20 px); deitado, a caneca está em foco: fios finos (σ de
+    2 a 9 px), sem desfoque, saindo da metade direita da boca (`x0` +22 e +29
+    px), porque o meio dela fica sob o fim da metade 2 a 16:9.
+  O `cena.test.ts` confere cada um desses pontos na coluna gerada e, deitado,
+  que o vapor visível (4 níveis de 8 bits ou mais) fica a 24 px ou mais da
+  metade 2 do título na pausa, nos 250 quadros, a 1366, 1440, 1920 e 2560.
 - Em pé, a placa da cidade leva o desfoque do fundo (`desfoque` da câmera, no
   passe `city` do `scene.js`), e as folgas em px das janelas e dos discos em
   volta dos montantes crescem com o `pxk`: a cidade em 2x é a mesma da foto.
@@ -371,6 +388,7 @@ mídia (1280 × 720 deitado, 720 × 1280 em pé). Todos ficam no
 | estado parado: `--hx-tela-s` 0,25625 e 0,32326 | a escala da tela na pausa a 1440 × 900 (295,2 × 1,25 / 1440) e a 390 × 844 (191,2 × 0,659375 / 390) | `heroEntrada.test.ts` (a escala e o centro da tela na pausa, contra `camera()`) |
 | estado parado: 0,2094141 e 0,2873472 no `--hx-tela-y` | o pé da tela em fração da largura da mídia: (720 − 359,7 − 184,5 / 2) / 1280 acima do pé do palco, e (413,78 / 2) / 720 abaixo do meio | `heroEntrada.test.ts` |
 | estado parado: 295,2, 191,2, 15,78 + 1,69 / 2, 8,75 + 2,06 / 2, 10,43 e 92 no `--hx-parado-*` | a largura da tela e a moldura do `ENTRADA.aparelho` (1 px da mídia e a meia moldura) | `AparelhoVetor.test.tsx` (o bloco CSS) |
+| `ENTRADA.tituloFolgaLado` 40 e `tituloMargemLado` 48 (deitado); `tituloFolga` 24 e `tituloMargem` 16 (em pé) | composição (crítica de arte N6 r1): deitado, a metade 1 a 16 px da borda ficava espremida; 48 px é o maior entre 48 e o gutter da página (40). No CSS parado, `--hx-titulo-folga` e `--hx-titulo-margem` (40 e 48; em pé, 24 e 16) | `heroEntrada.test.ts`, `AparelhoVetor.test.tsx` e o `check:browser` (lê os quatro do `ENTRADA`) |
 | estado parado: 11,47 e 5,38 na fonte do h1 | a largura das metades do título em em (688 e 323 px a 60 px, na Space Grotesk do site) | `AparelhoVetor.test.tsx`; mudam se o título ou a fonte mudarem |
 
 **A regra.** Mexeu no mundo ou numa câmera:
