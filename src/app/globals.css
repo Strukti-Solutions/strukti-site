@@ -4475,8 +4475,11 @@ textarea.field__input {
    expansão, 0 a 1), --hx-k (a aproximação, com a curva), o quadro
    (--hx-quadro-w/-h), a tela (--hx-tela-x/-y, o canto de cima à esquerda
    na janela útil, e --hx-tela-s, a escala), a sala (--hx-sala-*) e as
-   metades do título (--hx-linha1-x/-2-x e --hx-titulo-saida). Aqui elas
-   viram transform, opacity e filter.
+   metades do título (o deslocamento na pausa, --hx-linha1-x/-y e
+   --hx-linha2-x/-y; a escala delas na pausa, --hx-titulo-s; e a saída na
+   aproximação, --hx-titulo-saida). Aqui elas viram transform, opacity e
+   filter. A seção ganha ainda data-orientacao (deitado ou em-pe) e
+   data-coberta (a tela cobre a sala: o controle do vídeo sai).
 
    Os valores padrão são o cartão de 300 × 400 (p = 0): com JavaScript,
    antes de montar, nada salta ao armar. Sem JavaScript e com reduced
