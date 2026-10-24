@@ -179,9 +179,21 @@
 if (typeof module !== 'undefined') {
   module.exports = globalThis.FDE_LOOP;
   if (require.main === module) {
+    // O enquadramento é obrigatório nas três ações (m7 da revisão final da fase 2): sem ele, nada de padrão escondido.
     const [a, b] = process.argv.slice(2);
-    if (a === 'recorte') { const r = module.exports.quadro(b).recorteVapor; console.log(`${r.w}:${r.h}:${r.x}:${r.y}`); }
-    else if (a === 'vapor') console.log(module.exports.gravaVapor(b || 'mediaRetrato'));
-    else console.log(JSON.stringify(module.exports.quadro(a || 'media'), null, 1));
+    const acao = a === 'recorte' || a === 'vapor' ? a : null;
+    const cam = acao ? b : a;
+    if (cam !== 'media' && cam !== 'mediaRetrato') {
+      console.error([
+        `enquadramento ${cam === undefined ? 'ausente' : `desconhecido: ${cam}`}`,
+        'uso: node loop.js <media|mediaRetrato>',
+        '     node loop.js recorte <media|mediaRetrato>',
+        '     node loop.js vapor <media|mediaRetrato>',
+      ].join('\n'));
+      process.exit(1);
+    }
+    if (acao === 'recorte') { const r = module.exports.quadro(cam).recorteVapor; console.log(`${r.w}:${r.h}:${r.x}:${r.y}`); }
+    else if (acao === 'vapor') console.log(module.exports.gravaVapor(cam));
+    else console.log(JSON.stringify(module.exports.quadro(cam), null, 1));
   }
 }
