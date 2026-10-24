@@ -363,7 +363,9 @@ node sonda-rapida.js plates2/master.mkv --caixas caixas.json                    
 
 O `sonda-rapida.js` mede o p90 e o máximo da luminância em cada um dos 251
 quadros do master (o vapor e o LED mudam a faixa ao longo do loop) e diz o pior
-quadro de cada região; sai com 1 se algum p90 passar de 60 (MASTER §3.4). As
+quadro de cada região; sai com 1 se algum p90 passar de 60 (MASTER §3.4), e
+também se o ffmpeg falhar (o master errado), se não vierem os 251 quadros ou se
+uma região não tiver pixel nenhum no quadro (o `sonda-rapida.test.ts`). As
 regiões vêm do `sondas.js` (as faixas largas e as metades no modelo dele) ou,
 com `--caixas`, de um JSON `{"nome": [x0, x1, y0, y1]}` em px da mídia: as
 caixas das metades como o site as desenha na pausa (`getBoundingClientRect`
