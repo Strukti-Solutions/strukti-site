@@ -38,6 +38,38 @@ O mesmo do expansao: Microsoft Edge (caminho no `shot.sh`), Git Bash, ffmpeg
 usa o perfil `prof/` desta pasta e, no fim, fecha só os Edge com esse perfil.
 Rode tudo de dentro desta pasta (`cd scripts/hero-notebook`).
 
+## Do mundo ao site, em ordem
+
+Cada passo está detalhado nas seções abaixo. Mexeu no mundo (`BASE`,
+`BG_WORLD`, `PT_WORLD` no `scene.js`) ou numa câmera (`CAMS`)? Refaça **tudo**
+desta lista, nesta ordem, e atualize os números do site (§6):
+
+```sh
+# 1. as quatro fotos (§1)
+./shot.sh bg.html cur/bg.png 1920 1080
+./shot.sh media.html cur/media.png 1280 720
+./shot.sh portrait.html cur/portrait.png 1080 1920
+./shot.sh media-retrato.html cur/media-retrato.png 720 1280
+# 2. a geometria: o retângulo da tela e o aparelho em vetor (§2)
+node geo.js '{}' media && node geo.js '{}' mediaRetrato   # -> ENTRADA.aparelho (§6)
+node vetor.js > ../../src/components/sections/aparelhoVetor.json
+# 3. os passes e o loop dos dois enquadramentos, os pôsteres (§5)
+# 4. os fundos (§4) e a instalação em public/hero/notebook/
+./stills.sh cur/bg.png final2/fundo 11 3
+./stills.sh cur/portrait.png final2/fundo-retrato 11 3
+cp final2/fundo* final2/midia* ../../public/hero/notebook/
+# 5. as conferências (§2 e §5): a faixa do título e a emenda do loop
+node sondas.js cur/media.png cur/bg.png && node sondas.js --em-pe cur/media-retrato.png cur/portrait.png
+node sonda-rapida.js plates2/master.mkv cur/media.png 1440x900 1366x768
+./vqa.sh final2/midia.webm d-webm media
+# 6. no site: npx vitest run (o cena.test.ts e o heroNotebook.assets.test.ts
+#    conferem o JSON, o ENTRADA e os arquivos) e CHECK_BROWSER_ETAPAS=entrada npm run check:browser
+```
+
+Só mexeu no loop (o vapor, o LED, as curvas do `loop.js`)? Basta o passo 3 e a
+instalação dos vídeos e pôsteres. O `aparelhoVetor.json`, o `ENTRADA` e o CSS
+não dependem dos pixels, só da geometria.
+
 ## 1. Fotos
 
 ```sh
@@ -250,11 +282,11 @@ node composite2.js media                                 # -> plates2/master.mkv
 ffmpeg -y -v error -i plates2/master.mkv -frames:v 1 final2/poster-master.png
 ./stills.sh final2/poster-master.png final2/midia-poster 11 3
 ./vqa.sh final2/midia.webm d-webm media && ./vqa.sh final2/midia.mp4 d-mp4 media
-# em pé (a faixa do vapor é a mesma)
+# em pé (o vapor é uma coluna gerada, não a faixa)
 ./shot.sh plates-retrato.html plates2-retrato/tiles.png 1440 2560
 ./shot.sh city2x-retrato.html plates2-retrato/city2x.png 1456 2560
-cp plates2/strip.png plates2/mask.png plates2-retrato/
 ./derive.sh plates2-retrato 720 1280
+node loop.js vapor mediaRetrato                          # -> plates2-retrato/vapor.mkv (ffv1, 251 quadros)
 node composite2.js mediaRetrato                          # -> plates2-retrato/master.mkv
 ./encode.sh plates2-retrato/master.mkv final2 20 10 midia-retrato
 ffmpeg -y -v error -i plates2-retrato/master.mkv -frames:v 1 final2/poster-retrato-master.png
@@ -268,20 +300,91 @@ ffmpeg -y -v error -i plates2-retrato/master.mkv -frames:v 1 final2/poster-retra
 - final(t) = A + T × cidade(t) + k(t) × E + j(t) × Lp + vapor(t), periódico em
   10 s: o quadro 250 é igual ao 0. A cidade balança meio pixel, o LED respira
   18% a partir do brilho da foto parada (0,82 deitado, 1 em pé: o quadro 0 é a
-  foto), o abajur oscila 3% e o vapor sobe três períodos por volta.
-- O vapor fica na boca da caneca de cada câmera, na escala dela (a faixa do
-  `steam2.html` foi desenhada para 8,56 px/cm: deitado ela cresce 1,5×, em pé
-  2,2×). Em pé, a caneca está no desfoque do fundo, e o vapor é névoa
-  (`VAPOR_EM` no `loop.js`, ajuste de arte da N5): `gblur` de 7 px (o fundo dá
-  4), pico 20% mais baixo e a faixa adiantada 140 px, para o quadro 0 (o
-  pôster) não ser uma reta ao lado do montante da janela. Deitado, o vapor é o
-  do expansao, sem ajuste.
+  foto) e o abajur oscila 3%.
+- Deitado, o vapor é o do expansao: a faixa do `steam2.html` (desenhada para
+  uma boca vista a 8,56 px/cm) na boca da caneca e na escala dela (1,5×), três
+  períodos por volta.
+- Em pé, a caneca fica 2,2× maior e no desfoque do fundo, e a faixa virava uma
+  coluna reta e alta ao lado do montante da janela, com dois fios que fechavam
+  "olhos" simétricos (crítica da N5). Ali o vapor é uma **coluna gerada** no
+  Node (`COLUNA` e `colunaDeVapor` no `loop.js`; `node loop.js vapor
+  mediaRetrato` grava o `vapor.mkv`, uma entrada a mais do `composite2.js`):
+  - some a 0,9× a altura da caneca no quadro, com a opacidade caindo do meio
+    da coluna para cima;
+  - deriva 12 px para um lado só no topo (para a direita, o vidro, longe do
+    montante), crescendo com a altura;
+  - o pico é limitado por uma saturação suave (`pico`), para nenhum trecho
+    virar um traço claro onde os fios se cruzam;
+  - dois fios, cada um uma linha gaussiana em x cuja forma (ondulações e
+    sopros de densidade) sobe pela coluna: o da frente com período de 10 s e
+    peso 1, o de trás com 5 s e peso 0,6, e o de trás alarga com a altura (σ
+    de 7 a 20 px). Em velocidades diferentes, os fios não se reencontram
+    espelhados; os dois fecham no quadro 250, que é igual ao 0;
+  - por cima, o desfoque do fundo (4 px, o mesmo da caneca).
+  O `cena.test.ts` confere cada um desses pontos na coluna gerada.
 - Em pé, a placa da cidade leva o desfoque do fundo (`desfoque` da câmera, no
   passe `city` do `scene.js`), e as folgas em px das janelas e dos discos em
   volta dos montantes crescem com o `pxk`: a cidade em 2x é a mesma da foto.
 - O brilho frio da tela do aparelho na mesa fica parado (spec §12: a tela é o
   site, sem animação): ele está no passe A e no D, e nenhum termo o modula.
-- O `encode.sh` grava os quadros 0 a 249 (o `<video loop>` emenda o 249 no 0),
-  com os números do expansao: MP4 crf 20 e WebM crf 10. O `vqa.sh` mede a
-  emenda (ao menos 45 dB) e os pares iguais no recorte do vapor (até 10%), com
-  o recorte do `loop.js`.
+- O master tem 251 quadros (0 a 250, o 250 igual ao 0), e os vídeos publicados
+  têm **250, de propósito**: o `encode.sh` grava os quadros 0 a 249, e o
+  `<video loop>` emenda o 249 no 0 (como no expansao; um 251º quadro igual ao
+  0 apareceria como uma parada de 40 ms). Os números são os do expansao: MP4
+  crf 20 e WebM crf 10.
+- O `vqa.sh` mede a emenda 249 → 0 e os pares iguais no recorte do vapor (o
+  do `loop.js`), e **sai com 1** se a emenda ficar abaixo de 45 dB ou se os
+  pares iguais passarem de 10%.
+
+### A faixa do título quadro a quadro
+
+```sh
+node sonda-rapida.js plates2/master.mkv cur/media.png 1440x900 1366x768          # as faixas do sondas.js
+node sonda-rapida.js plates2-retrato/master.mkv cur/media-retrato.png --em-pe     # idem, em pé
+node sonda-rapida.js plates2/master.mkv --caixas caixas.json                      # as metades medidas no site
+```
+
+O `sonda-rapida.js` mede o p90 e o máximo da luminância em cada um dos 251
+quadros do master (o vapor e o LED mudam a faixa ao longo do loop) e diz o pior
+quadro de cada região; sai com 1 se algum p90 passar de 60 (MASTER §3.4). As
+regiões vêm do `sondas.js` (as faixas largas e as metades no modelo dele) ou,
+com `--caixas`, de um JSON `{"nome": [x0, x1, y0, y1]}` em px da mídia: as
+caixas das metades como o site as desenha na pausa (`getBoundingClientRect`
+das `.hero-expansao__linha`, levadas para a mídia pelo cover do pôster). As
+caixas medidas valem mais que o modelo do `sondas.js`, que ainda põe as metades
+ao lado da tela, e não da moldura.
+
+## 6. Os números do site e quando atualizá-los
+
+O site não lê os pixels da arte: ele usa números tirados da geometria, em px da
+mídia (1280 × 720 deitado, 720 × 1280 em pé). Todos ficam no
+`ENTRADA` (`src/lib/heroEntrada.ts`) e no estado parado do `globals.css`.
+
+| Número | De onde vem | Quem confere |
+|---|---|---|
+| `ENTRADA.aparelho.deitado` `cx`, `cy`, `largura`, `altura` (640, 359,7, 295,2, 184,5) | `tela` do `node geo.js '{}' media` | `cena.test.ts` (0,1 px) |
+| `ENTRADA.aparelho.emPe` `cx`, `cy`, `largura` (360, 640, 191,2) | `tela` do `node geo.js '{}' mediaRetrato` | `cena.test.ts` |
+| `ENTRADA.aparelho.emPe.altura` (413,78) | 191,2 × 844 / 390: a proporção do celular de 390 × 844 (a arte dá 413,73) | `heroEntrada.test.ts` |
+| `moldura` (`lado`, `topo`, `queixo`, `aro`) e `pe` (150, 92) | o `aparelhoVetor.json` (`node vetor.js`): a borda da tampa ou do corpo e o fundo da `caixa` da base ou do suporte | `cena.test.ts` |
+| `deitado.tituloY` (328,4, 391,6) | o centro de cada metade na pausa a 1440 × 900: a linha 1 no vidro escuro, acima da caixa do Replay (topo em y 368 da mídia), e a linha 2 na parede, acima da caneca | `heroEntrada.test.ts` (pausa) e `AparelhoVetor.test.tsx` (estado parado); a faixa, a `sonda-rapida.js --caixas` |
+| `ENTRADA.midia` (tamanho e `object-position`) | o tamanho das câmeras `media` e `mediaRetrato` e o corte (50% 100% deitado, 50% 50% em pé) | `cena.test.ts` |
+| estado parado: `--hx-tela-s` 0,25625 e 0,32326 | a escala da tela na pausa a 1440 × 900 (295,2 × 1,25 / 1440) e a 390 × 844 (191,2 × 0,659375 / 390) | `heroEntrada.test.ts` (a escala e o centro da tela na pausa, contra `camera()`) |
+| estado parado: 0,2094141 e 0,2873472 no `--hx-tela-y` | o pé da tela em fração da largura da mídia: (720 − 359,7 − 184,5 / 2) / 1280 acima do pé do palco, e (413,78 / 2) / 720 abaixo do meio | `heroEntrada.test.ts` |
+| estado parado: 295,2, 191,2, 15,78 + 1,69 / 2, 8,75 + 2,06 / 2, 10,43 e 92 no `--hx-parado-*` | a largura da tela e a moldura do `ENTRADA.aparelho` (1 px da mídia e a meia moldura) | `AparelhoVetor.test.tsx` (o bloco CSS) |
+| estado parado: 11,47 e 5,38 na fonte do h1 | a largura das metades do título em em (688 e 323 px a 60 px, na Space Grotesk do site) | `AparelhoVetor.test.tsx`; mudam se o título ou a fonte mudarem |
+
+**A regra.** Mexeu no mundo ou numa câmera:
+
+1. renderize as quatro fotos (§1), os passes e o loop dos dois enquadramentos
+   (§5), com os pôsteres do quadro 0, e os fundos (§4);
+2. rode o `geo.js` nas duas câmeras e o `vetor.js` (§2), e copie para o
+   `ENTRADA.aparelho` os números novos (a tela, a moldura e o pé);
+3. refaça as contas do estado parado no `globals.css` com os números novos (a
+   escala e o pé da tela, as larguras da tela e da moldura) e, se a mesa
+   mudou de lugar, o `tituloY`;
+4. confira: `npx vitest run` (o `cena.test.ts` acusa o JSON velho e o
+   `ENTRADA` fora do `geo.js`; o `heroEntrada.test.ts` acusa o estado parado
+   fora da pausa), as sondas da faixa (§2 e §5) e
+   `CHECK_BROWSER_ETAPAS=entrada npm run check:browser`.
+
+Mexeu só no loop: §5 e a instalação; os números do site não mudam.
