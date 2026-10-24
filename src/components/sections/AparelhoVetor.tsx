@@ -97,7 +97,9 @@ export function AparelhoVetor() {
         </div>
       </div>
       <div className="aparelho-vetor__celular" style={moldura(celular.tela.largura, celular.corpo, celular.cores)}>
-        <div className="aparelho-vetor__corpo" />
+        <div className="aparelho-vetor__corpo">
+          <span className="aparelho-vetor__camera" />
+        </div>
         <svg className="aparelho-vetor__suporte" viewBox={suporte.caixa.join(" ")} style={caixa(suporte.caixa)} focusable="false">
           <defs>
             <radialGradient id="aparelho-vetor-contato-celular">
@@ -109,6 +111,16 @@ export function AparelhoVetor() {
             <linearGradient id="aparelho-vetor-ressalto-frente" x1={0} y1={0} x2={0} y2={1}>
               <stop offset={0} stopColor={suporte.ressalto.cores.frente} />
               <stop offset={1} stopColor={suporte.ressalto.cores.frentePe} />
+            </linearGradient>
+            {/* A luz quente da luminária na frente da aba, vinda da esquerda (crítica de arte N6 r1). */}
+            <linearGradient id="aparelho-vetor-ressalto-quente" x1={0} y1={0} x2={1} y2={0}>
+              <stop offset={0} stopColor={suporte.ressalto.cores.quente} stopOpacity={suporte.ressalto.cores.quenteA} />
+              <stop offset={0.7} stopColor={suporte.ressalto.cores.quente} stopOpacity={0} />
+            </linearGradient>
+            {/* A sombra da aba na chapa: escura junto da frente, some para a frente da chapa. */}
+            <linearGradient id="aparelho-vetor-sombra-aba" x1={0} y1={0} x2={0} y2={1}>
+              <stop offset={0} stopColor={suporte.cores.contato} />
+              <stop offset={1} stopColor={suporte.cores.contato} stopOpacity={0} />
             </linearGradient>
             {ladrilhos("aparelho-vetor-grao-suporte", grao)}
             <clipPath id="aparelho-vetor-contorno-suporte">
@@ -126,13 +138,19 @@ export function AparelhoVetor() {
             <path d={suporte.chapa.topo} fill={suporte.chapa.cores.topo} />
             {linha(undefined, "aparelho-vetor-chapa-quina", suporte.chapa.quina)}
           </g>
-          {/* O ressalto, à frente da borda de baixo do celular. */}
+          <path
+            className="aparelho-vetor__sombra-aba"
+            d={suporte.ressalto.sombraAba}
+            fill="url(#aparelho-vetor-sombra-aba)"
+          />
+          {/* O ressalto, a aba que abraça a borda de baixo do celular, à frente dela. */}
           <g className="aparelho-vetor__ressalto">
             <path
               className="aparelho-vetor__lateral"
               d={suporte.ressalto.frente}
               fill="url(#aparelho-vetor-ressalto-frente)"
             />
+            <path d={suporte.ressalto.frente} fill="url(#aparelho-vetor-ressalto-quente)" />
             <path d={suporte.ressalto.topo} fill={suporte.ressalto.cores.topo} />
             {linha(undefined, "aparelho-vetor-ressalto-quina", suporte.ressalto.quina)}
           </g>

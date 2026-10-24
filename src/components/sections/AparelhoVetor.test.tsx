@@ -104,6 +104,45 @@ describe("<AparelhoVetor />", () => {
     expect(largura(frente)).toBeGreaterThan(notebook.tela.largura + 2 * notebook.tampa.lado);
   });
 
+  it("o celular (crítica de arte N6 r1): o furo da câmera na borda de cima, como no notebook", () => {
+    const host = montar();
+    expect(host.querySelector(".aparelho-vetor__corpo > .aparelho-vetor__camera")).not.toBeNull();
+    const { corpo } = geometria.celular as { corpo: { topo: number; camera?: number } };
+    // discreto: um quarto da borda de cima, como o do notebook (3,16 px numa borda de 12,12)
+    expect(corpo.camera).toBeGreaterThan(0.15 * corpo.topo);
+    expect(corpo.camera).toBeLessThan(0.35 * corpo.topo);
+    const estilo = host.querySelector<HTMLElement>(".aparelho-vetor__celular")?.getAttribute("style") ?? "";
+    expect(estilo).toContain(`--av-camera:${corpo.camera}`);
+  });
+
+  it("a aba do suporte abraça o pé do celular: a frente sobe sobre o queixo, sem chegar ao pé da tela", () => {
+    const { corpo, suporte } = geometria.celular;
+    const yDe = (d: string) => pontos(d).map(([, y]) => y);
+    const altoDaFrente = Math.min(...yDe(suporte.ressalto.frente));
+    // o queixo vai do pé da tela (y 0) ao pé do corpo (y = queixo): a aba cobre ao menos 40% dele
+    expect(altoDaFrente).toBeLessThanOrEqual(0.6 * corpo.queixo);
+    // e nem a frente nem o topo dela passam do pé da tela (a tela, por cima de tudo, a cortaria)
+    expect(altoDaFrente).toBeGreaterThan(0);
+    expect(Math.min(...yDe(suporte.ressalto.topo))).toBeGreaterThanOrEqual(0);
+  });
+
+  it("a frente da aba recebe a luz quente da luminária, da esquerda, e deixa uma sombra macia na chapa", () => {
+    const host = montar();
+    const { ressalto } = geometria.celular.suporte as { ressalto: { frente: string; cores: { quente?: string } } };
+    const quente = host.querySelector("#aparelho-vetor-ressalto-quente");
+    expect(quente?.tagName.toLowerCase()).toBe("lineargradient");
+    // da esquerda para a direita
+    expect([quente?.getAttribute("x1"), quente?.getAttribute("x2"), quente?.getAttribute("y2")]).toEqual(["0", "1", "0"]);
+    const paradas = [...(quente?.querySelectorAll("stop") ?? [])];
+    expect(paradas[0]?.getAttribute("stop-color")).toBe(ressalto.cores.quente);
+    expect(Number(paradas.at(-1)?.getAttribute("stop-opacity"))).toBe(0);
+    const camada = host.querySelector('.aparelho-vetor__ressalto [fill="url(#aparelho-vetor-ressalto-quente)"]');
+    expect(camada?.getAttribute("d")).toBe(ressalto.frente);
+    // a sombra da aba na chapa: uma faixa logo abaixo da frente, que some para a frente
+    const sombra = host.querySelector(".aparelho-vetor__suporte .aparelho-vetor__sombra-aba");
+    expect(sombra?.getAttribute("fill")).toBe("url(#aparelho-vetor-sombra-aba)");
+  });
+
   it("a tela do vetor é a do ENTRADA (a escala do furo é a largura da tela da arte)", () => {
     expect(geometria.notebook.tela.largura).toBe(ENTRADA.aparelho.deitado.largura);
     expect(geometria.celular.tela.largura).toBe(ENTRADA.aparelho.emPe.largura);
@@ -216,7 +255,13 @@ describe('globals.css, bloco Hero "entrada"', () => {
     expect(declaracao(parado, "--hx-parado-folga")).toBe(
       `max(var(--hx-titulo-folga), ${2 * ENTRADA.tituloFolgaRelativa} * var(--hx-parado-moldura))`,
     );
-    expect(declaracao(corpo(".hero-expansao--entrada"), "--hx-titulo-margem")).toBe(`${ENTRADA.tituloMargem}px`);
+    // Deitado, ao lado do notebook, a folga e a margem de quem fica de lado; em pé, as de cima e de baixo do celular.
+    expect(declaracao(corpo(".hero-expansao--entrada"), "--hx-titulo-folga")).toBe(`${ENTRADA.tituloFolgaLado}px`);
+    expect(declaracao(corpo(".hero-expansao--entrada"), "--hx-titulo-margem")).toBe(`${ENTRADA.tituloMargemLado}px`);
+    const cartaoEmPe = bloco.slice(bloco.indexOf("@media (orientation: portrait) {\n  .hero-expansao--entrada {\n"));
+    const corpoEmPe = cartaoEmPe.slice(0, cartaoEmPe.indexOf("}"));
+    expect(declaracao(corpoEmPe, "--hx-titulo-folga")).toBe(`${ENTRADA.tituloFolga}px`);
+    expect(declaracao(corpoEmPe, "--hx-titulo-margem")).toBe(`${ENTRADA.tituloMargem}px`);
     // A linha 1 termina e a 2 começa a folga da moldura; nunca passam da margem do palco.
     expect(declaracao(parado, "--hx-linha1-x")).toBe(
       "max( calc(-1 * (var(--hx-parado-moldura) + var(--hx-parado-folga)) - 50%), calc(-50cqw + 50% + var(--hx-titulo-margem)) ) !important",
@@ -303,6 +348,37 @@ describe('globals.css, bloco Hero "entrada"', () => {
     expect(cartao).toContain("--hx-titulo-s: 1;");
     expect(cartao).toContain("--hx-linha1-y: 0px;");
     expect(cartao).toContain("--hx-linha2-y: 0px;");
+  });
+
+  it("no cartão, um véu do navy da tela apaga o bloco de chamada atrás do h1 e some até o fim da expansão (crítica de arte N6 r1)", () => {
+    // Texto sobre texto no primeiro quadro: o h1 passava em cima da chamada e dos botões em miniatura.
+    const veu = corpo(
+      '.hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"]) .hero-expansao__conteudo::after',
+    );
+    expect(veu).toContain('content: "";');
+    expect(veu).toContain("inset: 0;");
+    expect(veu).toContain("background-color: var(--surface);");
+    // 0,9 no cartão (e = 0), igual até e = 0,65 (P ≈ 0,35) e 0 no fim da expansão (e = 1).
+    expect(veu).toContain("opacity: calc(0.9 * min(1, (1 - var(--hx-e)) / 0.35));");
+    expect(veu).toContain("pointer-events: none;");
+    // Só opacidade: nada de display nem visibility, para o leitor de tela seguir lendo o bloco (§5).
+    expect(veu).not.toMatch(/display|visibility/);
+  });
+
+  it("no cartão, o fundo de fora escurece na faixa do h1 (MASTER §3.4), por cima do degradê do expansao", () => {
+    const fundo = corpo(".hero-expansao--entrada .hero-expansao__fundo::after");
+    expect(fundo).toMatch(/radial-gradient\( ellipse min\(40cqw, 520px\) min\(22cqw, 180px\) at 50% 50%,/);
+    // O degradê do pé, o do expansao, continua por baixo.
+    expect(fundo).toContain("linear-gradient( to bottom, rgb(8 18 29 / 0.1) 0%, rgb(8 18 29 / 0.1) 72%, var(--color-navy-950) 100% )");
+  });
+
+  it("o corpo do celular tem um filete de luz fria na borda junto da tela (o brilho dela), sem cobrir a tela", () => {
+    const filete = corpo(".hero-expansao--entrada .aparelho-vetor__corpo::after");
+    expect(filete).toContain('content: "";');
+    // em volta do furo, por fora dele: a tela (por cima) não o cobre
+    expect(filete).toContain("inset: calc(-0.8 * var(--av-px));");
+    expect(filete).toContain("border: calc(0.8 * var(--av-px)) solid");
+    expect(filete).toContain("pointer-events: none;");
   });
 
   it("não usa 100vw (com a barra de rolagem clássica, passa da janela útil) nem imagem no aparelho", () => {

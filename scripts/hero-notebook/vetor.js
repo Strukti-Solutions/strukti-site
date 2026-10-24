@@ -143,6 +143,9 @@ function celular() {
   const pxCm = (dir - esq) / c.w;
   const corpo = { lado: r2(-t.largura / 2 - esq), topo: r2(-t.altura - topo), queixo: r2(pe), raio: r2(c.r * pxCm),
     aro: r2(Math.max(1, cam.S(g.centroTela) * 0.07)) };
+  // o furo da câmera (crítica de arte N6 r1: sem ele, o corpo era um retângulo preto genérico), na proporção do do
+  // notebook: um quarto da borda de cima
+  corpo.camera = r2(0.24 * corpo.topo);
   const aro = mix(F.light(ALU, g.at(0, g.h, 0), g.nrm, { amb: 1.2 }), C.n400, 0.3);
 
   // a chapa na mesa: a lateral e o tampo, com a quina da frente pegando a luz
@@ -151,7 +154,7 @@ function celular() {
   const chapaLateral = F.hull(bot.concat(tp));
   // um bloco (face da frente e de cima), do tampo da chapa até y1. Só o ressalto aparece: a prateleira tem a mesma frente
   // (z0) e fica inteira atrás dele.
-  const bloco = (x0, x1, z0, z1, y1) => {
+  const bloco = (x0, x1, z0, z1, y1, extra = {}) => {
     const y0 = ch.h;
     return {
       frente: d([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]].map(P)),
@@ -159,10 +162,16 @@ function celular() {
       quina: quina(P([x0, y1, z0]), P([x1, y1, z0]), Math.max(1, cam.S([x0, y1, z0]) * 0.08), cor(mix(C.n300, C.lampW, 0.5), 0.5), cor(C.n400, 0.18)),
       // a frente do ressalto com volume (ajuste de arte r1: chapada, parecia um furo): um degradê do navy-800, no alto,
       // que pega a luz, ao navy-950 junto da chapa
-      cores: { frente: cor(NAVY_800), frentePe: cor(NAVY_950), topo: cor(F.light(ALU, [(x0 + x1) / 2, y1, (z0 + z1) / 2], [0, 1, 0])) }
+      cores: Object.assign({ frente: cor(NAVY_800), frentePe: cor(NAVY_950), topo: cor(F.light(ALU, [(x0 + x1) / 2, y1, (z0 + z1) / 2], [0, 1, 0])) }, extra)
     };
   };
   const pr = sg.prateleira, rs = sg.ressalto;
+  // A aba (crítica de arte N6 r1: o celular só pousava em cima do ressalto, sem nada que o segurasse): a frente do
+  // ressalto sobe à frente do queixo do celular até ABA dele abaixo do pé da tela, e fica mais fina (`abaEsp`, cm), para o
+  // topo dela não chegar à tela (que fica por cima de tudo no site). O alto, em cm, sai da projeção (linear em y aqui).
+  const ABA = 0.55, abaEsp = 0.15;
+  const yNaMidia = y => P([0, y, rs.z0])[1];
+  const altoDaAba = rs.y1 + (ABA * corpo.queixo - yNaMidia(rs.y1)) / (yNaMidia(rs.y1 + 1) - yNaMidia(rs.y1));
   const e1 = P(frc(-ch.w / 2 + ch.r, ch.h, -ch.d / 2)), e2 = P(frc(ch.w / 2 - ch.r, ch.h, -ch.d / 2));
   const chao = P(frc(0, 0, -ch.d / 2)), chaoEsq = P(frc(-ch.w / 2, 0, -ch.d / 2)), sCm = cam.S(frc(0, 0, -ch.d / 2));
   const contato = elipse(chao[0], chao[1], (chaoEsq[0] - chao[0]) * -1.03, 0.3 * sCm);
@@ -180,7 +189,11 @@ function celular() {
         quina: quina(e1, e2, Math.max(1, cam.S(frc(0, ch.h, -ch.d / 2)) * 0.1), cor(mix(C.n300, C.lampW, 0.5), 0.36), cor(C.n400, 0.14)),
         cores: { lateral: cor(lado(frc(0, ch.h / 2, -ch.d / 2), [0, 0, -1])), topo: cor(F.light(ALU, [ch.x, ch.h, ch.z], [0, 1, 0])) }
       },
-      ressalto: bloco(pr.x0, pr.x1, rs.z0, rs.z1, rs.y1),
+      // a frente pega a luz quente da luminária, da esquerda (`quente`, um degradê por cima do da frente), e a aba deixa
+      // uma sombra macia na chapa, logo abaixo da frente (`sombraAba`)
+      ressalto: Object.assign(bloco(pr.x0, pr.x1, rs.z0, rs.z0 + abaEsp, altoDaAba, { quente: cor(C.lampW), quenteA: 0.16 }), {
+        sombraAba: d([[pr.x0, ch.h, rs.z0], [pr.x1, ch.h, rs.z0], [pr.x1, ch.h, rs.z0 - 0.5], [pr.x0, ch.h, rs.z0 - 0.5]].map(P))
+      }),
       // o suporte vem depois do corpo no site (o ressalto fica à frente da borda de baixo do celular), mas a chapa fica
       // atrás dele: ela é recortada pelo corpo, que sobe do pé (`queixo`) com os cantos de baixo arredondados (`raio`)
       semCorpo: semCorpo(-t.largura / 2 - corpo.lado, t.largura / 2 + corpo.lado, corpo.queixo, corpo.raio, sCaixa),

@@ -4488,10 +4488,12 @@ textarea.field__input {
   --hx-palco-h: 100vh;
   /* A largura da mídia da sala com cover (1280 × 720) no palco inteiro. */
   --hx-midia-largura: max(100cqw, var(--hx-palco-h) * 16 / 9);
-  /* ENTRADA.tituloFolga: das metades do título até a moldura do aparelho;
-     ENTRADA.tituloMargem: delas até a borda do palco. */
-  --hx-titulo-folga: 24px;
-  --hx-titulo-margem: 16px;
+  /* Das metades do título até a moldura do aparelho e delas até a borda do
+     palco: deitado, ao lado do notebook, ENTRADA.tituloFolgaLado e
+     ENTRADA.tituloMargemLado; em pé (abaixo), ENTRADA.tituloFolga e
+     ENTRADA.tituloMargem. */
+  --hx-titulo-folga: 40px;
+  --hx-titulo-margem: 48px;
   --hx-e: 0;
   --hx-k: 0;
   --hx-quadro-w: 300px;
@@ -4530,6 +4532,8 @@ textarea.field__input {
    no meio do palco; a escala é a de 390 px. */
 @media (orientation: portrait) {
   .hero-expansao--entrada {
+    --hx-titulo-folga: 24px;
+    --hx-titulo-margem: 16px;
     --hx-midia-largura: max(100cqw, var(--hx-palco-h) * 9 / 16);
     --hx-midia-pos: 50% 50%;
     --hx-tela-s: 0.20427;
@@ -4562,6 +4566,27 @@ textarea.field__input {
 
 .hero-expansao--entrada .hero-expansao__fundo {
   opacity: calc(1 - var(--hx-e));
+}
+
+/* O fundo de fora traz o aparelho e os objetos renderizados (a caixa do
+   Replay com o LED, a caneca com o vapor): numa janela larga eles caem
+   atrás do h1 do cartão. Um véu local escurece a faixa do título (MASTER
+   §3.4: a faixa fica escura), centrado nele (o h1 fica no meio do palco), e
+   some com o fundo. Por baixo, o degradê do pé, o do expansao. */
+.hero-expansao--entrada .hero-expansao__fundo::after {
+  background:
+    radial-gradient(
+      ellipse min(40cqw, 520px) min(22cqw, 180px) at 50% 50%,
+      rgb(8 18 29 / 0.8) 0%,
+      rgb(8 18 29 / 0.72) 60%,
+      rgb(8 18 29 / 0) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(8 18 29 / 0.1) 0%,
+      rgb(8 18 29 / 0.1) 72%,
+      var(--color-navy-950) 100%
+    );
 }
 
 /* A sombra clareia na expansão e volta um pouco na aproximação (a sala
@@ -4686,6 +4711,22 @@ textarea.field__input {
   clip-path: inset(0 0 calc(100% - var(--hx-palco-h)) 0);
 }
 
+/* No cartão (P = 0) a tela já mostra o bloco de chamada em miniatura, bem
+   atrás do h1: texto sobre texto no primeiro quadro (crítica de arte N6 r1).
+   Um véu do navy da tela a apaga no cartão (0,9), fica até e ≈ 0,65 (P ≈
+   0,35) e some no fim da expansão: a tela "acende" enquanto o quadro cresce.
+   Só opacidade, num pseudo-elemento: o leitor de tela segue lendo o bloco
+   (§5). Na pausa, na aproximação e solta, e = 1: o véu é 0. */
+.hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"]) .hero-expansao__conteudo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: var(--surface);
+  opacity: calc(0.9 * min(1, (1 - var(--hx-e)) / 0.35));
+  pointer-events: none;
+}
+
 /* Expandida, é a página (data-expanded vira "true" no mesmo quadro em que
    a página rola até o topo da tela). */
 .hero-expansao--entrada[data-expanded="true"] .hero-expansao__conteudo {
@@ -4760,6 +4801,18 @@ textarea.field__input {
     var(--color-navy-900);
   box-shadow: 0 0 0 calc(0.25 * var(--av-px)) rgb(42 71 102 / 0.6);
   translate: -50% -50%;
+}
+
+/* O filete de luz fria do celular (crítica de arte N6 r1): a quina da borda
+   junto da tela pega o brilho dela. Fica em volta do furo, por fora dele
+   (a tela, por cima, não o cobre), com o navy claro do brilho da tela. */
+.hero-expansao--entrada .aparelho-vetor__corpo::after {
+  content: "";
+  position: absolute;
+  inset: calc(-0.8 * var(--av-px));
+  border: calc(0.8 * var(--av-px)) solid rgb(108 148 196 / 0.3);
+  border-radius: calc(2 * var(--av-px));
+  pointer-events: none;
 }
 
 /* A base com o teclado e o suporte: SVG presos ao pé da tela, no viewBox

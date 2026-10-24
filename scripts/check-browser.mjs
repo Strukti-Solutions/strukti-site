@@ -80,8 +80,8 @@
 // clássica, a 1366×768 com a tela a 125% (deviceScaleFactor 1,25) e a
 // 390×844 em pé, com toque:
 //   1. sem JavaScript (e com reduced motion): a pose da pausa em tela cheia,
-//      o h1 inteiro à vista e fora da moldura (a ENTRADA.tituloFolga dela,
-//      como na pausa), a tela (o bloco de chamada) no fluxo logo abaixo
+//      o h1 inteiro à vista e fora da moldura (a ENTRADA.tituloFolga dela
+//      em pé e a tituloFolgaLado deitado, como na pausa), a tela (o bloco de chamada) no fluxo logo abaixo
 //      da cena, sem transform, com os botões clicáveis, e a altura do hero
 //      igual à com JavaScript (±2 px);
 //   2. a roda até expandir: o progresso só sobe, o palco fica preso, sem
@@ -89,7 +89,8 @@
 //      E e E + Pa (a pausa: --hx-e = 1 e --hx-k = 0), parada (±1 px), com
 //      as metades do título inteiras na janela útil (a ENTRADA.tituloMargem
 //      da borda, ±1 px) e fora da moldura, a ENTRADA.tituloFolga dela
-//      (deitado, dos lados; em pé, acima e abaixo do celular);
+//      (em pé, acima e abaixo do celular; deitado, dos lados, com a
+//      tituloMargemLado e a tituloFolgaLado);
 //   3. no quadro da liberação (lido no MutationObserver de data-expanded): a
 //      tela igual à janela útil {0, 0, clientWidth, innerHeight} (±1 px; uma
 //      tela mais alta que a janela começa nela e passa do pé) e scrollY
@@ -300,8 +301,10 @@ const ENT_WHEEL_BUDGET = 60;
 const ENT_RESIZE_TO = { width: 1100, height: 900 };
 // O Tab até um botão da tela completa a entrada em menos disto (Q21).
 const ENT_TAB_MS = 500;
-// As metades do título na pausa: a folga até a tela e a margem até a borda
-// da janela útil, lidas do ENTRADA (src/lib/heroEntrada.ts), a fonte única.
+// As metades do título na pausa: a folga até a moldura e a margem até a
+// borda da janela útil, lidas do ENTRADA (src/lib/heroEntrada.ts), a fonte
+// única. Em pé, acima e abaixo do celular; deitado, ao lado do notebook
+// (as "Lado", maiores: crítica de arte N6 r1).
 const entradaNumero = (nome) => {
   const fonte = readFileSync(new URL("../src/lib/heroEntrada.ts", import.meta.url), "utf8");
   const valor = Number(fonte.match(new RegExp(`\\b${nome}: ([\\d.]+),`))?.[1]);
@@ -310,6 +313,8 @@ const entradaNumero = (nome) => {
 };
 const ENT_TITULO_FOLGA = entradaNumero("tituloFolga");
 const ENT_TITULO_MARGEM = entradaNumero("tituloMargem");
+const ENT_TITULO_FOLGA_LADO = entradaNumero("tituloFolgaLado");
+const ENT_TITULO_MARGEM_LADO = entradaNumero("tituloMargemLado");
 // Produto que o passo de âncoras do "expansao" escolhe no menu "Produtos ▾"
 // da barra (catálogo, §3.5): o link é #slug e a página para no topo da seção
 // #produtos (§3.4), não no cartão.
@@ -2156,9 +2161,10 @@ const entStaticExpr = (scriptsOn) => `(async () => {
     // media query).
     const [l1, l2] = s.linhas;
     const mo = s.moldura;
-    const folga = ${ENT_TITULO_FOLGA};
+    const emPe = matchMedia("(orientation: portrait)").matches;
+    const folga = emPe ? ${ENT_TITULO_FOLGA} : ${ENT_TITULO_FOLGA_LADO};
     if (l1 && l2 && mo) {
-      if (matchMedia("(orientation: portrait)").matches) {
+      if (emPe) {
         if (l1.bottom > mo.top - folga + 1) problems.push("a linha 1 do título termina em y " + px(l1.bottom) + ", a menos de " + folga + "px da moldura (y " + px(mo.top) + ")");
         if (l2.top < mo.bottom + folga - 1) problems.push("a linha 2 do título começa em y " + px(l2.top) + ", a menos de " + folga + "px da moldura (y " + px(mo.bottom) + ")");
       } else {
@@ -2274,24 +2280,27 @@ function entProblemasDoTitulo(s) {
   const [l1, l2] = s.linhas;
   const m = s.moldura;
   const problemas = [];
+  const emPe = s.orientacao === "em-pe";
+  const margem = emPe ? ENT_TITULO_MARGEM : ENT_TITULO_MARGEM_LADO;
+  const folga = emPe ? ENT_TITULO_FOLGA : ENT_TITULO_FOLGA_LADO;
   for (const [nome, l] of [["linha 1", l1], ["linha 2", l2]]) {
-    if (l.left < ENT_TITULO_MARGEM - 1 || l.right > s.cw - ENT_TITULO_MARGEM + 1) {
-      problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${ENT_TITULO_MARGEM}px da janela (${s.cw})`);
+    if (l.left < margem - 1 || l.right > s.cw - margem + 1) {
+      problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${margem}px da janela (${s.cw})`);
     }
   }
-  if (s.orientacao === "em-pe") {
-    if (l1.bottom > m.top - ENT_TITULO_FOLGA + 1) {
-      problemas.push(`a linha 1 termina em y ${l1.bottom.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (y ${m.top.toFixed(1)})`);
+  if (emPe) {
+    if (l1.bottom > m.top - folga + 1) {
+      problemas.push(`a linha 1 termina em y ${l1.bottom.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.top.toFixed(1)})`);
     }
-    if (l2.top < m.bottom + ENT_TITULO_FOLGA - 1) {
-      problemas.push(`a linha 2 começa em y ${l2.top.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (y ${m.bottom.toFixed(1)})`);
+    if (l2.top < m.bottom + folga - 1) {
+      problemas.push(`a linha 2 começa em y ${l2.top.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.bottom.toFixed(1)})`);
     }
   } else {
-    if (l1.right > m.left - ENT_TITULO_FOLGA + 1) {
-      problemas.push(`a linha 1 termina em x ${l1.right.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (x ${m.left.toFixed(1)})`);
+    if (l1.right > m.left - folga + 1) {
+      problemas.push(`a linha 1 termina em x ${l1.right.toFixed(1)}, a menos de ${folga}px da moldura (x ${m.left.toFixed(1)})`);
     }
-    if (l2.left < m.right + ENT_TITULO_FOLGA - 1) {
-      problemas.push(`a linha 2 começa em x ${l2.left.toFixed(1)}, a menos de ${ENT_TITULO_FOLGA}px da moldura (x ${m.right.toFixed(1)})`);
+    if (l2.left < m.right + folga - 1) {
+      problemas.push(`a linha 2 começa em x ${l2.left.toFixed(1)}, a menos de ${folga}px da moldura (x ${m.right.toFixed(1)})`);
     }
   }
   return problemas;

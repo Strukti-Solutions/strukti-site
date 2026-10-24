@@ -43,8 +43,17 @@ export const ENTRADA = {
    * mínima: numa janela larga (21:9) o aparelho cresce e a folga acompanha.
    */
   tituloFolgaRelativa: 0.04,
-  /** Margem, em px, entre cada metade do título e a borda da janela útil na pausa. */
+  /** Margem, em px, entre cada metade do título e a borda da janela útil na pausa (em pé). */
   tituloMargem: 16,
+  /**
+   * Deitado, as metades ficam ao lado do notebook, e a folga e a margem
+   * crescem (crítica de arte N6 r1): a 16 px da borda e a 24 px da moldura,
+   * a linha 1 ficava espremida entre a janela e o aparelho. A margem é a
+   * maior entre 48 px e o gutter da página (40 px no desktop); a folga até
+   * a moldura, 40 px. A escala cai para cerca de 0,6 a 1366 e 1440.
+   */
+  tituloFolgaLado: 40,
+  tituloMargemLado: 48,
   /**
    * A mídia da sala de cada enquadramento, com o `object-position` do cover
    * (`--hx-midia-pos`). Deitado, a do notebook, 1280 × 720, cortada por
@@ -273,13 +282,14 @@ export type LayoutDoTitulo = { centros: [number, number]; alturas: [number, numb
  * As metades do título na pausa: o deslocamento X e Y (px) de cada uma e a
  * escala das duas. No layout cada linha é centrada na janela, com o centro
  * vertical em `layout.centros`. A folga até a moldura do aparelho é a maior
- * entre `tituloFolga` e `tituloFolgaRelativa` da largura da moldura.
+ * entre a fixa (`tituloFolgaLado` deitado, `tituloFolga` em pé) e
+ * `tituloFolgaRelativa` da largura da moldura.
  *
  * - **Deitado (Q19):** as metades ladeiam a moldura do notebook: a linha 1
  *   termina a folga à esquerda dela e a linha 2 começa a folga à direita. A
  *   escala encolhe as duas por igual em volta dessas bordas (o CSS põe a
  *   origem do transform na direita da linha 1 e na esquerda da linha 2), para
- *   cada uma caber entre a moldura e a janela útil (`tituloMargem`), com o
+ *   cada uma caber entre a moldura e a janela útil (`tituloMargemLado`), com o
  *   pior dos dois lados. Na altura, o centro de cada uma vai para o
  *   `tituloY` da mídia (a linha 1 no vidro escuro da janela, acima da caixa
  *   do Replay), em qualquer proporção.
@@ -299,9 +309,9 @@ export function posicaoDoTitulo(
   layout: LayoutDoTitulo = { centros: [0, 0], alturas: [0, 0] },
   cena: Cena = cenaDe(v),
 ): { x: [number, number]; y: [number, number]; escala: number } {
-  const { tituloFolga, tituloFolgaRelativa, tituloMargem } = ENTRADA;
+  const { tituloFolga, tituloFolgaLado, tituloFolgaRelativa, tituloMargem, tituloMargemLado } = ENTRADA;
   const moldura = molduraNaPausa(v, cena);
-  const folga = Math.max(tituloFolga, tituloFolgaRelativa * (moldura.direita - moldura.esquerda));
+  const folga = Math.max(v.emPe ? tituloFolga : tituloFolgaLado, tituloFolgaRelativa * (moldura.direita - moldura.esquerda));
   const [larguraLinha1, larguraLinha2] = larguras;
   const { centros, alturas } = layout;
   const cabe = (livre: number, largura: number) => (largura > 0 ? livre / largura : 1);
@@ -321,8 +331,8 @@ export function posicaoDoTitulo(
     };
   }
 
-  const livreEsquerda = moldura.esquerda - folga - tituloMargem;
-  const livreDireita = v.w - moldura.direita - folga - tituloMargem;
+  const livreEsquerda = moldura.esquerda - folga - tituloMargemLado;
+  const livreDireita = v.w - moldura.direita - folga - tituloMargemLado;
   const escala = Math.min(1, cabe(livreEsquerda, larguraLinha1), cabe(livreDireita, larguraLinha2));
   const alvo = cena.aparelho.tituloY;
   return {

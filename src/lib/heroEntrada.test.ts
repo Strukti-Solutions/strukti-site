@@ -319,9 +319,13 @@ function layoutDoTitulo(v: Viewport, altura = ALTURA_60PX) {
   };
 }
 
-/** A folga entre as metades e a moldura: a maior entre a fixa e 4% da largura da moldura. */
-function folgaDa(m: { esquerda: number; direita: number }) {
-  return Math.max(ENTRADA.tituloFolga, ENTRADA.tituloFolgaRelativa * (m.direita - m.esquerda));
+/**
+ * A folga entre as metades e a moldura: a maior entre a fixa e 4% da largura da moldura. Deitado, a fixa é a de
+ * quem fica ao lado do notebook (`tituloFolgaLado`); em pé, a de cima e de baixo do celular (`tituloFolga`).
+ */
+function folgaDa(m: { esquerda: number; direita: number }, emPe = false) {
+  const fixa = emPe ? ENTRADA.tituloFolga : ENTRADA.tituloFolgaLado;
+  return Math.max(fixa, ENTRADA.tituloFolgaRelativa * (m.direita - m.esquerda));
 }
 
 const DEITADOS: Viewport[] = [
@@ -370,30 +374,48 @@ describe("posicaoDoTitulo deitado: as metades ladeiam a moldura (Q19)", () => {
     const { linha1, linha2, escala } = metadesNaPausa(v, TITULO_60PX);
     const m = molduraNaPausa(v);
     const folga = folgaDa(m);
-    expect(folga).toBeGreaterThanOrEqual(ENTRADA.tituloFolga);
+    expect(folga).toBeGreaterThanOrEqual(ENTRADA.tituloFolgaLado);
     expect(linha1.right).toBeCloseTo(m.esquerda - folga, 6);
     expect(linha2.left).toBeCloseTo(m.direita + folga, 6);
     expect(escala).toBeLessThanOrEqual(1);
     for (const linha of [linha1, linha2]) {
-      expect(linha.left).toBeGreaterThanOrEqual(ENTRADA.tituloMargem - 1e-6);
-      expect(linha.right).toBeLessThanOrEqual(v.w - ENTRADA.tituloMargem + 1e-6);
+      expect(linha.left).toBeGreaterThanOrEqual(ENTRADA.tituloMargemLado - 1e-6);
+      expect(linha.right).toBeLessThanOrEqual(v.w - ENTRADA.tituloMargemLado + 1e-6);
     }
   });
 
-  it("a 21:9 a folga cresce com a moldura (4% da largura dela), acima da fixa", () => {
-    const m = molduraNaPausa({ w: 2560, h: 1080, emPe: false });
+  it("ao lado do notebook, a margem até a borda acompanha o gutter da página (48 px) e a folga até a moldura é de 40 px (crítica de arte N6 r1)", () => {
+    // A 16 px da borda, a linha 1 ficava espremida entre a janela e o aparelho; o gutter da página é de 40 px.
+    expect(ENTRADA.tituloMargemLado).toBe(48);
+    expect(ENTRADA.tituloFolgaLado).toBe(40);
+    // Em pé, as metades seguem acima e abaixo do celular com a folga e a margem de antes.
+    expect(ENTRADA.tituloFolga).toBe(24);
+    expect(ENTRADA.tituloMargem).toBe(16);
+    for (const v of [NOTEBOOK_GRANDE, { w: 1366, h: 768, emPe: false }]) {
+      const { linha1, linha2, escala } = metadesNaPausa(v, TITULO_60PX);
+      const m = molduraNaPausa(v);
+      expect(linha1.left).toBeGreaterThanOrEqual(48 - 1e-6);
+      expect(m.esquerda - linha1.right).toBeGreaterThanOrEqual(40 - 1e-6);
+      expect(linha2.left - m.direita).toBeGreaterThanOrEqual(40 - 1e-6);
+      // Na prática, cerca de 0,6 a 1366 e 1440 (era 0,68 e 0,69).
+      expect(escala).toBeGreaterThan(0.58);
+      expect(escala).toBeLessThan(0.64);
+    }
+  });
+
+  it("numa janela muito larga a folga cresce com a moldura (4% da largura dela), acima da fixa", () => {
+    const m = molduraNaPausa({ w: 5120, h: 2160, emPe: false });
     expect(ENTRADA.tituloFolgaRelativa).toBe(0.04);
     expect(folgaDa(m)).toBeCloseTo(0.04 * (m.direita - m.esquerda), 9);
-    expect(folgaDa(m)).toBeGreaterThan(ENTRADA.tituloFolga);
+    expect(folgaDa(m)).toBeGreaterThan(ENTRADA.tituloFolgaLado);
   });
 
   it("a escala é min(1, espaço livre ÷ largura), com o pior dos dois lados", () => {
     const v = NOTEBOOK_GRANDE;
     const m = molduraNaPausa(v);
     const folga = folgaDa(m);
-    const livreEsq = m.esquerda - folga - ENTRADA.tituloMargem;
-    const livreDir = v.w - m.direita - folga - ENTRADA.tituloMargem;
-    expect(ENTRADA.tituloMargem).toBe(16);
+    const livreEsq = m.esquerda - folga - ENTRADA.tituloMargemLado;
+    const livreDir = v.w - m.direita - folga - ENTRADA.tituloMargemLado;
     expect(posicaoDoTitulo(v, TITULO_60PX).escala).toBeCloseTo(Math.min(1, livreEsq / 688, livreDir / 323), 9);
     expect(posicaoDoTitulo(v, [100, 900]).escala).toBeCloseTo(livreDir / 900, 9);
     expect(posicaoDoTitulo(v, [300, 200]).escala).toBe(1);
@@ -436,7 +458,7 @@ describe("posicaoDoTitulo em pé: as metades acima e abaixo do celular", () => {
       const { x, escala } = posicaoDoTitulo(v, larguras, medida);
       const { linha1, linha2 } = metadesNaPausa(v, larguras, medida);
       const m = molduraNaPausa(v);
-      const folga = folgaDa(m);
+      const folga = folgaDa(m, true);
       expect(x).toEqual([0, 0]);
       expect(escala).toBe(1);
       expect(linha1.bottom).toBeCloseTo(m.topo - folga, 6);
