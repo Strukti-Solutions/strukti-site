@@ -6,9 +6,13 @@ const loop = require('./loop.js');
 const cam = process.argv[2] || 'media';
 const q = loop.quadro(cam);
 const P = __dirname + '/' + q.pasta + '/'; const DUR = '10.04';
-const inputs = ['A.png', 'T.png', 'city2x.png', 'E.png', 'Lp.png', 'strip.png', 'mask.png'];
+// as entradas vêm do loop.js: as placas (imagens paradas, repetidas) e o vapor (deitado, a faixa e a máscara; em pé,
+// a coluna gerada, um vídeo de 251 quadros: `node loop.js vapor mediaRetrato`)
 const args = ['-y', '-v', 'error'];
-for (const f of inputs) args.push('-framerate', '25', '-loop', '1', '-t', DUR, '-i', P + f);
+for (const f of q.entradas) {
+  if (/\.mkv$/.test(f)) args.push('-i', P + f);
+  else args.push('-framerate', '25', '-loop', '1', '-t', DUR, '-i', P + f);
+}
 fs.writeFileSync(P + 'graph.txt', loop.grafo(cam));
 args.push('-/filter_complex', P + 'graph.txt', '-map', '[out]', '-c:v', 'ffv1', '-level', '3', P + 'master.mkv');
 const t0 = Date.now(); execFileSync('ffmpeg', args, { stdio: 'inherit' }); console.log(cam, 'composite', ((Date.now() - t0) / 1000).toFixed(1) + 's');

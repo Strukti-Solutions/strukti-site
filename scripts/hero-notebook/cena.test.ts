@@ -599,6 +599,8 @@ describe("cena do hero notebook", () => {
         "composite2.js",
         "encode.sh",
         "vqa.sh",
+        // a faixa do título quadro a quadro (N6)
+        "sonda-rapida.js",
       ]),
     );
     for (const f of fontes) expect(readFileSync(join(PASTA, f), "utf8")).not.toMatch(/hero-expansao/);
@@ -703,15 +705,37 @@ describe("cena do hero notebook", () => {
       pasta: string;
       mosaico: [number, number];
       cidade: { pass: string; W: number; H: number; F: number; shiftY: number; pxk: number };
-      vapor: { x: number; y: number; w: number; h: number; desfoque: number; fase: number; opacidade: number };
+      vapor: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+        desfoque: number;
+        fase: number;
+        opacidade: number;
+        coluna?: Coluna;
+      };
+      entradas: string[];
       led: [number, number];
       recorteVapor: { x: number; y: number; w: number; h: number };
       curvas: { cidade: string; led: string; abajur: string; vapor: string };
+    };
+    type Fio = { periodo: number; peso: number; largura: [number, number] };
+    type Coluna = {
+      arquivo: string;
+      altura: number;
+      caneca: number;
+      deriva: number;
+      pico: number;
+      pe: number;
+      cx: number;
+      fios: Fio[];
     };
     type Loop = {
       quadro: (cam: string) => Quadro;
       grafo: (cam: string) => string;
       avalia: (expr: string, t: number) => number;
+      colunaDeVapor: (cam: string, k: number, fio?: number) => Float32Array;
       VAPOR: { w: number; h: number; S: number };
     };
     // carregado no beforeAll: sem o loop.js, cada caso falha sozinho (e não a suíte inteira)
@@ -748,7 +772,8 @@ describe("cena do hero notebook", () => {
       }
     });
 
-    it.each(ENQ)("%s: o vapor sobe da boca da caneca, na escala dela", (cam) => {
+    // em pé, a coluna é gerada (abaixo); deitado, a faixa do hero na escala da caneca
+    it.each(ENQ.slice(0, 1))("%s: o vapor sobe da boca da caneca, na escala dela", (cam) => {
       const q = loop.quadro(cam);
       const o = Object.assign({}, cena.CAMS[cam]);
       const mundo = cena.prepWorld(o);
@@ -775,32 +800,128 @@ describe("cena do hero notebook", () => {
       expect(r.x + r.w).toBeLessThanOrEqual(q.W);
     });
 
-    it("em pé, o vapor fica no desfoque do fundo, como a caneca; deitado, nítido", () => {
-      expect(loop.quadro("media").vapor.desfoque).toBe(0);
-      const o = cena.CAMS.mediaRetrato as unknown as { desfoque: [number, number, number]; F: number };
-      const fundo = Math.max(1, Math.round((o.desfoque[2] * o.F) / 1000));
-      // ajuste de arte (rodada 1): em pé, o vapor é névoa, mais mole que a borda da caneca (6 a 7 px, o fundo dá 4)
-      const v = loop.quadro("mediaRetrato").vapor;
-      expect(v.desfoque).toBeGreaterThan(fundo);
-      expect(v.desfoque).toBeGreaterThanOrEqual(6);
-      expect(v.desfoque).toBeLessThanOrEqual(7);
-      expect(loop.grafo("mediaRetrato")).toContain(`gblur=sigma=${v.desfoque}`);
-    });
+    describe("em pé, o vapor é uma coluna gerada quadro a quadro (crítica N5 r2)", () => {
+      // a coluna, em px do quadro: linha a linha, o máximo (em x e em 50 quadros) e o x do centro de massa
+      const perfil = (cam: string) => {
+        const q = loop.quadro(cam);
+        const c = q.vapor.coluna as Coluna;
+        const { w, h } = q.vapor;
+        const maxLinha = new Float64Array(h);
+        const centros: number[][] = Array.from({ length: h }, () => []);
+        for (let k = 0; k < 250; k += 5) {
+          const f = loop.colunaDeVapor(cam, k);
+          for (let y = 0; y < h; y++) {
+            let s = 0;
+            let sx = 0;
+            for (let x = 0; x < w; x++) {
+              const v = f[y * w + x] as number;
+              if (v > (maxLinha[y] as number)) maxLinha[y] = v;
+              s += v;
+              sx += v * x;
+            }
+            if (s > 1e-3) (centros[y] as number[]).push(sx / s - c.cx);
+          }
+        }
+        // a linha a `u` alturas da caneca acima do pé da coluna
+        const linha = (u: number) => Math.round(c.pe - u * c.caneca);
+        return { q, c, maxLinha, centros, linha };
+      };
+      let P: ReturnType<typeof perfil>;
+      beforeAll(() => {
+        P = perfil("mediaRetrato");
+      });
 
-    it("em pé, o quadro 0 (o pôster) pega a faixa do vapor defasada, e o pico do vapor é 20% mais baixo", () => {
-      // ajuste de arte (rodada 1): no início da faixa, o vapor em pé é uma reta ao lado do montante da janela
-      const r = loop.quadro("mediaRetrato");
-      expect(r.vapor.fase).toBeGreaterThanOrEqual(120);
-      expect(r.vapor.fase).toBeLessThanOrEqual(160);
-      expect(loop.avalia(r.curvas.vapor, 0)).toBe(r.vapor.fase);
-      expect(r.vapor.opacidade).toBeCloseTo(0.8, 9);
-      const g = loop.grafo("mediaRetrato");
-      expect(g).toContain(`colorchannelmixer=rr=0.8:gg=0.8:bb=0.8`);
-      // deitado fica como foi aprovado: sem defasagem, sem atenuação, o mesmo grafo
-      const d = loop.quadro("media");
-      expect({ fase: d.vapor.fase, opacidade: d.vapor.opacidade }).toEqual({ fase: 0, opacidade: 1 });
-      expect(d.curvas.vapor).toBe("trunc(mod(t*1200/10,400))");
-      expect(loop.grafo("media")).not.toContain("colorchannelmixer");
+      it("sai da boca da caneca, num arquivo próprio (vapor.mkv), no desfoque do fundo e sem a faixa do hero", () => {
+        const o = Object.assign({}, cena.CAMS.mediaRetrato);
+        const mundo = cena.prepWorld(o);
+        const cam = cena.makeCam(Object.assign({}, cena.CAMS.mediaRetrato));
+        const boca = cam.P([mundo.mug.x, mundo.mug.h, mundo.mug.z]);
+        const pe = cam.P([mundo.mug.x, 0, mundo.mug.z]);
+        const { q, c } = P;
+        expect(c.arquivo).toBe("vapor.mkv");
+        expect(q.entradas).toContain("vapor.mkv");
+        expect(q.entradas).not.toContain("strip.png");
+        // a altura da caneca no quadro, e o pé da coluna na boca
+        expect(c.caneca).toBeCloseTo(pe[1] - boca[1], 0);
+        expect(Math.abs(q.vapor.x + c.cx - boca[0])).toBeLessThanOrEqual(1);
+        expect(boca[1] - (q.vapor.y + c.pe)).toBeGreaterThanOrEqual(0);
+        expect(boca[1] - (q.vapor.y + c.pe)).toBeLessThanOrEqual(12);
+        // o desfoque é o do fundo (a caneca está nele); a névoa vem da largura dos fios
+        const d = cena.CAMS.mediaRetrato as unknown as { desfoque: [number, number, number]; F: number };
+        const fundo = Math.max(1, Math.round((d.desfoque[2] * d.F) / 1000));
+        expect(q.vapor.desfoque).toBe(fundo);
+        const g = loop.grafo("mediaRetrato");
+        expect(g).toContain(`pad=${q.W}:${q.H}:${q.vapor.x}:${q.vapor.y}`);
+        expect(g).toContain(`gblur=sigma=${fundo}`);
+        expect(g).not.toContain("vstack");
+        expect(g).not.toContain("colorchannelmixer");
+      });
+
+      it("some entre 0,8 e 1× a altura da caneca, com a opacidade caindo do meio da coluna para cima", () => {
+        const { c, maxLinha, linha } = P;
+        expect(c.altura).toBeGreaterThanOrEqual(0.8);
+        expect(c.altura).toBeLessThanOrEqual(1);
+        const m = (u: number) => maxLinha[linha(u)] as number;
+        // acima de 1× a caneca não há vapor (menos de meio nível de 8 bits)
+        for (let y = 0; y <= linha(1); y++) expect(maxLinha[y]).toBeLessThan(0.5 / 255);
+        // do meio para cima, cai sempre
+        for (let u = 0.45; u < c.altura - 0.05; u += 0.05) expect(m(u + 0.05)).toBeLessThan(m(u));
+        expect(m(0.75)).toBeLessThan(0.5 * m(0.3));
+      });
+
+      it("deriva para um lado só, de 8 a 15 px no topo, em todos os quadros", () => {
+        const { c, centros, linha } = P;
+        expect(Math.abs(c.deriva)).toBeGreaterThanOrEqual(8);
+        expect(Math.abs(c.deriva)).toBeLessThanOrEqual(15);
+        const topo = centros[linha(0.9 * c.altura)] as number[];
+        const pe = centros[linha(0.1)] as number[];
+        expect(topo.length).toBeGreaterThan(40);
+        const media = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+        // no pé, a coluna fica na boca; no topo, para o lado da deriva em todos os quadros
+        expect(Math.abs(media(pe))).toBeLessThan(2);
+        for (const x of topo) expect(Math.sign(x)).toBe(Math.sign(c.deriva));
+        expect(Math.abs(media(topo))).toBeGreaterThanOrEqual(0.6 * Math.abs(c.deriva));
+      });
+
+      it("o pico fica limitado ao longo da coluna: nenhum trecho vira um traço mais claro", () => {
+        const { c, maxLinha, linha } = P;
+        expect(Math.max(...maxLinha)).toBeLessThanOrEqual(c.pico + 1e-6);
+        const faixa: number[] = [];
+        for (let u = 0.15; u <= 0.45; u += 0.02) faixa.push(maxLinha[linha(u)] as number);
+        expect(Math.max(...faixa) / Math.min(...faixa)).toBeLessThan(1.35);
+      });
+
+      it("os dois fios: períodos de 10 s e 5 s e pesos 1 e 0,6, e o quadro 250 é o 0", () => {
+        const { c } = P;
+        expect(c.fios.map((f) => [f.periodo, f.peso])).toEqual([
+          [10, 1],
+          [5, 0.6],
+        ]);
+        // o fio de trás alarga com a altura
+        const tras = c.fios[1] as Fio;
+        expect(tras.largura[1]).toBeGreaterThanOrEqual(2 * tras.largura[0]);
+        const igual = (a: Float32Array, b: Float32Array) => a.every((v, i) => Math.abs(v - (b[i] as number)) < 1e-6);
+        expect(igual(loop.colunaDeVapor("mediaRetrato", 250), loop.colunaDeVapor("mediaRetrato", 0))).toBe(true);
+        // o fio de 5 s volta em 125 quadros; o de 10 s, não
+        expect(igual(loop.colunaDeVapor("mediaRetrato", 125, 1), loop.colunaDeVapor("mediaRetrato", 0, 1))).toBe(true);
+        expect(igual(loop.colunaDeVapor("mediaRetrato", 125, 0), loop.colunaDeVapor("mediaRetrato", 0, 0))).toBe(false);
+        // e cada quadro muda de verdade (o VP9 congela o vapor que muda menos de um nível por quadro)
+        const a = loop.colunaDeVapor("mediaRetrato", 10);
+        const b = loop.colunaDeVapor("mediaRetrato", 11);
+        let dmax = 0;
+        for (let i = 0; i < a.length; i++) dmax = Math.max(dmax, Math.abs((a[i] as number) - (b[i] as number)));
+        expect(dmax * 255).toBeGreaterThan(2);
+      });
+
+      it("deitado fica como foi aprovado: a faixa do hero, sem coluna, o mesmo grafo", () => {
+        const d = loop.quadro("media");
+        expect(d.vapor.coluna).toBeUndefined();
+        expect(d.vapor.desfoque).toBe(0);
+        expect({ fase: d.vapor.fase, opacidade: d.vapor.opacidade }).toEqual({ fase: 0, opacidade: 1 });
+        expect(d.curvas.vapor).toBe("trunc(mod(t*1200/10,400))");
+        expect(d.entradas).toEqual(["A.png", "T.png", "city2x.png", "E.png", "Lp.png", "strip.png", "mask.png"]);
+        expect(loop.grafo("media")).not.toContain("colorchannelmixer");
+      });
     });
 
     it.each(ENQ)("%s: o loop fecha em 10 s (as curvas em t = 10 voltam ao valor de t = 0)", (cam) => {
@@ -825,6 +946,11 @@ describe("cena do hero notebook", () => {
       expect(q.led[0]).toBeCloseTo(o.ledK ?? 0.82, 9);
       expect(Math.abs(q.led[1] - q.led[0])).toBeCloseTo(0.18, 9);
       expect(Math.max(...q.led)).toBeLessThanOrEqual(1);
+    });
+
+    it("o LED respira para cima deitado (0,82 → 1) e para baixo em pé (1 → 0,82)", () => {
+      expect(loop.quadro("media").led).toEqual([0.82, 1]);
+      expect(loop.quadro("mediaRetrato").led).toEqual([1, 0.82]);
     });
 
     it.each(ENQ)("%s: o grafo do composite usa as curvas, o lugar do vapor e o tamanho do quadro", (cam) => {

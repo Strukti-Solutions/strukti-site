@@ -8,8 +8,8 @@ import { readAvif } from "@/test/avif";
 /**
  * A mídia do hero "notebook" (fase 2 da arte, Global Constraints do plano
  * 2026-10-23-hero-notebook-arte): confere os arquivos que o
- * `siteConfig.heroNotebook` usa (e só eles: o vídeo chega depois), com o
- * tamanho e o limite de bytes de cada nome. Mídia só do próprio site
+ * `siteConfig.heroNotebook` usa (inclusive os loops de 10 s, WebM e MP4),
+ * com o tamanho e o limite de bytes de cada nome. Mídia só do próprio site
  * (ADR-008), de public/hero/notebook/.
  */
 
