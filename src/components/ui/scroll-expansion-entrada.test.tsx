@@ -1146,3 +1146,47 @@ describe("<ScrollExpandMedia entrada /> — o controle do vídeo com a sala cobe
     expect(screen.getByRole("button", { name: "Tocar" })).toBe(controle());
   });
 });
+
+/**
+ * O pôster atrás do vídeo (desempenho, rolagem a 144 Hz): na aproximação a
+ * sala amplia e desfoca a cada quadro, e o pôster, coberto pelo vídeo, custava
+ * um segundo desfoque inteiro na GPU sem aparecer. Com o vídeo já tocando
+ * (`data-started="true"`), ele sai da pintura; sem vídeo, ou no giro (o vídeo
+ * novo volta a `"false"`), ele é a sala e fica.
+ */
+describe("globals.css, bloco Hero \"entrada\" — o pôster atrás do vídeo", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
+  const cabeca = '.hero-expansao--entrada picture:has(+ .hero-expansao__video[data-started="true"]) .hero-expansao__poster {';
+
+  function montar(started: "true" | "false") {
+    const estilo = document.createElement("style");
+    const i = css.indexOf(cabeca);
+    expect(i, cabeca).toBeGreaterThan(-1);
+    estilo.textContent = css.slice(i, css.indexOf("}", i) + 1);
+    document.head.append(estilo);
+    document.body.innerHTML = `<section class="hero-expansao hero-expansao--entrada"><picture><img class="hero-expansao__poster" alt=""></picture><video class="hero-expansao__video" data-started="${started}"></video></section>`;
+    return { estilo, poster: document.querySelector<HTMLElement>(".hero-expansao__poster")! };
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+    document.head.querySelectorAll("style").forEach((s) => s.remove());
+  });
+
+  it("some com o vídeo tocando", () => {
+    const { estilo, poster } = montar("true");
+    expect(estilo.textContent).toMatch(/visibility:\s*hidden/);
+    expect(getComputedStyle(poster).visibility).toBe("hidden");
+  });
+
+  it("fica antes do 1º quadro do vídeo (e sem vídeo)", () => {
+    const { poster } = montar("false");
+    expect(getComputedStyle(poster).visibility).not.toBe("hidden");
+  });
+
+  it("vale só no modo entrada", () => {
+    const { poster } = montar("true");
+    poster.closest("section")!.classList.remove("hero-expansao--entrada");
+    expect(getComputedStyle(poster).visibility).not.toBe("hidden");
+  });
+});

@@ -4606,6 +4606,14 @@ textarea.field__input {
   filter: blur(var(--hx-sala-blur));
 }
 
+/* Com o vídeo tocando, o pôster atrás dele sai da pintura: na aproximação
+   ele custava um 2º desfoque da sala inteira na GPU a cada quadro, sem
+   aparecer. Antes do 1º quadro, sem vídeo ou no giro (o vídeo novo volta a
+   `data-started="false"`), ele é a sala e fica. */
+.hero-expansao--entrada picture:has(+ .hero-expansao__video[data-started="true"]) .hero-expansao__poster {
+  visibility: hidden;
+}
+
 /* O aparelho: uma caixa do tamanho do palco, escalada como a tela e posta
    no mesmo retângulo dela. Ele fica no quadro (o canto do quadro está a
    meia sobra do palco), entre a sala e a tela. */
