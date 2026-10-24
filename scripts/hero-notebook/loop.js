@@ -1,7 +1,7 @@
 // O loop de 10 s dos dois enquadramentos (README §5): o que muda de um para o outro na montagem dos passes.
 //   node loop.js <media|mediaRetrato>          -> o enquadramento em JSON (tamanhos, cidade em 2x, vapor, LED, curvas)
 //   node loop.js recorte <media|mediaRetrato>  -> o recorte do vapor para o vqa.sh (w:h:x:y)
-//   node loop.js vapor mediaRetrato            -> a coluna de vapor gerada (<pasta>/vapor.mkv, ffv1, 251 quadros)
+//   node loop.js vapor <media|mediaRetrato>    -> a coluna de vapor gerada (<pasta>/vapor.mkv, ffv1, 251 quadros)
 // No navegador (plates*.html, city2x*.html), depois do scene.js: FDE_LOOP.passes(canvas, cam) e FDE_LOOP.cidade(canvas, cam).
 //
 // final(t) = A + T × cidade(t) + k(t) × E + j(t) × Lp + vapor(t), periódico em 10 s: o quadro 250 é igual ao 0.
@@ -17,10 +17,9 @@
 // (e no D, porque não depende do abajur), e nenhum termo o modula.
 (function (G) {
   const F = typeof module !== 'undefined' && typeof require === 'function' ? require('./scene.js') : G.FDE;
-  // A escala do vapor: a faixa do hero (steam2.html, que saiu) foi desenhada para uma boca de caneca vista a 8,56 px/cm
-  // (48 x 120 px do
-  // quadro, ~14 cm de altura); o pé da faixa fica 4 px acima da boca. Noutra escala, a faixa cresce na mesma proporção.
-  const VAPOR = { w: 48, h: 120, S: 8.56, acima: 4 };
+  // A escala de referência do vapor: a boca de caneca do hero, vista a 8,56 px/cm. O `acima` da coluna (o pé dela acima
+  // da boca) é em px dessa escala.
+  const VAPOR = { S: 8.56 };
   // Em pé (crítica da N5, rodada 2), o vapor é uma coluna gerada, e não a faixa do hero: com a faixa, ele subia reto,
   // 1,3× a altura da caneca, paralelo ao montante da janela, e os dois fios fechavam "olhos" simétricos. A coluna:
   // - `altura`: some a essa fração da altura da caneca no quadro, com a opacidade caindo do meio para cima;
@@ -54,16 +53,13 @@
   const SAIDA = { media: 'midia', mediaRetrato: 'midia-retrato' };
   const PASTA = { media: 'plates2', mediaRetrato: 'plates2-retrato' };
   const LED_PADRAO = 0.82, LED_RESPIRA = 0.18, ABAJUR = 0.03;
-  const par = n => 2 * Math.round(n / 2);
   const num = n => +n.toFixed(4);
 
   function quadro(cam) {
     if (!SAIDA[cam]) throw new Error(`enquadramento desconhecido: ${cam} (media ou mediaRetrato)`);
     const o = Object.assign({}, F.CAMS[cam]), W0 = F.prepWorld(o), c = F.makeCam(o);
-    // o vapor: o pé no meio da boca da caneca, o tamanho na escala dela
+    // o vapor: a coluna na boca da caneca, na escala dela
     const m = W0.mug, boca = [m.x, m.h, m.z], p = c.P(boca), s = c.S(boca) / VAPOR.S;
-    const w = par(VAPOR.w * s), h = par(VAPOR.h * s);
-    const x = Math.round(p[0] - w / 2), y = Math.round(p[1] - VAPOR.acima * s - h);
     // em pé (desfocaFundo): o desfoque pesa de 0 (yN, a mesa nítida) a 1 (yD); a boca da caneca fica acima de yD
     let desfoque = 0;
     if (o.desfoque) {
@@ -71,17 +67,13 @@
       const yN = c.P([cx, 0, zN])[1], yD = c.P([cx, 0, zD])[1], peso = Math.min(1, Math.max(0, (yN - p[1]) / (yN - yD)));
       desfoque = peso > 0.5 ? Math.max(1, Math.round(px * o.F / 1000)) : 0;
     }
-    let vapor = { x, y, w, h, desfoque };
-    let entradas = ['A.png', 'T.png', 'city2x.png', 'E.png', 'Lp.png', 'strip.png', 'mask.png'];
+    // a coluna gerada: a caixa em volta da boca, com o pé `acima` px de escala acima dela e espaço para a deriva
     const col = COLUNA[cam];
-    if (col) {
-      // a coluna gerada: a caixa em volta da boca, com o pé `acima` px de escala acima dela e espaço para a deriva
-      const caneca = c.P([m.x, 0, m.z])[1] - p[1], alto = Math.round(col.altura * caneca);
-      const hc = alto + 20, yc = Math.round(p[1] - col.acima * s) - hc + 1, xc = Math.round(p[0]) - col.cx;
-      const coluna = Object.assign({}, col, { caneca: num(caneca), pe: hc - 1, cx: col.cx + (p[0] - Math.round(p[0])) });
-      vapor = { x: xc, y: yc, w: col.w, h: hc, desfoque, coluna };
-      entradas = entradas.slice(0, 5).concat(col.arquivo);
-    }
+    const caneca = c.P([m.x, 0, m.z])[1] - p[1], alto = Math.round(col.altura * caneca);
+    const hc = alto + 20, yc = Math.round(p[1] - col.acima * s) - hc + 1, xc = Math.round(p[0]) - col.cx;
+    const coluna = Object.assign({}, col, { caneca: num(caneca), pe: hc - 1, cx: col.cx + (p[0] - Math.round(p[0])) });
+    const vapor = { x: xc, y: yc, w: col.w, h: hc, desfoque, coluna };
+    const entradas = ['A.png', 'T.png', 'city2x.png', 'E.png', 'Lp.png', col.arquivo];
     const rx = Math.max(0, vapor.x - vapor.w / 2), ry = Math.max(0, vapor.y - 3);
     const recorteVapor = { x: rx, y: ry, w: Math.min(o.W, vapor.x + vapor.w + vapor.w / 2) - rx, h: Math.min(o.H, vapor.y + vapor.h + 8) - ry };
     // a direção do respiro com folga de ponto flutuante: 0,82 + 0,18 pode sair um ulp acima de 1
@@ -90,10 +82,8 @@
     const curvas = {
       cidade: '8-trunc(8*pow(sin(PI*t/10),2)+0.5)',
       led: `${num(k0)}${k1 >= k0 ? '+' : '-'}${num(Math.abs(k1 - k0))}*(0.5-0.5*cos(2*PI*T/10))`,
-      abajur: `${ABAJUR}*sin(2*PI*T/10)`,
-      vapor: 'trunc(mod(t*1200/10,400))'
+      abajur: `${ABAJUR}*sin(2*PI*T/10)`
     };
-    if (col) delete curvas.vapor;
     return {
       cam, W: o.W, H: o.H, saida: SAIDA[cam], pasta: PASTA[cam], mosaico: [2 * o.W, 2 * o.H],
       cidade: { pass: 'city', W: 2 * o.W + 16, H: 2 * o.H, F: 2 * o.F, shiftY: 2 * (o.shiftY || 0), pxk: 2, dither: 3 },
@@ -101,24 +91,18 @@
     };
   }
 
-  // O grafo do ffmpeg (composite2.js), entradas: 0 A, 1 T, 2 cidade 2x, 3 E, 4 Lp e o vapor: deitado, 5 a faixa e 6 a
-  // máscara; em pé, 5 a coluna gerada (um quadro por quadro do loop, já com a opacidade).
+  // O grafo do ffmpeg (composite2.js), entradas: 0 A, 1 T, 2 cidade 2x, 3 E, 4 Lp e 5 o vapor, a coluna gerada (um
+  // quadro por quadro do loop, já com a opacidade).
   function grafo(cam) {
     const q = quadro(cam), { W, H, vapor: v, curvas: k } = q;
-    const st = v.coluna
-      ? [`[5]format=gbrp,pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`]
-      : [
-        `[5]format=gbrp,split[s1][s2];[s1][s2]vstack,crop=96:240:0:'${k.vapor}'[sc]`,
-        `[6]format=gbrp[m]`,
-        `[sc][m]blend=all_mode=multiply,scale=${v.w}:${v.h}:flags=lanczos,pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`
-      ];
+    const st = `[5]format=gbrp,pad=${W}:${H}:${v.x}:${v.y}:black${v.desfoque ? `,gblur=sigma=${v.desfoque}` : ''}[st]`;
     return [
       '[0]format=gbrp[A]', '[1]format=gbrp[T]', '[3]format=gbrp[E]', '[4]format=gbrp[Lp]',
       `[2]format=gbrp,crop=${2 * W}:${2 * H}:x='${k.cidade}':y=0,scale=${W}:${H}:flags=lanczos[city]`,
       '[T][city]blend=all_mode=multiply[tc]', '[A][tc]blend=all_mode=addition[x1]',
       `[x1][E]blend=all_expr='A+B*(${k.led})'[x2]`,
       `[x2][Lp]blend=all_expr='A+B*${k.abajur}'[x3]`,
-      ...st,
+      st,
       '[x3][st]blend=all_mode=addition,format=gbrp[out]'
     ].join(';\n');
   }
@@ -158,8 +142,8 @@
     return out;
   }
 
-  // Grava a coluna de vapor (em pé) em <pasta>/vapor.mkv: ffv1, 251 quadros (o 250 é o 0), na cor do vapor do hero
-  // (o navy-100 da faixa do steam2.html) multiplicada pela opacidade, sobre o preto (o grafo soma).
+  // Grava a coluna de vapor em <pasta>/vapor.mkv: ffv1, 251 quadros (o 250 é o 0), na cor do vapor do hero (o navy-100)
+  // multiplicada pela opacidade, sobre o preto (o grafo soma).
   function gravaVapor(cam) {
     const { execFileSync } = require('child_process');
     const q = quadro(cam), v = q.vapor, cor = [223, 231, 239];

@@ -6,8 +6,8 @@ const loop = require('./loop.js');
 const cam = process.argv[2] || 'media';
 const q = loop.quadro(cam);
 const P = __dirname + '/' + q.pasta + '/'; const DUR = '10.04';
-// as entradas vêm do loop.js: as placas (imagens paradas, repetidas) e o vapor (deitado, a faixa e a máscara; em pé,
-// a coluna gerada, um vídeo de 251 quadros: `node loop.js vapor mediaRetrato`)
+// as entradas vêm do loop.js: as placas (imagens paradas, repetidas) e o vapor, a coluna gerada, um vídeo de 251
+// quadros (`node loop.js vapor <media|mediaRetrato>`)
 const args = ['-y', '-v', 'error'];
 for (const f of q.entradas) {
   if (/\.mkv$/.test(f)) args.push('-i', P + f);

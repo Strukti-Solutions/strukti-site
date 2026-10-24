@@ -594,7 +594,6 @@ describe("cena do hero notebook", () => {
         "plates-retrato.html",
         "city2x.html",
         "city2x-retrato.html",
-        "steam2.html",
         "derive.sh",
         "composite2.js",
         "encode.sh",
@@ -716,7 +715,7 @@ describe("cena do hero notebook", () => {
       entradas: string[];
       led: [number, number];
       recorteVapor: { x: number; y: number; w: number; h: number };
-      curvas: { cidade: string; led: string; abajur: string; vapor?: string };
+      curvas: { cidade: string; led: string; abajur: string };
     };
     type Fio = { periodo: number; peso: number; largura: [number, number] };
     type Coluna = {
@@ -734,7 +733,7 @@ describe("cena do hero notebook", () => {
       grafo: (cam: string) => string;
       avalia: (expr: string, t: number) => number;
       colunaDeVapor: (cam: string, k: number, fio?: number) => Float32Array;
-      VAPOR: { w: number; h: number; S: number };
+      VAPOR: { S: number };
     };
     // carregado no beforeAll: sem o loop.js, cada caso falha sozinho (e não a suíte inteira)
     let loop: Loop;
@@ -900,7 +899,7 @@ describe("cena do hero notebook", () => {
         const { q, c, centros, linha } = P;
         expect(c.arquivo).toBe("vapor.mkv");
         expect(q.entradas).toEqual(["A.png", "T.png", "city2x.png", "E.png", "Lp.png", "vapor.mkv"]);
-        expect(q.curvas.vapor).toBeUndefined();
+        expect(Object.keys(q.curvas)).toEqual(["cidade", "led", "abajur"]);
         expect(c.caneca).toBeCloseTo(pe[1] - boca[1], 0);
         expect(Math.abs(q.vapor.x + c.cx - boca[0])).toBeLessThanOrEqual(1);
         expect(boca[1] - (q.vapor.y + c.pe)).toBeGreaterThanOrEqual(0);
