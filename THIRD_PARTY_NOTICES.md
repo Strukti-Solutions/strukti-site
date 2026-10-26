@@ -50,9 +50,18 @@ SOFTWARE.
 - **Licença:** MIT, conferida em 15/10/2026. A página de origem publica a
   licença e o autor (nome e perfil), sem ano e sem arquivo de licença; o
   aviso abaixo usa o nome e o perfil do autor como estão lá.
-- A mídia do hero ("Fim de expediente", `public/hero/expansao/`) é produção
-  própria, não deste componente (a demonstração original usa imagens e
-  vídeos de terceiros, que não entram no site).
+- **Mudanças:** além da adaptação do hero "expansao", o modo `entrada` (o
+  hero "notebook", padrão desde 26/10/2026): com a prop `entrada`, o mesmo
+  progresso cobre a expansão até a tela cheia, uma pausa e a aproximação
+  até a tela de um aparelho em vetor, que é o bloco de chamada do hero; sem
+  ela, o componente segue como no "expansao". A lista completa fica no
+  comentário do topo do arquivo; as decisões, na ADR-010 (revisão de
+  23/10/2026).
+- A mídia dos heros ("Fim de expediente", `public/hero/expansao/`, e a mesa
+  com o notebook, `public/hero/notebook/`) é produção própria, não deste
+  componente (a demonstração original usa imagens e vídeos de terceiros,
+  que não entram no site). O aparelho em vetor do "notebook"
+  (`AparelhoVetor.tsx`) também é nosso.
 
 ```
 MIT License

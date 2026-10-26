@@ -16,7 +16,7 @@
 
 **Escuro para mostrar, claro para ler.** O escuro é a base da página: topo, produtos, aplicativos e rodapé. O claro fica só onde se lê e se age: a chamada para outros problemas, como trabalhamos, equipe, contato, dúvidas e o aviso de privacidade.
 
-**Uma ousadia só.** O momento memorável é o hero em uso (`siteConfig.heroVariant`): o "expansao" (§9.8, o padrão desde 15/10/2026), um quadro calmo que cresce com a rolagem até quase a tela inteira enquanto o título se abre, ou o "estudio" (§9.7), o produto girando sob a luz conforme a rolagem. Nunca os dois na mesma página. Todo o resto é quieto, preciso e tipográfico.
+**Uma ousadia só.** O momento memorável é o hero em uso (`siteConfig.heroVariant`): o "expansao" (§9.8; desde 26/10/2026, o padrão é o modo entrada dele, o "notebook"), um quadro calmo que cresce com a rolagem até quase a tela inteira enquanto o título se abre, ou o "estudio" (§9.7), o produto girando sob a luz conforme a rolagem. Nunca os dois na mesma página. Todo o resto é quieto, preciso e tipográfico.
 
 ### Quatro assinaturas da marca (as únicas "decorações" permitidas)
 
@@ -998,9 +998,9 @@ Seção `#inicio` (`.hero-estudio`). O produto ocupa a tela inteira, e os textos
 - O pôster (quadro 0, em AVIF com JPG de reserva) vem no HTML, com `alt=""` (é decorativo, como o canvas), e é o LCP. O quadro 0 é o produto em 3/4 já iluminado, para o canvas assumir sem salto.
 - O selo "Ilustração do conceito" fica sempre visível num canto do quadro, fora da peça (§8.14).
 
-### 9.8 Hero "expansao" (padrão desde 15/10/2026)
+### 9.8 Hero "expansao" e o modo "entrada" (notebook, padrão desde 26/10/2026)
 
-Seção `#inicio` (`.hero-expansao`, `surface-space`), escolhida com `siteConfig.heroVariant = "expansao"`; a barra do topo é a da §8.3.1, e a seção seguinte é Produtos. Quando está em uso, é ela a ousadia da página (§1). Componente de terceiro com licença MIT, adaptado: `ScrollExpandMedia`, de Arunachalam (@arunachalam, 21st.dev), em `src/components/ui/scroll-expansion-hero.tsx` (licença, origem e a lista de mudanças no comentário do topo e em `THIRD_PARTY_NOTICES.md`); a seção é `src/components/sections/HeroExpansao.tsx`; decisões na ADR-010. Com o hero "expansao", o protótipo do fio não desenha: ele parte do símbolo do hero de marca (`.hero-estudio__quadro`), que este hero não tem; para vê-lo, `heroVariant = "estudio"`. Onde o fio começa com este hero fica para decisão do Thiago.
+Seção `#inicio` (`.hero-expansao`, `surface-space`), escolhida com `siteConfig.heroVariant = "expansao"`; a barra do topo é a da §8.3.1, e a seção seguinte é Produtos. Quando está em uso, é ela a ousadia da página (§1). Componente de terceiro com licença MIT, adaptado: `ScrollExpandMedia`, de Arunachalam (@arunachalam, 21st.dev), em `src/components/ui/scroll-expansion-hero.tsx` (licença, origem e a lista de mudanças no comentário do topo e em `THIRD_PARTY_NOTICES.md`); a seção é `src/components/sections/HeroExpansao.tsx`; decisões na ADR-010. Foi o padrão de 15 a 26/10/2026; desde então o padrão é o modo entrada do mesmo componente (o hero "notebook", "Modo entrada" abaixo), e o "expansao" segue como variante. Com o hero "expansao", o protótipo do fio não desenha: ele parte do símbolo do hero de marca (`.hero-estudio__quadro`), que este hero não tem; para vê-lo, `heroVariant = "estudio"`. Onde o fio começa com este hero fica para decisão do Thiago.
 
 **Tema da mídia** ("Fim de expediente", produção própria): um ambiente que transmite paz, com detalhes sutis do que a Strukti faz. Uma mesa calma junto a uma janela alta na hora azul, a cidade desfocada lá fora, a luz do abajur, um caderno fechado, uma caneca, um celular com uma rota do Rota de Vendas e a caixa do botão do replay com o LED ciano. Sem florestas, árvores, montanhas ou paisagens naturais; sem texto, logo de cliente ou dado na imagem (§9.1).
 
@@ -1053,6 +1053,75 @@ O parado é a composição de p = 0 (fundo, quadro de 300 × 400 com o pôster, 
 - **FAB:** a seção tem `data-hides-fab` (§8.12).
 - **Barra fixa:** o quadro expandido nunca passa sob a barra; o título fica no meio do palco.
 - **Sem JavaScript:** o conteúdo (com os dois botões) está à vista logo abaixo do palco.
+
+#### Modo entrada (hero notebook)
+
+Escolhido com `siteConfig.heroVariant = "notebook"`, o padrão desde 26/10/2026: `src/components/sections/HeroNotebook.tsx`, o mesmo `ScrollExpandMedia` com a prop `entrada` (a seção ganha `.hero-expansao--entrada`, e o CSS fica no bloco Hero "entrada" do `globals.css`, só sob esse modificador). Mesmo `id="inicio"`, mesmos textos (`landingContent.heroExpansao`), mesmo provedor de vídeo e mesma barra (§8.3.1). O hero termina entrando num aparelho da mesa: deitado, o notebook; em pé (`(orientation: portrait)`), o celular num suporte. A tela do aparelho é o bloco de chamada (`.hero-expansao__conteudo`), o HTML de verdade: quando a aproximação cobre a janela, a pessoa já está na página. Os números ficam no `ENTRADA` e a câmera em funções puras (`camera`, `telaNaCena`, `posicaoDoTitulo`), em `src/lib/heroEntrada.ts`; spec `docs/superpowers/specs/2026-10-23-hero-entrada-notebook-design.md`; decisões na ADR-010 (revisão de 23/10/2026). A rolagem presa é a mesma exceção da §6, só mais longa.
+
+**A animação.** Um progresso só, P de 0 a 1, preso à rolagem, em três fases (frações do percurso):
+- **Expansão** (P de 0 a `E` = 0,54; `e` = P ÷ `E`): o quadro vai do cartão de 300 × 400 px ao palco inteiro (a largura útil × a altura do palco, sem o limite de 95vw × 85vh do expansao), linear em `e`, e perde o raio de 16 px e a sombra. O fundo de fora some (1 − e); a linha de apoio e a dica saem para os lados, como no expansao; as metades do título vão à pose da pausa.
+- **Pausa** (de `E` a `E` + `Pa`, `Pa` = 0,08): nada se move com a rolagem (o loop da sala segue). As metades do título ficam paradas na pose da pausa (`posicaoDoTitulo`). Deitado, ao lado da moldura do notebook, a linha 1 à esquerda e a 2 à direita, a 40 px da moldura (`tituloFolgaLado`; ou 4% da largura dela, `tituloFolgaRelativa`, se for maior) e a 48 px da borda (`tituloMargemLado`), encolhendo por igual se não couberem. Em pé, empilhadas e centradas: a linha 1 acima do celular e a 2 na mesa, abaixo do suporte, a 24 px da moldura (`tituloFolga`) e a 16 px da borda (`tituloMargem`). Deitado, se ao lado a fonte efetiva das metades ficaria abaixo de `tituloPisoRem` = 1,5rem (zoom, janela quase quadrada), elas vão para a disposição empilhada, de reserva.
+- **Aproximação** (de `E` + `Pa` a 1; `a` linear, `k` = a²(3 − 2a), a curva `ease-in-out`): a câmera anda reto até a tela do aparelho. O centro da tela vai, linear em `k`, ao centro da janela, e a escala dela vai do tamanho na pausa a 1, multiplicativa. A sala amplia até `salaZoomMax` = 1,45 em volta da tela da pausa e desfoca até `salaBlurMax` = 10 px; a sombra dela volta a escurecer (+0,3 × k). As metades do título saem pelas bordas (60vw) e somem até `a` = `tituloSaidaAte` = 0,5. A partir de `k` = `salaCobertaK` = 0,98 (e em P = 1), a tela cobre a sala, e o vídeo pausa (ver as garantias). Em P = 1, a tela é a janela útil.
+- **Liberação e volta:** no quadro em que o progresso desenhado chega a 1, `data-expanded` vira "true" (o CSS tira o transform da tela) e a página rola, instantânea, até o topo da tela (a altura do palco); a rolagem normal leva ao Catálogo. No topo da tela, roda para cima, arrasto para baixo, as teclas para cima ou uma rolagem para acima dele (a barra de rolagem, o Home do navegador) recolhem, com P em 1, e o caminho se desfaz pelo mesmo trajeto.
+- **Entrada:** a roda e o toque usam os ganhos do expansao divididos por `ganho` = 1,85 (o percurso preso fica 1,85 × mais longo), com a roda de mouse suavizada como no expansao. O teclado anda por P (seta 0,1, página 0,34) e anima como o clique da roda, não pela transição do CSS. O Tab até um botão da tela completa a entrada na hora (`data-input` "auto"); até P = 1, a tela não recebe clique (`pointer-events: none`), e o clique cai na cena. Os saltos (âncora, foco, a montagem) ganham a transição de 300 ms; uma âncora fora do hero começa dentro (P = 1).
+- O `paint()` escreve a câmera em variáveis CSS (`--hx-e`, `--hx-k`, `--hx-quadro-w/-h`, `--hx-tela-x/-y/-s`, `--hx-sala-*`, `--hx-linha1-x/-y`, `--hx-linha2-x/-y`, `--hx-titulo-s` e `--hx-titulo-saida`) num `requestAnimationFrame`, e as camadas só usam `transform`, `opacity` e `filter: blur`. A janela útil, a orientação e as metades do título são medidas depois de montar e de novo a cada resize ou giro; uma janela de tamanho 0 (iframe oculto, aba em segundo plano) vale 1 × 1.
+
+**Camadas** (do palco, de baixo para cima; a barra do topo fica por cima de tudo e, a partir de 75em, com o hero armado, vira a cápsula):
+```
+6. Controle do vídeo   o do expansao (z-index 5); some com a sala coberta,
+                       menos com o foco nele
+5. Título              H1 em duas metades, "mais perto da câmera" (z-index 4)
+4. Tela                o bloco de chamada (z-index 3): no fluxo, logo abaixo
+                       do palco, levado ao retângulo da tela por transform;
+                       na cena, cortado na altura da janela (clip-path); no
+                       cartão, um véu do navy da tela (0,9) que some com a
+                       expansão
+3. Aparelho            vetor (AparelhoVetor), no quadro, escalado como a
+                       tela (z-index 2), aria-hidden
+2. Sala                pôster + vídeo + sombra, no quadro: amplia e desfoca
+                       na aproximação
+1. Fundo               <picture> decorativo (alt=""), com o aparelho
+                       renderizado; véu em elipse na faixa do título e o
+                       degradê do pé (--hx-fundo-degrade, o mesmo do
+                       expansao); some na expansão
+0. Base                espaço (navy-950)
+```
+
+**Os estados** (atributos da seção, lidos pelo CSS, pelos testes e pelo check:browser):
+
+| Estado | `data-pin` | `data-expanded` | `data-progress` | `data-content` | `data-coberta` |
+|---|---|---|---|---|---|
+| Parado (servidor, sem JavaScript, reduced motion, antes de montar) | `false` | `false` | `0.00` | `visible` | `false` |
+| Segurando (P < 1, ou recolhido em P = 1) | `true` | `false` | `0.00`…`1.00` | `visible` (a tela está sempre lá) | `true` com `k` ≥ 0,98 e em P = 1 |
+| Dentro (página livre) | `false` | `true` | `1.00` | `visible` | `true` |
+
+`data-orientacao` ("deitado" ou "em-pe") é escrito depois de montar, também com reduced motion; no servidor e sem JavaScript ele não existe, e o CSS usa `(orientation: portrait)`. `data-input` ("wheel", "touch", "key", "auto") diz o que mexeu por último, como no expansao.
+
+**O estado parado.** Sem JavaScript (`scripting: none`) e com reduced motion, vale a pose da pausa, só com CSS: o quadro no palco inteiro, sem raio, o fundo de fora apagado, o aparelho com o miolo no fundo da página e as metades do título ao lado dele (em pé, acima e abaixo do celular); a linha de apoio e a dica já saíram. A tela fica no fluxo, sem transform, logo abaixo da cena, e a página rola normalmente. Sem medir, a escala da tela é fixa: a de 1440 × 900 deitado e a de 390 × 844 em pé. A fonte do h1 encolhe até as metades caberem ao lado do aparelho, nunca abaixo de 1,5rem. Com reduced motion, o vídeo não toca (fica o pôster) e o aparelho fica em SVG. Com JavaScript, antes de montar, vale o cartão de P = 0 (os valores padrão das variáveis): nada salta ao armar. A altura do hero é a mesma em todos os estados.
+
+**A mídia** (`public/hero/notebook/`, `siteConfig.heroNotebook`, nomes e tamanhos fixos; o `heroNotebook.assets.test.ts` confere os arquivos, os tamanhos e os limites e, nos vídeos, o tamanho e os 10 s; KB = 1000 bytes):
+
+| Arquivo | Tamanho | Limite (AVIF / JPG ou WebM / MP4) |
+|---|---|---|
+| `fundo.avif` / `.jpg` | 1920 × 1080 | ≤ 100 KB / ≤ 160 KB |
+| `fundo-retrato.avif` / `.jpg` | 1080 × 1920 | ≤ 100 KB / ≤ 160 KB |
+| `midia-poster.avif` / `.jpg` | 1280 × 720 | ≤ 60 KB / ≤ 90 KB |
+| `midia.webm` / `.mp4` | 1280 × 720 | ≤ 420 KB / ≤ 520 KB |
+| `midia-retrato-poster.avif` / `.jpg` | 720 × 1280 | ≤ 60 KB / ≤ 90 KB |
+| `midia-retrato.webm` / `.mp4` | 720 × 1280 | ≤ 420 KB / ≤ 520 KB |
+
+- Os vídeos (WebM VP9 e MP4 H.264, mudos) são o loop de 10 s a 25 fps, com 250 quadros publicados: o master tem 251, o 250 igual ao 0, e o `<video loop>` emenda o 249 no 0. O pôster é o 1º quadro.
+- O fundo (visto em volta do cartão em P = 0) traz o aparelho renderizado, porque nunca é ampliado. A mídia da sala não: o lugar dele fica vazio, com a sombra e o brilho da tela na mesa, e o vetor vem por cima.
+- Cada enquadramento tem a sua: o fundo e o pôster em `<picture>`, com o retrato em `<source media="(orientation: portrait)">`, e o vídeo escolhido depois de montar, pelo `matchMedia`, e trocado no giro. O corte da sala é 50% 100% deitado (o pé da mídia emenda na página) e 50% 50% em pé.
+- O vídeo segue o mecanismo da §9.6, como no expansao. A produção da mídia (a cena, o vetor, o loop e as conferências) está em `scripts/hero-notebook/README.md`.
+
+**Garantias** (além das da §6, "Exceção controlada", e das do expansao):
+- **Contraste da faixa do título:** na pausa, atrás de cada metade, a luminância (0 a 255) fica com p90 ≤ 60 em todos os quadros do loop, medida pela sonda (`scripts/hero-notebook/sonda-rapida.js`, com as caixas das metades como o site as desenha). No cartão (P = 0), o véu da tela e o véu em elipse do fundo mantêm a faixa escura.
+- **LCP no pôster:** o pôster da cena (`img.hero-expansao__poster`) vai com `fetchpriority="high"`, e o fundo sem. A etapa `entrada` do `check:browser` confere que o LCP é ele a 1440×900 (`midia-poster.avif`) e a 390×844 (`midia-retrato-poster.avif`).
+- **Mídia só do enquadramento:** em pé, a página só baixa o pôster e o vídeo do retrato; deitado, só os do deitado.
+- **Vídeo pausado com a sala coberta:** com `k` ≥ 0,98 e em P = 1, o `MidiaCobertaContext` pausa o vídeo, a seção ganha `data-coberta="true"` e o controle sai da tela, da leitura e do Tab, menos com o foco nele (`:not(:focus-within)`: o foco não cai no `body`). Descoberta, a regra de tocar vale de novo, e o "Pausar" da pessoa segue valendo.
+- **Desempenho:** com o vídeo tocando, o pôster atrás dele sai da pintura; depois de montar, só com movimento, a base e o suporte do enquadramento à vista viram uma imagem do próprio SVG (`VetorRasterizado.tsx`, com o lado maior em até 4096 px), e o SVG sai da pintura.
+- **Cores forçadas:** a moldura ganha contorno de 2 px em `CanvasText`, a base e o suporte ficam em SVG, com o contorno das laterais em `CanvasText`, o grão some e a tela na cena ganha contorno de 2 px; o controle é o do expansao.
 
 ---
 

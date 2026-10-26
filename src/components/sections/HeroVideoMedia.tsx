@@ -11,6 +11,7 @@ import {
   type RefObject,
 } from "react";
 import { landingContent } from "@/content/landing";
+import { useMidiaCoberta } from "@/components/ui/midia-coberta";
 import { useCanAnimate } from "@/lib/motion";
 import { isUserVideoPlaying, subscribeToVideoPlayback } from "@/lib/videoCoordination";
 import type { HeroVideoSource } from "@/config/site";
@@ -24,6 +25,15 @@ interface HeroVideoState {
   playing: boolean;
   setPlaying: (playing: boolean) => void;
   setChoice: (choice: Choice) => void;
+  /** A mídia está coberta (a tela do modo entrada sobre a sala): não toca. */
+  setCoberto: (coberto: boolean) => void;
+  /**
+   * O `src` que o `HeroVideoClip` escolheu para o enquadramento: `null` é
+   * "sem vídeo aqui" (não toca); `undefined`, o padrão, deixa os `<source>`
+   * do próprio `<video>` decidirem. Mudar de `src` pede a regra de tocar de
+   * novo (o vídeo novo começa parado).
+   */
+  setFonte: (fonte: string | null | undefined) => void;
 }
 
 const HeroVideoContext = createContext<HeroVideoState | null>(null);
@@ -61,6 +71,12 @@ function prefersSavingData() {
  * tocando, porque foi a pessoa que pediu — e, como qualquer play, pausa esse
  * vídeo do portfólio (o listener do CatalogoInterativo.tsx não distingue
  * quem pediu o play), mantendo só um vídeo tocando por vez.
+ *
+ * Duas condições a mais, do `HeroVideoClip` (hero "notebook"): nada toca
+ * com a mídia coberta (a tela do aparelho sobre a sala, `useMidiaCoberta`),
+ * nem sem vídeo para o enquadramento (`fonte` nula). Descoberta, ou com o
+ * `src` novo de um giro, a regra vale de novo: volta a tocar se tocaria, e
+ * o "Pausar" da pessoa segue valendo.
  */
 export function HeroVideoProvider({ children }: { children: ReactNode }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -71,6 +87,8 @@ export function HeroVideoProvider({ children }: { children: ReactNode }) {
   const [choice, setChoice] = useState<Choice>("auto");
   const [onScreen, setOnScreen] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
+  const [coberto, setCoberto] = useState(false);
+  const [fonte, setFonte] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
@@ -106,7 +124,7 @@ export function HeroVideoProvider({ children }: { children: ReactNode }) {
     if (!video) return;
     const wanted =
       choice === "play" || (choice === "auto" && canAnimate && !prefersSavingData() && !userVideoPlaying);
-    if (wanted && onScreen && pageVisible) {
+    if (wanted && onScreen && pageVisible && !coberto && fonte !== null) {
       video.muted = true;
       video.play().catch(() => {
         // Navegador recusou (economia de energia, política): fica o pôster.
@@ -114,10 +132,10 @@ export function HeroVideoProvider({ children }: { children: ReactNode }) {
     } else if (!video.paused) {
       video.pause();
     }
-  }, [canAnimate, choice, onScreen, pageVisible, userVideoPlaying]);
+  }, [canAnimate, choice, coberto, fonte, onScreen, pageVisible, userVideoPlaying]);
 
   return (
-    <HeroVideoContext.Provider value={{ videoRef, mounted, playing, setPlaying, setChoice }}>
+    <HeroVideoContext.Provider value={{ videoRef, mounted, playing, setPlaying, setChoice, setCoberto, setFonte }}>
       {children}
     </HeroVideoContext.Provider>
   );
@@ -171,14 +189,26 @@ export function HeroVideoBackground({ video }: { video: HeroVideoSource }) {
   );
 }
 
-/** Um vídeo curto em loop (WebM e MP4) com o pôster do mesmo 1º quadro. */
+/**
+ * Um vídeo curto em loop (WebM e MP4) com o pôster do mesmo 1º quadro. Sem
+ * `webm` nem `mp4`, fica só o pôster: não há vídeo para tocar.
+ */
 export interface HeroVideoClipSource {
-  webm: string;
-  mp4: string;
+  webm?: string;
+  mp4?: string;
   posterAvif: string;
   posterJpg: string;
   width: number;
   height: number;
+}
+
+/** Em pé, o recorte do retrato (a mesma regra do fundo do hero, Q26). */
+const RETRATO_QUERY = "(orientation: portrait)";
+
+/** O `src` do clipe que este `<video>` toca: WebM se o navegador o toca, senão MP4; `null` sem vídeo. */
+function srcDoClipe(video: HTMLVideoElement, clip: HeroVideoClipSource): string | null {
+  const tocaWebm = Boolean(clip.webm) && video.canPlayType('video/webm; codecs="vp9"') !== "";
+  return (tocaWebm ? clip.webm : (clip.mp4 ?? clip.webm)) ?? null;
 }
 
 /**
@@ -193,26 +223,101 @@ export interface HeroVideoClipSource {
  * `fetchpriority="high"` quando ele é o LCP (`posterPriority`; no
  * "expansao", o fundo cobre a tela inteira e não conta para o LCP) e
  * `data-hero-video`, o gancho do check:browser para "só um vídeo toca".
+ *
+ * Com `clipRetrato` (hero "notebook"), cada enquadramento tem a sua mídia:
+ * - o pôster é um `<picture>` com o retrato em `<source media="(orientation:
+ *   portrait)">`, e o navegador baixa um só;
+ * - o vídeo não tem `<source>`: o `src` sai de um efeito, pelo `matchMedia`,
+ *   nunca na 1ª renderização (o servidor não sabe a orientação), e troca no
+ *   giro. O vídeo novo começa parado e invisível (`data-started` "false", o
+ *   pôster do enquadramento novo à vista); o provedor aplica a regra de
+ *   tocar de novo, então ele volta a tocar se tocava, e o "Pausar" da pessoa
+ *   segue valendo;
+ * - sem vídeo para o enquadramento, o `<video>` fica sem `src` e não toca.
+ *
+ * A mídia coberta (a tela do modo entrada sobre a sala, `useMidiaCoberta`)
+ * vai para o provedor, que pausa o vídeo enquanto isso durar.
  */
 export function HeroVideoClip({
   clip,
+  clipRetrato,
   posterClassName,
   videoClassName,
   posterPriority = false,
 }: {
   clip: HeroVideoClipSource;
+  /** A mídia do enquadramento em pé (`(orientation: portrait)`); sem ela, `clip` vale para os dois. */
+  clipRetrato?: HeroVideoClipSource;
   posterClassName: string;
   videoClassName: string;
   /** O pôster é o maior elemento da 1ª tela (o LCP): baixa com prioridade alta. */
   posterPriority?: boolean;
 }) {
-  const { videoRef, playing, setPlaying } = useHeroVideo();
-  // Já tocou alguma vez? Até lá, o pôster (o 1º quadro) fica à vista.
+  const { videoRef, playing, setPlaying, setCoberto, setFonte } = useHeroVideo();
+  // Já tocou alguma vez (com o src de agora)? Até lá, o pôster (o 1º quadro) fica à vista.
   const [started, setStarted] = useState(false);
+  const coberta = useMidiaCoberta();
+
+  useEffect(() => {
+    setCoberto(coberta);
+  }, [coberta, setCoberto]);
+
+  useEffect(() => {
+    if (!clipRetrato) {
+      // Os <source> decidem; sem nenhum, não há vídeo.
+      setFonte(clip.webm || clip.mp4 ? undefined : null);
+      return;
+    }
+    const video = videoRef.current;
+    if (!video) return;
+    const emPe = typeof window.matchMedia === "function" ? window.matchMedia(RETRATO_QUERY) : null;
+
+    const aplicar = () => {
+      const src = srcDoClipe(video, emPe?.matches === true ? clipRetrato : clip);
+      setFonte(src);
+      if (src === video.getAttribute("src")) return;
+      if (src === null) {
+        // Sem src, o load() para o vídeo e solta o que ele tinha.
+        video.removeAttribute("src");
+        video.load();
+      } else {
+        video.setAttribute("src", src);
+      }
+      setStarted(false);
+      setPlaying(!video.paused);
+    };
+
+    aplicar();
+    // O `addListener` é o dos Safari antigos.
+    if (typeof emPe?.addEventListener === "function") emPe.addEventListener("change", aplicar);
+    else emPe?.addListener?.(aplicar);
+    return () => {
+      if (typeof emPe?.removeEventListener === "function") emPe.removeEventListener("change", aplicar);
+      else emPe?.removeListener?.(aplicar);
+    };
+  }, [clip, clipRetrato, setFonte, setPlaying, videoRef]);
 
   return (
     <>
       <picture>
+        {clipRetrato && (
+          <source
+            media={RETRATO_QUERY}
+            type="image/avif"
+            srcSet={clipRetrato.posterAvif}
+            width={clipRetrato.width}
+            height={clipRetrato.height}
+          />
+        )}
+        {clipRetrato && (
+          <source
+            media={RETRATO_QUERY}
+            type="image/jpeg"
+            srcSet={clipRetrato.posterJpg}
+            width={clipRetrato.width}
+            height={clipRetrato.height}
+          />
+        )}
         <source type="image/avif" srcSet={clip.posterAvif} />
         <img
           className={posterClassName}
@@ -242,8 +347,8 @@ export function HeroVideoClip({
         }}
         onPause={() => setPlaying(false)}
       >
-        <source src={clip.webm} type="video/webm" />
-        <source src={clip.mp4} type="video/mp4" />
+        {!clipRetrato && clip.webm && <source src={clip.webm} type="video/webm" />}
+        {!clipRetrato && clip.mp4 && <source src={clip.mp4} type="video/mp4" />}
       </video>
     </>
   );

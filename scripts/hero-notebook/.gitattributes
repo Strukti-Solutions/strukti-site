@@ -1,0 +1,2 @@
+# Os scripts rodam no sh do Git Bash: fim de linha LF, mesmo com core.autocrlf.
+*.sh text eol=lf

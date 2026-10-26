@@ -9,9 +9,9 @@ import Home from "./page";
 // divergência entre o HTML do servidor e o 1º render do cliente, com
 // prefers-reduced-motion ligado e desligado. Falha em onRecoverableError ou
 // em qualquer console.error (divergência de atributo só aparece lá).
-// Roda com as quatro versões do topo (siteConfig.heroVariant): "expansao", o
-// padrão, "estudio", e "video" e "classic", que seguem no código (revisão
-// HR1 da Crivo).
+// Roda com as cinco versões do topo (siteConfig.heroVariant): "expansao", o
+// padrão em produção, "estudio", "notebook" (o protótipo do branch), e "video"
+// e "classic", que seguem no código (revisão HR1 da Crivo).
 
 const heroVariant = vi.hoisted(() => ({ current: "expansao" as HeroVariant }));
 vi.mock("@/config/site", async (importOriginal) => {
@@ -96,7 +96,7 @@ async function hydrateHome(clientPrefersReducedMotion: boolean) {
   return { consoleErrors, recoverableErrors, serverHtml };
 }
 
-describe.each(["expansao", "estudio", "video", "classic"] as const)("página inicial (hero %s) — hidratação", (variant) => {
+describe.each(["expansao", "estudio", "video", "classic", "notebook"] as const)("página inicial (hero %s) — hidratação", (variant) => {
   beforeEach(() => {
     heroVariant.current = variant;
   });

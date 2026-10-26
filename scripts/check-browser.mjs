@@ -73,6 +73,46 @@
 // hero. Só usa os ganchos estáveis do hero (data-pin, data-expanded,
 // data-progress, data-content, --hx-p e as classes .hero-expansao__*).
 //
+// Com "notebook" (o modo entrada do ScrollExpandMedia, spec
+// 2026-10-23-hero-entrada-notebook-design.md: a expansão até a tela cheia,
+// uma pausa e a aproximação até a tela de um aparelho, que vira a página), a
+// etapa "entrada" confere a 1440×900, a 1366×768 com a barra de rolagem
+// clássica, a 1366×768 com a tela a 125% (deviceScaleFactor 1,25) e a
+// 390×844 em pé, com toque:
+//   1. sem JavaScript (e com reduced motion): a pose da pausa em tela cheia,
+//      o h1 inteiro à vista e fora da moldura (a ENTRADA.tituloFolga dela
+//      em pé e a tituloFolgaLado deitado, como na pausa), a tela (o bloco de chamada) no fluxo logo abaixo
+//      da cena, sem transform, com os botões clicáveis, e a altura do hero
+//      igual à com JavaScript (±2 px);
+//   2. a roda até expandir: o progresso só sobe, o palco fica preso, sem
+//      rolagem de lado, a tela no furo do aparelho em toda amostra e, entre
+//      E e E + Pa (a pausa: --hx-e = 1 e --hx-k = 0), parada (±1 px), com
+//      as metades do título inteiras na janela útil (a ENTRADA.tituloMargem
+//      da borda, ±1 px) e fora da moldura, a ENTRADA.tituloFolga dela
+//      (em pé, acima e abaixo do celular; deitado, dos lados, com a
+//      tituloMargemLado e a tituloFolgaLado);
+//   3. no quadro da liberação (lido no MutationObserver de data-expanded): a
+//      tela igual à janela útil {0, 0, clientWidth, innerHeight} (±1 px; uma
+//      tela mais alta que a janela começa nela e passa do pé) e scrollY
+//      igual à altura do palco;
+//   4. a volta: a roda para cima recolhe sem salto (a tela igual à janela em
+//      todo quadro gravado) e o progresso volta a 0 pelo mesmo caminho;
+//   5. a barra de rolagem: expandido, scrollTo(0, palco/2) e um arrasto
+//      recolhem em P = 1, e o palco nunca aparece sem a tela;
+//   6. o resize de 1440×900 para 1100×900 no meio da aproximação: a tela
+//      continua no furo do aparelho e dentro da moldura;
+//   7. o Tab do topo até o 1º botão da tela: o controle do vídeo antes; a
+//      entrada completa em menos de 500 ms, uma rolagem só, o foco à vista;
+//   8. /#contato e a posição restaurada (recarregar): começa dentro, sem
+//      salto do alvo, com o vídeo da sala pausado;
+//   9. em pé: data-orientacao="em-pe" e o celular; os passos 3 e 4 com toque;
+//  10. o teclado a 740×360 deitado, com o espaçamento do 1.4.12 e a fonte
+//      raiz a 200% (a tela mais alta que a janela): a seta até expandir, com a tela (a parte à vista,
+//      sob o clip-path da cena) no furo do aparelho em toda amostra; o último
+//      quadro antes da liberação já com a tela quase na janela (sem corte
+//      seco); os passos 3 e 4 com Page Up e seta para cima.
+// Com outra variante, avisa que pulou.
+//
 // Com um hero que prende a rolagem, três conferências gerais poderiam
 // "passar" sem conferir nada; por isso: a varredura das larguras falha se não
 // chegar ao fim da página (um hero preso a deixaria no topo) — ela começa no
@@ -163,11 +203,11 @@ import { join } from "node:path";
 
 const URL_TO_CHECK = process.argv[2] ?? "http://localhost:3000/";
 // Só algumas etapas (para iterar ou provar uma mutação sem a volta inteira):
-// CHECK_BROWSER_ETAPAS=catalogo (ou larguras, hero, expansao, catalogo,
-// interacao, separadas por vírgula). Sem a variável, todas. O controle
-// positivo de CSP roda sempre.
+// CHECK_BROWSER_ETAPAS=catalogo (ou larguras, hero, expansao, entrada,
+// catalogo, interacao, separadas por vírgula). Sem a variável, todas. O
+// controle positivo de CSP roda sempre.
 const ETAPAS = process.env.CHECK_BROWSER_ETAPAS?.split(",").map((etapa) => etapa.trim()).filter(Boolean) ?? null;
-const ETAPAS_CONHECIDAS = ["larguras", "hero", "expansao", "catalogo", "interacao"];
+const ETAPAS_CONHECIDAS = ["larguras", "hero", "expansao", "entrada", "catalogo", "interacao"];
 // Um nome errado rodaria zero etapas e terminaria verde: falha antes.
 const desconhecidas = ETAPAS?.filter((etapa) => !ETAPAS_CONHECIDAS.includes(etapa)) ?? [];
 if (desconhecidas.length > 0) {
@@ -234,6 +274,56 @@ const EXPANSAO_SIZES = [
 const EXP_WHEEL_DELTA = 40;
 const EXP_WHEEL_GAIN = 0.0007;
 const EXP_WHEEL_BUDGET = 80;
+// Hero "notebook" (o modo entrada do ScrollExpandMedia, spec
+// 2026-10-23-hero-entrada-notebook-design.md): os ganchos estáveis das
+// Tasks 2 e 3. A tela é o próprio bloco de chamada (EXP_CONTEUDO_SELECTOR);
+// o aparelho é a caixa do tamanho da tela (o furo da moldura), e a moldura é
+// a tampa do notebook ou o corpo do celular, o que estiver à vista (o
+// AparelhoVetor da fase de arte, ganchos aparelho-vetor__*).
+const ENT_SELECTOR = ".hero-expansao--entrada";
+const ENT_APARELHO_SELECTOR = ".hero-expansao__aparelho";
+const ENT_MOLDURA_SELECTOR = ".aparelho-vetor__tampa, .aparelho-vetor__corpo";
+// Computador; a barra de rolagem clássica (a janela útil ~15 px mais
+// estreita que a janela, Review Focus 1); o mesmo com a tela a 125%
+// (pixels de tela fracionários); e o celular em pé, com toque (Q6, Q26).
+const ENTRADA_SIZES = [
+  { width: 1440, height: 900, dsf: 1, mobile: false, toque: false, lcp: true },
+  { width: 1366, height: 768, dsf: 1, mobile: false, toque: false },
+  { width: 1366, height: 768, dsf: 1.25, mobile: false, toque: false },
+  { width: 390, height: 844, dsf: 2, mobile: true, toque: true, lcp: true },
+];
+// O LCP do hero: o pôster da cena (deitado ou em pé), não o fundo de tela
+// cheia nem o título. O fim do currentSrc de cada orientação:
+const ENT_LCP_POSTER_DEITADO = "midia-poster.avif";
+const ENT_LCP_POSTER_EM_PE = "midia-retrato-poster.avif";
+// Depois do load, quanto esperar a última entrada do LCP (sem rolar).
+const ENT_LCP_ESPERA_MS = 1500;
+// A roda: passos de 40 px (× 0,0007 ÷ ENTRADA.ganho ≈ 0,015 de progresso
+// cada); 4 por amostra, e 1 perto da pausa e nela, para ela ter várias
+// amostras. O orçamento sobra para a ida inteira (~66 eventos).
+const ENT_WHEEL_DELTA = 40;
+const ENT_WHEEL_BUDGET = 60;
+// O resize no meio da aproximação (Review Focus 3): de 1440 × 900 para isto.
+const ENT_RESIZE_TO = { width: 1100, height: 900 };
+// O Tab até um botão da tela completa a entrada em menos disto (Q21).
+const ENT_TAB_MS = 500;
+// As metades do título na pausa: a folga até a moldura e a margem até a
+// borda da janela útil, lidas do ENTRADA (src/lib/heroEntrada.ts), a fonte
+// única. Em pé, acima e abaixo do celular; deitado, ao lado do notebook
+// (as "Lado", maiores: crítica de arte N6 r1).
+const entradaNumero = (nome) => {
+  const fonte = readFileSync(new URL("../src/lib/heroEntrada.ts", import.meta.url), "utf8");
+  const valor = Number(fonte.match(new RegExp(`\\b${nome}: ([\\d.]+),`))?.[1]);
+  if (!Number.isFinite(valor)) throw new Error(`ENTRADA.${nome} não encontrado em src/lib/heroEntrada.ts`);
+  return valor;
+};
+const ENT_TITULO_FOLGA = entradaNumero("tituloFolga");
+const ENT_TITULO_MARGEM = entradaNumero("tituloMargem");
+const ENT_TITULO_FOLGA_LADO = entradaNumero("tituloFolgaLado");
+const ENT_TITULO_MARGEM_LADO = entradaNumero("tituloMargemLado");
+// O piso da fonte efetiva das metades na pausa, em rem (I2 da revisão final
+// da fase 2): deitado, abaixo dele as metades empilham como em pé.
+const ENT_TITULO_PISO_REM = entradaNumero("tituloPisoRem");
 // Produto que o passo de âncoras do "expansao" escolhe no menu "Produtos ▾"
 // da barra (catálogo, §3.5): o link é #slug e a página para no topo da seção
 // #produtos (§3.4), não no cartão.
@@ -1041,6 +1131,8 @@ const KEYS = {
   Tab: { key: "Tab", code: "Tab", vk: 9 },
   Space: { key: " ", code: "Space", vk: 32, text: " " },
   PageDown: { key: "PageDown", code: "PageDown", vk: 34 },
+  PageUp: { key: "PageUp", code: "PageUp", vk: 33 },
+  ArrowUp: { key: "ArrowUp", code: "ArrowUp", vk: 38 },
   End: { key: "End", code: "End", vk: 35 },
   Home: { key: "Home", code: "Home", vk: 36 },
   ArrowDown: { key: "ArrowDown", code: "ArrowDown", vk: 40 },
@@ -1846,6 +1938,956 @@ async function expTouchPass(cdp, ctx) {
   } finally {
     await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: false }).catch(() => {});
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 }).catch(() => {});
+  }
+}
+
+// --- Hero "notebook" (modo entrada): as passadas (cada uma recebe o tamanho e onde anotar) ---
+
+// Lê, na hora (sem esperar quadro), os ganchos e a geometria da entrada: o
+// progresso (--hx-p) e as fases (--hx-e, a expansão; --hx-k, a aproximação),
+// os data-*, a janela útil e as caixas do palco, da tela, do aparelho (o
+// furo da moldura) e da moldura à vista. Uma função em texto, para o estado
+// assentado, o gravador de quadros e o MutationObserver usarem a mesma.
+const ENT_READ_FN = `(() => {
+  const root = document.querySelector(${JSON.stringify(ENT_SELECTOR)});
+  if (!root) return null;
+  const doc = document.documentElement;
+  const rect = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height };
+  };
+  const shown = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).display !== "none";
+  const num = (name) => {
+    const value = root.style.getPropertyValue(name);
+    return value === "" ? null : Number(value);
+  };
+  const palco = root.querySelector(${JSON.stringify(EXP_PALCO_SELECTOR)});
+  const moldura = [...root.querySelectorAll(${JSON.stringify(ENT_MOLDURA_SELECTOR)})].find(shown) ?? null;
+  // A tela à vista: na cena, o clip-path corta o que passa da altura da
+  // janela (a do palco); a caixa é a de cima, na escala da tela.
+  const telaEl = root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)});
+  let tela = rect(telaEl);
+  const telaInteira = tela;
+  if (tela && palco && getComputedStyle(telaEl).clipPath !== "none") {
+    const h = Math.min(tela.h, (tela.w * palco.clientHeight) / palco.clientWidth);
+    tela = { ...tela, bottom: tela.top + h, h };
+  }
+  return {
+    t: performance.now(),
+    hxp: num("--hx-p"),
+    e: num("--hx-e"),
+    k: num("--hx-k"),
+    pin: root.dataset.pin ?? null,
+    expanded: root.dataset.expanded ?? null,
+    progress: root.dataset.progress ?? null,
+    input: root.dataset.input ?? null,
+    orientacao: root.dataset.orientacao ?? null,
+    scrollY,
+    vh: innerHeight,
+    vw: innerWidth,
+    cw: doc.clientWidth,
+    sw: doc.scrollWidth,
+    height: root.offsetHeight,
+    palco: rect(palco),
+    tela,
+    telaInteira,
+    // A altura da tela sem escala (com o corte da cena, ela passa da janela?).
+    telaAltura: telaEl ? telaEl.offsetHeight : null,
+    aparelho: rect(root.querySelector(${JSON.stringify(ENT_APARELHO_SELECTOR)})),
+    moldura: rect(moldura),
+    linhas: [...root.querySelectorAll(".hero-expansao__linha")].map(rect),
+    // A fonte efetiva de cada metade (o font-size vezes a escala do transform, pela altura) e o rem.
+    linhasFonte: [...root.querySelectorAll(".hero-expansao__linha")].map((el) =>
+      el.offsetHeight > 0 ? (parseFloat(getComputedStyle(el).fontSize) * el.getBoundingClientRect().height) / el.offsetHeight : null,
+    ),
+    rem: parseFloat(getComputedStyle(doc).fontSize),
+    // O controle do vídeo: some com a sala coberta (data-coberta, I1 da revisão final da fase 2).
+    coberta: root.dataset.coberta ?? null,
+    controle: (() => {
+      const botao = root.querySelector(".hero-expansao__controle button");
+      return botao ? getComputedStyle(botao).visibility : null;
+    })(),
+    notebook: shown(root.querySelector(".aparelho-vetor__notebook")),
+    celular: shown(root.querySelector(".aparelho-vetor__celular")),
+  };
+})`;
+
+// Com JavaScript: assenta como o EXP_STATE_EXPR (scrollY e data-progress
+// iguais por 3 quadros; de 6 a 90 quadros) e lê.
+const ENT_STATE_EXPR = `(async () => {
+  const root = document.querySelector(${JSON.stringify(ENT_SELECTOR)});
+  if (!root) return null;
+  let lastY = null;
+  let lastP = null;
+  let stable = 0;
+  for (let i = 0; i < 90 && (i < 6 || stable < 3); i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    if (scrollY === lastY && root.dataset.progress === lastP) stable++;
+    else { stable = 0; lastY = scrollY; lastP = root.dataset.progress; }
+  }
+  return ${ENT_READ_FN}();
+})()`;
+
+/**
+ * Gravador, dentro da página: `marks` guarda a leitura feita no
+ * MutationObserver de `data-expanded` (o mesmo quadro da liberação e da
+ * volta, depois do scrollTo síncrono e antes da pintura); com `frames`,
+ * guarda também uma leitura por quadro (requestAnimationFrame).
+ */
+const entRecStartExpr = ({ frames }) => `(() => {
+  const read = ${ENT_READ_FN};
+  const root = document.querySelector(${JSON.stringify(ENT_SELECTOR)});
+  if (!root) return false;
+  if (window.__entRec) { window.__entRec.on = false; window.__entRec.mo.disconnect(); }
+  const rec = (window.__entRec = { frames: [], marks: [], on: true });
+  rec.mo = new MutationObserver(() => rec.marks.push(read()));
+  rec.mo.observe(root, { attributes: true, attributeFilter: ["data-expanded"] });
+  if (${frames}) {
+    const loop = () => {
+      if (!rec.on) return;
+      rec.frames.push(read());
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+  return true;
+})()`;
+const ENT_REC_STOP_EXPR = `(() => {
+  const rec = window.__entRec;
+  if (!rec) return null;
+  rec.on = false;
+  rec.mo.disconnect();
+  window.__entRec = null;
+  return { frames: rec.frames, marks: rec.marks };
+})()`;
+
+const entState = (cdp) => evalValue(cdp, ENT_STATE_EXPR, { awaitPromise: true });
+const entRecStart = (cdp, frames = false) => evalValue(cdp, entRecStartExpr({ frames }));
+const entRecStop = async (cdp) => (await evalValue(cdp, ENT_REC_STOP_EXPR)) ?? { frames: [], marks: [] };
+
+const entRect = (r) =>
+  r ? `(${r.left.toFixed(1)}, ${r.top.toFixed(1)}) ${r.w.toFixed(1)}×${r.h.toFixed(1)}` : "sem caixa";
+/** As duas caixas coincidem, borda a borda, com a folga `tol` (px). */
+const entSame = (a, b, tol = 1) =>
+  !!a && !!b && ["left", "top", "right", "bottom"].every((side) => Math.abs(a[side] - b[side]) <= tol);
+/** A janela útil (sem a barra de rolagem clássica), na leitura `s`. */
+const entJanela = (s) => ({ left: 0, top: 0, right: s.cw, bottom: s.vh, w: s.cw, h: s.vh });
+/**
+ * A tela começa na janela útil e a cobre: os lados e o topo dela (±1 px) e,
+ * embaixo, até o pé da janela ou além. Solta, uma tela mais alta que a
+ * janela (a fonte grande do passo 10) segue no fluxo; na cena, a parte à
+ * vista (sob o corte) é a janela.
+ */
+const entNaJanela = (s, tol = 1) =>
+  !!s.tela &&
+  Math.abs(s.tela.left) <= tol &&
+  Math.abs(s.tela.top) <= tol &&
+  Math.abs(s.tela.right - s.cw) <= tol &&
+  s.tela.bottom >= s.vh - tol;
+const entDentro = (inner, outer, tol = 1) =>
+  !!inner &&
+  !!outer &&
+  inner.left >= outer.left - tol &&
+  inner.top >= outer.top - tol &&
+  inner.right <= outer.right + tol &&
+  inner.bottom <= outer.bottom + tol;
+/**
+ * A tela cobre a janela útil (o palco não aparece sem ela): dos lados e
+ * embaixo com 1 px; em cima, com `folga` (a volta pela barra de rolagem
+ * recolhe abaixo de 5 px do topo da tela, TOP_SLOP_PX do componente).
+ */
+const entCobre = (s, folga = 1) =>
+  !!s.tela && s.tela.left <= 1 && s.tela.right >= s.cw - 1 && s.tela.top <= folga && s.tela.bottom >= s.vh - 1;
+const entPausa = (s) => s.e === 1 && s.k === 0 && s.expanded !== "true";
+const entDesc = (s) =>
+  `progresso ${s.progress} (e ${fixed2(s.e)}, k ${fixed2(s.k)}), scrollY ${Math.round(s.scrollY * 100) / 100}, data-expanded=${s.expanded}, data-pin=${s.pin}`;
+
+/** Aplica o tamanho do caso (e o toque emulado, no celular). */
+async function entMetrics(cdp, ctx, size = ctx) {
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width: size.width,
+    height: size.height,
+    deviceScaleFactor: size.dsf ?? 1,
+    mobile: !!size.mobile,
+  });
+  await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: !!ctx.toque, maxTouchPoints: ctx.toque ? 5 : 1 });
+}
+
+/** Um arrasto de um dedo, de `passos` movimentos de `px` (positivo: o dedo sobe, a página "desce"). */
+async function entArrasto(cdp, x, y0, passos, px) {
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: y0, id: 1 }] });
+  for (let i = 1; i <= passos; i++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y0 - i * px, id: 1 }] });
+    await sleep(30);
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+}
+
+// Sem JavaScript ou com reduced motion depois de montar: a pose da pausa em
+// tela cheia (o palco e o quadro cobrem a janela útil, com o aparelho à
+// vista), o h1 inteiro à vista e a tela no fluxo, sem transform, logo abaixo
+// da cena, com os botões clicáveis. Devolve os problemas e a altura do hero.
+const entStaticExpr = (scriptsOn) => `(async () => {
+  await document.fonts.ready;
+  const opacityOf = ${EFFECTIVE_OPACITY_FN};
+  const root = document.querySelector(${JSON.stringify(ENT_SELECTOR)});
+  if (!root) return { missing: true };
+  window.scrollTo({ top: 0, behavior: "instant" });
+  const s = ${ENT_READ_FN}();
+  const problems = [];
+  const px = (n) => Math.round(n * 10) / 10;
+  const box = (r) => r ? "(" + px(r.left) + ", " + px(r.top) + ") " + px(r.w) + "×" + px(r.h) : "sem caixa";
+  const label = (el) => {
+    if (!el) return "nada";
+    const cls = typeof el.className === "string" ? el.className.trim().split(/\\s+/)[0] : "";
+    return el.tagName.toLowerCase() + (cls ? "." + cls : "");
+  };
+  const near = (a, b) => Math.abs(a - b) <= 1;
+  if (s.pin !== "false") problems.push("data-pin=" + s.pin + " (esperado false: nada preso)");
+  if (s.expanded !== "false") problems.push("data-expanded=" + s.expanded + " (esperado false)");
+  if (s.hxp !== null) problems.push("--hx-p escrito na seção (esperado ausente)");
+  const p = s.palco;
+  if (!p || !(near(p.left, 0) && near(p.top, 0) && near(p.right, s.cw) && near(p.bottom, s.vh))) {
+    problems.push("o palco não cobre a janela útil (" + box(p) + "; janela " + s.cw + "×" + s.vh + ")");
+  }
+  const midia = root.querySelector(${JSON.stringify(EXP_MIDIA_SELECTOR)});
+  const m = midia && midia.getBoundingClientRect();
+  if (!m || !(near(m.left, 0) && near(m.top, 0) && near(m.right, s.cw) && near(m.bottom, s.vh))) {
+    problems.push("a cena não está em tela cheia (o quadro em " + box(m && { left: m.left, top: m.top, w: m.width, h: m.height }) + ")");
+  }
+  if (!s.moldura) problems.push("o aparelho não aparece na cena");
+  else if (!(s.moldura.bottom > 0 && s.moldura.top < s.vh && s.moldura.right > 0 && s.moldura.left < s.cw)) {
+    problems.push("o aparelho está fora da janela (" + box(s.moldura) + ")");
+  }
+  if (!s.aparelho || !s.moldura || s.aparelho.w < 1) problems.push("sem o aparelho (" + ${JSON.stringify(ENT_APARELHO_SELECTOR)} + ")");
+  const video = root.querySelector("video");
+  if (video && !video.paused) problems.push("o vídeo da sala está tocando no estado parado");
+
+  const bar = document.querySelector(".topbar");
+  const barBottom = bar ? bar.getBoundingClientRect().bottom : 0;
+  const h1 = root.querySelector("h1#hero-title");
+  if (!h1 || !h1.textContent.trim()) problems.push("sem o h1#hero-title com texto");
+  else {
+    if (opacityOf(h1) < 0.99) problems.push("o título está apagado (opacidade " + opacityOf(h1).toFixed(2) + ")");
+    for (const linha of h1.querySelectorAll(".hero-expansao__linha")) {
+      const r = linha.getBoundingClientRect();
+      if (opacityOf(linha) < 0.99) problems.push("a linha '" + linha.textContent.trim() + "' do título está apagada");
+      if (r.left < -0.5 || r.right > s.cw + 0.5) problems.push("a linha '" + linha.textContent.trim() + "' do título passa da largura (x " + px(r.left) + "–" + px(r.right) + ")");
+      if (r.top < barBottom - 0.5 || r.bottom > s.vh + 0.5) problems.push("a linha '" + linha.textContent.trim() + "' do título não está à vista (y " + px(r.top) + "–" + px(r.bottom) + ", barra até " + px(barBottom) + ")");
+    }
+    // O pôster da pausa (§7): as metades fora da moldura, como na pausa (o
+    // entProblemasDoTitulo; sem JavaScript não há data-orientacao, vale a
+    // media query).
+    const [l1, l2] = s.linhas;
+    const mo = s.moldura;
+    const emPe = matchMedia("(orientation: portrait)").matches;
+    const folga = emPe ? ${ENT_TITULO_FOLGA} : ${ENT_TITULO_FOLGA_LADO};
+    if (l1 && l2 && mo) {
+      if (emPe) {
+        if (l1.bottom > mo.top - folga + 1) problems.push("a linha 1 do título termina em y " + px(l1.bottom) + ", a menos de " + folga + "px da moldura (y " + px(mo.top) + ")");
+        if (l2.top < mo.bottom + folga - 1) problems.push("a linha 2 do título começa em y " + px(l2.top) + ", a menos de " + folga + "px da moldura (y " + px(mo.bottom) + ")");
+      } else {
+        if (l1.right > mo.left - folga + 1) problems.push("a linha 1 do título termina em x " + px(l1.right) + ", a menos de " + folga + "px da moldura (x " + px(mo.left) + ")");
+        if (l2.left < mo.right + folga - 1) problems.push("a linha 2 do título começa em x " + px(l2.left) + ", a menos de " + folga + "px da moldura (x " + px(mo.right) + ")");
+      }
+    }
+  }
+
+  const tela = root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)});
+  if (!tela) problems.push("sem a tela (" + ${JSON.stringify(EXP_CONTEUDO_SELECTOR)} + ")");
+  else {
+    if (getComputedStyle(tela).transform !== "none") problems.push("a tela tem transform no estado parado (" + getComputedStyle(tela).transform + ")");
+    if (!p || !near(s.tela.top, p.bottom) || !near(s.tela.left, 0) || !near(s.tela.right, s.cw)) {
+      problems.push("a tela não está no fluxo logo abaixo da cena (tela " + box(s.tela) + ", pé do palco em y=" + (p ? px(p.bottom) : "?") + ")");
+    }
+    for (const link of tela.querySelectorAll("a[href]")) {
+      link.scrollIntoView({ block: "center", behavior: "instant" });
+      const r = link.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const name = "'" + link.textContent.trim().slice(0, 30) + "'";
+      if (opacityOf(link) < 0.99) problems.push("o botão " + name + " está apagado");
+      else if (!hit || !(hit === link || link.contains(hit))) problems.push("o botão " + name + " está coberto por " + label(hit));
+    }
+  }
+  const toggle = root.querySelector(".hero-expansao__controle button");
+  const toggleShown = !!toggle && !toggle.hidden && getComputedStyle(toggle).display !== "none";
+  if (${scriptsOn ? "!toggleShown" : "toggleShown"}) {
+    problems.push(${JSON.stringify(scriptsOn ? "o controle do vídeo não apareceu depois de montar" : "o controle do vídeo aparece sem JavaScript")});
+  }
+  if (s.sw > s.cw) problems.push("a página rola de lado (" + (s.sw - s.cw) + "px)");
+  window.scrollTo({ top: 0, behavior: "instant" });
+  return { problems, height: s.height, orientacao: s.orientacao, celular: s.celular, notebook: s.notebook };
+})()`;
+
+/** 1. Sem JavaScript (e, à parte, com reduced motion): a pose da pausa. Devolve a altura do hero. */
+async function entStaticPass(cdp, ctx, { scriptsOn }) {
+  const what = scriptsOn ? "reduced motion" : "sem JavaScript";
+  await setReducedMotion(cdp, scriptsOn);
+  if (!scriptsOn) await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
+  let result;
+  try {
+    await navigate(cdp, URL_TO_CHECK, `carregar (${what}) a ${ctx.size}`);
+    if (scriptsOn) await expWaitMounted(cdp);
+    result = await evalValue(cdp, entStaticExpr(scriptsOn), { awaitPromise: true });
+  } finally {
+    if (!scriptsOn) await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
+    await setReducedMotion(cdp, false);
+  }
+  if (result.missing) {
+    ctx.fail(`${what}: a variante é "notebook", mas a página não tem ${ENT_SELECTOR} (o gancho do hero mudou?)`);
+    return null;
+  }
+  for (const problem of result.problems) ctx.fail(`${what}: ${problem}`);
+  if (scriptsOn && ctx.staticHeight != null && Math.abs(result.height - ctx.staticHeight) > 2) {
+    ctx.fail(`${what}: o hero tem ${result.height}px; sem JavaScript, ${ctx.staticHeight}px (a altura não pode mudar)`);
+  }
+  if (scriptsOn && ctx.toque && (result.orientacao !== "em-pe" || !result.celular || result.notebook)) {
+    ctx.fail(`${what}: em pé, data-orientacao=${result.orientacao}, celular ${result.celular ? "à vista" : "escondido"}, notebook ${result.notebook ? "à vista" : "escondido"} (esperado em-pe e só o celular)`);
+  }
+  ctx.log(
+    `${what}: ${result.problems.length === 0 ? "a pose da pausa em tela cheia, o h1 à vista, a tela no fluxo abaixo da cena e os botões clicáveis" : `${result.problems.length} problema(s)`}; altura do hero ${result.height}px`,
+  );
+  return result.height;
+}
+
+/**
+ * A ida até a liberação: `avancar(fino)` dá um gesto (fino perto da pausa e
+ * nela) e cada amostra espera a animação assentar. Confere o progresso só
+ * subindo, o palco preso e sem rolagem de lado (expCheckForward), a tela
+ * no furo do aparelho e dentro da moldura em toda amostra, e o fim
+ * expandido. Devolve as amostras, ou null se não expandiu.
+ */
+async function entIda(cdp, ctx, what, avancar, budget) {
+  const samples = [await entState(cdp)];
+  let unsettled = 0;
+  for (let i = 0; i < budget && samples.at(-1).expanded !== "true"; i++) {
+    const s = samples.at(-1);
+    // Fino perto da pausa e nela (várias amostras dela) e no fim da
+    // aproximação (o gesto acaba antes da liberação, sem sobra que role).
+    await avancar(s.e !== null && ((s.e > 0.8 && !(s.k > 0)) || s.k > 0.9));
+    if (!(await expSettle(cdp))) unsettled++;
+    samples.push(await entState(cdp));
+  }
+  if (unsettled > 0) ctx.fail(`${what}: a animação não assentou em ${unsettled} amostra(s)`);
+  expCheckForward(ctx, what, samples);
+  const desalinhada = samples.find((s) => s.expanded !== "true" && !entSame(s.tela, s.aparelho));
+  if (desalinhada) {
+    ctx.fail(`${what}: com ${entDesc(desalinhada)}, a tela (${entRect(desalinhada.tela)}) saiu do furo do aparelho (${entRect(desalinhada.aparelho)})`);
+  }
+  const fora = samples.find((s) => s.expanded !== "true" && !entDentro(s.tela, s.moldura));
+  if (fora) ctx.fail(`${what}: com ${entDesc(fora)}, a tela (${entRect(fora.tela)}) passa da moldura (${entRect(fora.moldura)})`);
+  entCheckTituloNaPausa(ctx, what, samples);
+  const last = samples.at(-1);
+  ctx.log(`${what}: progresso ${samples.map((s) => s.progress).join(" → ")}`);
+  if (last.expanded !== "true") {
+    ctx.fail(`${what}: ${samples.length - 1} gestos e não expandiu (${entDesc(last)})`);
+    return null;
+  }
+  if (last.progress !== "1.00" || last.pin !== "false") ctx.fail(`${what}: expandido, mas ${entDesc(last)} (esperado 1.00 e solto)`);
+  return samples;
+}
+
+/**
+ * As metades do título fora da moldura do aparelho (fase 2 da arte, ajuste
+ * de arte r1 da N4): dentro da janela útil com a margem do ENTRADA e a folga
+ * da moldura (a caixa da tampa ou do corpo), com 1 px de tolerância. Deitado,
+ * a linha 1 termina antes da borda esquerda e a 2 começa depois da direita
+ * (Q19); em pé, a linha 1 fica acima da moldura e a 2 abaixo dela.
+ *
+ * Deitado, a fonte efetiva não fica abaixo do piso (`tituloPisoRem`); quando
+ * ele venceria, vale a disposição de reserva (I2 da revisão final da fase
+ * 2): as metades empilhadas como em pé, centradas, com a margem de em pé,
+ * dentro da janela, a linha 1 acima da 2, e a folga da moldura, exceto
+ * quando a janela, baixa demais, a encosta na margem do topo ou do pé (aí a
+ * metade pode passar sobre a moldura, como no estado parado). Devolve os
+ * problemas (vazio: tudo certo).
+ */
+function entProblemasDoTitulo(s) {
+  const [l1, l2] = s.linhas;
+  const m = s.moldura;
+  const problemas = [];
+  const emPe = s.orientacao === "em-pe";
+  // A reserva deitada: as duas metades no meio da janela (ao lado do notebook, nenhuma fica).
+  const noMeio = (l) => Math.abs((l.left + l.right) / 2 - s.cw / 2) <= 1;
+  const reserva = !emPe && noMeio(l1) && noMeio(l2);
+  const empilhado = emPe || reserva;
+  const margem = empilhado ? ENT_TITULO_MARGEM : ENT_TITULO_MARGEM_LADO;
+  const folga = emPe ? ENT_TITULO_FOLGA : ENT_TITULO_FOLGA_LADO;
+  for (const [nome, l] of [["linha 1", l1], ["linha 2", l2]]) {
+    if (l.left < margem - 1 || l.right > s.cw - margem + 1) {
+      problemas.push(`a ${nome} (x ${l.left.toFixed(1)}–${l.right.toFixed(1)}) passa da margem de ${margem}px da janela (${s.cw})`);
+    }
+    if (reserva && (l.top < margem - 1 || l.bottom > s.vh - margem + 1)) {
+      problemas.push(`a ${nome} (y ${l.top.toFixed(1)}–${l.bottom.toFixed(1)}) passa da margem de ${margem}px da janela (${s.vh})`);
+    }
+  }
+  if (!emPe) {
+    const piso = ENT_TITULO_PISO_REM * (s.rem || 16);
+    for (const [nome, fonte] of [["linha 1", s.linhasFonte?.[0]], ["linha 2", s.linhasFonte?.[1]]]) {
+      if (fonte != null && fonte < piso - 0.5) {
+        problemas.push(`a ${nome} tem ${fonte.toFixed(1)}px de fonte efetiva, abaixo do piso de ${piso}px (${ENT_TITULO_PISO_REM}rem)`);
+      }
+    }
+  }
+  if (reserva && l1.bottom > l2.top + 1) {
+    problemas.push(`a linha 1 (y ${l1.top.toFixed(1)}–${l1.bottom.toFixed(1)}) cobre a linha 2 (y ${l2.top.toFixed(1)}–${l2.bottom.toFixed(1)})`);
+  }
+  if (empilhado) {
+    // Na reserva, a janela manda sobre a folga: a metade encostada na margem do topo ou do pé pode passar sobre a moldura.
+    const noTopo = reserva && Math.abs(l1.top - margem) <= 1;
+    const noPe = reserva && Math.abs(l2.bottom - (s.vh - margem)) <= 1;
+    if (!noTopo && l1.bottom > m.top - folga + 1) {
+      problemas.push(`a linha 1 termina em y ${l1.bottom.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.top.toFixed(1)})`);
+    }
+    if (!noPe && l2.top < m.bottom + folga - 1) {
+      problemas.push(`a linha 2 começa em y ${l2.top.toFixed(1)}, a menos de ${folga}px da moldura (y ${m.bottom.toFixed(1)})`);
+    }
+  } else {
+    if (l1.right > m.left - folga + 1) {
+      problemas.push(`a linha 1 termina em x ${l1.right.toFixed(1)}, a menos de ${folga}px da moldura (x ${m.left.toFixed(1)})`);
+    }
+    if (l2.left < m.right + folga - 1) {
+      problemas.push(`a linha 2 começa em x ${l2.left.toFixed(1)}, a menos de ${folga}px da moldura (x ${m.right.toFixed(1)})`);
+    }
+  }
+  return problemas;
+}
+
+/**
+ * O título inteiro na pausa: nas amostras da pausa, as metades seguem o
+ * entProblemasDoTitulo. O arrasto do toque anda em passos largos e pode pular
+ * a pausa: aí só anota.
+ */
+function entCheckTituloNaPausa(ctx, what, samples) {
+  const pausas = samples.filter((s) => entPausa(s) && s.moldura && s.linhas?.length === 2);
+  if (pausas.length === 0) {
+    ctx.log(`${what}: nenhuma amostra na pausa; o título na pausa não foi conferido aqui`);
+    return;
+  }
+  for (const s of pausas) {
+    const problemas = entProblemasDoTitulo(s);
+    if (problemas.length > 0) {
+      ctx.fail(`${what}: na pausa (${entDesc(s)}), ${problemas.join("; ")}`);
+      return;
+    }
+  }
+  const [l1, l2] = pausas[0].linhas;
+  const fonte = (pausas[0].linhasFonte ?? []).map((f) => (f == null ? "?" : f.toFixed(1))).join(" e ");
+  ctx.log(
+    `${what}: título na pausa em ${pausas.length} amostra(s): linha 1 ${entRect(l1)}, moldura ${entRect(pausas[0].moldura)}, linha 2 ${entRect(l2)}; fonte efetiva ${fonte}px`,
+  );
+}
+
+/**
+ * 3. O quadro da liberação (a leitura do MutationObserver): a tela é a
+ * janela útil e a página está no topo dela. Depois de assentar, a página
+ * fica ali (`exato`: o último gesto acabou antes da liberação) ou um pouco
+ * abaixo (o resto do gesto, que já rola a página: o arrasto continua), e
+ * nunca acima do topo da tela.
+ */
+function entCheckLiberacao(ctx, what, marks, depois, { exato }) {
+  const quadro = marks.find((mark) => mark.expanded === "true");
+  if (!quadro) {
+    ctx.fail(`${what}: não houve quadro de liberação (data-expanded não virou "true")`);
+    return;
+  }
+  if (!entNaJanela(quadro)) {
+    ctx.fail(`${what}: no quadro da liberação, a tela está em ${entRect(quadro.tela)}; a janela útil é (0, 0) ${quadro.cw}×${quadro.vh} (Review Focus 1)`);
+  }
+  if (!quadro.palco || Math.abs(quadro.scrollY - quadro.palco.h) > 1) {
+    ctx.fail(`${what}: no quadro da liberação, scrollY ${quadro.scrollY}; o palco tem ${quadro.palco?.h}px (a página solta no topo da tela)`);
+  }
+  const passou = depois.scrollY - (depois.palco?.h ?? NaN);
+  if (exato ? Math.abs(passou) > 1 : !(passou >= -1)) {
+    ctx.fail(`${what}: depois de assentar, scrollY ${depois.scrollY}; o palco tem ${depois.palco?.h}px (${exato ? "a página não fica no topo da tela" : "a página voltou para acima do topo da tela"})`);
+  }
+  ctx.log(
+    `${what}: no quadro da liberação, tela ${entRect(quadro.tela)}, janela ${quadro.cw}×${quadro.vh}, scrollY ${quadro.scrollY} (palco ${quadro.palco?.h}px); assentado em scrollY ${depois.scrollY}`,
+  );
+}
+
+/**
+ * 4. A volta: expandido no topo da tela, `recolher()` recolhe sem salto (a
+ * tela igual à janela em todo quadro gravado, antes e depois), presa em
+ * P = 1 no topo; depois `recuar(fino)` leva P a 0 pelo mesmo caminho (o
+ * progresso só desce, o palco preso, a tela no aparelho, a pausa no mesmo
+ * lugar da ida e, em 0, a tela onde começou).
+ */
+async function entVolta(cdp, ctx, what, { recolher, recuar, budget, s0, pausaIda }) {
+  // No topo da tela (o resto do último gesto pode ter rolado a página um
+  // pouco abaixo): uma rolagem que o hero não causou, sem recolher.
+  await evalValue(
+    cdp,
+    `(() => { const palco = document.querySelector(${JSON.stringify(EXP_PALCO_SELECTOR)}); window.scrollTo({ top: palco.offsetHeight, left: 0, behavior: "instant" }); })()`,
+  );
+  const antes = await entState(cdp);
+  if (antes.expanded !== "true" || !entNaJanela(antes)) {
+    ctx.fail(`${what}: antes de recolher, esperava expandido com a tela na janela (${entDesc(antes)}, tela ${entRect(antes.tela)})`);
+    return;
+  }
+  await entRecStart(cdp, true);
+  await recolher();
+  await sleep(400);
+  const rec = await entRecStop(cdp);
+  const depois = await entState(cdp);
+  if (depois.expanded !== "false" || depois.pin !== "true" || depois.scrollY > 0.5 || depois.progress !== "1.00") {
+    ctx.fail(`${what}: não recolheu preso em P = 1 no topo (${entDesc(depois)})`);
+    return;
+  }
+  const salto = [...rec.marks, ...rec.frames, depois].find((s) => !entNaJanela(s));
+  if (salto) ctx.fail(`${what}: ao recolher, um quadro com a tela em ${entRect(salto.tela)} (${entDesc(salto)}); esperado a janela inteira, sem salto`);
+  ctx.log(`${what}: recolheu sem salto (${rec.frames.length} quadros gravados com a tela na janela), ${entDesc(depois)}`);
+  // P = 1 recolhido: a tela cobre a sala, o vídeo fica pausado e o controle, que não faria nada, some (I1).
+  if (depois.coberta !== "true" || depois.controle !== "hidden") {
+    ctx.fail(`${what}: recolhido em P = 1, data-coberta=${depois.coberta} e o controle do vídeo com visibility ${depois.controle} (esperado "true" e hidden: a sala está coberta)`);
+  }
+
+  const samples = [depois];
+  for (let i = 0; i < budget && samples.at(-1).progress !== "0.00"; i++) {
+    const s = samples.at(-1);
+    await recuar(s.e === 1 && !(s.k > 0.15));
+    await expSettle(cdp);
+    samples.push(await entState(cdp));
+  }
+  const last = samples.at(-1);
+  if (last.progress !== "0.00") {
+    ctx.fail(`${what}: ${samples.length - 1} gestos para cima e o progresso não voltou a 0 (${entDesc(last)})`);
+    return;
+  }
+  for (let i = 1; i < samples.length; i++) {
+    if (Number(samples[i].progress) > Number(samples[i - 1].progress) + 0.005) {
+      ctx.fail(`${what}: voltando, o progresso subiu de ${samples[i - 1].progress} para ${samples[i].progress}`);
+      break;
+    }
+  }
+  const solta = samples.find((s) => s.pin !== "true" || !holdsViewport(s));
+  if (solta) ctx.fail(`${what}: voltando, o palco soltou (${entDesc(solta)}, palco em y=${Math.round(solta.palco?.top ?? NaN)})`);
+  const desalinhada = samples.find((s) => !entSame(s.tela, s.aparelho));
+  if (desalinhada) ctx.fail(`${what}: voltando, com ${entDesc(desalinhada)}, a tela (${entRect(desalinhada.tela)}) saiu do aparelho (${entRect(desalinhada.aparelho)})`);
+  const pausa = samples.filter(entPausa);
+  if (pausaIda) {
+    const outra = pausa.find((s) => !entSame(s.tela, pausaIda));
+    if (outra) ctx.fail(`${what}: voltando, na pausa a tela está em ${entRect(outra.tela)}; na ida, em ${entRect(pausaIda)} (não é o mesmo caminho)`);
+  }
+  if (!entSame(last.tela, s0.tela)) ctx.fail(`${what}: de volta a 0, a tela está em ${entRect(last.tela)}; no começo, em ${entRect(s0.tela)}`);
+  if (last.coberta !== "false" || last.controle !== "visible") {
+    ctx.fail(`${what}: de volta a 0, data-coberta=${last.coberta} e o controle do vídeo com visibility ${last.controle} (esperado "false" e visible)`);
+  }
+  ctx.log(`${what}: recolhido em P = 1, o controle do vídeo fora da tela (visibility ${depois.controle}); de volta a 0, à vista (${last.controle})`);
+  ctx.log(`${what}: voltou a 0 pelo mesmo caminho (${samples.map((s) => s.progress).join(" → ")}; ${pausa.length} amostra(s) na pausa)`);
+}
+
+/** 2, 3 e 4 com a roda: a ida, a pausa parada, a liberação e a volta. */
+async function entRodaPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "roda"))) return;
+  const x = Math.round(ctx.width / 2);
+  const y = Math.round(ctx.height / 2);
+  const s0 = await entState(cdp);
+  if (ctx.staticHeight != null && Math.abs(s0.height - ctx.staticHeight) > 2) {
+    ctx.fail(`roda: preso, o hero tem ${s0.height}px; sem JavaScript, ${ctx.staticHeight}px (±2: as âncoras saem do lugar)`);
+  }
+  if (ctx.dsf === 1 && ctx.width === 1366 && !(s0.cw < s0.vw)) {
+    ctx.fail(`roda: a ${ctx.size}, a barra de rolagem clássica não apareceu (janela útil ${s0.cw} = janela ${s0.vw}); o Review Focus 1 não foi conferido`);
+  }
+  await entRecStart(cdp);
+  const samples = await entIda(
+    cdp,
+    ctx,
+    "roda",
+    async (fino) => {
+      for (let k = 0; k < (fino ? 1 : 4); k++) await wheelAt(cdp, x, y, ENT_WHEEL_DELTA);
+    },
+    ENT_WHEEL_BUDGET,
+  );
+  const rec = await entRecStop(cdp);
+  if (!samples) return;
+  // 2. Entre E e E + Pa, nada se move com a rolagem: a tela fica parada.
+  const pausa = samples.filter(entPausa);
+  if (pausa.length < 2) ctx.fail(`roda: só ${pausa.length} amostra(s) na pausa (e = 1, k = 0); esperava pelo menos 2`);
+  const andou = pausa.find((s) => !entSame(s.tela, pausa[0].tela));
+  if (andou) ctx.fail(`roda: na pausa, a tela andou de ${entRect(pausa[0].tela)} para ${entRect(andou.tela)} (progresso ${andou.progress})`);
+  ctx.log(`roda: pausa em ${pausa.map((s) => s.progress).join(", ")}, tela parada em ${entRect(pausa[0]?.tela)}`);
+  entCheckLiberacao(ctx, "roda", rec.marks, samples.at(-1), { exato: true });
+  // 4. A volta: a roda para cima no topo da tela e depois até 0.
+  await entVolta(cdp, ctx, "roda, volta", {
+    recolher: () => wheelAt(cdp, x, y, -100),
+    recuar: async (fino) => {
+      for (let k = 0; k < (fino ? 1 : 4); k++) await wheelAt(cdp, x, y, -ENT_WHEEL_DELTA);
+    },
+    budget: ENT_WHEEL_BUDGET,
+    s0,
+    pausaIda: pausa[0]?.tela ?? null,
+  });
+}
+
+/**
+ * 5. A barra de rolagem (Review Focus 2): expandido, `scrollTo(0, palco/2)`
+ * (com o scroll-behavior: smooth do html, como o Home do navegador) e,
+ * depois, um arrasto (posições instantâneas, uma por quadro) recolhem em
+ * P = 1, e em nenhum quadro o palco aparece sem a tela por cima.
+ */
+async function entBarraPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "barra de rolagem"))) return;
+  const notas = [];
+  for (const [nome, expr] of [
+    ["scrollTo(0, palco/2)", (meio) => `window.scrollTo(0, ${meio})`],
+    [
+      "arrasto da barra",
+      // Uma posição por quadro, cada uma numa tarefa entre os quadros, como
+      // os eventos do mouse (um scrollTo dentro do requestAnimationFrame
+      // seria pintado antes de o evento scroll chegar, o que um arrasto de
+      // verdade, pela thread principal, não faz).
+      (meio) => `(async () => {
+        for (const f of [1.5, 1.2, 0.9, 0.6, 0.3, 0.1]) {
+          await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+          window.scrollTo({ top: Math.round(${meio} * f), left: 0, behavior: "instant" });
+        }
+      })()`,
+    ],
+  ]) {
+    // O End anima como o clique da roda (~0,7 s); o data-progress fica em
+    // 0.99 na cauda, e o entState sozinho a daria por assentada.
+    await pressKey(cdp, KEYS.End);
+    await expSettle(cdp);
+    const aberto = await entState(cdp);
+    if (aberto.expanded !== "true" || Math.abs(aberto.scrollY - (aberto.palco?.h ?? NaN)) > 1) {
+      ctx.fail(`barra de rolagem, ${nome}: o End não deixou a página no topo da tela (${entDesc(aberto)})`);
+      return;
+    }
+    const meio = Math.round(aberto.palco.h / 2);
+    await entRecStart(cdp, true);
+    await evalValue(cdp, expr(meio), { awaitPromise: true });
+    await sleep(800);
+    const rec = await entRecStop(cdp);
+    const depois = await entState(cdp);
+    if (depois.expanded !== "false" || depois.pin !== "true" || depois.progress !== "1.00" || depois.scrollY > 0.5) {
+      ctx.fail(`barra de rolagem, ${nome}: não recolheu preso em P = 1 no topo (${entDesc(depois)})`);
+    }
+    const vazio = [...rec.marks, ...rec.frames].find((s) => !entCobre(s, 6));
+    if (vazio) {
+      ctx.fail(`barra de rolagem, ${nome}: um quadro com o palco sem a tela (tela em ${entRect(vazio.tela)}, ${entDesc(vazio)})`);
+    }
+    notas.push(`${nome}: ${rec.frames.length} quadros, ${entDesc(depois)}`);
+  }
+  ctx.log(`barra de rolagem: ${notas.join("; ")}`);
+}
+
+/**
+ * 6. Resize no meio da aproximação (Review Focus 3): de 1440 × 900 para
+ * ENT_RESIZE_TO, a tela continua no furo do aparelho e dentro da moldura
+ * (no máximo um quadro velho, o do resize, antes da medida nova).
+ */
+async function entResizePass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "resize"))) return;
+  const x = Math.round(ctx.width / 2);
+  const y = Math.round(ctx.height / 2);
+  let s = await entState(cdp);
+  for (let i = 0; i < ENT_WHEEL_BUDGET && !(s.k >= 0.35) && s.expanded !== "true"; i++) {
+    await wheelAt(cdp, x, y, ENT_WHEEL_DELTA);
+    await expSettle(cdp);
+    s = await entState(cdp);
+  }
+  if (!(s.k >= 0.35 && s.k < 1 && s.pin === "true")) {
+    ctx.fail(`resize: não parou no meio da aproximação (${entDesc(s)})`);
+    return;
+  }
+  await entRecStart(cdp, true);
+  await entMetrics(cdp, ctx, { ...ENT_RESIZE_TO, dsf: ctx.dsf, mobile: ctx.mobile });
+  await sleep(600);
+  const rec = await entRecStop(cdp);
+  const depois = await entState(cdp);
+  if (depois.vw !== ENT_RESIZE_TO.width) ctx.fail(`resize: a janela não mudou (innerWidth ${depois.vw})`);
+  if (!entSame(depois.tela, depois.aparelho)) {
+    ctx.fail(`resize: depois do resize, a tela (${entRect(depois.tela)}) saiu do furo do aparelho (${entRect(depois.aparelho)})`);
+  }
+  if (!entDentro(depois.tela, depois.moldura)) {
+    ctx.fail(`resize: depois do resize, a tela (${entRect(depois.tela)}) passa da moldura (${entRect(depois.moldura)})`);
+  }
+  const novos = rec.frames.filter((f) => f.vw === ENT_RESIZE_TO.width);
+  const velhos = novos.filter((f) => !entSame(f.tela, f.aparelho));
+  if (velhos.length > 1) {
+    ctx.fail(`resize: ${velhos.length} quadros com a tela fora do aparelho depois do resize (o 1º: tela ${entRect(velhos[0].tela)}, aparelho ${entRect(velhos[0].aparelho)}); esperado no máximo 1`);
+  }
+  if (depois.pin !== "true" || depois.progress !== s.progress) ctx.fail(`resize: o progresso mudou com o resize (${s.progress} → ${depois.progress}, data-pin=${depois.pin})`);
+  ctx.log(
+    `resize: com k ${fixed2(s.k)}, ${ctx.width}×${ctx.height} → ${ENT_RESIZE_TO.width}×${ENT_RESIZE_TO.height}; tela ${entRect(depois.tela)} no aparelho ${entRect(depois.aparelho)}; ${velhos.length} quadro(s) velho(s) de ${novos.length}`,
+  );
+}
+
+// Tab (Q21, Review Focus 4): grava a ordem do foco (o controle do vídeo, a
+// tela, outra coisa do hero ou fora dele) e, no 1º foco dentro da tela, a
+// hora, cada rolagem e um quadro por vez durante 1 s. O focusin na captura
+// do document chega antes do onFocus do React.
+const ENT_TAB_WATCH_EXPR = `(() => {
+  const read = ${ENT_READ_FN};
+  const root = document.querySelector(${JSON.stringify(ENT_SELECTOR)});
+  const tela = root && root.querySelector(${JSON.stringify(EXP_CONTEUDO_SELECTOR)});
+  if (!tela) return false;
+  const w = (window.__entTab = { order: [], t0: null, scrolls: [], frames: [] });
+  document.addEventListener("focusin", (event) => {
+    const el = event.target;
+    const where = el.closest(".hero-expansao__controle") ? "controle" : tela.contains(el) ? "tela" : root.contains(el) ? "hero" : "fora";
+    w.order.push(where);
+    if (where === "tela" && w.t0 === null) {
+      w.t0 = performance.now();
+      w.before = read();
+      const loop = () => {
+        w.frames.push(read());
+        if (performance.now() - w.t0 < 1000) requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+  }, true);
+  addEventListener("scroll", () => {
+    if (w.t0 !== null) w.scrolls.push({ t: performance.now() - w.t0, y: scrollY });
+  }, { passive: true });
+  return true;
+})()`;
+
+/** 7. Tab do topo até o 1º botão da tela: o controle do vídeo antes; a entrada completa na hora, uma rolagem só, o foco à vista. */
+async function entTabPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "Tab"))) return;
+  if (!(await evalValue(cdp, ENT_TAB_WATCH_EXPR))) {
+    ctx.fail(`Tab: a página não tem a tela (${EXP_CONTEUDO_SELECTOR})`);
+    return;
+  }
+  let tabs = 0;
+  let onde = "fora";
+  let noControle = null;
+  while (tabs < 40 && onde !== "tela") {
+    await pressTab(cdp);
+    tabs++;
+    onde = await evalValue(cdp, `window.__entTab.order.at(-1) ?? "fora"`);
+    if (onde === "controle" && !noControle) noControle = await entState(cdp);
+  }
+  const order = await evalValue(cdp, `window.__entTab.order`);
+  if (onde !== "tela") {
+    ctx.fail(`Tab: ${tabs} Tabs e o foco não chegou à tela (ordem ${order.join(", ")})`);
+    return;
+  }
+  const iControle = order.indexOf("controle");
+  const iTela = order.indexOf("tela");
+  if (iControle === -1 || iControle > iTela) ctx.fail(`Tab: o controle do vídeo não veio antes da tela (ordem ${order.join(", ")})`);
+  if (order.slice(0, iTela).includes("hero")) ctx.fail(`Tab: outra coisa do hero ganhou o foco antes da tela (ordem ${order.join(", ")})`);
+  if (noControle && (noControle.pin !== "true" || noControle.progress !== "0.00")) {
+    ctx.fail(`Tab: o foco no controle do vídeo mexeu na entrada (${entDesc(noControle)})`);
+  }
+  const foco = await evalValue(cdp, FOCUS_VS_TOPBAR_EXPR, { awaitPromise: true });
+  await sleep(300);
+  const w = await evalValue(cdp, `(() => { const w = window.__entTab; return { t0: w.t0, before: w.before, scrolls: w.scrolls, frames: w.frames }; })()`);
+  const pronto = w.frames.find((f) => f.expanded === "true" && entSame(f.tela, entJanela(f)));
+  const ms = pronto ? pronto.t - w.t0 : null;
+  if (ms === null) ctx.fail("Tab: focado o botão da tela, a entrada não se completou em 1 s (a tela não chegou à janela)");
+  else if (ms >= ENT_TAB_MS) ctx.fail(`Tab: a entrada levou ${Math.round(ms)} ms para completar (esperado menos de ${ENT_TAB_MS})`);
+  // As posições que a página ocupou depois do foco: só uma mudança (0 → topo da tela).
+  const posicoes = [w.before.scrollY, ...w.scrolls.map((s) => s.y)].filter((y, i, all) => i === 0 || Math.abs(y - all[i - 1]) > 0.5);
+  if (posicoes.length !== 2) ctx.fail(`Tab: a página rolou ${posicoes.length - 1} vez(es) depois do foco (${posicoes.map((y) => Math.round(y)).join(" → ")}; esperado uma só)`);
+  if (!foco.active || foco.offscreen || foco.underBar || foco.centerCovered || foco.invisible) {
+    ctx.fail(
+      `Tab: o botão focado (${foco.active ?? "nada"}) ${foco.offscreen ? "ficou fora da tela" : foco.underBar ? `ficou sob a barra (topo em y=${foco.top}, barra até y=${foco.barBottom})` : foco.centerCovered ? "está coberto no centro" : foco.invisible ? `está invisível (opacidade ${foco.opacity})` : "não ficou focado"}`,
+    );
+  }
+  ctx.log(
+    `Tab: ${tabs} Tab(s), ordem ${order.join(" → ")}; entrada completa em ${ms === null ? "?" : Math.round(ms)} ms; rolagem ${posicoes.map((y) => Math.round(y)).join(" → ")}; foco em ${foco.active} (topo y=${foco.top}, barra até y=${foco.barBottom})`,
+  );
+}
+
+/** O vídeo da sala está pausado? */
+const ENT_VIDEO_PAUSED_EXPR = `(() => { const v = document.querySelector(${JSON.stringify(`${ENT_SELECTOR} video`)}); return v ? v.paused : null; })()`;
+
+/** 8. Carga com âncora (/#contato) e com a posição restaurada: começa dentro, sem salto, e o vídeo da sala pausado. */
+async function entAncoraPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  const contato = "#contato";
+  await navigate(cdp, "about:blank", "sair da página antes de /#contato");
+  await navigate(cdp, new URL(contato, URL_TO_CHECK).href, `carregar /${contato} a ${ctx.size}`);
+  await sleep(1500);
+  const direct = await evalValue(cdp, expAnchorExpr(contato), { awaitPromise: true });
+  expCheckAnchor(ctx, `/${contato} direto`, direct, contato);
+  if (direct && (direct.expanded !== "true" || direct.pin === "true")) {
+    ctx.fail(`/${contato} direto: o hero não começou dentro (data-expanded=${direct.expanded}, data-pin=${direct.pin})`);
+  }
+  if ((await evalValue(cdp, ENT_VIDEO_PAUSED_EXPR)) === false) ctx.fail(`/${contato} direto: o vídeo da sala está tocando escondido`);
+  await sleep(1500);
+  const later = await evalValue(cdp, expAnchorExpr(contato), { awaitPromise: true });
+  expCheckAnchor(ctx, `/${contato} direto, 1,5 s depois`, later, contato);
+  if (direct && later && Math.abs(later.top - direct.top) > 1) ctx.fail(`/${contato} direto: o alvo saltou de y=${direct.top} para y=${later.top}`);
+  if ((await evalValue(cdp, ENT_VIDEO_PAUSED_EXPR)) === false) ctx.fail(`/${contato} direto, 1,5 s depois: o vídeo da sala está tocando escondido`);
+  ctx.log(`/${contato} direto: ${contato} em y=${direct?.top} (scroll-padding ${direct?.pad}), 1,5 s depois em y=${later?.top}; data-expanded=${direct?.expanded}`);
+
+  // Posição restaurada: a página rolada além da tela, recarregada.
+  if (!(await expLoadPinned(cdp, ctx, "posição restaurada"))) return;
+  await pressKey(cdp, KEYS.End);
+  await expSettle(cdp);
+  const aberto = await entState(cdp);
+  const alvo = Math.round((aberto.palco?.h ?? ctx.height) + 1200);
+  await evalValue(cdp, `window.scrollTo({ top: ${alvo}, left: 0, behavior: "instant" })`);
+  await sleep(500);
+  const antes = await entState(cdp);
+  const loaded = cdp.once("Page.loadEventFired");
+  await cdp.send("Page.reload", {});
+  await withTimeout(loaded, `recarregar a ${ctx.size}`);
+  await sleep(1500);
+  const restaurado = await entState(cdp);
+  if (Math.abs(restaurado.scrollY - antes.scrollY) > 2) {
+    ctx.fail(`posição restaurada: a página voltou em scrollY ${restaurado.scrollY}; antes de recarregar, ${antes.scrollY} (o navegador não restaurou, ou o hero rolou)`);
+  }
+  if (restaurado.expanded !== "true" || restaurado.pin !== "false") ctx.fail(`posição restaurada: o hero não começou dentro (${entDesc(restaurado)})`);
+  if ((await evalValue(cdp, ENT_VIDEO_PAUSED_EXPR)) === false) ctx.fail("posição restaurada: o vídeo da sala está tocando escondido");
+  await sleep(1500);
+  const depois = await entState(cdp);
+  if (Math.abs(depois.scrollY - restaurado.scrollY) > 1) ctx.fail(`posição restaurada: a página saltou de scrollY ${restaurado.scrollY} para ${depois.scrollY}`);
+  ctx.log(`posição restaurada: scrollY ${antes.scrollY} → recarregada em ${restaurado.scrollY}, 1,5 s depois ${depois.scrollY}; ${entDesc(restaurado)}`);
+}
+
+/** 9. Em pé, com toque: o celular; a ida até a liberação e a volta (os passos 3 e 4). */
+async function entToquePass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  if (!(await expLoadPinned(cdp, ctx, "toque"))) return;
+  const x = Math.round(ctx.width / 2);
+  const s0 = await entState(cdp);
+  if (s0.orientacao !== "em-pe" || !s0.celular || s0.notebook) {
+    ctx.fail(`toque: em pé, data-orientacao=${s0.orientacao}, celular ${s0.celular ? "à vista" : "escondido"}, notebook ${s0.notebook ? "à vista" : "escondido"} (esperado em-pe e só o celular)`);
+  }
+  if (ctx.staticHeight != null && Math.abs(s0.height - ctx.staticHeight) > 2) {
+    ctx.fail(`toque: preso, o hero tem ${s0.height}px; sem JavaScript, ${ctx.staticHeight}px`);
+  }
+  await entRecStart(cdp);
+  const samples = await entIda(
+    cdp,
+    ctx,
+    "toque",
+    (fino) => (fino ? entArrasto(cdp, x, Math.round(ctx.height * 0.8), 2, 15) : entArrasto(cdp, x, Math.round(ctx.height * 0.8), 5, 20)),
+    40,
+  );
+  const rec = await entRecStop(cdp);
+  if (!samples) return;
+  entCheckLiberacao(ctx, "toque", rec.marks, samples.at(-1), { exato: false });
+  const pausa = samples.filter(entPausa);
+  await entVolta(cdp, ctx, "toque, volta", {
+    // Um movimento de 30 px para baixo: passa dos 20 px que recolhem.
+    recolher: () => entArrasto(cdp, x, Math.round(ctx.height * 0.3), 1, -30),
+    // Fino: dois movimentos (um só, curto, fica dentro da folga do toque e
+    // não chega à página).
+    recuar: (fino) => (fino ? entArrasto(cdp, x, Math.round(ctx.height * 0.3), 2, -12) : entArrasto(cdp, x, Math.round(ctx.height * 0.3), 5, -20)),
+    budget: 40,
+    s0,
+    pausaIda: pausa[0]?.tela ?? null,
+  });
+}
+
+/**
+ * 11. O LCP (a Task 2 da integração): numa página nova, sem cache, o maior
+ * elemento pintado até 1,5 s depois do load, sem rolar, é o pôster da cena
+ * (`img.hero-expansao__poster`, `midia-poster.avif` deitado e
+ * `midia-retrato-poster.avif` em pé), não o fundo decorativo nem o h1.
+ */
+async function entLcpPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  await cdp.send("Network.enable").catch(() => {});
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  const { identifier } = await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+    source: `(() => {
+      window.__lcp = null;
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) {
+          const el = e.element;
+          window.__lcp = {
+            tag: el ? el.tagName.toLowerCase() : null,
+            cls: el && typeof el.className === "string" ? el.className : "",
+            currentSrc: el && el.currentSrc ? el.currentSrc : null,
+            size: e.size,
+            t: e.startTime,
+          };
+        }
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    })()`,
+  });
+  try {
+    await navigate(cdp, URL_TO_CHECK, `carregar (LCP) a ${ctx.size}`);
+    await sleep(ENT_LCP_ESPERA_MS);
+    const lcp = await evalValue(cdp, "window.__lcp");
+    if (!lcp) {
+      ctx.fail("LCP: a página não registrou nenhuma entrada de largest-contentful-paint");
+      return;
+    }
+    const fim = ctx.mobile ? ENT_LCP_POSTER_EM_PE : ENT_LCP_POSTER_DEITADO;
+    const eOPoster = lcp.tag === "img" && lcp.cls.split(/\s+/).includes("hero-expansao__poster") && !!lcp.currentSrc && new URL(lcp.currentSrc).pathname.endsWith(`/${fim}`);
+    if (!eOPoster) {
+      ctx.fail(`LCP: o elemento foi <${lcp.tag}> .${lcp.cls || "(sem classe)"} com currentSrc ${lcp.currentSrc ?? "(nenhum)"} (esperado img.hero-expansao__poster terminando em ${fim})`);
+    }
+    ctx.log(`LCP: <${lcp.tag}> .${lcp.cls}, ${Math.round(lcp.size)} px², ${Math.round(lcp.t)} ms, currentSrc ${lcp.currentSrc ?? "(nenhum)"}`);
+  } finally {
+    await cdp.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
+    await cdp.send("Network.setCacheDisabled", { cacheDisabled: false }).catch(() => {});
+  }
+}
+
+/** A tela baixa do passo 10: o celular deitado, sem toque (o teclado de um tablet, de um notebook com a janela baixa). */
+const ENT_TECLADO_SIZE = { width: 740, height: 360, dsf: 1, mobile: false };
+/** Com o 1.4.12, a fonte raiz a 200% (a tela passa da altura da janela, M1). */
+const ENT_TECLADO_CSS = `${TEXT_SPACING_CSS} html { font-size: 200% !important; }`;
+
+/**
+ * 10. O teclado (I1 e M1 da revisão final): a 740×360 deitado, com o
+ * espaçamento do 1.4.12 e a fonte raiz a 200%, a seta até expandir (a tela à vista no aparelho em
+ * toda amostra), o último quadro antes da liberação com a tela quase na
+ * janela (o passo que chega a 1 anima até o fim, sem corte seco), a
+ * liberação, e a volta com Page Up e seta para cima.
+ */
+async function entTecladoPass(cdp, ctx) {
+  const tamanho = `${ENT_TECLADO_SIZE.width}×${ENT_TECLADO_SIZE.height}`;
+  const tctx = { ...ctx, ...ENT_TECLADO_SIZE, size: tamanho, toque: false };
+  await entMetrics(cdp, tctx);
+  await setReducedMotion(cdp, false);
+  try {
+    if (!(await expLoadPinned(cdp, tctx, "teclado"))) return;
+    await evalValue(
+      cdp,
+      `(() => { const s = document.createElement("style"); s.textContent = ${JSON.stringify(ENT_TECLADO_CSS)}; document.head.appendChild(s); })()`,
+    );
+    const s0 = await entState(cdp);
+    const maisAlta = s0.telaAltura > (s0.palco?.h ?? Infinity) + 1;
+    if (!maisAlta) ctx.fail(`teclado a ${tamanho}: a tela (${s0.telaAltura}px) cabe no palco (${Math.round(s0.palco?.h ?? NaN)}px); o corte da cena (M1) não foi exercitado`);
+    ctx.log(`teclado a ${tamanho}, com o 1.4.12 e a fonte a 200%: a tela tem ${s0.telaAltura}px sem escala; o palco, ${Math.round(s0.palco?.h ?? NaN)}px`);
+    await entRecStart(cdp, true);
+    const samples = await entIda(cdp, ctx, `teclado a ${tamanho}`, () => pressKey(cdp, KEYS.ArrowDown), 20);
+    const rec = await entRecStop(cdp);
+    if (!samples) return;
+    // O que o corte evita: a caixa inteira da tela passaria do pé da moldura.
+    const vaza = samples.filter((s) => s.expanded !== "true" && s.telaInteira && s.moldura).map((s) => s.telaInteira.bottom - s.moldura.bottom);
+    ctx.log(`teclado a ${tamanho}: sem o corte, a tela passaria até ${Math.round(Math.max(0, ...vaza))}px do pé da moldura; à vista, ela fica no furo do aparelho`);
+    const liberacao = rec.marks.find((mark) => mark.expanded === "true");
+    const antes = liberacao ? rec.frames.filter((f) => f.t < liberacao.t && f.expanded !== "true").at(-1) : null;
+    if (!antes || !antes.tela) {
+      ctx.fail(`teclado a ${tamanho}: sem quadro gravado antes da liberação`);
+    } else if (antes.tela.w < 0.95 * antes.cw) {
+      ctx.fail(`teclado a ${tamanho}: no último quadro antes da liberação, a tela tinha ${entRect(antes.tela)} numa janela de ${antes.cw}×${antes.vh} (corte seco até a página, ${entDesc(antes)})`);
+    }
+    ctx.log(`teclado a ${tamanho}: último quadro antes da liberação com a tela em ${antes ? entRect(antes.tela) : "?"}`);
+    entCheckLiberacao(ctx, `teclado a ${tamanho}`, rec.marks, samples.at(-1), { exato: true });
+    const pausa = samples.filter(entPausa);
+    await entVolta(cdp, ctx, `teclado a ${tamanho}, volta`, {
+      recolher: () => pressKey(cdp, KEYS.PageUp),
+      recuar: (fino) => pressKey(cdp, fino ? KEYS.ArrowUp : KEYS.PageUp),
+      budget: 20,
+      s0,
+      pausaIda: pausa[0]?.tela ?? null,
+    });
+  } finally {
+    await entMetrics(cdp, ctx);
   }
 }
 
@@ -3331,6 +4373,63 @@ try {
     await setReducedMotion(cdp, false);
   }
 
+  // --- Hero "notebook" (o modo entrada): sem JavaScript; a roda até expandir,
+  // a pausa, a liberação e a volta; a barra de rolagem; o resize; o Tab; a
+  // carga com âncora; em pé, com toque ---
+  // Só com a variante "notebook" (lida no HTML servido); com outra, avisa
+  // que pulou. Cada passada tem o próprio tempo-limite e os próprios erros
+  // de console; um erro numa não derruba as outras.
+  if (!roda("entrada")) {
+    console.log(`\nHero "entrada": etapa fora de CHECK_BROWSER_ETAPAS`);
+  } else if (heroVariant !== "notebook") {
+    console.log(`\nHero "entrada": passo pulado (variante ${heroVariant ?? "não informada"})`);
+  } else {
+    const runEntPass = async (ctx, what, pass) => {
+      consoleErrors = [];
+      try {
+        return await withTimeout(pass(), `hero entrada a ${ctx.size}, ${what}`);
+      } catch (error) {
+        ctx.fail(`${what}: erro na passada (${error.message}); as seguintes continuam`);
+        return null;
+      } finally {
+        await cdp.send("Emulation.setScriptExecutionDisabled", { value: false }).catch(() => {});
+        for (const error of consoleErrors) ctx.fail(`${what}: erro no console: ${error.split("\n")[0]}`);
+      }
+    };
+    for (const tamanho of ENTRADA_SIZES) {
+      const { width, height, dsf } = tamanho;
+      const size = `${width}×${height}${dsf !== 1 ? ` a ${Math.round(dsf * 100)}%` : ""}${tamanho.toque ? " (toque)" : ""}`;
+      const ctx = {
+        ...tamanho,
+        size,
+        staticHeight: null,
+        fail: (message) => failures.push(`hero entrada a ${size}: ${message}`),
+        log: (message) => console.log(`  ${message}`),
+      };
+      console.log(`\nHero "entrada" a ${size}:`);
+      await entMetrics(cdp, ctx);
+      ctx.staticHeight = await runEntPass(ctx, "sem JavaScript", () => entStaticPass(cdp, ctx, { scriptsOn: false }));
+      await runEntPass(ctx, "reduced motion", () => entStaticPass(cdp, ctx, { scriptsOn: true }));
+      if (tamanho.lcp) await runEntPass(ctx, "LCP", () => entLcpPass(cdp, ctx));
+      if (tamanho.toque) {
+        await runEntPass(ctx, "toque", () => entToquePass(cdp, ctx));
+        await runEntPass(ctx, "âncora", () => entAncoraPass(cdp, ctx));
+      } else {
+        await runEntPass(ctx, "roda", () => entRodaPass(cdp, ctx));
+        await runEntPass(ctx, "barra de rolagem", () => entBarraPass(cdp, ctx));
+      }
+      // O resize, o Tab e a âncora não dependem da barra nem da escala da tela.
+      if (width === 1440) {
+        await runEntPass(ctx, "resize", () => entResizePass(cdp, ctx));
+        await runEntPass(ctx, "Tab", () => entTabPass(cdp, ctx));
+        await runEntPass(ctx, "âncora", () => entAncoraPass(cdp, ctx));
+        await runEntPass(ctx, "teclado", () => entTecladoPass(cdp, ctx));
+      }
+      await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: false }).catch(() => {});
+    }
+    await setReducedMotion(cdp, false);
+  }
+
   // --- Catálogo de produtos (#produtos): sem JS; mouse e altura constante;
   // teclado; link direto e voltar; reduced motion; loop; um vídeo por vez
   // (1440×900 e 360×740); e as conferências de uma largura só ---
@@ -3608,6 +4707,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
+    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela (ou, se ao lado a fonte ficaria abaixo de 1,5rem, empilhadas e acima do piso); no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto (em P = 1 recolhido, com a sala coberta, sem o controle do vídeo à vista) e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o LCP de uma página nova, sem cache e sem rolar (1440×900 e 390×844), é o pôster da cena (midia-poster.avif deitado, midia-retrato-poster.avif em pé), não o fundo de tela cheia nem o título; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
     "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
