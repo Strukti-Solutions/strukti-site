@@ -287,11 +287,17 @@ const ENT_MOLDURA_SELECTOR = ".aparelho-vetor__tampa, .aparelho-vetor__corpo";
 // estreita que a janela, Review Focus 1); o mesmo com a tela a 125%
 // (pixels de tela fracionários); e o celular em pé, com toque (Q6, Q26).
 const ENTRADA_SIZES = [
-  { width: 1440, height: 900, dsf: 1, mobile: false, toque: false },
+  { width: 1440, height: 900, dsf: 1, mobile: false, toque: false, lcp: true },
   { width: 1366, height: 768, dsf: 1, mobile: false, toque: false },
   { width: 1366, height: 768, dsf: 1.25, mobile: false, toque: false },
-  { width: 390, height: 844, dsf: 2, mobile: true, toque: true },
+  { width: 390, height: 844, dsf: 2, mobile: true, toque: true, lcp: true },
 ];
+// O LCP do hero: o pôster da cena (deitado ou em pé), não o fundo de tela
+// cheia nem o título. O fim do currentSrc de cada orientação:
+const ENT_LCP_POSTER_DEITADO = "midia-poster.avif";
+const ENT_LCP_POSTER_EM_PE = "midia-retrato-poster.avif";
+// Depois do load, quanto esperar a última entrada do LCP (sem rolar).
+const ENT_LCP_ESPERA_MS = 1500;
 // A roda: passos de 40 px (× 0,0007 ÷ ENTRADA.ganho ≈ 0,015 de progresso
 // cada); 4 por amostra, e 1 perto da pausa e nela, para ela ter várias
 // amostras. O orçamento sobra para a ida inteira (~66 eventos).
@@ -2781,6 +2787,54 @@ async function entToquePass(cdp, ctx) {
   });
 }
 
+/**
+ * 11. O LCP (a Task 2 da integração): numa página nova, sem cache, o maior
+ * elemento pintado até 1,5 s depois do load, sem rolar, é o pôster da cena
+ * (`img.hero-expansao__poster`, `midia-poster.avif` deitado e
+ * `midia-retrato-poster.avif` em pé), não o fundo decorativo nem o h1.
+ */
+async function entLcpPass(cdp, ctx) {
+  await entMetrics(cdp, ctx);
+  await setReducedMotion(cdp, false);
+  await cdp.send("Network.enable").catch(() => {});
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  const { identifier } = await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+    source: `(() => {
+      window.__lcp = null;
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) {
+          const el = e.element;
+          window.__lcp = {
+            tag: el ? el.tagName.toLowerCase() : null,
+            cls: el && typeof el.className === "string" ? el.className : "",
+            currentSrc: el && el.currentSrc ? el.currentSrc : null,
+            size: e.size,
+            t: e.startTime,
+          };
+        }
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    })()`,
+  });
+  try {
+    await navigate(cdp, URL_TO_CHECK, `carregar (LCP) a ${ctx.size}`);
+    await sleep(ENT_LCP_ESPERA_MS);
+    const lcp = await evalValue(cdp, "window.__lcp");
+    if (!lcp) {
+      ctx.fail("LCP: a página não registrou nenhuma entrada de largest-contentful-paint");
+      return;
+    }
+    const fim = ctx.mobile ? ENT_LCP_POSTER_EM_PE : ENT_LCP_POSTER_DEITADO;
+    const eOPoster = lcp.tag === "img" && lcp.cls.split(/\s+/).includes("hero-expansao__poster") && !!lcp.currentSrc && new URL(lcp.currentSrc).pathname.endsWith(`/${fim}`);
+    if (!eOPoster) {
+      ctx.fail(`LCP: o elemento foi <${lcp.tag}> .${lcp.cls || "(sem classe)"} com currentSrc ${lcp.currentSrc ?? "(nenhum)"} (esperado img.hero-expansao__poster terminando em ${fim})`);
+    }
+    ctx.log(`LCP: <${lcp.tag}> .${lcp.cls}, ${Math.round(lcp.size)} px², ${Math.round(lcp.t)} ms, currentSrc ${lcp.currentSrc ?? "(nenhum)"}`);
+  } finally {
+    await cdp.send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => {});
+    await cdp.send("Network.setCacheDisabled", { cacheDisabled: false }).catch(() => {});
+  }
+}
+
 /** A tela baixa do passo 10: o celular deitado, sem toque (o teclado de um tablet, de um notebook com a janela baixa). */
 const ENT_TECLADO_SIZE = { width: 740, height: 360, dsf: 1, mobile: false };
 /** Com o 1.4.12, a fonte raiz a 200% (a tela passa da altura da janela, M1). */
@@ -4356,6 +4410,7 @@ try {
       await entMetrics(cdp, ctx);
       ctx.staticHeight = await runEntPass(ctx, "sem JavaScript", () => entStaticPass(cdp, ctx, { scriptsOn: false }));
       await runEntPass(ctx, "reduced motion", () => entStaticPass(cdp, ctx, { scriptsOn: true }));
+      if (tamanho.lcp) await runEntPass(ctx, "LCP", () => entLcpPass(cdp, ctx));
       if (tamanho.toque) {
         await runEntPass(ctx, "toque", () => entToquePass(cdp, ctx));
         await runEntPass(ctx, "âncora", () => entAncoraPass(cdp, ctx));
@@ -4652,7 +4707,7 @@ console.log(
     "Sem rolagem horizontal, sem erro no console e sem o FAB do WhatsApp cruzando controle focável (360/390/1024/1100/1199px) em nenhuma largura, com a varredura indo até o fim da página. " +
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
-    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela (ou, se ao lado a fonte ficaria abaixo de 1,5rem, empilhadas e acima do piso); no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto (em P = 1 recolhido, com a sala coberta, sem o controle do vídeo à vista) e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
+    'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela (ou, se ao lado a fonte ficaria abaixo de 1,5rem, empilhadas e acima do piso); no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto (em P = 1 recolhido, com a sala coberta, sem o controle do vídeo à vista) e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o LCP de uma página nova, sem cache e sem rolar (1440×900 e 390×844), é o pôster da cena (midia-poster.avif deitado, midia-retrato-poster.avif em pé), não o fundo de tela cheia nem o título; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
     "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
