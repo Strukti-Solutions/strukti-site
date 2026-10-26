@@ -7,7 +7,7 @@ import { AparelhoVetor } from "./AparelhoVetor";
 import { HeroVideoClip, HeroVideoProvider, HeroVideoToggle } from "./HeroVideoMedia";
 
 /**
- * Hero "notebook" (protótipo da entrada pelo notebook, spec
+ * Hero "notebook" (a entrada pelo notebook, padrão desde 26/10/2026; spec
  * 2026-10-23-hero-entrada-notebook-design.md): o `HeroExpansao` com o modo
  * `entrada` do `ScrollExpandMedia` ligado. Depois da expansão até a tela
  * cheia, há uma pausa e a câmera se aproxima da tela de um aparelho (o

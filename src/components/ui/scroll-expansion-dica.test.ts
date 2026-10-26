@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  */
 describe("globals.css — a transição da dica do hero expansao", () => {
   const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
-  const regras = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, seletor, corpo]) => ({
+  const regras = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, seletor = "", corpo = ""]) => ({
     seletor: seletor.trim().replace(/\s+/g, " "),
     corpo,
   }));
