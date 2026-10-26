@@ -107,8 +107,8 @@
     ].join(';\n');
   }
 
-  // A coluna de vapor gerada (em pé), no quadro k do loop (0 a 250; o 250 é o 0): a opacidade (0 a `pico`) de cada px
-  // da caixa do vapor, linha a linha. `fio` (0 ou 1) devolve só um dos fios (para os testes).
+  // A coluna de vapor gerada do enquadramento `cam` (media, deitado, ou mediaRetrato, em pé: cada um com a sua receita em
+  // COLUNA), no quadro k do loop (0 a 250; o 250 é o 0): a opacidade (0 a `pico`) de cada px da caixa do vapor, linha a linha. `fio` (0 ou 1) devolve só um dos fios (para os testes).
   // Cada fio é uma linha gaussiana em x, cujo centro e cuja densidade são uma forma de comprimento L que sobe pela
   // coluna a L / periodo px por segundo (exatamente um comprimento por período: fecha em 10 s). A deriva e o envelope
   // (entra em 8% da coluna e cai do meio para cima) ficam presos ao quadro, como o ar parado em volta da caneca.
@@ -142,8 +142,9 @@
     return out;
   }
 
-  // Grava a coluna de vapor em <pasta>/vapor.mkv: ffv1, 251 quadros (o 250 é o 0), na cor do vapor do hero (o navy-100)
-  // multiplicada pela opacidade, sobre o preto (o grafo soma).
+  // Grava a coluna de vapor do enquadramento `cam` em <pasta do enquadramento>/vapor.mkv (plates2 no media, plates2-retrato
+  // no mediaRetrato): ffv1, 251 quadros (o 250 é o 0), na cor do vapor do hero (o navy-100) multiplicada pela opacidade,
+  // sobre o preto (o grafo soma). Devolve o caminho do arquivo.
   function gravaVapor(cam) {
     const { execFileSync } = require('child_process');
     const q = quadro(cam), v = q.vapor, cor = [223, 231, 239];
