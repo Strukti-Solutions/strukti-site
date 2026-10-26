@@ -71,7 +71,11 @@ async function carregar(imagem: HTMLImageElement): Promise<void> {
   try {
     await imagem.decode();
   } catch {
-    if (imagem.complete && imagem.naturalWidth > 0) return;
+    // Já terminou: carregou (decode recusou só o SVG) ou deu erro, que não dispara de novo.
+    if (imagem.complete) {
+      if (imagem.naturalWidth > 0) return;
+      throw new Error("imagem do SVG não carregou");
+    }
     await new Promise<void>((resolve, reject) => {
       imagem.addEventListener("load", () => resolve(), { once: true });
       imagem.addEventListener("error", () => reject(new Error("imagem do SVG não carregou")), { once: true });
