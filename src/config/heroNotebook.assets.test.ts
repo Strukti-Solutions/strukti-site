@@ -144,3 +144,84 @@ describe("siteConfig.heroNotebook: a cena deitada", () => {
     expect(siteConfig.heroExpansao.fundo.avif).toBe("/hero/expansao/fundo.avif");
   });
 });
+
+/** Os boxes filhos de `buf[ini, fim)` (ISO BMFF): tipo e [início do corpo, fim). */
+function boxes(buf: Buffer, ini: number, fim: number) {
+  const lista: { tipo: string; corpo: number; fim: number }[] = [];
+  for (let i = ini; i + 8 <= fim; ) {
+    let tamanho = buf.readUInt32BE(i);
+    let cabeca = 8;
+    if (tamanho === 1) {
+      tamanho = Number(buf.readBigUInt64BE(i + 8));
+      cabeca = 16;
+    } else if (tamanho === 0) tamanho = fim - i;
+    if (tamanho < cabeca) break;
+    lista.push({ tipo: buf.toString("latin1", i + 4, i + 8), corpo: i + cabeca, fim: Math.min(fim, i + tamanho) });
+    i += tamanho;
+  }
+  return lista;
+}
+
+/** Largura e altura (16.16 fixo, nos últimos 8 bytes do `tkhd`) e duração em segundos (`mvhd`) de um MP4. */
+function readMp4(file: string) {
+  const buf = readFileSync(file);
+  const moov = boxes(buf, 0, buf.length).find((b) => b.tipo === "moov")!;
+  const filhos = boxes(buf, moov.corpo, moov.fim);
+  const mvhd = filhos.find((b) => b.tipo === "mvhd")!;
+  const v1 = buf[mvhd.corpo] === 1;
+  const timescale = buf.readUInt32BE(mvhd.corpo + (v1 ? 20 : 12));
+  const duracao = v1 ? Number(buf.readBigUInt64BE(mvhd.corpo + 24)) : buf.readUInt32BE(mvhd.corpo + 16);
+  const trilhas = filhos
+    .filter((b) => b.tipo === "trak")
+    .map((trak) => boxes(buf, trak.corpo, trak.fim).find((b) => b.tipo === "tkhd")!)
+    .map((tkhd) => ({ width: buf.readUInt32BE(tkhd.fim - 8) / 65536, height: buf.readUInt32BE(tkhd.fim - 4) / 65536 }))
+    .filter((t) => t.width > 0 && t.height > 0);
+  return { ...trilhas[0]!, segundos: duracao / timescale };
+}
+
+/** Largura e altura (`PixelWidth` 0xB0 e `PixelHeight` 0xBA) da faixa de vídeo de um WebM (EBML). */
+function readWebm(file: string) {
+  const buf = readFileSync(file);
+  const MASTERS = new Set([0x18538067, 0x1654ae6b, 0xae, 0xe0]); // Segment, Tracks, TrackEntry, Video
+  const achados: Record<number, number> = {};
+  function varint(i: number, mantemMarca: boolean) {
+    const b = buf[i]!;
+    let len = 1;
+    while (len <= 8 && !(b & (0x80 >> (len - 1)))) len++;
+    let valor = mantemMarca ? b : b & (0xff >> len);
+    for (let k = 1; k < len; k++) valor = valor * 256 + buf[i + k]!;
+    return { valor, len };
+  }
+  function percorre(ini: number, fim: number) {
+    for (let i = ini; i < fim; ) {
+      const id = varint(i, true);
+      const tam = varint(i + id.len, false);
+      const corpo = i + id.len + tam.len;
+      const desconhecido = tam.valor === 2 ** (7 * tam.len) - 1;
+      const topo = desconhecido ? fim : Math.min(fim, corpo + tam.valor);
+      if (MASTERS.has(id.valor)) percorre(corpo, topo);
+      else if (id.valor === 0xb0 || id.valor === 0xba) {
+        let n = 0;
+        for (let k = corpo; k < topo; k++) n = n * 256 + buf[k]!;
+        achados[id.valor] = n;
+      }
+      i = topo;
+    }
+  }
+  percorre(0, buf.length);
+  return { width: achados[0xb0], height: achados[0xba] };
+}
+
+describe("siteConfig.heroNotebook: os vídeos publicados (lidos do próprio arquivo)", () => {
+  it.each([
+    ["midia", heroNotebook.midia],
+    ["midiaRetrato", heroNotebook.midiaRetrato],
+  ] as const)("os vídeos publicados têm o tamanho do config e 10 s (%s)", (_campo, quadro) => {
+    const esperado = { width: quadro.width, height: quadro.height };
+    const mp4 = readMp4(onDisk(quadro.mp4!));
+    expect({ width: mp4.width, height: mp4.height }).toEqual(esperado);
+    expect(mp4.segundos).toBeGreaterThanOrEqual(9.9);
+    expect(mp4.segundos).toBeLessThanOrEqual(10.1);
+    expect(readWebm(onDisk(quadro.webm!))).toEqual(esperado);
+  });
+});
