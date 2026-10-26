@@ -1,5 +1,6 @@
 import { useId, type CSSProperties } from "react";
 import geometria from "./aparelhoVetor.json";
+import { VetorRasterizado } from "./VetorRasterizado";
 
 /**
  * O aparelho em vetor da entrada pelo notebook (spec
@@ -22,7 +23,9 @@ import geometria from "./aparelhoVetor.json";
  * tampa, o corpo) é uma borda de espessura fixa em volta dele, em CSS. A base
  * e o suporte são SVG presos ao pé da tela, que fica sempre no pé da tela da
  * arte (`telaNaCena`): eles caem no lugar vazio da mesa em qualquer janela.
- * Sem texto, sem imagem e sem nada focável.
+ * Sem texto e sem nada focável; no servidor, sem imagem (depois de montar,
+ * com movimento, a base e o suporte viram uma imagem do próprio SVG, ver
+ * `VetorRasterizado`).
  *
  * Por cima da base e do suporte vai o grão da cena (três ladrilhos de pontos
  * do vetor.js, de lados primos entre si, em `<pattern>` de cada SVG): liso, o
@@ -44,7 +47,7 @@ export function AparelhoVetor() {
   return (
     <div className="aparelho-vetor" aria-hidden="true">
       <div className="aparelho-vetor__notebook" style={moldura(notebook.tela.largura, notebook.tampa, notebook.cores)}>
-        <svg className="aparelho-vetor__base" viewBox={base.caixa.join(" ")} style={caixa(base.caixa)} focusable="false">
+        <VetorRasterizado className="aparelho-vetor__base" viewBox={base.caixa.join(" ")} style={caixa(base.caixa)}>
           <defs>
             <radialGradient id={idDe("contato")}>
               {sombra(base.cores.contato)}
@@ -99,7 +102,7 @@ export function AparelhoVetor() {
           {camadaDeGrao(idDe("grao-base"), idDe("contorno-base"), base.caixa, grao)}
           {linha("aparelho-vetor__quina", idDe("quina"), base.quina)}
           <path className="aparelho-vetor__dobradica" d={base.dobradica} fill={base.cores.dobradica} />
-        </svg>
+        </VetorRasterizado>
         <div className="aparelho-vetor__tampa">
           <span className="aparelho-vetor__camera" />
         </div>
@@ -108,7 +111,7 @@ export function AparelhoVetor() {
         <div className="aparelho-vetor__corpo">
           <span className="aparelho-vetor__camera" />
         </div>
-        <svg className="aparelho-vetor__suporte" viewBox={suporte.caixa.join(" ")} style={caixa(suporte.caixa)} focusable="false">
+        <VetorRasterizado className="aparelho-vetor__suporte" viewBox={suporte.caixa.join(" ")} style={caixa(suporte.caixa)}>
           <defs>
             <radialGradient id={idDe("contato-celular")}>
               {sombra(suporte.cores.contato)}
@@ -166,7 +169,7 @@ export function AparelhoVetor() {
           <g clipPath={urlDe("sem-corpo")}>
             {camadaDeGrao(idDe("grao-suporte"), idDe("contorno-suporte"), suporte.caixa, grao)}
           </g>
-        </svg>
+        </VetorRasterizado>
       </div>
     </div>
   );

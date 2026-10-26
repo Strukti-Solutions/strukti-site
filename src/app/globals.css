@@ -4849,6 +4849,19 @@ textarea.field__input {
   overflow: visible;
 }
 
+/* Depois de montar, a base e o suporte viram uma imagem do mesmo desenho
+   (VetorRasterizado: na aproximação o navegador redesenhava o SVG a cada
+   escala). Com a imagem carregada, ela fica no lugar e o SVG sai da pintura.
+   A imagem é mais larga que a tela do aparelho: sem o max-width do reset de
+   img, ela sairia espremida. */
+.hero-expansao--entrada svg[data-rasterizado="true"] {
+  visibility: hidden;
+}
+
+.hero-expansao--entrada img:is(.aparelho-vetor__base, .aparelho-vetor__suporte) {
+  max-width: none;
+}
+
 /* Estado parado: sem JavaScript, ou com reduced motion (o JavaScript nem
    arma; o !important vence o que ele ainda escrever, como o --hx-p do
    expansao), a pose da pausa só com CSS: o quadro no palco inteiro, sem
