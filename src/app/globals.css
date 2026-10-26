@@ -4648,7 +4648,7 @@ textarea.field__input {
    solto ou recolhido), o vídeo fica pausado pelo provedor e não há vídeo à
    vista: o controle, que não faria nada, sai da tela, da leitura e do Tab
    (I1 da revisão final da fase 2). Descoberta, ele volta. */
-.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle {
+.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle:not(:focus-within) {
   visibility: hidden;
 }
 

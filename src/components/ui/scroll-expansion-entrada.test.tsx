@@ -1033,7 +1033,7 @@ describe("<ScrollExpandMedia entrada /> — o controle do vídeo com a sala cobe
 
   /** A regra do controle coberto, tirada do globals.css e posta no documento (o jsdom não carrega o CSS do site). */
   function regraDoControleCoberto() {
-    const cabeca = '.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle {';
+    const cabeca = '.hero-expansao--entrada[data-coberta="true"] .hero-expansao__controle:not(:focus-within) {';
     const i = css.indexOf(cabeca);
     expect(i, cabeca).toBeGreaterThan(-1);
     const estilo = document.createElement("style");
@@ -1130,6 +1130,22 @@ describe("<ScrollExpandMedia entrada /> — o controle do vídeo com a sala cobe
     expect(getComputedStyle(controle()).visibility).not.toBe("hidden");
     // A pessoa não pausou: o vídeo volta a tocar e o controle diz "Pausar".
     expect(screen.getByRole("button", { name: "Pausar" })).toBe(controle());
+  });
+
+  it("com o foco nele, o controle não some ao cobrir (o foco não cai no body)", async () => {
+    await montarComVideo();
+    controle().focus();
+    expect(document.activeElement).toBe(controle());
+
+    cobrir();
+    expect(hero().dataset.coberta).toBe("true");
+    expect(getComputedStyle(controle()).visibility).not.toBe("hidden");
+    expect(document.activeElement).toBe(controle());
+
+    controle().blur();
+    // O jsdom guarda o estilo calculado e só o refaz numa mutação do DOM (foco não conta): uma mutação inócua o refaz.
+    controle().parentElement!.dataset.teste = "refaz";
+    expect(getComputedStyle(controle()).visibility).toBe("hidden");
   });
 
   it("pausado pela pessoa antes de cobrir, descoberto segue pausado, com o controle em \"Tocar\"", async () => {
