@@ -4821,12 +4821,13 @@ textarea.field__input {
 
 /* O filete de luz fria do celular (crítica de arte N6 r1): a quina da borda
    junto da tela pega o brilho dela. Fica em volta do furo, por fora dele
-   (a tela, por cima, não o cobre), com o navy claro do brilho da tela. */
+   (a tela, por cima, não o cobre), com o navy claro do brilho da tela (a cor
+   vem da arte: celular.cores.filete do aparelhoVetor.json, em --av-filete). */
 .hero-expansao--entrada .aparelho-vetor__corpo::after {
   content: "";
   position: absolute;
   inset: calc(-0.8 * var(--av-px));
-  border: calc(0.8 * var(--av-px)) solid rgb(108 148 196 / 0.3);
+  border: calc(0.8 * var(--av-px)) solid var(--av-filete);
   border-radius: calc(2 * var(--av-px));
   pointer-events: none;
 }

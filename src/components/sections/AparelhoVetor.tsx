@@ -209,7 +209,7 @@ type Quina = { x1: number; y1: number; x2: number; y2: number; largura: number; 
  * unidade, `--av-px`, é 1 px da mídia), as espessuras da borda, o raio, o
  * aro e as cores.
  */
-function moldura(largura: number, m: Moldura, cores: { vidro: string; aro: string }): CSSProperties {
+function moldura(largura: number, m: Moldura, cores: { vidro: string; aro: string; filete?: string }): CSSProperties {
   return {
     "--av-largura": largura,
     "--av-lado": m.lado,
@@ -220,6 +220,7 @@ function moldura(largura: number, m: Moldura, cores: { vidro: string; aro: strin
     ...(m.camera ? { "--av-camera": m.camera } : {}),
     "--av-vidro": cores.vidro,
     "--av-aro-cor": cores.aro,
+    ...(cores.filete ? { "--av-filete": cores.filete } : {}),
   } as CSSProperties;
 }
 

@@ -170,6 +170,17 @@ describe("<AparelhoVetor />", () => {
   });
 });
 
+describe("<AparelhoVetor /> o filete do celular", () => {
+  it("o filete do corpo do celular vem do json", () => {
+    const celular = montar().querySelector<HTMLElement>(".aparelho-vetor__celular")!;
+    expect(geometria.celular.cores.filete).toMatch(/^rgb\(/);
+    expect(celular.style.getPropertyValue("--av-filete")).toBe(geometria.celular.cores.filete);
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css).toContain("var(--av-filete)");
+    expect(css).not.toContain("rgb(108 148 196");
+  });
+});
+
 describe('globals.css, bloco Hero "entrada"', () => {
   const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8").replace(/\r\n/g, "\n");
   const start = css.indexOf('/* Hero "entrada"');

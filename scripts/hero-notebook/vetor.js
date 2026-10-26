@@ -181,7 +181,7 @@ function celular() {
     // a altura na proporção de 390 x 844 (a da tela da arte), com a largura arredondada do ENTRADA
     tela: { largura: r1(t.largura), altura: r2(r1(t.largura) * 844 / 390) },
     corpo,
-    cores: { vidro: cor(VIDRO), aro: cor(aro, 0.85) },
+    cores: { vidro: cor(VIDRO), aro: cor(aro, 0.85), filete: cor([108, 148, 196], 0.3) },
     suporte: {
       caixa: sCaixa,
       chapa: {

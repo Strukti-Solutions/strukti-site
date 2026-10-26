@@ -84,7 +84,8 @@
     },
     "cores": {
       "vidro": "rgb(5 11 19)",
-      "aro": "rgb(44 55 71 / 0.85)"
+      "aro": "rgb(44 55 71 / 0.85)",
+      "filete": "rgb(108 148 196 / 0.3)"
     },
     "suporte": {
       "caixa": [
