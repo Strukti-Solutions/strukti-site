@@ -167,7 +167,10 @@ src/
     opengraph-image.tsx    imagem de compartilhamento gerada por código (next/og)
   components/
     sections/               um componente por seção da home, na ordem da página:
-      HeroExpansao.tsx        hero "expansao", o padrão (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
+      HeroNotebook.tsx        hero "notebook", o padrão: o ScrollExpandMedia no modo entrada (+ o vídeo de HeroVideoMedia.tsx)
+      AparelhoVetor.tsx       o aparelho em vetor do hero "notebook" (a geometria em aparelhoVetor.json)
+      VetorRasterizado.tsx    a base e o suporte do aparelho viram imagem depois de montar (+ rasterDoVetor.ts)
+      HeroExpansao.tsx        hero "expansao", variante (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
       HeroSequence.tsx        hero "estudio", o hero de marca da v2.2 (+ HeroSequenceScroller.tsx)
       Catalogo.tsx            a seção #produtos: título, introdução e o catálogo (components/catalogo/)
       ChamadaHardware.tsx     "Tem um problema que pede hardware?"
@@ -185,18 +188,22 @@ src/
                             HeroOpcao.tsx (as 3 opções do hero de marca, ?hero=a|c)
     ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica),
                             blackhole-hero-section (o buraco negro do hero "classic") e
-                            scroll-expansion-hero (o quadro que cresce do hero "expansao")
+                            scroll-expansion-hero (o quadro que cresce do hero "expansao" e,
+                            no modo entrada, do "notebook")
     InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
   config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
   content/landing.ts        todo o texto da página, incluindo o aviso de privacidade
   content/catalogo.ts       os 10 itens do catálogo (CATALOGO) e a microcopy dele (catalogoUi)
   lib/
+    heroEntrada.ts          números (ENTRADA) e câmera do hero "notebook" (progresso → expansão, pausa, aproximação)
     heroSequence.ts         matemática do hero "estudio" (progresso → quadro, conjunto, URLs)
     interest.ts             assuntos do formulário e o evento que marca o assunto
     validation.ts           schema Zod compartilhado (cliente + servidor)
     rateLimit.ts             limite de taxa simples em memória
     repository/              interface + implementação Postgres para gravar leads
+scripts/
+  hero-notebook/            a mídia do hero "notebook": a cena, o aparelho em vetor e o loop (README próprio)
 ```
 
 O texto em `src/content/landing.ts` é o texto aprovado pelo Thiago em
@@ -206,17 +213,24 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-Há quatro versões do topo da página (barra + hero), escolhidas numa linha de
+Há cinco versões do topo da página (barra + hero), escolhidas numa linha de
 `src/config/site.ts`:
 
 ```ts
-heroVariant: "expansao", // ou "estudio", "video" ou "classic"
+heroVariant: "notebook", // ou "expansao", "estudio", "video" ou "classic"
 ```
 
 O `page.tsx` liga cada valor ao seu hero num `Record<HeroVariant, …>`: uma
 variante nova sem hero ali é erro de tipo.
 
-- `"expansao"` (padrão) — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
+- `"notebook"` (padrão desde 26/10/2026) — `HeroNotebook.tsx` +
+  `TopBar.tsx`: o "expansao" com a entrada pelo notebook. O quadro cresce
+  até a tela cheia, há uma pausa com a sala inteira e as metades do título
+  ao lado do aparelho, e a câmera se aproxima da tela do aparelho (o
+  notebook deitado, o celular em pé) até ela virar a página: a tela é o
+  bloco de chamada do hero, em HTML de verdade (`MASTER.md` §9.8, "Modo
+  entrada", e a revisão de 23/10/2026 da ADR-010).
+- `"expansao"` — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
   vídeo "Fim de expediente" cresce com a roda ou o toque até quase a tela
   inteira, o fundo se apaga, o título se abre para os lados e, com a
   expansão completa, aparecem o texto do hero de marca da v2.2 e os botões
@@ -233,9 +247,9 @@ variante nova sem hero ali é erro de tipo.
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
 
-Nos heros "expansao" e "estudio", as 3 opções do texto do hero de marca da v2.2 ficam
+Nos heros "notebook", "expansao" e "estudio", as 3 opções do texto do hero de marca da v2.2 ficam
 acessíveis por `?hero=a` e `?hero=c` (sem a chave, a B), para comparar: no
-"expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
+"notebook" e no "expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
 passos do replay ("Como funciona") saíram do site na v2.2.
 
 **O hero "expansao"** (`MASTER.md` §9.8, ADR-010) é o `ScrollExpandMedia`
@@ -267,6 +281,27 @@ e `--hx-midia-pos`). A mídia precisa ser escura atrás do título e das
 legendas (limites de luminância no `MASTER.md` §3.4). Para gerar a mídia de novo
 (a cena, os passes, o loop e as codificações), veja
 `scripts/hero-expansao/README.md`.
+
+**O hero "notebook"** é o mesmo `ScrollExpandMedia` com a prop `entrada`
+(`HeroNotebook.tsx`): o progresso preso cobre a expansão, a pausa e a
+aproximação, com os números no `ENTRADA` e a câmera em funções puras
+(`src/lib/heroEntrada.ts`), escrita em variáveis CSS (bloco Hero "entrada"
+do `globals.css`, só sob `.hero-expansao--entrada`). O aparelho é vetor
+(`AparelhoVetor.tsx`); depois de montar, só com movimento, a base e o suporte viram imagem
+(`VetorRasterizado.tsx`). O texto é o mesmo do "expansao"
+(`landingContent.heroExpansao`). As fases, as camadas, os estados, o estado
+parado e as garantias estão no `MASTER.md` §9.8, "Modo entrada"; as
+decisões, na ADR-010.
+
+**Trocar a mídia do hero "notebook":** os arquivos ficam em
+`public/hero/notebook/`, com nomes, tamanhos e limites de bytes fixos,
+apontados em `siteConfig.heroNotebook` (a tabela está no `MASTER.md` §9.8,
+"Modo entrada"; o `heroNotebook.assets.test.ts` confere). Cada enquadramento
+tem a sua mídia (deitado, o notebook; em pé, o celular), e a mídia da sala
+não traz o aparelho, que é vetor por cima: mexeu na cena ou na câmera, o
+`aparelhoVetor.json` e o `ENTRADA` mudam junto. Para gerar a mídia de novo
+(as fotos, a geometria, o vetor, o loop, as codificações e as conferências
+da faixa do título), veja `scripts/hero-notebook/README.md`.
 
 **O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
 de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de

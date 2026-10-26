@@ -121,7 +121,9 @@
  * - Título: um H1 com as duas partes em `<span>` (o original tinha dois
  *   `<h2>`); sem `mix-blend-mode` (o `textBlend` saiu); cores do DS. O `date`
  *   é a linha de apoio; o `scrollToExpand` é a dica, `aria-hidden`, que só
- *   aparece quando a expansão de fato anda.
+ *   aparece quando a expansão de fato anda (a transição de opacidade dela
+ *   também só existe com o hero armado: na regra de sempre, ela piscava e
+ *   sumia a cada carregamento, 26/10/2026).
  * - Mídia por slots (`background`, `media`, `mediaControl`): sem next/image,
  *   sem o `<iframe>` do YouTube (CSP), sem `autoplay` (o vídeo segue a §9.6,
  *   `HeroVideoProvider`), sem a troca de `mediaType`; o quadro pode ter nome
@@ -132,10 +134,11 @@
  *   `overflow-x-hidden` (que vira caixa de rolagem); classes BEM do site no
  *   lugar das do Tailwind (sem preflight aqui); sem bloco de conteúdo vazio;
  *   export nomeado.
- * - Modo `entrada` (23/10/2026, protótipo da entrada pelo notebook, spec
- *   2026-10-23-hero-entrada-notebook-design.md): só com a prop `entrada` (o
- *   hero "notebook"); sem ela, nada aqui muda. O mesmo p passa a cobrir três
- *   fases (expansão, pausa e a aproximação até a tela do aparelho, em
+ * - Modo `entrada` (23/10/2026, a entrada pelo notebook, spec
+ *   2026-10-23-hero-entrada-notebook-design.md; MASTER §9.8, "Modo entrada",
+ *   e a revisão de 23/10/2026 da ADR-010): só com a prop `entrada` (o hero
+ *   "notebook", o padrão desde 26/10/2026); sem ela, nada aqui muda. O
+ *   mesmo p passa a cobrir três fases (expansão, pausa e a aproximação até a tela do aparelho, em
  *   `src/lib/heroEntrada.ts`), com os ganhos da roda e do toque ÷
  *   `ENTRADA.ganho` (o teclado segue por p: seta 0,1, página 0,34). As
  *   teclas animam como o clique da roda (o alvo anda e o desenhado o
@@ -158,7 +161,11 @@
  *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
  *   sala pausa; a seção ganha `data-coberta="true"`, e o CSS tira o controle
  *   do vídeo, que não faria nada, da tela, da leitura e do Tab (I1 da revisão
- *   final da fase 2). O conteúdo é a tela do aparelho:
+ *   final da fase 2), menos com o foco nele (`:not(:focus-within)`: o foco
+ *   não cai no body). Com o vídeo tocando, o pôster atrás dele sai da
+ *   pintura (desempenho: era um 2º desfoque da sala por quadro). Uma janela
+ *   de tamanho 0 (iframe oculto, aba em segundo plano) vale 1 × 1 nas contas
+ *   da câmera, sem NaN. O conteúdo é a tela do aparelho:
  *   sempre à vista (`data-content` "visible"), no fluxo, logo abaixo do
  *   palco; o aparelho vai no quadro, `aria-hidden`. Liberação no topo da
  *   tela: no quadro em que o desenhado chega a 1, `data-expanded` vira

@@ -1,15 +1,16 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
- * - "notebook" (protótipo, só no branch feat/hero-notebook, padrão dele): o
- *   "expansao" com a entrada pelo notebook: depois da tela cheia, a câmera
- *   se aproxima de um aparelho em caixas cinza (notebook deitado, celular em
- *   pé) até a tela dele virar a página (spec 2026-10-23-hero-entrada-notebook-
- *   design.md); usa a barra do "video";
- * - "expansao" (padrão em produção): o quadro com o vídeo "Fim de expediente"
- *   cresce com a rolagem até quase a tela inteira, o fundo se apaga e o
- *   título se abre para os lados (MASTER §9.8, ADR-010); usa a barra do topo
- *   do "video".
+ * - "notebook" (padrão desde 26/10/2026): o "expansao" com a entrada pelo
+ *   notebook: depois da tela cheia e de uma pausa, a câmera se aproxima de
+ *   um aparelho em vetor (notebook deitado, celular em pé) até a tela dele,
+ *   o bloco de chamada do hero, virar a página (MASTER §9.8, "Modo entrada",
+ *   e a revisão de 23/10/2026 da ADR-010); mídia em `heroNotebook`; usa a
+ *   barra do "video";
+ * - "expansao" (variante; o padrão de 15 a 26/10/2026): o quadro com o vídeo
+ *   "Fim de expediente" cresce com a rolagem até quase a tela inteira, o
+ *   fundo se apaga e o título se abre para os lados (MASTER §9.8, ADR-010);
+ *   usa a barra do topo do "video".
  *   Os passos do replay saíram do site na v2.2, com qualquer hero;
  * - "estudio": hero da v3 (MASTER §9.7): produto 3D em sequência de quadros
  *   guiada pela rolagem; usa a barra do "video";
