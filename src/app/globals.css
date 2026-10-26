@@ -4070,6 +4070,13 @@ textarea.field__input {
    as âncoras abaixo dele ficam no lugar. */
 .hero-expansao {
   --hx-p: 0;
+  /* O degradê do pé do fundo, o mesmo no expansao e no véu do entrada. */
+  --hx-fundo-degrade: linear-gradient(
+    to bottom,
+    rgb(8 18 29 / 0.1) 0%,
+    rgb(8 18 29 / 0.1) 72%,
+    var(--color-navy-950) 100%
+  );
   --hx-cresce-largura: 1250px;
   --hx-cresce-altura: 400px;
   --hx-desliza: 150vw;
@@ -4127,12 +4134,7 @@ textarea.field__input {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgb(8 18 29 / 0.1) 0%,
-    rgb(8 18 29 / 0.1) 72%,
-    var(--color-navy-950) 100%
-  );
+  background: var(--hx-fundo-degrade);
 }
 
 .hero-expansao__fundo-img {
@@ -4584,12 +4586,7 @@ textarea.field__input {
       rgb(8 18 29 / 0.72) 60%,
       rgb(8 18 29 / 0) 100%
     ),
-    linear-gradient(
-      to bottom,
-      rgb(8 18 29 / 0.1) 0%,
-      rgb(8 18 29 / 0.1) 72%,
-      var(--color-navy-950) 100%
-    );
+    var(--hx-fundo-degrade);
 }
 
 /* A sombra clareia na expansão e volta um pouco na aproximação (a sala

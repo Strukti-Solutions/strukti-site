@@ -186,6 +186,17 @@ describe('globals.css, bloco Hero "entrada"', () => {
     expect(end).toBeGreaterThan(start);
   });
 
+  it("o degradê do pé do fundo é um só (--hx-fundo-degrade)", () => {
+    expect(css.match(/--hx-fundo-degrade:/g)).toHaveLength(1);
+    // As duas regras de fundo: o pé do expansao e o véu (::after) do entrada.
+    for (const seletor of [".hero-expansao__fundo::after", ".hero-expansao--entrada .hero-expansao__fundo::after"]) {
+      const i = css.indexOf(`
+${seletor} {`);
+      expect(i, seletor).toBeGreaterThan(-1);
+      expect(css.slice(i, css.indexOf("}", i)), seletor).toContain("var(--hx-fundo-degrade)");
+    }
+  });
+
   it("o cinza saiu: nada de .aparelho-cinza no CSS", () => {
     expect(css).not.toContain("aparelho-cinza");
   });
@@ -389,8 +400,8 @@ describe('globals.css, bloco Hero "entrada"', () => {
   it("no cartão, o fundo de fora escurece na faixa do h1 (MASTER §3.4), por cima do degradê do expansao", () => {
     const fundo = corpo(".hero-expansao--entrada .hero-expansao__fundo::after");
     expect(fundo).toMatch(/radial-gradient\( ellipse min\(40cqw, 520px\) min\(22cqw, 180px\) at 50% 50%,/);
-    // O degradê do pé, o do expansao, continua por baixo.
-    expect(fundo).toContain("linear-gradient( to bottom, rgb(8 18 29 / 0.1) 0%, rgb(8 18 29 / 0.1) 72%, var(--color-navy-950) 100% )");
+    // O degradê do pé, o do expansao (a variável compartilhada), continua por baixo.
+    expect(fundo).toContain("), var(--hx-fundo-degrade);");
   });
 
   it("o corpo do celular tem um filete de luz fria na borda junto da tela (o brilho dela), sem cobrir a tela", () => {
