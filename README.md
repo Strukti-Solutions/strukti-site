@@ -142,7 +142,7 @@ conseguir comprovar o consentimento). A versão vigente fica em
 | `npm run test`      | Testes (Vitest): validação, rota de API, formulário, acessibilidade (axe) e hidratação da página inteira com e sem prefers-reduced-motion |
 | `npm run check:placeholders` | Falha se sobrar `[A PREENCHER` em `src/` — rodar antes do deploy (L5) |
 | `npm run check:quarantine` | Falha se algum pacote do `package-lock.json` (direto ou transitivo) tiver menos de 7 dias de publicado — ver docs/DECISOES.md (ADR-003) |
-| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim (e falha se não chegar lá ou não ficar lá: um hero preso deixaria a página no topo) e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Lê a variante do hero no HTML (`<main data-hero-variant>`, de `siteConfig.heroVariant`): com "estudio", a 1440×900 (lado a lado) e a 360×740 (celular, quadro em cima), confere que a rolagem troca o quadro do canvas (0 no topo, outro no meio da seção), que, com reduced motion, o hero fica no pôster, sem quadro desenhado e sem altura extra (a mesma altura da página sem JavaScript, com folga de 10% da tela), e que, com a animação, ao rolar até `#produtos` o fundo preso do hero já soltou: falha se ele ainda cobrir o topo da seção (pelo retângulo dele e pelo `elementFromPoint` em 6 pontos). Falha também se a seção `.hero-estudio` não existir; com outra variante, avisa "passo pulado". Na prévia aprovada em 13/10/2026, com a sequência de quadros desligada (`data-sequencia="desligada"` no hero; o símbolo é desenhado pelo fio), o passo do giro também avisa "passo pulado" e o resto da checagem segue. Com "expansao", a 1440×900, 360×740 e 740×360 (`.hero-expansao`, pelos atributos `data-pin`, `data-expanded`, `data-progress` e `data-content` e pela geometria de verdade): sem JavaScript, a composição parada e legível, com os dois botões clicáveis; com a roda do mouse (eventos do CDP), o progresso só sobe, o palco fica preso cobrindo a tela, o quadro cresce de fato e segue as fórmulas do original em cada amostra (largura min(300 + 1250p, 95vw), altura min(400 + 400p, 85vh, a tela menos duas barras), 650 e 200 abaixo de 768 px, e a 1ª linha do título a −p × 150vw, 180vw abaixo de 768 px), o título se abre, o fundo some, o conteúdo aparece e a altura do hero não muda, depois a roda rola até `#produtos` (topo livre) e, no topo, a roda para cima recolhe; com o teclado (Page Down, Espaço, seta, End, Home), o mesmo; as âncoras (o link `#produtos` da barra fixa, clicado sem rolar antes, e `/#contato` aberto direto) terminam no alvo e continuam lá 1,5 s depois; um clique no quadro preso não cai na mídia nem expande, e o Tab até o controle do vídeo não rola nem expande; com cores forçadas (a 1440), o ícone do controle tem contraste ≥ 3:1 nos dois estados; com reduced motion, nunca prende e a página rola. À parte, com o espaçamento de texto da WCAG 1.4.12 a 320×568 (barra de rolagem clássica) e 320×640 (celular) e no zoom de 400% (320×256 a 4×, sem o espaçamento), a linha de apoio e a dica não passam por baixo do controle do vídeo nem saem da largura, e a linha de apoio termina dentro da tela presa, e, com toque de verdade a 390×844 (toque emulado), um dedo arrastado 100 px expande metade e segura e uma pinça amplia a página sem mexer no hero. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto nem invisível), toca os vídeos do painel do catálogo (só um por vez na página, o do hero incluído) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo, coberto ou invisível (opacidade efetiva abaixo de 0,5, depois das transições). Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero (ou o quadro e o título do "expansao"). **Etapa do catálogo** (`#produtos`), a 1440×900 e a 360×740, com uma linha de log por item: sem JavaScript (10 cartões, fileira que rola de lado, `<details>` que abre); abrir e fechar com o mouse (a URL vai a `#slug` e volta); **altura constante** (o topo da seção seguinte fica no mesmo lugar, na tela e no documento, fechado, aberto, trocando, com o filtro e fechado de novo); teclado (← → no lateral, na pílula, no vídeo e no título, Enter, Esc devolvendo o foco); miniaturas e filtro; link direto `/#rota-de-vendas` e o voltar do navegador; movimento reduzido instantâneo; o loop do cartão parando em até 5,5 s; um vídeo por vez; menu "Produtos ▾" da barra; toque a 360 px (deslizar na horizontal troca, na vertical rola a página); cores forçadas; o espaçamento de texto da WCAG 1.4.12 a 320 px; e o texto do cartão do centro nos 10 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão cabe sem rolar, com a etiqueta e o selo sobre o véu opaco; com o 1.4.12 e com a fonte raiz a 200%, a etiqueta, o nome e o "Ver detalhes" alcançáveis pela rolagem de dentro do cartão). Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH`. `CHECK_BROWSER_ETAPAS` (`larguras`, `hero`, `expansao`, `catalogo`, `interacao`, separadas por vírgula) roda só as etapas pedidas; sem ela, roda tudo (cerca de 12 min, a do catálogo em ~2,5 min) |
+| `npm run check:browser` | Com o site no ar (`npm run dev`), abre a página no Edge/Chrome headless a 360–1440px, com e sem reduced motion, rola até o fim (e falha se não chegar lá ou não ficar lá: um hero preso deixaria a página no topo) e falha se houver rolagem horizontal, erro no console (ex.: hidratação) ou violação de CSP. Antes, um controle positivo provoca uma violação de CSP de propósito (imagem de uma origem externa `.invalid`) e interrompe a checagem se o detector não a acusar. A 360, 390, 1024, 1100 e 1199px, também falha se o botão flutuante do WhatsApp (`a.fab-whatsapp`) cruzar a caixa de um controle focável em algum ponto da rolagem. Lê a variante do hero no HTML (`<main data-hero-variant>`, de `siteConfig.heroVariant`): com "estudio", a 1440×900 (lado a lado) e a 360×740 (celular, quadro em cima), confere que a rolagem troca o quadro do canvas (0 no topo, outro no meio da seção), que, com reduced motion, o hero fica no pôster, sem quadro desenhado e sem altura extra (a mesma altura da página sem JavaScript, com folga de 10% da tela), e que, com a animação, ao rolar até `#produtos` o fundo preso do hero já soltou: falha se ele ainda cobrir o topo da seção (pelo retângulo dele e pelo `elementFromPoint` em 6 pontos). Falha também se a seção `.hero-estudio` não existir; com outra variante, avisa "passo pulado". Na prévia aprovada em 13/10/2026, com a sequência de quadros desligada (`data-sequencia="desligada"` no hero; o símbolo é desenhado pelo fio), o passo do giro também avisa "passo pulado" e o resto da checagem segue. Com "notebook" (a etapa `entrada`), entre as passadas do hero, o LCP de uma página nova, sem cache e sem rolar (1440×900 e 390×844 em pé, com toque) tem de ser o pôster da cena (`img.hero-expansao__poster`, `midia-poster.avif` deitado e `midia-retrato-poster.avif` em pé), não o fundo de tela cheia nem o título; com outra variante, avisa "passo pulado". Com "expansao", a 1440×900, 360×740 e 740×360 (`.hero-expansao`, pelos atributos `data-pin`, `data-expanded`, `data-progress` e `data-content` e pela geometria de verdade): sem JavaScript, a composição parada e legível, com os dois botões clicáveis; com a roda do mouse (eventos do CDP), o progresso só sobe, o palco fica preso cobrindo a tela, o quadro cresce de fato e segue as fórmulas do original em cada amostra (largura min(300 + 1250p, 95vw), altura min(400 + 400p, 85vh, a tela menos duas barras), 650 e 200 abaixo de 768 px, e a 1ª linha do título a −p × 150vw, 180vw abaixo de 768 px), o título se abre, o fundo some, o conteúdo aparece e a altura do hero não muda, depois a roda rola até `#produtos` (topo livre) e, no topo, a roda para cima recolhe; com o teclado (Page Down, Espaço, seta, End, Home), o mesmo; as âncoras (o link `#produtos` da barra fixa, clicado sem rolar antes, e `/#contato` aberto direto) terminam no alvo e continuam lá 1,5 s depois; um clique no quadro preso não cai na mídia nem expande, e o Tab até o controle do vídeo não rola nem expande; com cores forçadas (a 1440), o ícone do controle tem contraste ≥ 3:1 nos dois estados; com reduced motion, nunca prende e a página rola. À parte, com o espaçamento de texto da WCAG 1.4.12 a 320×568 (barra de rolagem clássica) e 320×640 (celular) e no zoom de 400% (320×256 a 4×, sem o espaçamento), a linha de apoio e a dica não passam por baixo do controle do vídeo nem saem da largura, e a linha de apoio termina dentro da tela presa, e, com toque de verdade a 390×844 (toque emulado), um dedo arrastado 100 px expande metade e segura e uma pinça amplia a página sem mexer no hero. Depois, exercita as interações: abre o menu e sai com Tab (o foco não pode ficar coberto nem invisível), toca os vídeos do painel do catálogo (só um por vez na página, o do hero incluído) e percorre a página inteira com Tab a 360, 390, 1024 e 1200px, falhando se um controle focado parar sob a barra fixa do topo, coberto ou invisível (opacidade efetiva abaixo de 0,5, depois das transições). Por fim, aplica o espaçamento de texto da WCAG 1.4.12 de 360 a 1440px e falha se algo da barra (ou do painel do Menu) sair da tela ou do container, ou se a barra cobrir a moldura do hero (ou o quadro e o título do "expansao"). **Etapa do catálogo** (`#produtos`), a 1440×900 e a 360×740, com uma linha de log por item: sem JavaScript (10 cartões, fileira que rola de lado, `<details>` que abre); abrir e fechar com o mouse (a URL vai a `#slug` e volta); **altura constante** (o topo da seção seguinte fica no mesmo lugar, na tela e no documento, fechado, aberto, trocando, com o filtro e fechado de novo); teclado (← → no lateral, na pílula, no vídeo e no título, Enter, Esc devolvendo o foco); miniaturas e filtro; link direto `/#rota-de-vendas` e o voltar do navegador; movimento reduzido instantâneo; o loop do cartão parando em até 5,5 s; um vídeo por vez; menu "Produtos ▾" da barra; toque a 360 px (deslizar na horizontal troca, na vertical rola a página); cores forçadas; o espaçamento de texto da WCAG 1.4.12 a 320 px; e o texto do cartão do centro nos 10 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão cabe sem rolar, com a etiqueta e o selo sobre o véu opaco; com o 1.4.12 e com a fonte raiz a 200%, a etiqueta, o nome e o "Ver detalhes" alcançáveis pela rolagem de dentro do cartão). Mostra qual elemento passou da borda ou foi coberto. Navegador detectado sozinho, ou `BROWSER_PATH`. `CHECK_BROWSER_ETAPAS` (`larguras`, `hero`, `expansao`, `entrada`, `catalogo`, `interacao`, separadas por vírgula) roda só as etapas pedidas; sem ela, roda tudo (cerca de 12 min, a do catálogo em ~2,5 min) |
 
 ### Definição de pronto
 
@@ -167,7 +167,10 @@ src/
     opengraph-image.tsx    imagem de compartilhamento gerada por código (next/og)
   components/
     sections/               um componente por seção da home, na ordem da página:
-      HeroExpansao.tsx        hero "expansao", o padrão (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
+      HeroNotebook.tsx        hero "notebook", o padrão: o ScrollExpandMedia no modo entrada (+ o vídeo de HeroVideoMedia.tsx)
+      AparelhoVetor.tsx       o aparelho em vetor do hero "notebook" (a geometria em aparelhoVetor.json)
+      VetorRasterizado.tsx    a base e o suporte do aparelho viram imagem depois de montar (+ rasterDoVetor.ts)
+      HeroExpansao.tsx        hero "expansao", variante (ui/scroll-expansion-hero.tsx + o vídeo de HeroVideoMedia.tsx)
       HeroSequence.tsx        hero "estudio", o hero de marca da v2.2 (+ HeroSequenceScroller.tsx)
       Catalogo.tsx            a seção #produtos: título, introdução e o catálogo (components/catalogo/)
       ChamadaHardware.tsx     "Tem um problema que pede hardware?"
@@ -185,18 +188,22 @@ src/
                             HeroOpcao.tsx (as 3 opções do hero de marca, ?hero=a|c)
     ui/                     peças do design system v3 (Palco, SeloStatus, FichaTecnica),
                             blackhole-hero-section (o buraco negro do hero "classic") e
-                            scroll-expansion-hero (o quadro que cresce do hero "expansao")
+                            scroll-expansion-hero (o quadro que cresce do hero "expansao" e,
+                            no modo entrada, do "notebook")
     InterestLink.tsx        link para #contato que já marca o assunto do formulário
     FloatingWhatsApp.tsx    botão flutuante do WhatsApp (todas as telas)
   config/site.ts            dados de contato, equipe, versão do aviso de privacidade e do hero
   content/landing.ts        todo o texto da página, incluindo o aviso de privacidade
   content/catalogo.ts       os 10 itens do catálogo (CATALOGO) e a microcopy dele (catalogoUi)
   lib/
+    heroEntrada.ts          números (ENTRADA) e câmera do hero "notebook" (progresso → expansão, pausa, aproximação)
     heroSequence.ts         matemática do hero "estudio" (progresso → quadro, conjunto, URLs)
     interest.ts             assuntos do formulário e o evento que marca o assunto
     validation.ts           schema Zod compartilhado (cliente + servidor)
     rateLimit.ts             limite de taxa simples em memória
     repository/              interface + implementação Postgres para gravar leads
+scripts/
+  hero-notebook/            a mídia do hero "notebook": a cena, o aparelho em vetor e o loop (README próprio)
 ```
 
 O texto em `src/content/landing.ts` é o texto aprovado pelo Thiago em
@@ -206,17 +213,24 @@ aprovada nesse documento e só depois replicada aqui.
 
 ### Como trocar o visual do hero
 
-Há quatro versões do topo da página (barra + hero), escolhidas numa linha de
+Há cinco versões do topo da página (barra + hero), escolhidas numa linha de
 `src/config/site.ts`:
 
 ```ts
-heroVariant: "expansao", // ou "estudio", "video" ou "classic"
+heroVariant: "notebook", // ou "expansao", "estudio", "video" ou "classic"
 ```
 
 O `page.tsx` liga cada valor ao seu hero num `Record<HeroVariant, …>`: uma
 variante nova sem hero ali é erro de tipo.
 
-- `"expansao"` (padrão) — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
+- `"notebook"` (padrão desde 26/10/2026) — `HeroNotebook.tsx` +
+  `TopBar.tsx`: o "expansao" com a entrada pelo notebook. O quadro cresce
+  até a tela cheia, há uma pausa com a sala inteira e as metades do título
+  ao lado do aparelho, e a câmera se aproxima da tela do aparelho (o
+  notebook deitado, o celular em pé) até ela virar a página: a tela é o
+  bloco de chamada do hero, em HTML de verdade (`MASTER.md` §9.8, "Modo
+  entrada", e a revisão de 23/10/2026 da ADR-010).
+- `"expansao"` — `HeroExpansao.tsx` + `TopBar.tsx`: o quadro com o
   vídeo "Fim de expediente" cresce com a roda ou o toque até quase a tela
   inteira, o fundo se apaga, o título se abre para os lados e, com a
   expansão completa, aparecem o texto do hero de marca da v2.2 e os botões
@@ -233,9 +247,9 @@ variante nova sem hero ali é erro de tipo.
 - `"classic"` — `Hero.tsx` + `Header.tsx`: o hero anterior, com o fundo
   trocável descrito abaixo.
 
-Nos heros "expansao" e "estudio", as 3 opções do texto do hero de marca da v2.2 ficam
+Nos heros "notebook", "expansao" e "estudio", as 3 opções do texto do hero de marca da v2.2 ficam
 acessíveis por `?hero=a` e `?hero=c` (sem a chave, a B), para comparar: no
-"expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
+"notebook" e no "expansao", elas trocam a linha de apoio, o H2 e a frase do conteúdo. Os 3
 passos do replay ("Como funciona") saíram do site na v2.2.
 
 **O hero "expansao"** (`MASTER.md` §9.8, ADR-010) é o `ScrollExpandMedia`
@@ -267,6 +281,27 @@ e `--hx-midia-pos`). A mídia precisa ser escura atrás do título e das
 legendas (limites de luminância no `MASTER.md` §3.4). Para gerar a mídia de novo
 (a cena, os passes, o loop e as codificações), veja
 `scripts/hero-expansao/README.md`.
+
+**O hero "notebook"** é o mesmo `ScrollExpandMedia` com a prop `entrada`
+(`HeroNotebook.tsx`): o progresso preso cobre a expansão, a pausa e a
+aproximação, com os números no `ENTRADA` e a câmera em funções puras
+(`src/lib/heroEntrada.ts`), escrita em variáveis CSS (bloco Hero "entrada"
+do `globals.css`, só sob `.hero-expansao--entrada`). O aparelho é vetor
+(`AparelhoVetor.tsx`); depois de montar, só com movimento, a base e o suporte viram imagem
+(`VetorRasterizado.tsx`). O texto é o mesmo do "expansao"
+(`landingContent.heroExpansao`). As fases, as camadas, os estados, o estado
+parado e as garantias estão no `MASTER.md` §9.8, "Modo entrada"; as
+decisões, na ADR-010.
+
+**Trocar a mídia do hero "notebook":** os arquivos ficam em
+`public/hero/notebook/`, com nomes, tamanhos e limites de bytes fixos,
+apontados em `siteConfig.heroNotebook` (a tabela está no `MASTER.md` §9.8,
+"Modo entrada"; o `heroNotebook.assets.test.ts` confere). Cada enquadramento
+tem a sua mídia (deitado, o notebook; em pé, o celular), e a mídia da sala
+não traz o aparelho, que é vetor por cima: mexeu na cena ou na câmera, o
+`aparelhoVetor.json` e o `ENTRADA` mudam junto. Para gerar a mídia de novo
+(as fotos, a geometria, o vetor, o loop, as codificações e as conferências
+da faixa do título), veja `scripts/hero-notebook/README.md`.
 
 **O hero "estudio"** (`MASTER.md` §9.7) desenha num `<canvas>` uma sequência
 de quadros AVIF pré-renderizada em `public/hero/sequencia/` (90 quadros de

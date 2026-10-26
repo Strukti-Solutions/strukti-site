@@ -1,9 +1,16 @@
 /**
  * Versão do topo da página (barra do topo + hero) em uso. Trocar é mudar
  * `siteConfig.heroVariant` — ver README, "Como trocar o visual do hero":
- * - "expansao" (padrão): o quadro com o vídeo "Fim de expediente" cresce com
- *   a rolagem até quase a tela inteira, o fundo se apaga e o título se abre
- *   para os lados (MASTER §9.8, ADR-010); usa a barra do topo do "video".
+ * - "notebook" (padrão desde 26/10/2026): o "expansao" com a entrada pelo
+ *   notebook: depois da tela cheia e de uma pausa, a câmera se aproxima de
+ *   um aparelho em vetor (notebook deitado, celular em pé) até a tela dele,
+ *   o bloco de chamada do hero, virar a página (MASTER §9.8, "Modo entrada",
+ *   e a revisão de 23/10/2026 da ADR-010); mídia em `heroNotebook`; usa a
+ *   barra do "video";
+ * - "expansao" (variante; o padrão de 15 a 26/10/2026): o quadro com o vídeo
+ *   "Fim de expediente" cresce com a rolagem até quase a tela inteira, o
+ *   fundo se apaga e o título se abre para os lados (MASTER §9.8, ADR-010);
+ *   usa a barra do topo do "video".
  *   Os passos do replay saíram do site na v2.2, com qualquer hero;
  * - "estudio": hero da v3 (MASTER §9.7): produto 3D em sequência de quadros
  *   guiada pela rolagem; usa a barra do "video";
@@ -12,7 +19,7 @@
  * - "classic": o cabeçalho fixo e o hero com fundo trocável (MASTER
  *   §9.1–9.5), escolhido em `siteConfig.heroVisual`.
  */
-export type HeroVariant = "expansao" | "estudio" | "video" | "classic";
+export type HeroVariant = "expansao" | "estudio" | "video" | "classic" | "notebook";
 
 /**
  * Peça de fundo do hero "classic". Trocar o visual é mudar este valor — ver
@@ -124,6 +131,78 @@ const FIM_DE_EXPEDIENTE: HeroExpansaoMedia = {
   },
 };
 
+/**
+ * Um quadro da mídia do hero "notebook": a imagem parada (o pôster, AVIF com
+ * JPG de reserva) e, se houver, o loop mudo (WebM VP9 e MP4 H.264), do mesmo
+ * 1º quadro. Sem `webm` nem `mp4`, não há vídeo: fica só o pôster.
+ */
+export interface HeroNotebookQuadro {
+  webm?: string;
+  mp4?: string;
+  posterAvif: string;
+  posterJpg: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Mídia do hero "notebook" (spec 2026-10-23-hero-entrada-notebook-design.md,
+ * §6; produção em scripts/hero-notebook/), servida de public/hero/notebook/,
+ * nunca de CDN. Cada enquadramento tem a sua (Q26: em pé é
+ * `(orientation: portrait)`), e o navegador só baixa a do enquadramento
+ * atual. Os nomes e tamanhos são fixos (o heroNotebook.assets.test.ts
+ * confere os arquivos e os limites).
+ */
+export interface HeroNotebookMedia {
+  /** Fundo decorativo, visto em volta do cartão em P = 0 (com o aparelho renderizado). */
+  fundo: { deitado: HeroNotebookQuadro; retrato: HeroNotebookQuadro };
+  /** A sala que a câmera atravessa, sem o aparelho da frente (ele é vetor por cima), deitada. */
+  midia: HeroNotebookQuadro;
+  /** A mesma, em pé. */
+  midiaRetrato: HeroNotebookQuadro;
+}
+
+/*
+ * A mesa com o notebook aberto no centro: o mesmo mundo do "Fim de
+ * expediente", produção própria. A mídia que a câmera atravessa tem o loop
+ * de 10 s (o pôster é o 1º quadro); o fundo é só a imagem parada. Deitado, o
+ * notebook no centro da mesa; em pé, o celular num suporte, na frente e no
+ * centro, com o notebook atrás (cada enquadramento com a sua mídia e o seu
+ * fundo).
+ */
+const MESA_COM_NOTEBOOK: HeroNotebookMedia = {
+  fundo: {
+    deitado: {
+      posterAvif: "/hero/notebook/fundo.avif",
+      posterJpg: "/hero/notebook/fundo.jpg",
+      width: 1920,
+      height: 1080,
+    },
+    retrato: {
+      posterAvif: "/hero/notebook/fundo-retrato.avif",
+      posterJpg: "/hero/notebook/fundo-retrato.jpg",
+      width: 1080,
+      height: 1920,
+    },
+  },
+  midia: {
+    webm: "/hero/notebook/midia.webm",
+    mp4: "/hero/notebook/midia.mp4",
+    posterAvif: "/hero/notebook/midia-poster.avif",
+    posterJpg: "/hero/notebook/midia-poster.jpg",
+    width: 1280,
+    height: 720,
+  },
+  midiaRetrato: {
+    webm: "/hero/notebook/midia-retrato.webm",
+    mp4: "/hero/notebook/midia-retrato.mp4",
+    posterAvif: "/hero/notebook/midia-retrato-poster.avif",
+    posterJpg: "/hero/notebook/midia-retrato-poster.jpg",
+    width: 720,
+    height: 1280,
+  },
+};
+
 /*
  * "Rota ao entardecer": "Aerial Footage of Truck on the Road", de K (Pexels),
  * https://www.pexels.com/video/aerial-footage-of-truck-on-the-road-9339061/
@@ -150,10 +229,11 @@ const ROTA_ENTARDECER: HeroVideoSource = {
 
 export const siteConfig = {
   brand: "Strukti Soluções",
-  heroVariant: "expansao" as HeroVariant,
+  heroVariant: "notebook" as HeroVariant,
   heroVisual: "blackhole" as HeroVisual,
   heroVideo: ROTA_ENTARDECER as HeroVideoSource | null,
   heroExpansao: FIM_DE_EXPEDIENTE,
+  heroNotebook: MESA_COM_NOTEBOOK,
   heroSequence: {
     desktop: { frames: 90, width: 1600, height: 1000 },
     celular: { frames: 45, width: 800, height: 900 },

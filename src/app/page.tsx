@@ -6,6 +6,7 @@ import { Hero } from "@/components/sections/Hero";
 import { HeroVideo } from "@/components/sections/HeroVideo";
 import { HeroSequence } from "@/components/sections/HeroSequence";
 import { HeroExpansao } from "@/components/sections/HeroExpansao";
+import { HeroNotebook } from "@/components/sections/HeroNotebook";
 import { Catalogo } from "@/components/sections/Catalogo";
 import { ChamadaHardware } from "@/components/sections/ChamadaHardware";
 import { ComoResolvemos } from "@/components/sections/ComoResolvemos";
@@ -22,6 +23,7 @@ import { FioPrototipo } from "@/components/spike/FioPrototipo";
  */
 const HERO_SECTIONS: Record<HeroVariant, ComponentType> = {
   expansao: HeroExpansao,
+  notebook: HeroNotebook,
   estudio: HeroSequence,
   video: HeroVideo,
   classic: Hero,

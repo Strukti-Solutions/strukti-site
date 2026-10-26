@@ -121,7 +121,9 @@
  * - Título: um H1 com as duas partes em `<span>` (o original tinha dois
  *   `<h2>`); sem `mix-blend-mode` (o `textBlend` saiu); cores do DS. O `date`
  *   é a linha de apoio; o `scrollToExpand` é a dica, `aria-hidden`, que só
- *   aparece quando a expansão de fato anda.
+ *   aparece quando a expansão de fato anda (a transição de opacidade dela
+ *   também só existe com o hero armado: na regra de sempre, ela piscava e
+ *   sumia a cada carregamento, 26/10/2026).
  * - Mídia por slots (`background`, `media`, `mediaControl`): sem next/image,
  *   sem o `<iframe>` do YouTube (CSP), sem `autoplay` (o vídeo segue a §9.6,
  *   `HeroVideoProvider`), sem a troca de `mediaType`; o quadro pode ter nome
@@ -132,10 +134,61 @@
  *   `overflow-x-hidden` (que vira caixa de rolagem); classes BEM do site no
  *   lugar das do Tailwind (sem preflight aqui); sem bloco de conteúdo vazio;
  *   export nomeado.
+ * - Modo `entrada` (23/10/2026, a entrada pelo notebook, spec
+ *   2026-10-23-hero-entrada-notebook-design.md; MASTER §9.8, "Modo entrada",
+ *   e a revisão de 23/10/2026 da ADR-010): só com a prop `entrada` (o hero
+ *   "notebook", o padrão desde 26/10/2026); sem ela, nada aqui muda. O
+ *   mesmo p passa a cobrir três fases (expansão, pausa e a aproximação até a tela do aparelho, em
+ *   `src/lib/heroEntrada.ts`), com os ganhos da roda e do toque ÷
+ *   `ENTRADA.ganho` (o teclado segue por p: seta 0,1, página 0,34). As
+ *   teclas animam como o clique da roda (o alvo anda e o desenhado o
+ *   persegue), e não pela transição do CSS: a liberação acontece no quadro
+ *   em que o desenhado chega a 1, e a transição seria cortada por ela já no
+ *   keydown (achado da revisão final, 23/10/2026); o Tab ("auto") segue
+ *   completando na hora (Q21). Recolher pelo toque zera o início do
+ *   arrasto: o resto do gesto anda só o que o dedo andou depois. O
+ *   `paint()` escreve a câmera (`camera()`) em variáveis CSS (`--hx-e`,
+ *   `--hx-k`, `--hx-tela-*`, `--hx-sala-*`, `--hx-quadro-*`, `--hx-linha1-x/-y`,
+ *   `--hx-linha2-x/-y`, `--hx-titulo-s`, `--hx-titulo-saida`); a janela útil
+ *   (largura da seção, altura do palco), a orientação (`data-orientacao`) e a largura,
+ *   a altura e o centro no palco das metades do título são medidos depois de montar e de
+ *   novo a cada resize ou giro, e cada medida pede um quadro. A pose das metades na pausa
+ *   (`posicaoDoTitulo`, fase 2 da arte, 23/10/2026) as deixa inteiras ao lado da
+ *   moldura do notebook ou, em pé, acima e abaixo do celular; deitado, se ao lado a fonte
+ *   efetiva ficaria abaixo de 1,5rem (zoom, janela quase quadrada), empilhadas como em pé
+ *   (o font-size das metades e o do html também são medidos). Com a tela cobrindo a sala (`k` a partir de
+ *   `ENTRADA.salaCobertaK`, e em P = 1 solto ou recolhido), a mídia recebe
+ *   `true` pelo `MidiaCobertaContext` (./midia-coberta.ts), e o vídeo da
+ *   sala pausa; a seção ganha `data-coberta="true"`, e o CSS tira o controle
+ *   do vídeo, que não faria nada, da tela, da leitura e do Tab (I1 da revisão
+ *   final da fase 2), menos com o foco nele (`:not(:focus-within)`: o foco
+ *   não cai no body). Com o vídeo tocando, o pôster atrás dele sai da
+ *   pintura (desempenho: era um 2º desfoque da sala por quadro). Uma janela
+ *   de tamanho 0 (iframe oculto, aba em segundo plano) vale 1 × 1 nas contas
+ *   da câmera, sem NaN. O conteúdo é a tela do aparelho:
+ *   sempre à vista (`data-content` "visible"), no fluxo, logo abaixo do
+ *   palco; o aparelho vai no quadro, `aria-hidden`. Liberação no topo da
+ *   tela: no quadro em que o desenhado chega a 1, `data-expanded` vira
+ *   "true" na hora (o CSS tira o transform da tela, sem esperar o React) e a
+ *   página rola, instantânea, até a altura do palco. "No topo", para
+ *   recolher, passa a ser o topo da tela; recolher (roda, toque, teclas, ou
+ *   uma rolagem para acima do topo da tela, como a barra de rolagem ou o
+ *   Home do navegador) deixa p em 1 e volta a página ao topo, no mesmo
+ *   quadro. Rolagens em vários passos têm uma janela de graça (renovada a
+ *   cada `scroll`, até ~250 ms sem nenhum): a rolagem suave até uma âncora
+ *   fora do hero (clique no link, âncora nova na URL ou `hashchange`)
+ *   completa sem rolar e não recolhe no caminho; o arrasto da barra para
+ *   cima, depois de recolher, mantém a página no topo, presa em p = 1, em
+ *   vez de completar e recolher de novo a cada movimento do mouse; e o
+ *   arrasto para baixo a partir do topo, depois de completar, mantém a
+ *   página no topo da tela até passar dele, em vez de recolher no caminho
+ *   (o que prendia a página no topo: achado do check:browser, 23/10/2026).
  */
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import { REDUCED_MOTION_QUERY, useCanAnimate } from "@/lib/motion";
+import { ENTRADA, camera, posicaoDoTitulo, quadro, type Viewport } from "@/lib/heroEntrada";
+import { MidiaCobertaContext } from "./midia-coberta";
 
 /** Roda: progresso por pixel de deltaY (original: 0,0009; ÷ 1,3, mais lenta). */
 const WHEEL_GAIN = 0.0007;
@@ -178,6 +231,18 @@ const WHEEL_LINE_PX = 16;
 const MULTI_TOUCH_GRACE_MS = 300;
 /** Página ampliada (pinça) acima desta escala: roda e toque são do navegador. */
 const ZOOMED_SCALE = 1.01;
+/**
+ * Modo entrada: depois do clique numa âncora fora do hero (ou do
+ * `hashchange`), a rolagem do navegador até ela pode começar até este tempo
+ * depois (a rolagem suave começa no quadro seguinte; folga para engasgos).
+ */
+const ANCORA_ESPERA_MS = 500;
+/**
+ * Modo entrada: uma rolagem em vários passos (a suave até uma âncora, o
+ * arrasto da barra de rolagem) segue em andamento enquanto chegam `scroll`
+ * com menos que isto entre eles (a rolagem suave manda um por quadro).
+ */
+const ROLAGEM_ASSENTA_MS = 250;
 
 /** O que mudou o progresso por último (`data-input`: o CSS anima "key" e "auto"). */
 type ProgressInput = "wheel" | "touch" | "key" | "auto";
@@ -208,6 +273,74 @@ const OPEN_MENU_SELECTOR = ".topbar[data-open='true'] .topbar__nav";
 /** Fica de fora do "foco completa a expansão": o controle do vídeo. */
 const CONTROL_SELECTOR = ".hero-expansao__controle";
 
+/** Modo entrada: em pé, o aparelho é o celular; deitado, o notebook (Q26). */
+const ORIENTACAO_EM_PE_QUERY = "(orientation: portrait)";
+
+/** Modo entrada: as variáveis da cena que o `paint()` escreve (a limpeza as apaga). */
+const VARIAVEIS_DA_CENA = [
+  "--hx-e",
+  "--hx-k",
+  "--hx-tela-x",
+  "--hx-tela-y",
+  "--hx-tela-s",
+  "--hx-sala-z",
+  "--hx-sala-ox",
+  "--hx-sala-oy",
+  "--hx-sala-tx",
+  "--hx-sala-ty",
+  "--hx-sala-blur",
+  "--hx-quadro-w",
+  "--hx-quadro-h",
+  "--hx-linha1-x",
+  "--hx-linha2-x",
+  "--hx-linha1-y",
+  "--hx-linha2-y",
+  "--hx-titulo-s",
+  "--hx-titulo-saida",
+] as const;
+
+type Orientacao = "deitado" | "em-pe";
+
+/**
+ * Modo entrada: o que é medido depois de montar: a janela útil e a pose das
+ * metades do título na pausa (o deslocamento de cada uma e a escala das duas).
+ */
+type MedidaDaCena = { v: Viewport; titulo: ReturnType<typeof posicaoDoTitulo> };
+
+/**
+ * Modo entrada: escreve a câmera em `p` nas variáveis da seção. A tela vai
+ * pelo canto de cima à esquerda (o CSS a escala a partir dele) e a escala.
+ * Devolve o `k` (a aproximação, com a curva) da câmera escrita.
+ */
+function pintarCena(section: HTMLElement, p: number, { v, titulo: pose }: MedidaDaCena) {
+  const { e, k, tela, sala, titulo } = camera(p, v);
+  const q = quadro(e, v);
+  const px = (valor: number) => `${valor}px`;
+  const valores: Record<(typeof VARIAVEIS_DA_CENA)[number], string> = {
+    "--hx-e": String(e),
+    "--hx-k": String(k),
+    "--hx-tela-x": px(tela.cx - (tela.s * v.w) / 2),
+    "--hx-tela-y": px(tela.cy - (tela.s * v.h) / 2),
+    "--hx-tela-s": String(tela.s),
+    "--hx-sala-z": String(sala.z),
+    "--hx-sala-ox": px(sala.ox),
+    "--hx-sala-oy": px(sala.oy),
+    "--hx-sala-tx": px(sala.tx),
+    "--hx-sala-ty": px(sala.ty),
+    "--hx-sala-blur": px(sala.blur),
+    "--hx-quadro-w": px(q.w),
+    "--hx-quadro-h": px(q.h),
+    "--hx-linha1-x": px(pose.x[0]),
+    "--hx-linha2-x": px(pose.x[1]),
+    "--hx-linha1-y": px(pose.y[0]),
+    "--hx-linha2-y": px(pose.y[1]),
+    "--hx-titulo-s": String(pose.escala),
+    "--hx-titulo-saida": String(titulo.saida),
+  };
+  for (const nome of VARIAVEIS_DA_CENA) section.style.setProperty(nome, valores[nome]);
+  return k;
+}
+
 /** Progresso válido: de 0 a 1, arredondado na 6ª casa (sem a deriva do ponto flutuante). */
 function clampProgress(value: number) {
   // 10 × 0,1 dá 0,999…, e a 10ª seta não expandiria. Imperceptível na roda e no toque.
@@ -223,9 +356,9 @@ function isWheelNotch(deltaMode: number, deltaYPx: number) {
   return deltaMode !== 0 || Math.abs(deltaYPx) >= WHEEL_NOTCH_PX;
 }
 
-/** O alvo da âncora da URL (ex.: /#contato) existe e fica fora do hero? */
-function hashTargetOutside(section: HTMLElement) {
-  const hash = window.location.hash.slice(1);
+/** O alvo da âncora (a da URL, ex.: /#contato, ou a de um link) existe e fica fora do hero? */
+function hashTargetOutside(section: HTMLElement, ancora = window.location.hash) {
+  const hash = ancora.slice(1);
   if (!hash) return false;
   let id = hash;
   try {
@@ -235,6 +368,23 @@ function hashTargetOutside(section: HTMLElement) {
   }
   const target = document.getElementById(id);
   return target !== null && !section.contains(target);
+}
+
+/**
+ * O clique foi num link para uma âncora desta página, que o navegador vai
+ * seguir? Devolve a âncora (com o `#`) ou `null`. Os mesmos critérios do
+ * `useCatalogo`: botão principal, sem modificador, sem `preventDefault`, na
+ * mesma aba e no mesmo documento.
+ */
+function ancoraDoClique(event: MouseEvent) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return null;
+  }
+  const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+  if (!(link instanceof HTMLAnchorElement) || !link.hash) return null;
+  if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return null;
+  const semAncora = (url: string) => url.split("#")[0];
+  return semAncora(link.href) === semAncora(window.location.href) ? link.hash : null;
 }
 
 function insideOpenMenu(target: EventTarget | null) {
@@ -305,6 +455,12 @@ export interface ScrollExpandMediaProps {
   mediaControl?: ReactNode;
   /** O conteúdo que aparece com a expansão completa (o `children` do original). */
   children?: ReactNode;
+  /**
+   * Liga o modo entrada (o hero "notebook"): as três fases, com o conteúdo
+   * como a tela do `aparelho`, que vai no quadro, por cima da mídia e fora
+   * da leitura (`aria-hidden`).
+   */
+  entrada?: { aparelho: ReactNode };
 }
 
 export function ScrollExpandMedia({
@@ -319,9 +475,12 @@ export function ScrollExpandMedia({
   mediaLabel,
   mediaControl,
   children,
+  entrada: modoEntrada,
 }: ScrollExpandMediaProps) {
+  const entrada = Boolean(modoEntrada);
   const canAnimate = useCanAnimate();
   const sectionRef = useRef<HTMLElement>(null);
+  const palcoRef = useRef<HTMLDivElement>(null);
   // O progresso desenhado (o que está no --hx-p e manda nos estados) e o
   // alvo da roda de mouse, que o desenhado persegue. Parados, são iguais.
   const progressRef = useRef(0);
@@ -336,10 +495,27 @@ export function ScrollExpandMedia({
   // callback antes de o requestAnimationFrame devolver (como no
   // HeroSequenceScroller).
   const paintScheduled = useRef(false);
+  // O id do quadro da pintura pedida (o modo entrada o cancela ao desmontar).
+  const paintFrameRef = useRef<number | null>(null);
+  // Modo entrada: a janela útil e a pose do título, medidas depois de montar.
+  const medidaRef = useRef<MedidaDaCena | null>(null);
   // Ligado = a expansão anda com roda, toque e teclado (só depois de montar).
   const [armed, setArmed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [contentShown, setContentShown] = useState(true);
+  // Modo entrada: notebook ou celular, só depois de montar (o servidor não sabe).
+  const [orientacao, setOrientacao] = useState<Orientacao>();
+  // Modo entrada: a tela cobre a sala (k ≥ ENTRADA.salaCobertaK)? Vai para a
+  // mídia pelo MidiaCobertaContext (o vídeo da sala pausa); o ref evita
+  // renderizar de novo a cada quadro.
+  const [midiaCoberta, setMidiaCoberta] = useState(false);
+  const midiaCobertaRef = useRef(false);
+
+  const marcarCoberta = useCallback((coberta: boolean) => {
+    if (midiaCobertaRef.current === coberta) return;
+    midiaCobertaRef.current = coberta;
+    setMidiaCoberta(coberta);
+  }, []);
 
   const paint = useCallback(() => {
     paintScheduled.current = false;
@@ -349,34 +525,61 @@ export function ScrollExpandMedia({
     section.style.setProperty("--hx-p", String(progress));
     // Duas casas; "1.00" só com a expansão completa.
     section.dataset.progress = (progress >= 1 ? 1 : Math.min(progress, 0.99)).toFixed(2);
+    if (entrada && medidaRef.current) {
+      const k = pintarCena(section, progress, medidaRef.current);
+      marcarCoberta(k >= ENTRADA.salaCobertaK);
+    }
+  }, [entrada, marcarCoberta]);
+
+  /** Pinta no próximo quadro (um só, por mais que se peça antes dele). */
+  const schedulePaint = useCallback(() => {
+    if (paintScheduled.current) return;
+    paintScheduled.current = true;
+    paintFrameRef.current = requestAnimationFrame(paint);
+  }, [paint]);
+
+  /** Desiste da pintura pedida (modo entrada, ao desligar): nenhum quadro sobra. */
+  const cancelPaint = useCallback(() => {
+    if (paintScheduled.current && paintFrameRef.current !== null) cancelAnimationFrame(paintFrameRef.current);
+    paintScheduled.current = false;
+    paintFrameRef.current = null;
   }, []);
 
   /**
    * Muda o progresso desenhado: pinta (no próximo quadro, ou já, de dentro
    * de um) e faz os efeitos de estado, que seguem o desenhado. Em p = 1 o
    * alvo também vai a 1: expandido, nada mais puxa o quadro de volta.
+   *
+   * Modo entrada: em p = 1 a página solta no topo da tela (o conteúdo, no
+   * fluxo logo abaixo do palco). No mesmo quadro, `data-expanded` vira
+   * "true" já (o CSS tira o transform da tela, sem esperar o React) e, com
+   * `rolar` e a página acima da tela, ela rola até lá, instantânea. Sem
+   * `rolar` (âncora fora do hero), quem rola é o navegador.
    */
   const draw = useCallback(
-    (next: number, paintNow = false) => {
+    (next: number, paintNow = false, rolar = true) => {
       const progress = clampProgress(next);
       progressRef.current = progress;
       if (paintNow) paint();
-      else if (!paintScheduled.current) {
-        paintScheduled.current = true;
-        requestAnimationFrame(paint);
-      }
+      else schedulePaint();
       if (progress >= 1) {
         targetRef.current = 1;
         if (!expandedRef.current) {
           expandedRef.current = true;
+          const section = sectionRef.current;
+          const palco = palcoRef.current;
+          if (entrada && section) section.dataset.expanded = "true";
           setExpanded(true);
+          if (entrada && rolar && palco && window.scrollY < palco.offsetHeight) {
+            window.scrollTo({ top: palco.offsetHeight, left: 0, behavior: "instant" });
+          }
         }
-        setContentShown(true);
-      } else if (progress < CONTENT_HIDE_BELOW) {
+        if (!entrada) setContentShown(true);
+      } else if (!entrada && progress < CONTENT_HIDE_BELOW) {
         setContentShown(false);
       }
     },
-    [paint],
+    [entrada, paint, schedulePaint],
   );
 
   /** Para a animação da roda de mouse (o desenhado fica onde está). */
@@ -386,15 +589,18 @@ export function ScrollExpandMedia({
     smoothLastTimeRef.current = null;
   }, []);
 
-  /** Teclado e saltos: desenhado e alvo vão juntos ao valor (a transição é do CSS). */
+  /**
+   * Teclado e saltos: desenhado e alvo vão juntos ao valor (a transição é do
+   * CSS). `rolar` é o da liberação do modo entrada (ver `draw`).
+   */
   const setProgress = useCallback(
-    (next: number, input: Extract<ProgressInput, "key" | "auto">) => {
+    (next: number, input: Extract<ProgressInput, "key" | "auto">, rolar = true) => {
       stopSmooth();
       const section = sectionRef.current;
       if (section) section.dataset.input = input;
       const progress = clampProgress(next);
       targetRef.current = progress;
-      draw(progress);
+      draw(progress, false, rolar);
     },
     [draw, stopSmooth],
   );
@@ -414,12 +620,90 @@ export function ScrollExpandMedia({
     [draw],
   );
 
-  /** Recolhe (o progresso fica em 1 até a próxima roda, como no original). */
+  /**
+   * Recolhe (o progresso fica em 1 até a próxima roda, como no original).
+   * Modo entrada: o transform volta à tela já, no mesmo quadro em que a
+   * página volta ao topo (a tela segue cobrindo a janela, agora na cena).
+   */
   const unexpand = useCallback(() => {
     expandedRef.current = false;
+    const section = sectionRef.current;
+    if (entrada && section) section.dataset.expanded = "false";
     setExpanded(false);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, []);
+  }, [entrada]);
+
+  // Modo entrada: a janela útil (a largura da seção, sem a barra de rolagem
+  // clássica, e a altura do palco), a orientação e a largura das metades do
+  // título, medidas depois de montar (nada disso existe no servidor) e de
+  // novo a cada resize ou giro e quando uma das metades muda de largura (a
+  // fonte que termina de carregar, o espaçamento de texto do usuário, o
+  // tamanho da fonte; com a largura muda a escala delas na pausa); cada
+  // medida pede um quadro. Mede também com o movimento reduzido: o
+  // `data-orientacao` vale para o estado parado.
+  useEffect(() => {
+    if (!entrada) return;
+    const section = sectionRef.current;
+    const palco = palcoRef.current;
+    if (!section || !palco) return;
+    const emPeQuery = typeof window.matchMedia === "function" ? window.matchMedia(ORIENTACAO_EM_PE_QUERY) : null;
+    const linhaEl = (linha: 1 | 2) => section.querySelector<HTMLElement>(`.hero-expansao__linha--${linha}`);
+    const largura = (linha: 1 | 2) => linhaEl(linha)?.offsetWidth ?? 0;
+    const altura = (linha: 1 | 2) => linhaEl(linha)?.offsetHeight ?? 0;
+    // O centro da linha no palco, pelo layout (os offsets ignoram o transform):
+    // soma os offsetTop até o palco, que é posicionado.
+    const centro = (linha: 1 | 2) => {
+      let el: HTMLElement | null = linhaEl(linha);
+      const meia = (el?.offsetHeight ?? 0) / 2;
+      let topo = 0;
+      while (el && el !== palco) {
+        topo += el.offsetTop;
+        el = el.offsetParent as HTMLElement | null;
+      }
+      return topo + meia;
+    };
+    // O font-size, em px (0 sem medida, como no jsdom sem CSS): o das metades
+    // e o do html (o rem), para o piso da fonte na pausa (`tituloPisoRem`).
+    const fonteDe = (el: Element | null) => (el ? Number.parseFloat(getComputedStyle(el).fontSize) || 0 : 0);
+
+    const medir = () => {
+      const v: Viewport = {
+        w: section.clientWidth || window.innerWidth,
+        h: palco.clientHeight || window.innerHeight,
+        emPe: emPeQuery?.matches === true,
+      };
+      medidaRef.current = {
+        v,
+        titulo: posicaoDoTitulo(v, [largura(1), largura(2)], {
+          centros: [centro(1), centro(2)],
+          alturas: [altura(1), altura(2)],
+          fonte: fonteDe(linhaEl(1)),
+          rem: fonteDe(document.documentElement) || undefined,
+        }),
+      };
+      setOrientacao(v.emPe ? "em-pe" : "deitado");
+      schedulePaint();
+    };
+
+    medir();
+    window.addEventListener("resize", medir);
+    // A caixa de layout das metades (o transform não conta). O jsdom e
+    // navegadores antigos não têm ResizeObserver.
+    const linhas = typeof ResizeObserver === "function" ? new ResizeObserver(medir) : null;
+    for (const linha of section.querySelectorAll(".hero-expansao__linha")) linhas?.observe(linha);
+    // O `addListener` é o dos Safari antigos.
+    if (typeof emPeQuery?.addEventListener === "function") emPeQuery.addEventListener("change", medir);
+    else emPeQuery?.addListener?.(medir);
+
+    return () => {
+      window.removeEventListener("resize", medir);
+      linhas?.disconnect();
+      if (typeof emPeQuery?.removeEventListener === "function") emPeQuery.removeEventListener("change", medir);
+      else emPeQuery?.removeListener?.(medir);
+      cancelPaint();
+      medidaRef.current = null;
+    };
+  }, [entrada, cancelPaint, schedulePaint]);
 
   useEffect(() => {
     if (!canAnimate) return;
@@ -436,6 +720,32 @@ export function ScrollExpandMedia({
     let multiTouchUntil = 0;
     // A roda e o touchmove (não passivos) estão na window?
     let holding = false;
+    // Modo entrada: até quando a rolagem é a do navegador indo até uma âncora
+    // fora do hero (completa sem rolar e não recolhe), até quando ainda é a
+    // mesma que recolheu (o arrasto da barra para cima: segue presa no topo)
+    // e até quando ainda é a mesma que completou (o arrasto da barra para
+    // baixo: segue no topo da tela até passar dele). As três se renovam a
+    // cada `scroll` que chega dentro delas.
+    let ancoraAte = 0;
+    let recolhidoAte = 0;
+    let completadoAte = 0;
+    // A âncora da URL da última vez que o hero olhou: uma nova, fora do hero,
+    // é um link seguido, mesmo que o `scroll` chegue antes do `hashchange`.
+    let hashVisto = window.location.hash;
+    /** Uma âncora fora do hero foi seguida agora: a rolagem que vem é do navegador. */
+    const notarAncora = () => {
+      ancoraAte = performance.now() + ANCORA_ESPERA_MS;
+    };
+    // Modo entrada: o percurso é ENTRADA.ganho vezes mais longo na roda e no
+    // toque (o teclado segue por p).
+    const divisor = entrada ? ENTRADA.ganho : 1;
+    const wheelGain = WHEEL_GAIN / divisor;
+    const touchGainForward = TOUCH_GAIN_FORWARD / divisor;
+    const touchGainBack = TOUCH_GAIN_BACK / divisor;
+    // O topo da página solta: 0, ou, no modo entrada, o topo da tela (a altura
+    // do palco). "No topo", para recolher, é a partir dele.
+    const palco = palcoRef.current;
+    const topoSolto = () => (entrada && palco ? palco.offsetHeight : 0);
 
     /** Um quadro da animação da roda de mouse: anda 1 − e^(−dt/τ) do que falta. */
     const smoothStep = (time: number) => {
@@ -455,12 +765,19 @@ export function ScrollExpandMedia({
       else smoothFrameRef.current = requestAnimationFrame(smoothStep);
     };
 
-    /** Clique de roda de mouse: move o alvo; o desenhado segue do ponto em que está. */
-    const aimProgress = (delta: number) => {
+    /**
+     * Leva o alvo a `next`; o desenhado segue do ponto em que está, quadro a
+     * quadro. É o caminho do clique de roda e, no modo entrada, o das teclas
+     * (`data-input` "wheel" nos dois: sem transição do CSS por cima).
+     */
+    const aimAt = (next: number) => {
       section.dataset.input = "wheel";
-      targetRef.current = clampProgress(targetRef.current + delta);
+      targetRef.current = clampProgress(next);
       if (smoothFrameRef.current === null) smoothFrameRef.current = requestAnimationFrame(smoothStep);
     };
+
+    /** Clique de roda de mouse: move o alvo. */
+    const aimProgress = (delta: number) => aimAt(targetRef.current + delta);
 
     armedRef.current = true;
     expandedRef.current = false;
@@ -476,7 +793,7 @@ export function ScrollExpandMedia({
       const scale = deltaMode === 1 ? WHEEL_LINE_PX : deltaMode === 2 ? window.innerHeight : 1;
       const delta = deltaY * scale;
       if (expandedRef.current) {
-        if (delta < 0 && window.scrollY <= TOP_SLOP_PX) {
+        if (delta < 0 && window.scrollY <= topoSolto() + TOP_SLOP_PX) {
           if (event.cancelable) event.preventDefault();
           unexpand();
         }
@@ -485,8 +802,8 @@ export function ScrollExpandMedia({
       // Segura até o desenhado chegar a 1 (expandedRef): com o quadro ainda
       // crescendo para o alvo, a página não rola.
       if (event.cancelable) event.preventDefault();
-      if (isWheelNotch(deltaMode, delta)) aimProgress(delta * WHEEL_GAIN);
-      else nudgeProgress(delta * WHEEL_GAIN, "wheel");
+      if (isWheelNotch(deltaMode, delta)) aimProgress(delta * wheelGain);
+      else nudgeProgress(delta * wheelGain, "wheel");
     };
 
     /** Conta os dedos; com dois ou mais (pinça), a rolagem fica com o navegador por um tempo. */
@@ -509,14 +826,17 @@ export function ScrollExpandMedia({
       if (start === null || !touch || event.touches.length !== 1 || motionReduced() || pageZoomed()) return;
       const delta = start - touch.clientY;
       if (expandedRef.current) {
-        if (delta < -TOUCH_COLLAPSE_PX && window.scrollY <= TOP_SLOP_PX) {
+        if (delta < -TOUCH_COLLAPSE_PX && window.scrollY <= topoSolto() + TOP_SLOP_PX) {
           if (event.cancelable) event.preventDefault();
           unexpand();
+          // Modo entrada: o resto do mesmo arrasto parte daqui (com o delta
+          // desde o começo do toque, a tela encolheria de uma vez).
+          if (entrada) touchStartRef.current = touch.clientY;
         }
         return;
       }
       if (event.cancelable) event.preventDefault();
-      nudgeProgress(delta * (delta < 0 ? TOUCH_GAIN_BACK : TOUCH_GAIN_FORWARD), "touch");
+      nudgeProgress(delta * (delta < 0 ? touchGainBack : touchGainForward), "touch");
       touchStartRef.current = touch.clientY;
     };
 
@@ -532,7 +852,7 @@ export function ScrollExpandMedia({
       const step = keyStep(event);
       if (step === null || !keyBelongsToHero(event, section)) return;
       if (expandedRef.current) {
-        if (step < 0 && window.scrollY <= TOP_SLOP_PX) {
+        if (step < 0 && window.scrollY <= topoSolto() + TOP_SLOP_PX) {
           event.preventDefault();
           unexpand();
         }
@@ -540,16 +860,23 @@ export function ScrollExpandMedia({
       }
       event.preventDefault();
       // Do alvo: no meio de uma animação da roda, a tecla parte de onde ela ia.
-      setProgress(step === Infinity ? 1 : step === -Infinity ? 0 : targetRef.current + step, "key");
+      const alvo = step === Infinity ? 1 : step === -Infinity ? 0 : targetRef.current + step;
+      // Modo entrada: a tecla anima como o clique da roda, e o desenhado só
+      // chega a 1 (e solta a página) no fim da aproximação. Pelo CSS, a
+      // liberação viria no próprio keydown, antes de qualquer quadro da
+      // transição, e cortaria a aproximação.
+      if (entrada) aimAt(alvo);
+      else setProgress(alvo, "key");
     };
 
     /**
      * A roda e o touchmove só ficam na window enquanto podem agir: preso, ou
-     * expandido até uma tela abaixo do topo. Recolher pede scrollY ≤ 5, e a
-     * rolagem até lá passa por aqui antes (o scroll é passivo e fica sempre).
+     * expandido até uma tela abaixo do topo. Recolher pede scrollY ≤ 5 (no
+     * modo entrada, até 5 px abaixo do topo da tela), e a rolagem até lá
+     * passa por aqui antes (o scroll é passivo e fica sempre).
      */
     const syncHoldListeners = () => {
-      const needed = !expandedRef.current || window.scrollY <= window.innerHeight;
+      const needed = !expandedRef.current || window.scrollY <= topoSolto() + window.innerHeight;
       if (needed === holding) return;
       holding = needed;
       if (needed) {
@@ -565,19 +892,85 @@ export function ScrollExpandMedia({
     // coisa (âncora, barra de rolagem, busca, foco). Completa, sem voltar.
     // Menos durante uma pinça (e logo depois): o zoom arrasta a página uns
     // pixels, e o título que a pessoa amplia não pode sair de lado.
+    // Modo entrada, expandido: uma rolagem para acima do topo da tela (barra
+    // de rolagem, Home do navegador, âncora do próprio hero) recolhe, como a
+    // roda, e o palco nunca aparece em p = 1 sem a tela por cima.
+    // Modo entrada, rolagens em vários passos: a suave até uma âncora fora do
+    // hero (o html tem scroll-behavior: smooth) passa por posições dentro do
+    // palco, e um scrollTo ali a interromperia; ela completa sem rolar e não
+    // recolhe até assentar. O arrasto da barra para cima, depois de recolher,
+    // continua mandando a página para onde o mouse está (o navegador não vê o
+    // scrollTo do meio): até ele assentar, a página volta ao topo, presa em
+    // p = 1, sem completar e recolher de novo a cada movimento. O arrasto
+    // para baixo a partir do topo é o espelho: o 1º movimento completa e
+    // rola até o topo da tela; até ele assentar, as posições ainda acima do
+    // topo da tela voltam a ele, em vez de recolher (o que prenderia a
+    // página no topo), e as abaixo ficam com o navegador.
     const onScroll = () => {
-      const pinching = touchCount >= 2 || performance.now() < multiTouchUntil;
-      if (!expandedRef.current && window.scrollY > 0 && !pinching) setProgress(1, "auto");
+      const now = performance.now();
+      const pinching = touchCount >= 2 || now < multiTouchUntil;
+      let indoAteAncora = false;
+      let recolhendo = false;
+      let completando = false;
+      if (entrada) {
+        const hash = window.location.hash;
+        if (hash !== hashVisto) {
+          hashVisto = hash;
+          if (hashTargetOutside(section)) notarAncora();
+        }
+        indoAteAncora = now < ancoraAte;
+        if (indoAteAncora) ancoraAte = Math.max(ancoraAte, now + ROLAGEM_ASSENTA_MS);
+        recolhendo = !indoAteAncora && now < recolhidoAte;
+        if (recolhendo) recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+        completando = !indoAteAncora && now < completadoAte;
+        if (completando) completadoAte = now + ROLAGEM_ASSENTA_MS;
+      }
+      if (expandedRef.current) {
+        if (entrada && !pinching && !indoAteAncora && window.scrollY < topoSolto() - TOP_SLOP_PX) {
+          if (completando) {
+            window.scrollTo({ top: topoSolto(), left: 0, behavior: "instant" });
+          } else {
+            unexpand();
+            recolhidoAte = now + ROLAGEM_ASSENTA_MS;
+          }
+        }
+      } else if (window.scrollY > 0 && !pinching) {
+        if (recolhendo) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        else {
+          // A liberação rola até o topo da tela só se a página está acima dele.
+          if (entrada && !indoAteAncora && window.scrollY < topoSolto()) completadoAte = now + ROLAGEM_ASSENTA_MS;
+          setProgress(1, "auto", !indoAteAncora);
+        }
+      }
       syncHoldListeners();
     };
 
+    // A âncora é do navegador: ele rola até ela (no modo entrada, o hero não rola).
     const onHashChange = () => {
-      if (!expandedRef.current && hashTargetOutside(section)) setProgress(1, "auto");
+      const fora = hashTargetOutside(section);
+      if (entrada) {
+        hashVisto = window.location.hash;
+        if (fora) notarAncora();
+      }
+      if (!expandedRef.current && fora) setProgress(1, "auto", false);
+    };
+
+    // Modo entrada: um link para uma âncora fora do hero. Pega também o
+    // clique na âncora que já está na URL, que não manda `hashchange` (o
+    // navegador só rola). Na window, na fase de bolha, para enxergar o
+    // `preventDefault` dos `onClick` do React.
+    const onClick = (event: MouseEvent) => {
+      const ancora = ancoraDoClique(event);
+      if (ancora !== null && hashTargetOutside(section, ancora)) notarAncora();
     };
 
     // Página já rolada (posição restaurada) ou âncora fora do hero: começa
-    // expandido, sem prender.
-    setProgress(window.scrollY > 0 || hashTargetOutside(section) ? 1 : 0, "auto");
+    // expandido, sem prender. No modo entrada, rolada para dentro do palco, a
+    // página vai até o topo da tela; além dele, ou com a âncora, fica.
+    const ancoraFora = hashTargetOutside(section);
+    // A rolagem do navegador até ela, se ainda vier, é dele (modo entrada).
+    if (entrada && ancoraFora) notarAncora();
+    setProgress(window.scrollY > 0 || ancoraFora ? 1 : 0, "auto", !ancoraFora);
     syncHoldListeners();
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -585,6 +978,7 @@ export function ScrollExpandMedia({
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("hashchange", onHashChange);
+    if (entrada) window.addEventListener("click", onClick);
 
     return () => {
       window.removeEventListener("wheel", onWheel);
@@ -595,6 +989,7 @@ export function ScrollExpandMedia({
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("click", onClick);
       // De volta ao estado parado (ex.: a pessoa ligou o reduced motion).
       stopSmooth();
       armedRef.current = false;
@@ -605,16 +1000,24 @@ export function ScrollExpandMedia({
       section.style.removeProperty("--hx-p");
       section.dataset.progress = "0.00";
       delete section.dataset.input;
+      if (entrada) {
+        // A cena volta à do CSS (o estado parado) e nenhum quadro sobra.
+        cancelPaint();
+        for (const nome of VARIAVEIS_DA_CENA) section.style.removeProperty(nome);
+        section.dataset.expanded = "false";
+        marcarCoberta(false);
+      }
       setArmed(false);
       setExpanded(false);
       setContentShown(true);
     };
-  }, [canAnimate, draw, nudgeProgress, setProgress, stopSmooth, unexpand]);
+  }, [canAnimate, entrada, cancelPaint, draw, marcarCoberta, nudgeProgress, setProgress, stopSmooth, unexpand]);
 
   // Foco dentro do hero (Tab até um botão do conteúdo, leitor de tela):
   // completa a expansão, para nada focado ficar invisível. Ficam de fora o
   // controle do vídeo (dá para pausar sem expandir) e a própria mídia (o
-  // `<video tabindex="-1">`, que está à vista em p = 0).
+  // `<video tabindex="-1">`, que está à vista em p = 0). No modo entrada, o
+  // foco num botão da tela também solta a página no topo da tela.
   const onFocus = (event: FocusEvent<HTMLElement>) => {
     if (!armedRef.current || expandedRef.current) return;
     const target = event.target;
@@ -624,12 +1027,13 @@ export function ScrollExpandMedia({
 
   const pinned = armed && !expanded;
   const frameA11y = mediaLabel ? { role: "img", "aria-label": mediaLabel } : { "aria-hidden": true };
+  const classes = ["hero-expansao", entrada && "hero-expansao--entrada", className].filter(Boolean).join(" ");
 
   return (
     <section
       ref={sectionRef}
       id={id}
-      className={className ? `hero-expansao ${className}` : "hero-expansao"}
+      className={classes}
       aria-labelledby={titleId}
       data-hides-fab=""
       data-pin={pinned ? "true" : "false"}
@@ -637,10 +1041,15 @@ export function ScrollExpandMedia({
       // Valor do servidor e do 1º render; depois de montar, quem escreve é o
       // requestAnimationFrame (o React não volta a mexer: o valor aqui não muda).
       data-progress="0.00"
-      data-content={!armed || contentShown ? "visible" : "hidden"}
+      // Modo entrada: o conteúdo é a tela do aparelho, sempre à vista.
+      data-content={entrada || !armed || contentShown ? "visible" : "hidden"}
+      data-orientacao={orientacao}
+      // Modo entrada: a tela cobre a sala (o mesmo valor do MidiaCobertaContext):
+      // o CSS tira o controle do vídeo, que não faria nada (I1 da revisão final da fase 2).
+      data-coberta={entrada ? (midiaCoberta ? "true" : "false") : undefined}
       onFocus={onFocus}
     >
-      <div className="hero-expansao__palco">
+      <div ref={palcoRef} className="hero-expansao__palco">
         <div className="hero-expansao__fundo" aria-hidden="true">
           {background}
         </div>
@@ -654,8 +1063,13 @@ export function ScrollExpandMedia({
 
         <div className="hero-expansao__midia">
           <div className="hero-expansao__quadro" {...frameA11y}>
-            {media}
+            <MidiaCobertaContext.Provider value={midiaCoberta}>{media}</MidiaCobertaContext.Provider>
             <div className="hero-expansao__sombra" />
+            {modoEntrada && (
+              <div className="hero-expansao__aparelho" aria-hidden="true">
+                {modoEntrada.aparelho}
+              </div>
+            )}
           </div>
           {(date || scrollToExpand) && (
             <div className="hero-expansao__legendas">
