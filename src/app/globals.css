@@ -4422,7 +4422,10 @@ textarea.field__input {
     transition: opacity 700ms ease;
   }
 
-  .hero-expansao__dica {
+  /* Só com o hero armado: a dica parada tem opacidade 0, diferente da
+     inicial, e a transição na regra de sempre a fazia piscar e sumir no
+     carregamento. */
+  .hero-expansao:is([data-pin="true"], [data-expanded="true"]) .hero-expansao__dica {
     transition: opacity var(--duration-slow) var(--ease-standard);
   }
 
