@@ -141,6 +141,88 @@ describe("<VetorRasterizado />", () => {
     expect(rasterizar).toHaveBeenCalledTimes(2);
     expect(document.querySelector("img")!.getAttribute("src")).toBe("data:image/png;base64,BBBB");
   });
+
+  it("uma imagem velha que termina depois da nova não a substitui", async () => {
+    midia({});
+    let aoMudar: () => void = () => {};
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(cb: () => void) {
+          aoMudar = cb;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    let terminarVelha: (src: string) => void = () => {};
+    rasterizar.mockReturnValueOnce(new Promise<string>((r) => (terminarVelha = r)));
+    rasterizar.mockResolvedValueOnce("data:image/png;base64,NOVA");
+    const { container } = render(<Base />);
+    await esperar();
+    container.querySelector("svg")!.style.width = "20px";
+    act(() => aoMudar());
+    await esperar();
+    expect(rasterizar).toHaveBeenCalledTimes(2);
+    expect(container.querySelector("img")!.getAttribute("src")).toBe("data:image/png;base64,NOVA");
+    await act(async () => {
+      terminarVelha("data:image/png;base64,VELHA");
+      await Promise.resolve();
+    });
+    expect(container.querySelector("img")!.getAttribute("src")).toBe("data:image/png;base64,NOVA");
+  });
+
+  it("desmontada no meio do desenho, não mexe em nada", async () => {
+    midia({});
+    let terminar: (src: string) => void = () => {};
+    rasterizar.mockReturnValueOnce(new Promise<string>((r) => (terminar = r)));
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { unmount } = render(<Base />);
+    await esperar();
+    unmount();
+    await act(async () => {
+      terminar("data:image/png;base64,TARDE");
+      await Promise.resolve();
+    });
+    expect(erro).not.toHaveBeenCalled();
+    erro.mockRestore();
+  });
+
+  it("se a imagem quebra, o SVG volta à vista", async () => {
+    midia({});
+    const { container } = render(<Base />);
+    await esperar();
+    const img = container.querySelector("img")!;
+    await act(async () => {
+      img.dispatchEvent(new Event("load"));
+    });
+    expect(container.querySelector("svg")!.dataset.rasterizado).toBe("true");
+    await act(async () => {
+      img.dispatchEvent(new Event("error"));
+    });
+    expect(container.querySelector("svg")!.dataset.rasterizado).toBeUndefined();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("refaz a imagem quando só a densidade da tela muda (outro monitor)", async () => {
+    const avisos = new Map<string, () => void>();
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: false,
+      media: q,
+      addEventListener: (_: string, f: () => void) => avisos.set(q, f),
+      removeEventListener: () => avisos.delete(q),
+      addListener() {},
+      removeListener() {},
+    }));
+    render(<Base />);
+    await esperar();
+    expect(rasterizar).toHaveBeenCalledTimes(1);
+    const resolucao = [...avisos.keys()].find((q) => q.includes("resolution"));
+    expect(resolucao).toBeDefined();
+    act(() => avisos.get(resolucao!)!());
+    await esperar();
+    expect(rasterizar).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('globals.css, bloco Hero "entrada" — o aparelho em imagem', () => {
@@ -157,5 +239,16 @@ describe('globals.css, bloco Hero "entrada" — o aparelho em imagem', () => {
 
   it("a imagem não leva o max-width do reset (mais larga que a tela, sairia espremida)", () => {
     expect(corpo(".hero-expansao--entrada img:is(.aparelho-vetor__base, .aparelho-vetor__suporte)")).toMatch(/max-width:\s*none/);
+  });
+
+  it("com cores forçadas ligadas depois do desenho, volta o SVG (o CSS da §8 só vale nele)", () => {
+    const bloco = css
+      .split("@media (forced-colors: active)")
+      .slice(1)
+      .map((resto) => resto.slice(0, resto.indexOf("\n}\n")))
+      .join("\n");
+    expect(bloco).not.toBe("");
+    expect(bloco).toMatch(/svg\[data-rasterizado="true"\]\s*\{\s*visibility:\s*visible/);
+    expect(bloco).toMatch(/img:is\(\.aparelho-vetor__base, \.aparelho-vetor__suporte\)\s*\{\s*display:\s*none/);
   });
 });

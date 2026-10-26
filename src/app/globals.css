@@ -5029,6 +5029,16 @@ textarea.field__input {
     display: none;
   }
 
+  /* Ligadas depois do desenho (VetorRasterizado), o SVG volta: as regras
+     acima só valem nele, e a imagem tem as cores da arte. */
+  .hero-expansao--entrada svg[data-rasterizado="true"] {
+    visibility: visible;
+  }
+
+  .hero-expansao--entrada img:is(.aparelho-vetor__base, .aparelho-vetor__suporte) {
+    display: none;
+  }
+
   .hero-expansao--entrada:is([data-pin="true"], [data-progress="1.00"]):not([data-expanded="true"])
     .hero-expansao__conteudo {
     outline: 2px solid CanvasText;

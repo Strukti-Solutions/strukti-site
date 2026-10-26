@@ -44,44 +44,67 @@ export function VetorRasterizado({
     let vivo = true;
     let agendado: ReturnType<typeof setTimeout> | undefined;
     let ocioso: number | undefined;
-    // Na tela e o tamanho: o giro que mostra o aparelho do outro enquadramento também redesenha.
+    // Cada desenho tem um número: um mais velho que termine depois do novo é descartado.
+    let geracao = 0;
+    // Na tela, o tamanho e a densidade: o giro que mostra o aparelho do outro
+    // enquadramento e a troca de monitor também redesenham.
     const medida = () => {
       const estilo = getComputedStyle(svg);
-      return `${svg.getClientRects().length > 0}:${estilo.width}x${estilo.height}`;
+      return `${svg.getClientRects().length > 0}:${estilo.width}x${estilo.height}@${window.devicePixelRatio || 1}`;
     };
     let tamanho = medida();
 
     const desenhar = async () => {
+      const esta = ++geracao;
       const novo = await rasterizarSvg(svg);
-      if (vivo && novo) setSrc(novo);
+      if (vivo && esta === geracao && novo) setSrc(novo);
+    };
+    const cancelarOcioso = () => {
+      if (ocioso !== undefined && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(ocioso);
+      ocioso = undefined;
     };
     // Fora do caminho do carregamento: quando o navegador estiver ocioso.
     const agendar = (atraso: number) => {
       clearTimeout(agendado);
+      cancelarOcioso();
       agendado = setTimeout(() => {
         if (typeof window.requestIdleCallback === "function") ocioso = window.requestIdleCallback(() => void desenhar());
         else void desenhar();
       }, atraso);
     };
+    const mudou = () => {
+      const agora = medida();
+      if (agora === tamanho) return;
+      tamanho = agora;
+      agendar(150);
+    };
 
     agendar(0);
+
+    // A densidade não muda o tamanho em CSS (o ResizeObserver não avisa): uma
+    // consulta da densidade de agora avisa quando ela deixa de valer.
+    let densidade: MediaQueryList | null = null;
+    const aoMudarDensidade = () => {
+      vigiarDensidade();
+      tamanho = "";
+      mudou();
+    };
+    const vigiarDensidade = () => {
+      densidade?.removeEventListener?.("change", aoMudarDensidade);
+      densidade = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+      densidade.addEventListener?.("change", aoMudarDensidade);
+    };
+    vigiarDensidade();
     // O 1º aviso do observador é o tamanho de agora: só uma mudança redesenha.
     // Sem ResizeObserver (Safari antigo), a imagem fica do tamanho da montagem.
-    const observador =
-      typeof ResizeObserver === "function"
-        ? new ResizeObserver(() => {
-            const agora = medida();
-            if (agora === tamanho) return;
-            tamanho = agora;
-            agendar(150);
-          })
-        : null;
+    const observador = typeof ResizeObserver === "function" ? new ResizeObserver(mudou) : null;
     observador?.observe(svg);
     return () => {
       vivo = false;
       clearTimeout(agendado);
-      if (ocioso !== undefined && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(ocioso);
+      cancelarOcioso();
       observador?.disconnect();
+      densidade?.removeEventListener?.("change", aoMudarDensidade);
     };
   }, []);
 
@@ -99,7 +122,19 @@ export function VetorRasterizado({
       </svg>
       {src && (
         // eslint-disable-next-line @next/next/no-img-element -- data URL desenhada no cliente, sem otimização a fazer
-        <img className={className} style={style} src={src} alt="" decoding="async" onLoad={() => setCarregada(true)} />
+        <img
+          className={className}
+          style={style}
+          src={src}
+          alt=""
+          decoding="async"
+          onLoad={() => setCarregada(true)}
+          // Quebrada, a imagem sai e o SVG volta.
+          onError={() => {
+            setCarregada(false);
+            setSrc(null);
+          }}
+        />
       )}
     </>
   );
