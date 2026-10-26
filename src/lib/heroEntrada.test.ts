@@ -639,3 +639,19 @@ describe("globals.css: os números fixos da cena batem com o ENTRADA", () => {
     expect(parteDoPalco * v.h + fracao * larguraDaMidia - pausaTela.s * v.h).toBeCloseTo(topo, 1);
   });
 });
+
+describe("janela de tamanho 0 (iframe oculto, aba em segundo plano)", () => {
+  const todosFinitos = (x: unknown): boolean =>
+    typeof x === "number" ? Number.isFinite(x) : Array.isArray(x) ? x.every(todosFinitos) : x !== null && typeof x === "object" ? Object.values(x).every(todosFinitos) : true;
+
+  it("janela 0 × 0 não gera NaN", () => {
+    for (const emPe of [false, true]) {
+      const v: Viewport = { w: 0, h: 0, emPe };
+      for (const p of [0, 0.3, 0.6, 1]) {
+        expect(todosFinitos(camera(p, v)), `camera(${p}, emPe ${emPe})`).toBe(true);
+      }
+      expect(todosFinitos(telaNaCena(0.5, v)), `telaNaCena emPe ${emPe}`).toBe(true);
+      expect(todosFinitos(posicaoDoTitulo(v, [100, 100])), `posicaoDoTitulo emPe ${emPe}`).toBe(true);
+    }
+  });
+});

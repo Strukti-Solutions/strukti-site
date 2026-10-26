@@ -163,6 +163,15 @@ export type Camera = {
   titulo: { saida: number };
 };
 
+/**
+ * Uma janela sem tamanho (iframe oculto, aba em segundo plano: 0 × 0) vale
+ * 1 × 1, para as contas de proporção não dividirem por zero e darem NaN
+ * (`transform: scale(NaN)`). Com janela real, devolve a mesma.
+ */
+function janelaUtil(v: Viewport): Viewport {
+  return v.w > 0 && v.h > 0 ? v : { ...v, w: 1, h: 1 };
+}
+
 function prende(x: number): number {
   return Math.min(1, Math.max(0, x));
 }
@@ -182,7 +191,8 @@ export function suave(x: number): number {
 }
 
 /** O quadro da expansão: de `quadroInicial` à área útil, linear em `e`. */
-export function quadro(e: number, v: Viewport): { w: number; h: number } {
+export function quadro(e: number, viewport: Viewport): { w: number; h: number } {
+  const v = janelaUtil(viewport);
   const { w, h } = ENTRADA.quadroInicial;
   return { w: w + e * (v.w - w), h: h + e * (v.h - h) };
 }
@@ -204,7 +214,8 @@ export function quadro(e: number, v: Viewport): { w: number; h: number } {
  * origem do conteúdo, dentro do quadro, é `((qw − w·m)·posX, (qh − h·m)·posY)`.
  * A mídia e a tela do aparelho são as do enquadramento (`cenaDe`).
  */
-export function telaNaCena(e: number, v: Viewport, cena: Cena = cenaDe(v)): { cx: number; cy: number; s: number } {
+export function telaNaCena(e: number, viewport: Viewport, cena: Cena = cenaDe(viewport)): { cx: number; cy: number; s: number } {
+  const v = janelaUtil(viewport);
   const q = quadro(e, v);
   const { midia, aparelho: tela } = cena;
   const m = Math.max(q.w / midia.w, q.h / midia.h);
@@ -226,7 +237,8 @@ export function telaNaCena(e: number, v: Viewport, cena: Cena = cenaDe(v)): { cx
  * (`s0^(1−k)`), para o zoom parecer uniforme. A sala amplia em volta da tela
  * da pausa e é puxada junto, para o ponto da tela nela acompanhar a tela.
  */
-export function camera(p: number, v: Viewport, cena: Cena = cenaDe(v)): Camera {
+export function camera(p: number, viewport: Viewport, cena: Cena = cenaDe(viewport)): Camera {
+  const v = janelaUtil(viewport);
   const { e, a } = fases(p);
   const k = suave(a);
   const { salaZoomMax, salaBlurMax, tituloSaidaAte } = ENTRADA;
@@ -264,9 +276,10 @@ function yNaJanela(y: number, v: Viewport, { midia }: Cena): number {
  * e o pé do aparelho (o fundo da base ou do suporte, com a sombra de contato).
  */
 export function molduraNaPausa(
-  v: Viewport,
-  cena: Cena = cenaDe(v),
+  viewport: Viewport,
+  cena: Cena = cenaDe(viewport),
 ): { esquerda: number; direita: number; topo: number; pe: number } {
+  const v = janelaUtil(viewport);
   const tela = telaNaCena(1, v, cena);
   const { aparelho } = cena;
   // 1 px da mídia em px da janela: a tela da janela tem a largura da tela da arte.
@@ -323,11 +336,12 @@ export type LayoutDoTitulo = { centros: [number, number]; alturas: [number, numb
  * não medida não desloca na vertical; sem a fonte medida, não há piso.
  */
 export function posicaoDoTitulo(
-  v: Viewport,
+  viewport: Viewport,
   larguras: [number, number],
   layout: LayoutDoTitulo = { centros: [0, 0], alturas: [0, 0] },
-  cena: Cena = cenaDe(v),
+  cena: Cena = cenaDe(viewport),
 ): { x: [number, number]; y: [number, number]; escala: number; empilhado: boolean } {
+  const v = janelaUtil(viewport);
   const { tituloFolga, tituloFolgaLado, tituloFolgaRelativa, tituloMargem, tituloMargemLado, tituloPisoRem } = ENTRADA;
   const moldura = molduraNaPausa(v, cena);
   const folga = Math.max(v.emPe ? tituloFolga : tituloFolgaLado, tituloFolgaRelativa * (moldura.direita - moldura.esquerda));
