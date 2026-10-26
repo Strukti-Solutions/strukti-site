@@ -116,7 +116,9 @@ node sondas.js --em-pe cur/media-retrato.png cur/portrait.png [390x844 360x740 3
   cortada em 50% 50%). Saem também o corpo do celular (`celular`) e o suporte
   (`suporte`: a quina da frente da chapa no tampo e o `pe` na mesa), para o
   vetor; a tela do notebook fica em `telaNotebook`.
-- `sondas.js` mede, na mídia, a faixa do título na pausa: com a conta do
+- **`sondas.js` é da pose antiga** do título (as metades ao lado da tela, e não da moldura):
+  o que vale é a medida do `sonda-rapida.js --caixas` (§5), com as caixas das
+  metades como o site as desenha. Ele mede, na mídia, a faixa do título na pausa: com a conta do
   `telaNaCena` (e = 1, `cover` em 50% 100%), a linha 1 do título fica à
   esquerda da tela (de 16 px da borda da janela até 24 px da tela) e a linha 2
   à direita, na altura do h1 no site. O percentil 90 da luminância (BT.709,
