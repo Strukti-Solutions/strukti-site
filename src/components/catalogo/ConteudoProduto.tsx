@@ -38,8 +38,17 @@ export function TextoDoVideo({ video }: { video: VideoProduto }) {
   );
 }
 
-/** Visão geral (lado do texto): para quem é, benefícios e "Quero saber mais". */
+/**
+ * Visão geral (lado do texto): para quem é, benefícios e "Quero saber mais"
+ * (a página própria do produto, se houver; senão, o formulário).
+ */
 export function VisaoGeralTexto({ item }: { item: ItemCatalogo }) {
+  const saberMais = (
+    <>
+      {catalogoUi.saberMais}{" "}
+      <span className="visually-hidden">{catalogoUi.saberMaisSobre.replace("{nome}", item.nome)}</span>
+    </>
+  );
   return (
     <div className="catalogo__visao">
       <h4 className="catalogo__subtitulo">{catalogoUi.paraQuem}</h4>
@@ -49,11 +58,17 @@ export function VisaoGeralTexto({ item }: { item: ItemCatalogo }) {
           <li key={beneficio}>{beneficio}</li>
         ))}
       </ul>
-      {/* §3.6: um #contato comum (sem JS, só rola) que marca o interesse. */}
-      <InterestLink interest={item.interesse} className="btn btn--primary catalogo__saber-mais">
-        {catalogoUi.saberMais}{" "}
-        <span className="visually-hidden">{catalogoUi.saberMaisSobre.replace("{nome}", item.nome)}</span>
-      </InterestLink>
+      {item.siteUrl ? (
+        // Produto com página própria (o replay): o botão leva a ela.
+        <a href={item.siteUrl} className="btn btn--primary catalogo__saber-mais">
+          {saberMais}
+        </a>
+      ) : (
+        // §3.6: um #contato comum (sem JS, só rola) que marca o interesse.
+        <InterestLink interest={item.interesse} className="btn btn--primary catalogo__saber-mais">
+          {saberMais}
+        </InterestLink>
+      )}
     </div>
   );
 }

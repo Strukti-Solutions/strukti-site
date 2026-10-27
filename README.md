@@ -493,9 +493,10 @@ Estas pendências vêm de `docs/landing-copy.md` e também aparecem, marcadas co
 O grupo decide se bloqueia: **fotos da equipe**. A página funciona com as
 iniciais no hexágono.
 
-Não bloqueia: **endereço do site próprio do replay**
-(`landingContent.produtos.replay.siteUrl`). Enquanto for `null`, o link "Ver o
-site do replay" fica escondido.
+O endereço da página do replay (`landingContent.produtos.replay.siteUrl`) já
+está definido: https://camera-replay.vercel.app (repo Camera_Replay). No
+catálogo, o "Quero saber mais" e o "Ver o site" do replay levam a ela; com
+`null`, o "Quero saber mais" volta ao formulário e o "Ver o site" some.
 
 Não publicar (fazer deploy real) enquanto essas pendências não forem resolvidas.
 Rode `npm run check:placeholders` antes do deploy para confirmar.

@@ -12,6 +12,9 @@ import { Catalogo } from "@/components/sections/Catalogo";
 import { TopBar } from "@/components/TopBar";
 import { CatalogoInterativo } from "./CatalogoInterativo";
 
+/** Página do replay (repo Camera_Replay), escrita à mão para o teste pegar uma troca. */
+const REPLAY_SITE_URL = "https://camera-replay.vercel.app";
+
 // Ids da §5.2, na ordem do catálogo (escritos à mão, para pegar uma troca).
 const IDS = [
   "replay",
@@ -500,16 +503,24 @@ describe("catálogo: estado fechado", () => {
     expect((await axe.run(container)).violations).toEqual([]);
   });
 
-  it("'Quero saber mais' no <details> do replay dispara selectInterest('replay'); no Site para clínicas, 'outro'", () => {
+  it("'Quero saber mais' do replay leva à página do replay (sem marcar assunto); no Rota de Vendas, 'aplicativo'; no Site para clínicas, 'outro'", () => {
     const handler = vi.fn();
     const parar = onInterestSelected(handler);
     const { raiz } = montar();
 
+    // Produto com página própria (siteUrl): o botão abre a página, não o formulário.
     const replay = within(cartao(raiz, "replay").querySelector<HTMLElement>("details.catalogo__ficha")!);
     const saberReplay = replay.getByRole("link", { name: "Quero saber mais sobre Replay para quadras", hidden: true });
-    expect(saberReplay.getAttribute("href")).toBe("#contato");
+    expect(saberReplay.getAttribute("href")).toBe(REPLAY_SITE_URL);
+    saberReplay.addEventListener("click", (event) => event.preventDefault()); // o jsdom não navega para fora
     fireEvent.click(saberReplay);
-    expect(handler).toHaveBeenLastCalledWith("replay");
+    expect(handler).not.toHaveBeenCalled();
+
+    const rota = within(cartao(raiz, "rota-de-vendas"));
+    const saberRota = rota.getByRole("link", { name: "Quero saber mais sobre Rota de Vendas", hidden: true });
+    expect(saberRota.getAttribute("href")).toBe("#contato");
+    fireEvent.click(saberRota);
+    expect(handler).toHaveBeenLastCalledWith("aplicativo");
 
     window.history.replaceState(null, "", "/");
     const clinicas = within(cartao(raiz, "site-clinicas"));
@@ -770,10 +781,14 @@ describe("catálogo: estado aberto", () => {
   });
 
   it("'Quero saber mais' no painel leva a #contato: fecha sem levar o foco (nem a rolagem) de volta ao cartão", async () => {
+    // O Rota de Vendas: o "Quero saber mais" do replay abre a página dele (siteUrl).
     const { raiz } = montar();
-    const painel = abrir(raiz);
+    fireEvent.click(within(abrir(raiz)).getByRole("button", { name: catalogoUi.proximo }));
+    const painel = raiz.querySelector<HTMLElement>(".catalogo__painel")!;
+    expect(painel.querySelector("h3")?.textContent).toBe("Rota de Vendas");
     const focar = vi.spyOn(HTMLElement.prototype, "focus");
-    const link = within(painel).getByRole("link", { name: /Quero saber mais sobre Replay para quadras/ });
+    const link = within(painel).getByRole("link", { name: /Quero saber mais sobre Rota de Vendas/ });
+    expect(link.getAttribute("href")).toBe("#contato");
     link.focus();
 
     // O navegador segue o link: a URL vai para #contato e vem o hashchange.
@@ -781,9 +796,17 @@ describe("catálogo: estado aberto", () => {
     act(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
     expect(raiz.dataset.estado).toBe("fechado");
     expect(raiz.querySelector(".catalogo__painel")).toBeNull();
-    expect(document.activeElement).not.toBe(cartao(raiz, "replay"));
-    expect(focar.mock.contexts).not.toContain(cartao(raiz, "replay"));
+    expect(document.activeElement).not.toBe(cartao(raiz, "rota-de-vendas"));
+    expect(focar.mock.contexts).not.toContain(cartao(raiz, "rota-de-vendas"));
     expect(window.location.hash).toBe("#contato");
+  });
+
+  it("no painel do replay, 'Quero saber mais' e 'Ver o site' abrem a página do replay", () => {
+    const { raiz } = montar();
+    const painel = abrir(raiz);
+    const saber = within(painel).getByRole("link", { name: /Quero saber mais sobre Replay para quadras/ });
+    expect(saber.getAttribute("href")).toBe(REPLAY_SITE_URL);
+    expect(within(painel).getByRole("link", { name: catalogoUi.siteLink }).getAttribute("href")).toBe(REPLAY_SITE_URL);
   });
 
   it("fechar pelo X ou pelo voltar do navegador foca o cartão sem rolar a página (preventScroll)", () => {

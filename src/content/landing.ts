@@ -211,8 +211,9 @@ export const landingContent = {
         description:
           'Numa arena à noite, o Lucas faz um gol no society e aperta o botão no alambrado: o anel de luz pisca duas vezes. O mesmo gol aparece de novo, visto pela câmera fixa atrás do gol, com a marca "Arena Pôr do Sol 20:37" e o texto "O sistema salva os últimos 30 segundos". Na areia, a Bia aperta o botão depois de um ponto, e o lance volta pela câmera atrás da linha de fundo, às 20:52: "Funciona em qualquer quadra: society, areia, futsal". No bar, o celular mostra a busca do lance, a lista de lances de hoje e o lance das 20:37, com os botões Baixar e Compartilhar e o aviso "Disponível por 7 dias". A TV do bar passa o replay. No fim, o logo da Strukti, a frase "O jogador aperta o botão e o lance chega no celular." e o WhatsApp (83) 99968-3670.',
       },
-      // Endereço do site próprio do replay: null até existir (o link some).
-      siteUrl: null as string | null,
+      // Página do replay (repo Camera_Replay): "Quero saber mais" e "Ver o
+      // site" do replay no catálogo levam a ela. null esconde o link.
+      siteUrl: "https://camera-replay.vercel.app" as string | null,
     },
   },
 
@@ -455,9 +456,7 @@ export const landingContent = {
       "Curso de cada pessoa da equipe (siteConfig.team[].course, ainda pendente nas 4 pessoas).",
     ],
     grupoDecide: ["Fotos da equipe. A página funciona com as iniciais; o grupo decide se publica sem fotos."],
-    naoBloqueiam: [
-      'Endereço do site próprio do replay (produtos.replay.siteUrl). Enquanto não existir, o link "Ver o site" do painel do replay no catálogo fica escondido.',
-    ],
+    naoBloqueiam: [] as string[],
   },
 
   privacidade: {
