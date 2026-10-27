@@ -313,6 +313,8 @@ Selo: **Piloto gratuito** (`piloto`).
 
 *Nota: o link fica escondido enquanto o endereço não existir (`produtos.replay.siteUrl: null`). Quando a página própria do replay existir (item 8), este link e o "Replay" da barra do topo passam a abri-la; o rótulo será revisto junto, porque pode ser uma página deste site, e não outro site. Endereço: [A PREENCHER: endereço da página do replay].*
 
+*Nota (26/10/2026): a página do replay existe (repo Camera_Replay): `produtos.replay.siteUrl` = https://camera-replay.vercel.app, por enquanto a página inicial dela (a busca de quadras), decisão do Thiago. No catálogo, o "Quero saber mais" do replay passa a abrir essa página (os outros produtos seguem no formulário) e o "Ver o site" aparece. O "Replay" da barra do topo continua levando ao cartão do catálogo; o rótulo "Ver o site" não mudou.*
+
 **Vídeo do replay (`produtos.replay.video`):**
 
 - **`video.accessibleName`:** Vídeo de demonstração do replay para quadras
