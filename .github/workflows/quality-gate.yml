@@ -1,0 +1,67 @@
+name: quality-gate
+
+# Ratchet de qualidade. v1: métricas estáticas baratas (duplicação, tamanho de
+# arquivo) — não precisa de npm install nem de banco. O exit code do compare É o gate.
+# Sem branch protection no plano Free, o check NÃO trava merge sozinho — ele reporta no PR;
+# para bloquear de fato, habilitar branch protection exigindo este check.
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    name: Quality Gate (ratchet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Collect metrics
+        run: node scripts/quality-gate/collect-metrics.mjs
+
+      - name: Compare against baseline (this exit code IS the gate)
+        run: node scripts/quality-gate/compare-baseline.mjs
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: quality-report.md
+
+      - name: Comment report on the PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body;
+            try { body = fs.readFileSync('quality-report.md', 'utf8'); }
+            catch { body = 'Quality gate did not produce a report (collection failed).'; }
+            const marker = '<!-- quality-gate-report -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body.includes(marker));
+            const content = `${marker}\n${body}`;
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: content });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: content });
+            }
