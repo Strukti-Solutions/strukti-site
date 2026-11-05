@@ -1,6 +1,6 @@
 #!/bin/sh
 # uso: encode.sh <master.mkv 600x900> <pasta de saída> <crf-mp4> <crf-webm>
-# Loop do cartão (só os 3 reais; spec 2026-10-16 §6.1): 600x900, 25 fps, 5 s = 125 quadros, sem áudio,
+# Loop do cartão (só os reais; spec 2026-10-16 §6.1): 600x900, 25 fps, 5 s = 125 quadros, sem áudio,
 # cartao-loop.mp4 (H.264) e cartao-loop.webm (VP9), cada um até 600 KB. Adaptado do encode.sh do hero.
 M=$1; O=$2; mkdir -p "$O"
 # A6: conversão RGB->YUV precisa (accurate_rnd, full_chroma_int), para o quadro 0 não mudar o tom sobre o pôster.

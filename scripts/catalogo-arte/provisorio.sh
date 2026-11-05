@@ -5,7 +5,7 @@
 # do tipo no topo até o navy #0e1c2b embaixo. Não toca nas telas SVG.
 #   <cor-do-tipo>  hex sem "#": hardware 22d3ee (ciano), aplicativo 0185e7
 #                  (elétrico), site 8b7ff0 (violeta suave).
-#   --loop         só para os 3 reais: loop de 5 s (600x900, 25 fps), VP9 + H.264.
+#   --loop         só para os reais: loop de 5 s (600x900, 25 fps), VP9 + H.264.
 # Exige ffmpeg com o filtro gradients, libaom-av1, libvpx-vp9 e libx264.
 set -euo pipefail
 

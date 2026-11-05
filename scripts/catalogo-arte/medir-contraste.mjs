@@ -59,7 +59,7 @@ const NAVY = [8, 18, 29];
 // baixo o véu vai de 0,8 a 0,94. Todo pixel atrás do texto leva então pelo
 // menos 0,8, e a medida usa esse mínimo (o pior caso). O check:browser
 // ("texto do cartão") confere no navegador que a linha da etiqueta começa
-// abaixo do esmaecimento, nos 10 itens, a 360x740, 390x844 e 1440x900.
+// abaixo do esmaecimento, em todos os itens, a 360x740, 390x844 e 1440x900.
 const VEU_MINIMO = 0.8;
 
 const lin = (v) => {
