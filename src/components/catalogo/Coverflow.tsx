@@ -109,7 +109,7 @@ export function useCliqueDoArrasto() {
   return { marcarArrasto, onClickCapture };
 }
 
-/** "3 de 10: Rota de Vendas" (§8.1), no rótulo do cartão e na live region. */
+/** "2 de 11: Rota de Vendas" (§8.1), no rótulo do cartão e na live region. */
 export function textoPosicao(indice: number, total: number, nome: string) {
   return catalogoUi.posicao
     .replace("{i}", String(indice + 1))

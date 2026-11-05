@@ -1,22 +1,26 @@
 /**
- * Dados do catálogo de produtos (spec 2026-10-16, §5): os 10 itens do
+ * Dados do catálogo de produtos (spec 2026-10-16, §5): os 11 itens do
  * coverflow e do painel, e a microcopy de interface (`catalogoUi`).
  *
- * Os 3 produtos reais reaproveitam por referência o que já está aprovado em
- * `landingContent` (nome, vídeo, a fase dos aplicativos e, no Rota de Vendas, a frase), sem duplicar.
- * Os textos novos deles (frase do replay e do Fleet, para quem é, benefícios e
- * como funciona) são PROPOSTA — aguardando aprovação do Thiago
+ * Os 4 produtos reais vêm primeiro. Replay, Rota de Vendas e Fleet
+ * reaproveitam por referência o que já está aprovado em `landingContent`
+ * (nome, vídeo, a fase dos aplicativos e, no Rota de Vendas, a frase), sem
+ * duplicar. Os textos novos deles (frase do replay e do Fleet, para quem é,
+ * benefícios e como funciona) são PROPOSTA — aguardando aprovação do Thiago
  * (docs/landing-copy.md, "Catálogo"), e só usam fatos que já estão no site:
- * nada de cliente, quadra instalada ou resultado medido.
+ * nada de cliente, quadra instalada ou resultado medido. O Air Central não
+ * está em `landingContent`: todos os textos dele são PROPOSTA, e os fatos vêm
+ * do código do projeto (github.com/Segunddo/Air_Central), não do site.
  *
  * Os outros 7 são inventados para mostrar a escala do catálogo (Q14/Q25/Q28):
  * levam `ficticio: true` (procure por isto para trocar) e nunca o marcador de
  * dado pendente, para o check:placeholders não falhar por eles.
  *
  * A arte e as telas apontam para `public/catalogo/<slug>/` (contrato da §6.1).
- * A arte dos cartões é a final (22/10/2026, `scripts/catalogo-arte/`); as
- * telas seguem ilustrativas (§5.4) até chegarem as capturas reais, que trocam
- * os arquivos com os mesmos nomes, sem mexer aqui.
+ * A arte dos cartões é a final (22/10/2026, `scripts/catalogo-arte/`; a do
+ * Air Central veio depois, no mesmo kit); as telas seguem ilustrativas (§5.4)
+ * até chegarem as capturas reais, que trocam os arquivos com os mesmos nomes,
+ * sem mexer aqui.
  */
 import type { Interest } from "@/lib/interest";
 import { landingContent, type ProductStatus, type Project } from "./landing";
@@ -46,8 +50,8 @@ export interface ItemCatalogo {
   fase: ProductStatus;
   /**
    * Selo "Ilustração do conceito", ao lado do selo de fase no cartão e no
-   * painel: só o replay, cuja arte é um render do conceito (ADR-009: o site
-   * o identifica sempre assim; MASTER §8.14).
+   * painel: o replay e o Air Central, cuja arte mostra uma caixa que ainda é
+   * conceito (ADR-009, item 4, e ADR-011, revisão de 05/11/2026: o site a identifica sempre assim; MASTER §8.14).
    */
   seloConceito?: string;
   /** Item inventado (Q28): procurar por isto para trocar. */
@@ -56,11 +60,20 @@ export interface ItemCatalogo {
     /** "/catalogo/<slug>/cartao" (+ .avif/.jpg, -480). */
     base: string;
     alt: string;
-    /** Só quem tem loop (os 3 reais). */
+    /** Só quem tem loop (os reais). */
     loop?: { webm: string; mp4: string };
+    /**
+     * Corte da arte grande no painel (`object-position`), nos itens sem vídeo.
+     * O quadro 16:9 mostra só ~37% da altura do retrato, e o corte do centro
+     * (o padrão) perde um objeto que fica no alto do cartão.
+     */
+    posicaoPainel?: string;
   };
   painel: {
-    /** Os 3 reais reaproveitam os vídeos atuais; os inventados mostram a arte grande. */
+    /**
+     * Replay, Rota de Vendas e Fleet reaproveitam os vídeos atuais; o Air
+     * Central (ainda sem vídeo) e os inventados mostram a arte grande.
+     */
     video?: Project["video"];
     paraQuem: string;
     /** 3 a 4. */
@@ -101,7 +114,13 @@ const REPLAY = landingContent.produtos.replay;
 const ROTA = projeto("rota-de-vendas");
 const FLEET = projeto("fleet-analytics-bi");
 
-/** Ordem da §5.2: os 3 reais primeiro, depois os inventados, alternando os tipos. */
+/**
+ * O rótulo aprovado do selo de conceito (ADR-009, item 4) mora no replay, onde
+ * nasceu; o Air Central usa o mesmo texto, porque a caixa dele também é conceito.
+ */
+const SELO_CONCEITO = REPLAY.illustrationBadge;
+
+/** Ordem da §5.2: os 4 reais primeiro, depois os inventados, alternando os tipos. */
 export const CATALOGO: readonly ItemCatalogo[] = [
   // ── Reais ────────────────────────────────────────────────────────────────
   {
@@ -111,7 +130,7 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     // A frase do cartão da v2.2 (130 caracteres) passa do limite da §5.3.
     frase: "Para quadras de aluguel: o jogador aperta um botão na beira da quadra e leva o lance no celular.",
     fase: "piloto",
-    seloConceito: REPLAY.illustrationBadge,
+    seloConceito: SELO_CONCEITO,
     arte: arte(
       "replay",
       "A caixa do botão do replay no alambrado de uma quadra vazia à noite, com névoa dos refletores e o LED ciano aceso.",
@@ -190,6 +209,61 @@ export const CATALOGO: readonly ItemCatalogo[] = [
     },
     siteUrl: null,
     interesse: "aplicativo",
+  },
+  {
+    // Fatos do código do projeto (github.com/Segunddo/Air_Central): a central
+    // de computador, os módulos ESP em rede mesh, os comandos aprendidos do
+    // controle remoto e a grade das aulas virando regras de ligar e desligar.
+    // A caixinha impressa em 3D ainda é conceito: daí o selo (ADR-009, item 4; ADR-011, revisão de 05/11/2026).
+    slug: "air-central",
+    tipo: "hardware",
+    nome: "Air Central",
+    frase: "Para faculdades e escolas: o ar de cada sala liga e desliga sozinho, no horário das aulas.",
+    fase: "desenvolvimento",
+    seloConceito: SELO_CONCEITO,
+    arte: {
+      ...arte(
+        "air-central",
+        "O módulo do Air Central, uma caixinha impressa em 3D com o LED ciano aceso, numa prateleira sob o ar-condicionado desligado de uma sala de aula vazia à noite.",
+        true,
+      ),
+      // O módulo fica a 16–28% da altura (para o texto do cartão não cobri-lo):
+      // no painel, o corte sobe para mostrar o ar, o módulo e a prateleira.
+      posicaoPainel: "50% 6%",
+    },
+    painel: {
+      paraQuem: "Faculdades e escolas com muitas salas climatizadas, onde o ar-condicionado fica ligado com a sala vazia.",
+      beneficios: [
+        "Cada ar-condicionado liga no início da aula e desliga no fim.",
+        "Importa a grade do sistema acadêmico, com integração sob medida.",
+        "Aprende os comandos do controle remoto do ar-condicionado.",
+        "Módulos em rede mesh, sem cabo entre as salas.",
+      ],
+      comoFunciona: [
+        {
+          titulo: "Um módulo em cada sala",
+          // No código, a central aprende os comandos (um jogo só) e grava todos
+          // na memória de cada módulo: não é cada módulo que lê o controle da sala.
+          texto: "Ele guarda os comandos do controle remoto do ar-condicionado, aprendidos pela central.",
+        },
+        {
+          titulo: "A grade vira automação",
+          texto: "A central importa os horários das aulas e cria as regras de ligar e desligar.",
+        },
+        {
+          titulo: "O ar segue as aulas",
+          texto: "Cada módulo liga o ar no início da aula e desliga quando ela termina.",
+        },
+      ],
+      // A central é um programa de computador: moldura de navegador, como nos sites.
+      telas: telas("air-central", "navegador", [
+        "a lista de salas, com os módulos da rede.",
+        "o cadastro dos comandos do controle remoto.",
+        "os horários de ligar e desligar de uma sala.",
+      ]),
+    },
+    siteUrl: null,
+    interesse: "outro",
   },
   {
     slug: "fleet-analytics-bi",
@@ -489,8 +563,8 @@ export const catalogoUi = {
   saberMais: "Quero saber mais",
   /**
    * Fim do nome acessível de "Ver detalhes" e "Quero saber mais", em texto
-   * visualmente oculto: são 10 de cada no HTML, e o nome diz de qual produto
-   * cada um é (WCAG 2.4.4/2.4.9).
+   * visualmente oculto: há um de cada por produto no HTML, e o nome diz de
+   * qual produto cada um é (WCAG 2.4.4/2.4.9).
    */
   verDetalhesDe: "de {nome}",
   saberMaisSobre: "sobre {nome}",

@@ -1,6 +1,6 @@
 # Catálogo de produtos ("segundo ato") — spec
 
-**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41); implementada no branch `feat/catalogo-produtos` (decisões de 22/10 anotadas nas seções 4, 3.5 e 8).
+**Data:** 16/10/2026 · **Situação:** aprovada na conversa (entrevista Q1–Q41); implementada no branch `feat/catalogo-produtos` (decisões de 22/10 anotadas nas seções 4, 3.5 e 8; a entrada do Air Central, de 05/11/2026, nas seções 5.2, 5.4 e 6.1, ver ADR-011, revisão de 05/11/2026).
 **Branch:** `feat/catalogo-produtos`, criado a partir de `main`. O PR #8 já entrou; o PR deste trabalho aponta para `homologacao`.
 **Referência de formato:** um "3D coverflow carousel" do 21st.dev mostrado pelo dono. É só referência visual: o componente não declara licença, então nenhum código dele entra (ADR-005), e três comportamentos dele ficam de fora de propósito: girar sozinho, capturar as setas do teclado na página inteira e carregar imagens de CDN externa (CSP, ADR-008).
 
@@ -174,12 +174,13 @@ interface Passo { titulo: string; texto: string }
 
 Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rota de Vendas) entram por referência a `landingContent`, sem duplicar. A seção usa os rótulos de `landingContent.statusLabels` (`desenvolvimento` = "Em desenvolvimento").
 
-### 5.2 Os 10 itens
+### 5.2 Os itens (10; 11 desde 05/11/2026)
 
 | Slug | Tipo | Nome | Fase | Origem |
 |---|---|---|---|---|
 | `replay` | hardware | Replay para quadras | piloto | real |
 | `rota-de-vendas` | aplicativo | Rota de Vendas | piloto | real |
+| `air-central` | hardware | Air Central | desenvolvimento | real |
 | `fleet-analytics-bi` | aplicativo | Fleet Analytics BI | emUso ("Em uso") | real |
 | `placar-conectado` | hardware | Placar conectado para quadras | desenvolvimento | inventado |
 | `totem-check-in` | hardware | Totem de check-in para academias | desenvolvimento | inventado |
@@ -189,7 +190,7 @@ Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rot
 | `site-clinicas` | site | Site para clínicas | desenvolvimento | inventado |
 | `vitrine-lojas` | site | Vitrine para lojas de bairro | desenvolvimento | inventado |
 
-**Ordem:** os 3 reais primeiro, depois os inventados, alternando os tipos.
+**Ordem:** os reais primeiro (desde 05/11: Replay, Rota de Vendas, Air Central e Fleet, alternando hardware e aplicativo), depois os inventados, alternando os tipos.
 
 ### 5.3 Textos
 
@@ -204,7 +205,7 @@ Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rot
 
 ### 5.4 Telas
 
-3 por item, **ilustrativas**: blocos, barras e ícones na paleta, sem texto que imite letras (sem "texto falso"). Moldura de celular para apps e para os apps de apoio dos hardwares; moldura de navegador para sites. Marcadas como ilustrativas no `alt` até o dono mandar as capturas reais, que substituem os arquivos com os mesmos nomes.
+3 por item, **ilustrativas**: blocos, barras e ícones na paleta, sem texto que imite letras (sem "texto falso"). Moldura de celular para apps e para os apps de apoio dos hardwares; moldura de navegador para sites. Exceção de 05/11/2026: o app de apoio do Air Central é um programa de computador (Qt), não um app de celular, e vai na moldura de navegador, a mais próxima de uma janela de computador (ADR-011, revisão de 05/11/2026). Marcadas como ilustrativas no `alt` até o dono mandar as capturas reais, que substituem os arquivos com os mesmos nomes.
 
 ## 6. Arte e mídia
 
@@ -214,7 +215,7 @@ Os textos que já existem para os 3 reais (nome, frase, vídeo, destaques do Rot
 |---|---|---|---|
 | `cartao.avif` / `cartao.jpg` | 800×1200 (2:3) | ≤120 KB / ≤200 KB | todos |
 | `cartao-480.avif` / `cartao-480.jpg` | 480×720 | ≤45 KB / ≤70 KB | todos (miniaturas, celular, fundo ambiente) |
-| `cartao-loop.webm` / `cartao-loop.mp4` | 600×900, 25 fps, **5 s** | ≤600 KB cada | os 3 reais |
+| `cartao-loop.webm` / `cartao-loop.mp4` | 600×900, 25 fps, **5 s** | ≤600 KB cada | os reais (4 desde 05/11/2026) |
 | `tela-1.svg` … `tela-3.svg` | moldura celular 360×720 ou navegador 960×600 | pequeno | todos |
 
 A **arte final** dos cartões (as cenas da §6.2 e os 3 loops) entrou em 22/10/2026 no lugar dos degradês provisórios, com os mesmos nomes, e o `LEIA-PROVISORIO.txt` saiu. As fontes ficam em `scripts/catalogo-arte/`. As `tela-N.svg` continuam ilustrativas (§5.4) até chegarem as capturas reais, que também só trocam os arquivos.

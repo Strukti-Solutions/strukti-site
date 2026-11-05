@@ -2519,7 +2519,7 @@ video:focus-visible {
   box-shadow: var(--shadow-screen);
 }
 
-/* A arte dos inventados não é tela: sem a luz embaixo, que sem vídeo e sem
+/* A arte dos itens sem vídeo (o Air Central e os inventados) não é tela: sem a luz embaixo, que sem vídeo e sem
    legenda parecia uma segunda caixa (§5.4). */
 .catalogo__painel-midia--arte {
   box-shadow: none;
