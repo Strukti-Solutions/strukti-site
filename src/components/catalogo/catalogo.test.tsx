@@ -16,6 +16,7 @@ import { CatalogoInterativo } from "./CatalogoInterativo";
 const IDS = [
   "replay",
   "rota-de-vendas",
+  "air-central",
   "fleet-analytics-bi",
   "placar-conectado",
   "agenda-de-quadras",
@@ -62,7 +63,7 @@ const proximaTarefa = () => act(() => new Promise<void>((resolve) => setTimeout(
 const CONTEUDO_ATUAL = ".catalogo__painel-conteudo:not([aria-hidden])";
 
 describe("catálogo: HTML do servidor", () => {
-  it("HTML do servidor (renderToString): 10 cartões (group) com os ids da §5.2, o conteúdo dos painéis (para quem é, os 3 passos de cada um) e nenhum <video>", () => {
+  it("HTML do servidor (renderToString): 11 cartões (group) com os ids da §5.2, o conteúdo dos painéis (para quem é, os 3 passos de cada um) e nenhum <video>", () => {
     const html = renderToString(<Catalogo />);
     const doc = document.createElement("div");
     doc.innerHTML = html;
@@ -86,8 +87,8 @@ describe("catálogo: HTML do servidor", () => {
         expect(passos[i]).toContain(passo.titulo);
         expect(passos[i]).toContain(passo.texto);
       });
-      // Os 3 reais: a legenda, a descrição em texto e um link comum para o
-      // vídeo (sem <video>: ele só existe depois do clique, com JS).
+      // Os reais com vídeo: a legenda, a descrição em texto e um link comum
+      // para o vídeo (sem <video>: ele só existe depois do clique, com JS).
       const { video } = item.painel;
       const linkVideo = ficha.querySelector<HTMLAnchorElement>(`a[href="${video?.src}"]`);
       if (video) {
@@ -118,8 +119,8 @@ describe("catálogo: estado fechado", () => {
     expect(raiz.dataset.js).toBe("true");
     expect(raiz.dataset.estado).toBe("fechado");
     expect(cartoes(raiz).map((c) => c.id)).toEqual(IDS);
-    expect(posicoes(raiz)).toEqual(["0", "1", "2", "oculto", "oculto", "oculto", "oculto", "oculto", "-2", "-1"]);
-    expect(cartao(raiz, "rota-de-vendas").getAttribute("aria-label")).toBe("2 de 10: Rota de Vendas");
+    expect(posicoes(raiz)).toEqual(["0", "1", "2", "oculto", "oculto", "oculto", "oculto", "oculto", "oculto", "-2", "-1"]);
+    expect(cartao(raiz, "rota-de-vendas").getAttribute("aria-label")).toBe("2 de 11: Rota de Vendas");
     expect(cartao(raiz, "rota-de-vendas").getAttribute("aria-roledescription")).toBe(catalogoUi.roledescProduto);
     expect(screen.getByRole("region", { name: catalogoUi.rotuloCarrossel }).getAttribute("aria-roledescription")).toBe(
       catalogoUi.roledescCarrossel,
@@ -128,17 +129,17 @@ describe("catálogo: estado fechado", () => {
     expect(anuncio(raiz)).toBe("");
   });
 
-  it("seta 'Próximo produto' centraliza o Rota de Vendas e a live region diz '2 de 10: Rota de Vendas'", () => {
+  it("seta 'Próximo produto' centraliza o Rota de Vendas e a live region diz '2 de 11: Rota de Vendas'", () => {
     const { raiz } = montar();
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
     expect(centro(raiz)).toBe("rota-de-vendas");
-    expect(anuncio(raiz)).toBe("2 de 10: Rota de Vendas");
+    expect(anuncio(raiz)).toBe("2 de 11: Rota de Vendas");
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.anterior }));
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.anterior }));
     expect(centro(raiz)).toBe("contador-de-fluxo");
-    expect(anuncio(raiz)).toBe("10 de 10: Contador de fluxo para lojas");
+    expect(anuncio(raiz)).toBe("11 de 11: Contador de fluxo para lojas");
   });
 
   it("bolinhas: uma por produto, com nome; a ativa tem aria-current e leva ao produto", () => {
@@ -148,7 +149,7 @@ describe("catálogo: estado fechado", () => {
     expect(bolinhas.map((b) => b.getAttribute("aria-label"))).toEqual(
       CATALOGO.map((item) => catalogoUi.irPara.replace("{nome}", item.nome)),
     );
-    expect(bolinhas.map((b) => b.getAttribute("aria-current"))).toEqual(["true", ...Array(9).fill(null)]);
+    expect(bolinhas.map((b) => b.getAttribute("aria-current"))).toEqual(["true", ...Array(CATALOGO.length - 1).fill(null)]);
 
     fireEvent.click(screen.getByRole("button", { name: "Ir para Totem de check-in para academias" }));
     expect(centro(raiz)).toBe("totem-check-in");
@@ -157,22 +158,28 @@ describe("catálogo: estado fechado", () => {
     );
   });
 
-  it("o cartão e o painel do replay mostram o selo 'Ilustração do conceito' ao lado do selo de fase (ADR-009); os outros, não", () => {
+  it("o cartão e o painel do replay e do Air Central mostram o selo 'Ilustração do conceito' ao lado do selo de fase (ADR-009); os outros, não", () => {
     vi.spyOn(window.history, "back").mockImplementation(() => {});
     const { raiz } = montar();
     const selo = landingContent.produtos.replay.illustrationBadge;
+    const comSelo = ["replay", "air-central"];
 
-    const metaReplay = cartao(raiz, "replay").querySelector(".catalogo__meta")!;
-    expect(within(metaReplay as HTMLElement).getByText(selo).className).toBe("selo selo--conceito");
-    for (const slug of IDS.filter((s) => s !== "replay")) {
+    for (const slug of comSelo) {
+      const meta = cartao(raiz, slug).querySelector<HTMLElement>(".catalogo__meta")!;
+      expect(within(meta).getByText(selo).className, slug).toBe("selo selo--conceito");
+    }
+    for (const slug of IDS.filter((s) => !comSelo.includes(s))) {
       expect(cartao(raiz, slug).textContent, slug).not.toContain(selo);
     }
 
+    const metaPainel = () => raiz.querySelector<HTMLElement>(".catalogo__painel .catalogo__meta")!;
     fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Replay para quadras" }));
-    const metaPainel = raiz.querySelector<HTMLElement>(".catalogo__painel .catalogo__meta")!;
-    expect(within(metaPainel).getByText(selo).className).toBe("selo selo--conceito");
+    expect(within(metaPainel()).getByText(selo).className).toBe("selo selo--conceito");
+    // O Rota de Vendas não tem o selo; o Air Central, logo depois, tem.
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
-    expect(raiz.querySelector(".catalogo__painel .catalogo__meta")?.textContent).not.toContain(selo);
+    expect(metaPainel().textContent).not.toContain(selo);
+    fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
+    expect(within(metaPainel()).getByText(selo).className).toBe("selo selo--conceito");
   });
 
   it("clicar num lateral (data-pos=1) o centraliza; não abre", () => {
@@ -241,16 +248,18 @@ describe("catálogo: estado fechado", () => {
 
   it("Enter num lateral o centraliza e leva o foco ao 'Ver detalhes' dele; no centro, abre", () => {
     const { raiz } = montar();
-    const fleet = cartao(raiz, "fleet-analytics-bi");
-    expect(fleet.tabIndex).toBe(0);
+    // O +2 do replay.
+    const air = cartao(raiz, "air-central");
+    expect(air.dataset.pos).toBe("2");
+    expect(air.tabIndex).toBe(0);
 
-    fleet.focus();
-    fireEvent.keyDown(fleet, { key: "Enter" });
-    expect(centro(raiz)).toBe("fleet-analytics-bi");
+    air.focus();
+    fireEvent.keyDown(air, { key: "Enter" });
+    expect(centro(raiz)).toBe("air-central");
     expect(raiz.dataset.estado).toBe("fechado");
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ver detalhes de Fleet Analytics BI" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ver detalhes de Air Central" }));
 
-    fireEvent.keyDown(fleet, { key: " " });
+    fireEvent.keyDown(air, { key: " " });
     expect(raiz.dataset.estado).toBe("aberto");
   });
 
@@ -375,9 +384,10 @@ describe("catálogo: estado fechado", () => {
   it("troca pelo teclado num cartão: o foco segue o novo centro e a live region não repete o anúncio; a seta 'Próximo produto' anuncia", () => {
     const { raiz } = montar();
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
-    expect(anuncio(raiz)).toBe("2 de 10: Rota de Vendas");
+    expect(anuncio(raiz)).toBe("2 de 11: Rota de Vendas");
 
-    // Enter num lateral: quem fala é o leitor, ao chegar ao grupo do novo centro.
+    // Enter num lateral (o +2 do Rota de Vendas): quem fala é o leitor, ao
+    // chegar ao grupo do novo centro.
     const fleet = cartao(raiz, "fleet-analytics-bi");
     fleet.focus();
     fireEvent.keyDown(fleet, { key: "Enter" });
@@ -392,7 +402,7 @@ describe("catálogo: estado fechado", () => {
     expect(anuncio(raiz)).toBe("");
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
-    expect(anuncio(raiz)).toBe(`5 de 10: ${porSlug("agenda-de-quadras").nome}`);
+    expect(anuncio(raiz)).toBe(`6 de 11: ${porSlug("agenda-de-quadras").nome}`);
   });
 
   it("os ocultos têm inert e aria-hidden; os botões dos laterais não estão na ordem de Tab", () => {
@@ -540,7 +550,7 @@ describe("catálogo: estado aberto", () => {
   const tituloPainel = (raiz: HTMLElement) => raiz.querySelector(".catalogo__painel h3")?.textContent;
   const fita = (raiz: HTMLElement) => raiz.querySelector<HTMLElement>(".catalogo__fita")!;
 
-  it("clicar em 'Ver detalhes' abre: data-estado='aberto', foco no h3 'Replay para quadras', fita com 10 botões e aria-current no replay", () => {
+  it("clicar em 'Ver detalhes' abre: data-estado='aberto', foco no h3 'Replay para quadras', fita com um botão por produto e aria-current no replay", () => {
     const { raiz } = montar();
     expect(raiz.querySelector(".catalogo__painel")).toBeNull();
 
@@ -555,7 +565,7 @@ describe("catálogo: estado aberto", () => {
     expect(within(painel).getByRole("button", { name: catalogoUi.fechar })).toBeTruthy();
 
     const botoes = [...fita(raiz).querySelectorAll<HTMLButtonElement>("button")];
-    expect(botoes).toHaveLength(10);
+    expect(botoes).toHaveLength(CATALOGO.length);
     expect(botoes.map((b) => b.textContent)).toEqual(CATALOGO.map((item) => item.nome));
     expect(botoes.filter((b) => b.getAttribute("aria-current") === "true").map((b) => b.textContent)).toEqual([
       "Replay para quadras",
@@ -621,7 +631,7 @@ describe("catálogo: estado aberto", () => {
     expect(tituloPainel(raiz)).toBe("Replay para quadras");
   });
 
-  it("→ com o foco no X troca para o Rota de Vendas e a live region anuncia '2 de 10: Rota de Vendas'", () => {
+  it("→ com o foco no X troca para o Rota de Vendas e a live region anuncia '2 de 11: Rota de Vendas'", () => {
     const { raiz } = montar();
     const painel = abrir(raiz);
     const fechar = within(painel).getByRole("button", { name: catalogoUi.fechar });
@@ -630,7 +640,7 @@ describe("catálogo: estado aberto", () => {
     fireEvent.keyDown(fechar, { key: "ArrowRight" });
     expect(raiz.dataset.estado).toBe("aberto");
     expect(tituloPainel(raiz)).toBe("Rota de Vendas");
-    expect(anuncio(raiz)).toBe("2 de 10: Rota de Vendas");
+    expect(anuncio(raiz)).toBe("2 de 11: Rota de Vendas");
     expect(window.location.hash).toBe("#rota-de-vendas");
     // O foco fica no X, que não sai do painel.
     expect(document.activeElement).toBe(fechar);
@@ -658,15 +668,15 @@ describe("catálogo: estado aberto", () => {
     // Quem fala é o leitor, ao chegar ao título; a posição vai na descrição dele.
     expect(anuncio(raiz)).toBe("");
     const descricao = document.getElementById(h3.getAttribute("aria-describedby") ?? "");
-    expect(descricao?.textContent).toBe("2 de 10");
+    expect(descricao?.textContent).toBe("2 de 11");
 
     // Com o foco no X (que fica), a troca seguinte anuncia.
     const fechar = within(painel).getByRole("button", { name: catalogoUi.fechar });
     act(() => fechar.focus());
     fireEvent.keyDown(fechar, { key: "ArrowRight" });
-    expect(tituloPainel(raiz)).toBe("Fleet Analytics BI");
+    expect(tituloPainel(raiz)).toBe("Air Central");
     expect(document.activeElement).toBe(fechar);
-    expect(anuncio(raiz)).toBe("3 de 10: Fleet Analytics BI");
+    expect(anuncio(raiz)).toBe("3 de 11: Air Central");
   });
 
   it("→ com o foco no <video> do painel não troca de produto", () => {
@@ -836,7 +846,7 @@ describe("catálogo: estado aberto", () => {
     expect(raiz.dataset.estado).toBe("aberto");
     expect(tituloPainel(raiz)).toBe("Fleet Analytics BI");
     expect(fleet.getAttribute("aria-current")).toBe("true");
-    expect(anuncio(raiz)).toBe("3 de 10: Fleet Analytics BI");
+    expect(anuncio(raiz)).toBe("4 de 11: Fleet Analytics BI");
     expect(window.history.pushState).toHaveBeenCalledTimes(1);
     expect(window.location.hash).toBe("#fleet-analytics-bi");
   });
@@ -998,8 +1008,32 @@ describe("catálogo: estado aberto", () => {
     expect(arte.getAttribute("src")).toBe(`${placar.arte.base}.jpg`);
     // A arte não é tela: sem a luz do vídeo embaixo (MASTER §5.4).
     expect(arte.closest(".catalogo__painel-midia")?.classList.contains("catalogo__painel-midia--arte")).toBe(true);
+    // Sem `posicaoPainel`, o corte é o do CSS (o centro).
+    expect(arte.style.objectPosition).toBe("");
     // As miniaturas da fita são decorativas: o nome está no botão.
     for (const img of fita(raiz).querySelectorAll("img")) expect(img.getAttribute("alt")).toBe("");
+  });
+
+  it("o Air Central (real, ainda sem vídeo) abre com a arte grande, sem 'Assistir', e as telas na moldura de navegador", () => {
+    const { raiz } = montar();
+    const air = porSlug("air-central");
+    fireEvent.click(screen.getByRole("button", { name: `Ir para ${air.nome}` }));
+    const painel = abrir(raiz, air.nome);
+
+    expect(tituloPainel(raiz)).toBe(air.nome);
+    expect(within(painel).queryByRole("button", { name: /Assistir/ })).toBeNull();
+    expect(within(painel).queryByText(landingContent.aplicativos.videoDescriptionLinkLabel)).toBeNull();
+    const arte = within(painel).getByRole("img", { name: air.arte.alt });
+    expect(arte.getAttribute("src")).toBe(`${air.arte.base}.jpg`);
+    expect(arte.closest(".catalogo__painel-midia")?.classList.contains("catalogo__painel-midia--arte")).toBe(true);
+    // O módulo fica no alto do retrato: o corte 16:9 sobe até ele.
+    expect(air.arte.posicaoPainel).toBeTruthy();
+    expect(arte.style.objectPosition).toBe(air.arte.posicaoPainel);
+
+    fireEvent.click(within(painel).getByRole("tab", { name: catalogoUi.abas.telas }));
+    const telas = [...painel.querySelectorAll(`${CONTEUDO_ATUAL} .catalogo__tela`)];
+    expect(telas).toHaveLength(3);
+    for (const tela of telas) expect(tela.classList.contains("catalogo__tela--navegador")).toBe(true);
   });
 
   it("o vídeo leva a luz de tela; o 'Assistir' fica num canto, à direita só onde o pôster pede", () => {
@@ -1125,17 +1159,17 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     expect(play).toHaveBeenCalledTimes(1);
     expect(play.mock.contexts[0]).toBe(loop);
 
-    // Os laterais têm loop (Rota e Fleet), mas só tocam com o mouse ou o foco.
+    // Os laterais têm loop (Rota e Air Central), mas só tocam com o mouse ou o foco.
     expect(loopDe(raiz, "rota-de-vendas")).toBeNull();
-    expect(loopDe(raiz, "fleet-analytics-bi")).toBeNull();
+    expect(loopDe(raiz, "air-central")).toBeNull();
     fireEvent.mouseEnter(cartao(raiz, "rota-de-vendas"));
     expect(loopDe(raiz, "rota-de-vendas")).not.toBeNull();
     fireEvent.mouseLeave(cartao(raiz, "rota-de-vendas"));
     expect(loopDe(raiz, "rota-de-vendas")).toBeNull();
-    act(() => cartao(raiz, "fleet-analytics-bi").focus());
-    expect(loopDe(raiz, "fleet-analytics-bi")).not.toBeNull();
-    act(() => cartao(raiz, "fleet-analytics-bi").blur());
-    expect(loopDe(raiz, "fleet-analytics-bi")).toBeNull();
+    act(() => cartao(raiz, "air-central").focus());
+    expect(loopDe(raiz, "air-central")).not.toBeNull();
+    act(() => cartao(raiz, "air-central").blur());
+    expect(loopDe(raiz, "air-central")).toBeNull();
 
     // Centralizar outro leva o loop junto; os inventados não têm loop.
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
@@ -1210,7 +1244,7 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     // A mesma árvore (ADR-004): o fundo e os cartões estão lá, sem entrada escondida.
     expect(raiz.querySelector(".catalogo__fundo")).not.toBeNull();
     const entradas = [...raiz.querySelectorAll<HTMLElement>(".catalogo__entrada")];
-    expect(entradas).toHaveLength(10);
+    expect(entradas).toHaveLength(CATALOGO.length);
     for (const entrada of entradas) expect(entrada.style.opacity).not.toBe("0");
   });
 
@@ -1269,11 +1303,11 @@ describe("catálogo: movimento, loop de 5 s e fundo ambiente", () => {
     }
 
     fireEvent.click(screen.getByRole("button", { name: catalogoUi.proximo }));
-    carregar("/catalogo/fleet-analytics-bi/cartao-480.jpg");
-    expect(visivel()).toBe("/catalogo/fleet-analytics-bi/cartao-480.jpg");
+    carregar("/catalogo/air-central/cartao-480.jpg");
+    expect(visivel()).toBe("/catalogo/air-central/cartao-480.jpg");
     expect(camadas()).toHaveLength(2);
     // Com o painel aberto, o fundo segue o produto do painel.
-    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Fleet Analytics BI" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalhes de Air Central" }));
     fireEvent.click(within(fita(raiz)).getByRole("button", { name: porSlug("placar-conectado").nome }));
     carregar("/catalogo/placar-conectado/cartao-480.jpg");
     expect(visivel()).toBe("/catalogo/placar-conectado/cartao-480.jpg");

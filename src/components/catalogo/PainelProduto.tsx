@@ -351,7 +351,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
                   hidden={aba !== "visaoGeral"}
                 >
                   <div className="catalogo__painel-coluna">
-                    {/* Só o vídeo leva a luz de tela (§5.4); a arte dos inventados, não. */}
+                    {/* Só o vídeo leva a luz de tela (§5.4); a arte dos itens sem vídeo (o Air Central e os inventados), não. */}
                     <div className={video ? "catalogo__painel-midia" : "catalogo__painel-midia catalogo__painel-midia--arte"}>
                       {video ? (
                         <VideoDemo
@@ -360,7 +360,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
                           sizes={TAMANHOS_MIDIA}
                         />
                       ) : (
-                        // Os inventados, sem vídeo: a arte em tamanho grande, com a
+                        // Os itens sem vídeo (o Air Central e os inventados): a arte em tamanho grande, com a
                         // descrição da cena (aqui ela é a imagem principal, não enfeite).
                         <picture>
                           <source
@@ -376,6 +376,7 @@ export function PainelProduto({ item, posicao, direcao, animar, aoFechar, aoPass
                             width={800}
                             height={1200}
                             alt={item.arte.alt}
+                            style={item.arte.posicaoPainel ? { objectPosition: item.arte.posicaoPainel } : undefined}
                             decoding="async"
                           />
                         </picture>

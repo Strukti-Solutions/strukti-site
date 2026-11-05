@@ -194,7 +194,7 @@ describe("menu Produtos", () => {
     expect(nav.querySelector('a[href="#produtos"]')).toBeNull();
   });
 
-  it("clicar em 'Produtos' abre 3 grupos (Hardware, Aplicativos, Sites) com os 10 links #slug", () => {
+  it("clicar em 'Produtos' abre 3 grupos (Hardware, Aplicativos, Sites) com os 11 links #slug", () => {
     render(<TopBar />);
     const botao = getProdutos();
 
@@ -216,6 +216,15 @@ describe("menu Produtos", () => {
       );
     }
     expect(lista.querySelectorAll('a[href^="#"]')).toHaveLength(CATALOGO.length);
+    // Escritos à mão, para pegar uma troca: o Air Central é o 2º do Hardware.
+    const hardware = within(lista).getByRole("list", { name: catalogoUi.filtros.hardware });
+    expect(within(hardware).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "#replay",
+      "#air-central",
+      "#placar-conectado",
+      "#totem-check-in",
+      "#contador-de-fluxo",
+    ]);
 
     fireEvent.click(botao);
     expect(botao.getAttribute("aria-expanded")).toBe("false");

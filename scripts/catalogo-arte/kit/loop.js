@@ -1,5 +1,5 @@
 // uso: node ../kit/loop.js <receita.js>   (de dentro da pasta da cena; ex.: cd ../replay && node ../kit/loop.js loop.js)
-// Compõe o loop de 5 s do cartão (só os 3 reais; spec 2026-10-16 §6.1 e §6.2) a partir de passes ("placas"), como o
+// Compõe o loop de 5 s do cartão (só os reais; spec 2026-10-16 §6.1 e §6.2) a partir de passes ("placas"), como o
 // composite2.js do hero, mas em Node e em ponto flutuante: cada quadro é o cartão mais deltas periódicos, somados num
 // Float32Array e arredondados uma vez só. O quadro 0 é o cartão byte a byte (o loop confere e sai com 1 se não for), e
 // o tempo é periódico em N quadros: o quadro N seria o 0, então a emenda N-1 -> 0 é um passo como os outros.

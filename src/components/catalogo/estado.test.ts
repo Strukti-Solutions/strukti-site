@@ -39,6 +39,7 @@ describe("filtrar", () => {
     expect(filtrar(CATALOGO, "site").map((i) => i.slug)).toEqual(["site-clinicas", "vitrine-lojas"]);
     expect(filtrar(CATALOGO, "hardware").map((i) => i.slug)).toEqual([
       "replay",
+      "air-central",
       "placar-conectado",
       "totem-check-in",
       "contador-de-fluxo",

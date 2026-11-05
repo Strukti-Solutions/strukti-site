@@ -16,7 +16,7 @@ interface CartaoLoopProps {
 }
 
 /**
- * O loop de 5 s dos 3 produtos reais (spec 2026-10-16, §6.2, §7 e §9). O
+ * O loop de 5 s dos produtos reais (spec 2026-10-16, §6.2, §7 e §9). O
  * `<video>` só existe enquanto o cartão está ativo e há movimento: sem isso,
  * fica a arte (e, com `preload="none"`, nada do vídeo carrega antes).
  *

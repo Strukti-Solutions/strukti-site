@@ -7,10 +7,11 @@ import { landingContent } from "./landing";
 // texto inteiro em src/ e não pode achar este teste.
 const PLACEHOLDER = ["[A", "PREENCHER"].join(" ");
 
-// Os 3 reais primeiro; depois os inventados, alternando os tipos (spec §5.2).
+// Os 4 reais primeiro; depois os inventados, alternando os tipos (spec §5.2).
 const ORDEM = [
   "replay",
   "rota-de-vendas",
+  "air-central",
   "fleet-analytics-bi",
   "placar-conectado",
   "agenda-de-quadras",
@@ -20,7 +21,9 @@ const ORDEM = [
   "vitrine-lojas",
   "contador-de-fluxo",
 ];
-const REAIS = ["replay", "rota-de-vendas", "fleet-analytics-bi"];
+const REAIS = ["replay", "rota-de-vendas", "air-central", "fleet-analytics-bi"];
+// Os reais com vídeo de demonstração; o Air Central ainda não tem um.
+const COM_VIDEO = ["replay", "rota-de-vendas", "fleet-analytics-bi"];
 
 const porSlug = (slug: string): ItemCatalogo => {
   const item = CATALOGO.find((i) => i.slug === slug);
@@ -50,7 +53,7 @@ function textos(item: ItemCatalogo): string[] {
 }
 
 describe("CATALOGO (spec §5)", () => {
-  it("tem os 10 itens na ordem da §5.2, com slugs únicos", () => {
+  it("tem os 11 itens na ordem da §5.2, com slugs únicos", () => {
     expect(CATALOGO.map((i) => i.slug)).toEqual(ORDEM);
     expect(new Set(CATALOGO.map((i) => i.slug)).size).toBe(CATALOGO.length);
   });
@@ -59,6 +62,7 @@ describe("CATALOGO (spec §5)", () => {
     expect(Object.fromEntries(CATALOGO.map((i) => [i.slug, i.tipo]))).toEqual({
       replay: "hardware",
       "rota-de-vendas": "aplicativo",
+      "air-central": "hardware",
       "fleet-analytics-bi": "aplicativo",
       "placar-conectado": "hardware",
       "agenda-de-quadras": "aplicativo",
@@ -82,8 +86,8 @@ describe("CATALOGO (spec §5)", () => {
     expect(CATALOGO.filter((i) => i.ficticio)).toHaveLength(7);
   });
 
-  it("as fases dos reais são piloto, piloto e emUso", () => {
-    expect(REAIS.map((slug) => porSlug(slug).fase)).toEqual(["piloto", "piloto", "emUso"]);
+  it("as fases dos reais são piloto, piloto, desenvolvimento e emUso", () => {
+    expect(REAIS.map((slug) => porSlug(slug).fase)).toEqual(["piloto", "piloto", "desenvolvimento", "emUso"]);
   });
 
   it("a fase dos aplicativos reais vem do status do projeto em landingContent (uma fonte só)", async () => {
@@ -110,7 +114,7 @@ describe("CATALOGO (spec §5)", () => {
     }
   });
 
-  it("os reais reaproveitam nome e vídeo do landingContent (mesma referência); a frase só no Rota de Vendas", () => {
+  it("os reais do landingContent reaproveitam nome e vídeo dele (mesma referência); a frase só no Rota de Vendas", () => {
     const replayItem = porSlug("replay");
     const rotaItem = porSlug("rota-de-vendas");
     const fleetItem = porSlug("fleet-analytics-bi");
@@ -119,7 +123,8 @@ describe("CATALOGO (spec §5)", () => {
     // ADR-009: o replay é sempre identificado como ilustração do conceito.
     expect(replayItem.seloConceito).toBe(landingContent.produtos.replay.illustrationBadge);
     expect(replayItem.seloConceito).toBe("Ilustração do conceito");
-    expect(CATALOGO.filter((i) => i.seloConceito).map((i) => i.slug)).toEqual(["replay"]);
+    // ADR-009, item 4: a caixa do Air Central também é conceito; os outros, não.
+    expect(CATALOGO.filter((i) => i.seloConceito).map((i) => i.slug)).toEqual(["replay", "air-central"]);
     expect(rotaItem.nome).toBe(rota.name);
     expect(rotaItem.painel.video).toBe(rota.video);
     expect(rotaItem.frase).toBe(rota.summary);
@@ -141,11 +146,29 @@ describe("CATALOGO (spec §5)", () => {
     for (const item of CATALOGO.slice(1)) expect(item.siteUrl, item.slug).toBeNull();
   });
 
-  it("só os 3 reais têm vídeo no painel; os inventados mostram a arte grande", () => {
+  it("só os 3 reais com vídeo o têm no painel; o Air Central e os inventados mostram a arte grande", () => {
     for (const item of CATALOGO) {
-      if (REAIS.includes(item.slug)) expect(item.painel.video, item.slug).toBeDefined();
+      if (COM_VIDEO.includes(item.slug)) expect(item.painel.video, item.slug).toBeDefined();
       else expect(item.painel.video, item.slug).toBeUndefined();
     }
+  });
+
+  it("o Air Central: real, hardware, em desenvolvimento, com o selo de conceito, loop, sem vídeo nem site, interesse 'outro'", () => {
+    const item = porSlug("air-central");
+    expect(item.nome).toBe("Air Central");
+    expect(item.tipo).toBe("hardware");
+    expect(item.ficticio).toBeUndefined();
+    expect(item.fase).toBe("desenvolvimento");
+    // O mesmo rótulo do replay (uma fonte só).
+    expect(item.seloConceito).toBe(landingContent.produtos.replay.illustrationBadge);
+    expect(item.arte.loop).toEqual({
+      webm: "/catalogo/air-central/cartao-loop.webm",
+      mp4: "/catalogo/air-central/cartao-loop.mp4",
+    });
+    expect(item.painel.video).toBeUndefined();
+    expect(item.painel.telas.map((t) => t.moldura)).toEqual(["navegador", "navegador", "navegador"]);
+    expect(item.siteUrl).toBeNull();
+    expect(item.interesse).toBe("outro");
   });
 
   it("respeita os limites de texto da §5.3", () => {
@@ -170,17 +193,19 @@ describe("CATALOGO (spec §5)", () => {
     }
   });
 
-  it("3 telas por item em /catalogo/<slug>/tela-N.svg; moldura navegador só para sites; alt contém 'ilustrativa'", () => {
+  it("3 telas por item em /catalogo/<slug>/tela-N.svg; moldura navegador só nos sites e no Air Central; alt contém 'ilustrativa'", () => {
     for (const { slug, tipo, painel } of CATALOGO) {
       expect(painel.telas.map((t) => t.src)).toEqual([1, 2, 3].map((n) => `/catalogo/${slug}/tela-${n}.svg`));
+      // A central do Air Central é um programa de computador, não de celular.
+      const navegador = tipo === "site" || slug === "air-central";
       for (const tela of painel.telas) {
-        expect(tela.moldura, slug).toBe(tipo === "site" ? "navegador" : "celular");
+        expect(tela.moldura, slug).toBe(navegador ? "navegador" : "celular");
         expect(tela.alt, slug).toContain("ilustrativa");
       }
     }
   });
 
-  it("arte.base é /catalogo/<slug>/cartao; loop só nos 3 reais, com webm e mp4", () => {
+  it("arte.base é /catalogo/<slug>/cartao; loop só nos 4 reais, com webm e mp4", () => {
     for (const { slug, arte } of CATALOGO) {
       expect(arte.base).toBe(`/catalogo/${slug}/cartao`);
       expect(arte.alt, slug).toMatch(/\S/);

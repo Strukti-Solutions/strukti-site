@@ -52,7 +52,7 @@ interface CartaoProdutoProps {
   item: ItemCatalogo;
   /** `data-pos`: "-2" a "2", ou "oculto". */
   pos: string;
-  /** "3 de 10: Rota de Vendas" (§8.1). */
+  /** "2 de 11: Rota de Vendas" (§8.1). */
   rotulo: string;
   /** Depois de montar (`data-js="true"`): o coverflow está ligado. */
   js: boolean;

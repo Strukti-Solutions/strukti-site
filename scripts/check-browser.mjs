@@ -128,7 +128,7 @@
 // O catálogo de produtos (#produtos, spec 2026-10-16 §10), pelos ganchos
 // estáveis (data-js, data-estado, data-pos e as classes .catalogo__*), a
 // 1440×900 e a 360×740, uma linha de log e uma falha por item:
-//   1. sem JavaScript: os 10 cartões no HTML, a fileira rola para o lado
+//   1. sem JavaScript: os 11 cartões no HTML, a fileira rola para o lado
 //      dentro da seção (a página não) e o <details> do Rota de Vendas abre
 //      com "Para quem é";
 //   2. mouse: a seta "Próximo" troca o centro, "Ver detalhes" abre (URL no
@@ -138,7 +138,7 @@
 //   4. teclado: → num cartão lateral troca o centro sem rolar a página; →
 //      nas pílulas não troca; com o painel aberto, → no vídeo é do vídeo
 //      (Review Focus 2) e no título troca; Esc fecha com o foco no centro;
-//   5. a 3ª miniatura abre o Fleet e o filtro "Sites", aberto, o Site para
+//   5. a 3ª miniatura abre o Air Central e o filtro "Sites", aberto, o Site para
 //      clínicas;
 //   6. /#rota-de-vendas carregado abre o painel com a seção no topo; ir à
 //      âncora com a página aberta e voltar do navegador fecha (data-estado,
@@ -147,7 +147,7 @@
 //   8. o loop do centro para em até 5,5 s, no quadro 0;
 //   9. um vídeo por vez com o vídeo do painel, a fita e outro centro.
 // E as conferências de uma largura só: o histórico com o Next (abrir,
-// fechar, avançar, voltar, sem recarregar); a Visão geral dos 10 cabendo sem
+// fechar, avançar, voltar, sem recarregar); a Visão geral dos 11 cabendo sem
 // rolar, a fita de ~110 px e a altura constante a 1440×900 e 1280×800; a
 // superfície do painel sem crescer de caixa zerada no ›, nem transform do
 // motion nas trocas do coverflow (com um controle positivo: ao abrir, a
@@ -161,7 +161,7 @@
 // Visão geral alcançável, sem rolagem para o lado); a pista de rolagem do
 // painel a 390×844 (visível no topo de cada painel que rola, some no fim;
 // a 1440×900 e 1280×800, sem rolagem, não aparece); e o texto do cartão do
-// centro nos 10 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão,
+// centro nos 11 produtos a 360×740, 390×844 e 1440×900 (no tamanho padrão,
 // cabe sem rolar, com a etiqueta e o selo abaixo do esmaecimento, sobre o
 // véu opaco; com o espaçamento do 1.4.12 e com a fonte raiz a 200%, a caixa
 // não passa do cartão e a etiqueta, o nome e o "Ver detalhes" ficam
@@ -353,7 +353,7 @@ const CAT_VIDEO_SELECTOR = `${CAT_PAINEL_SELECTOR} .catalogo__video`;
 const catMiniatura = (n) => `${CAT_SELECTOR} .catalogo__fita button:nth-child(${n})`;
 // A N-ésima pílula do filtro, na ordem da §3.3: Todos, Hardware, Aplicativos, Sites.
 const catFiltro = (n) => `${CAT_SELECTOR} .catalogo__filtro button:nth-child(${n})`;
-const CAT_TOTAL = 10;
+const CAT_TOTAL = 11;
 // A fita do estado aberto mede ~110 px (§4).
 const CAT_FITA_ALTURA = 110;
 const CAT_FITA_FOLGA = 15;
@@ -3052,7 +3052,7 @@ function catCheckAltura(ctx, what, medidas) {
   return texto;
 }
 
-/** 1. Sem JS: os 10 produtos no HTML, a fileira rola de lado dentro da seção e o <details> abre. */
+/** 1. Sem JS: os 11 produtos no HTML, a fileira rola de lado dentro da seção e o <details> abre. */
 async function catNoJsPass(cdp, ctx) {
   await setReducedMotion(cdp, false);
   await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
@@ -3153,13 +3153,13 @@ async function catMousePass(cdp, ctx) {
   if (s2.painel !== nome2) ctx.fail(`mouse: o painel abriu "${s2.painel}" (esperado "${nome2}")`);
   medidas.push(["aberto", s2]);
 
-  // 5. A 3ª miniatura (Fleet) e o filtro "Sites", com o painel aberto.
+  // 5. A 3ª miniatura (Air Central) e o filtro "Sites", com o painel aberto.
   await catClick(cdp, catMiniatura(3));
   await sleep(700);
   const s3 = await catState(cdp);
-  const fleet = await catNome(cdp, "fleet-analytics-bi");
-  if (s3.fita !== fleet || s3.painel !== fleet) {
-    ctx.fail(`miniaturas: a 3ª miniatura deixou o aria-current em "${s3.fita}" e o painel em "${s3.painel}" (esperado "${fleet}")`);
+  const terceiro = await catNome(cdp, "air-central");
+  if (s3.fita !== terceiro || s3.painel !== terceiro) {
+    ctx.fail(`miniaturas: a 3ª miniatura deixou o aria-current em "${s3.fita}" e o painel em "${s3.painel}" (esperado "${terceiro}")`);
   }
   medidas.push(["trocando (miniatura)", s3]);
   const sitesTexto = await evalValue(cdp, `document.querySelector(${JSON.stringify(catFiltro(4))})?.textContent.trim() ?? null`);
@@ -3432,7 +3432,7 @@ async function catHistoryPass(cdp, ctx) {
 }
 
 /**
- * A Visão geral dos 10 produtos cabe sem rolar dentro do painel, a fita
+ * A Visão geral dos 11 produtos cabe sem rolar dentro do painel, a fita
  * mede ~110 px e o topo da seção seguinte não muda entre fechado, aberto e
  * trocando (§4; a 1440×900 e a 1280×800).
  */
@@ -3518,8 +3518,9 @@ async function catPistaCaixa(cdp) {
  * por dentro, a borda de baixo esmaece enquanto há mais a rolar e a pista
  * some no fim. Confere a regra (::after colado embaixo, com degradê), que a
  * pista encosta na borda de baixo visível do painel (±1 px) e a opacidade no
- * topo e no fim da rolagem, nos 3 reais (que têm vídeo e texto)
- * e num inventado.
+ * topo e no fim da rolagem, nos 4 primeiros: os 3 reais com vídeo e texto
+ * e o Air Central, que mostra a arte grande no lugar do vídeo, como os
+ * inventados.
  */
 async function catPistaPass(cdp, ctx) {
   if (!(await catLoad(cdp, ctx, "pista de rolagem"))) return;
@@ -3937,7 +3938,7 @@ async function catSpacingPass(cdp, ctx) {
 }
 
 /**
- * O texto do cartão do centro, nos 10 produtos (WCAG 1.4.3, 1.4.12, 1.4.4):
+ * O texto do cartão do centro, nos 11 produtos (WCAG 1.4.3, 1.4.12, 1.4.4):
  *   - no tamanho padrão (`css` vazio): a caixa .catalogo__info cabe no
  *     cartão sem rolar, e a linha da etiqueta e dos selos (.catalogo__meta)
  *     começa dentro da superfície e abaixo do esmaecimento (--info-fade), onde
@@ -4014,7 +4015,7 @@ async function catTextoCartaoPass(cdp, ctx, { css = "", what }) {
   );
   if (r.total !== CAT_TOTAL) ctx.fail(`${what}: ${r.total} bolinhas (esperado ${CAT_TOTAL})`);
   for (const problem of r.problems) ctx.fail(`${what}: ${problem}`);
-  ctx.log(`${what}: ${r.problems.length === 0 ? "ok nos 10" : `${r.problems.length} problema(s)`} (${r.itens.join(", ")})`);
+  ctx.log(`${what}: ${r.problems.length === 0 ? `ok nos ${r.total}` : `${r.problems.length} problema(s)`} (${r.itens.join(", ")})`);
 }
 
 // Controle positivo da detecção de CSP: uma imagem de origem externa, que a
@@ -4708,7 +4709,7 @@ console.log(
     'Hero "estudio" (quando é a variante em uso; outra variante aparece como "passo pulado" acima), a 1440×900 e a 360×740: a rolagem troca o quadro, o fundo preso solta antes de #produtos e, com reduced motion, fica no pôster, sem quadro desenhado e sem altura extra. ' +
     'Hero "expansao" (idem), a 1440×900, 360×740 e 740×360: parado e legível sem JavaScript; a roda e o teclado expandem preso (o quadro cresce com as fórmulas do original, o título se abre, o conteúdo aparece) e depois a página rola até Produtos; no topo, recolhe; as âncoras terminam no alvo, sem voltar ao topo; clicar no quadro e focar o controle do vídeo não expandem; o ícone do controle aparece com cores forçadas; com reduced motion, nunca prende e a altura é a mesma; a 320 px, com o espaçamento do 1.4.12, e com 400% de zoom, as legendas não passam sob o controle e a linha de apoio termina dentro da tela; com toque de verdade, um dedo expande e a pinça não mexe no hero. ' +
     'Hero "notebook", a etapa "entrada" (idem), a 1440×900, 1366×768 com a barra clássica, 1366×768 a 125% e 390×844 em pé com toque: sem JavaScript e com reduced motion, a pose da pausa em tela cheia com a tela no fluxo abaixo e a mesma altura; a roda e o toque expandem presos, com a tela no aparelho e parada na pausa, e nela as metades do título inteiras dentro da janela útil e ao lado da tela (ou, se ao lado a fonte ficaria abaixo de 1,5rem, empilhadas e acima do piso); no quadro da liberação, a tela é a janela útil e a página está no topo dela; a volta recolhe sem salto (em P = 1 recolhido, com a sala coberta, sem o controle do vídeo à vista) e desce a 0 pelo mesmo caminho; a barra de rolagem recolhe em P = 1 sem mostrar o palco sem a tela; o resize no meio da aproximação mantém a tela no aparelho; o Tab completa a entrada na hora, com uma rolagem só e o foco à vista; /#contato e a posição restaurada começam dentro, sem salto e com o vídeo pausado; em pé, o celular; o LCP de uma página nova, sem cache e sem rolar (1440×900 e 390×844), é o pôster da cena (midia-poster.avif deitado, midia-retrato-poster.avif em pé), não o fundo de tela cheia nem o título; o teclado a 740×360 com o 1.4.12 e a fonte a 200% anima até a liberação sem corte seco, com a tela (cortada na cena) no aparelho, e volta. ' +
-    "Catálogo (1440×900 e 360×740): sem JavaScript, os 10 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (10 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
+    "Catálogo (1440×900 e 360×740): sem JavaScript, os 11 produtos e o <details>; mouse, teclado, miniaturas e filtro; altura constante; link direto e voltar; reduced motion instantâneo; o loop para em 5 s; um vídeo por vez; e, numa largura só, o histórico com o Next, a Visão geral cabendo sem rolar (1440×900 e 1280×800), a superfície sem crescer de caixa zerada, Tab até o ±2, o popover dentro da janela e sem misturar os itens, a pista de rolagem do painel a 390×844, o menu da barra, o toque, as cores forçadas e o 1.4.12 a 320 px; e o texto do cartão do centro (11 produtos, 360×740, 390×844 e 1440×900) cabendo sem rolar sobre o véu opaco e alcançável com o 1.4.12 e a fonte a 200%. " +
     "Menu fecha e o foco não fica coberto nem invisível ao sair com Tab; só um vídeo toca por vez na página (o do painel do catálogo, trocando pela fita) e o vídeo do hero, se existir, não toca por cima; " +
     "no Tab pela página (360/390/1024/1200px), nenhum controle focado fica sob a barra fixa do topo, coberto ou invisível; " +
     "com o espaçamento de texto da WCAG 1.4.12 (360–1440px), nada da barra é cortado e ela não cobre o hero.",

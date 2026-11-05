@@ -164,8 +164,8 @@ describe("useCatalogo: histórico", () => {
       result.current.despachar({ tipo: "passo", delta: 1 });
       result.current.despachar({ tipo: "passo", delta: 1 });
     });
-    expect(result.current.estado.ativo).toBe("fleet-analytics-bi");
-    expect(replaceState.mock.calls.map((c) => c[2])).toEqual(["#rota-de-vendas", "#fleet-analytics-bi"]);
+    expect(result.current.estado.ativo).toBe("air-central");
+    expect(replaceState.mock.calls.map((c) => c[2])).toEqual(["#rota-de-vendas", "#air-central"]);
   });
 
   // Review Focus 5. O `back()` é assíncrono: o navegador aplica a volta e

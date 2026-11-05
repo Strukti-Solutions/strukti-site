@@ -394,9 +394,9 @@ Os cartões da parede da v2.2 não existem mais: a microcopy do catálogo (seç�
 
 ### Catálogo (proposta — aguardando aprovação)
 
-Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seção Produtos vira um catálogo em coverflow com 10 itens: o cartão do centro mostra tipo, selo de fase, nome, frase e "Ver detalhes"; o clique abre um painel com abas (Visão geral · Como funciona · Telas) e o botão "Quero saber mais" (spec `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`, §3 e §5). Os textos ficam em `src/content/catalogo.ts` (`CATALOGO` e `catalogoUi`). O título e a introdução da seção continuam os de cima (`produtos.title` e `produtos.intro`).
+Status: **proposta — aguardando aprovação do Thiago** (22/10/2026; o Air Central entrou em 05/11/2026). A seção Produtos vira um catálogo em coverflow com 11 itens: o cartão do centro mostra tipo, selo de fase, nome, frase e "Ver detalhes"; o clique abre um painel com abas (Visão geral · Como funciona · Telas) e o botão "Quero saber mais" (spec `docs/superpowers/specs/2026-10-16-catalogo-produtos-design.md`, §3 e §5). Os textos ficam em `src/content/catalogo.ts` (`CATALOGO` e `catalogoUi`). O título e a introdução da seção continuam os de cima (`produtos.title` e `produtos.intro`).
 
-*Nota: os textos novos dos 3 produtos reais usam só fatos que já estão nesta página (frases, destaques, descrições dos vídeos e dúvidas). Nada de cliente, quadra instalada ou resultado medido. Limites para caber no painel sem rolagem (spec §5.3): frase até ~110 caracteres; "Para quem é" até ~140; 3 a 4 benefícios de até ~70; passos com título de até ~30 e texto de até ~90.*
+*Nota: os textos novos de Replay, Rota de Vendas e Fleet usam só fatos que já estão nesta página (frases, destaques, descrições dos vídeos e dúvidas); os do Air Central, só fatos do código do projeto (ver a subseção dele). Nada de cliente, quadra instalada ou resultado medido. Limites para caber no painel sem rolagem (spec §5.3): frase até ~110 caracteres; "Para quem é" até ~140; 3 a 4 benefícios de até ~70; passos com título de até ~30 e texto de até ~90.*
 
 #### Replay para quadras (`replay`)
 
@@ -434,6 +434,33 @@ Status: **proposta — aguardando aprovação do Thiago** (22/10/2026). A seçã
   3. **A entrega sai na rota.** As paradas saem agrupadas por cidade, com a lista de carga de cada uma.
 - **`arte.alt`:** Um celular com a rota do Rota de Vendas no suporte do painel de um carro parado, com a cidade desfocada no para-brisa.
 - **`painel.telas[].alt`:** Tela ilustrativa: a lista de clientes, com a busca. · Tela ilustrativa: um pedido com o número do outro sistema. · Tela ilustrativa: a rota de entrega, com as paradas agrupadas por cidade.
+
+#### Air Central (`air-central`)
+
+Status: **PROPOSTA — aguardando aprovação do Thiago** (05/11/2026), todos os textos. Produto real, em desenvolvimento, 3º do catálogo (ADR-011, revisão de 05/11/2026). Não está em `landingContent`: os fatos vêm do código do projeto (`github.com/Segunddo/Air_Central`), não desta página.
+
+- **`nome`:** Air Central
+- **`tipo` / `fase`:** Hardware / Em desenvolvimento
+- **`seloConceito`:** Ilustração do conceito (o mesmo rótulo do replay, `produtos.replay.illustrationBadge`: a caixinha do módulo ainda é conceito, ADR-009 item 4).
+- **`frase`:** Para faculdades e escolas: o ar de cada sala liga e desliga sozinho, no horário das aulas.
+- **`painel.video`:** nenhum por enquanto; o painel mostra a arte grande, como nos fictícios.
+- **`painel.paraQuem`:** Faculdades e escolas com muitas salas climatizadas, onde o ar-condicionado fica ligado com a sala vazia.
+- **`painel.beneficios`:**
+  - Cada ar-condicionado liga no início da aula e desliga no fim.
+  - Importa a grade do sistema acadêmico, com integração sob medida.
+  - Aprende os comandos do controle remoto do ar-condicionado.
+  - Módulos em rede mesh, sem cabo entre as salas.
+- **`painel.comoFunciona`:**
+  1. **Um módulo em cada sala.** Ele guarda os comandos do controle remoto do ar-condicionado, aprendidos pela central.
+  2. **A grade vira automação.** A central importa os horários das aulas e cria as regras de ligar e desligar.
+  3. **O ar segue as aulas.** Cada módulo liga o ar no início da aula e desliga quando ela termina.
+- **`arte.alt`:** O módulo do Air Central, uma caixinha impressa em 3D com o LED ciano aceso, numa prateleira sob o ar-condicionado desligado de uma sala de aula vazia à noite.
+- **`painel.telas[].alt` (moldura de navegador: a central é um programa de computador):** Tela ilustrativa: a lista de salas, com os módulos da rede. · Tela ilustrativa: o cadastro dos comandos do controle remoto. · Tela ilustrativa: os horários de ligar e desligar de uma sala.
+- **Assunto do formulário:** Outro assunto. Sem link de site.
+
+*Nota (de onde vem cada fato, no código do Air_Central): a central é um app de computador (Qt/QML, "Central_Ar_Condicionado") que fala por USB/serial com um ESP que faz a ponte; os módulos são placas ESP8266 (NodeMCU v2, `platform = espressif8266` no `platformio.ini`) numa malha painlessMesh ("Sincronizando a Malha Mesh..." em `qml/TelaLista.qml`; a tela diz "Dispositivo ESP32 Mesh", mas o firmware é para ESP8266). Os comandos do controle: a tela "Configuração de Códigos IR" (`qml/TelaCadastro.qml`: Ligar, Desligar e 16 a 30 °C, com desfazer a última leitura e apagar tudo; `Require_IR` → `new_code`, em `src/receivedata.cpp`). A grade: o botão "Importar SACI" roda o `scripts/saci_ci.py`, que busca a alocação das salas na API do SACI e gera, por sala e por dia, um "Ligar" (22 °C por padrão) no início e um "Desligar" no fim de cada bloco de aulas seguidas (com intervalo entre as aulas, o dia ganha dois ou mais pares). A memória do módulo: a sincronização (`src/senddata.cpp`) manda a hora, limpa a memória de cada módulo, grava na flash todos os códigos (o comentário diz "garantindo o funcionamento manual") e envia as regras de horário da sala. No firmware do `Comunicate-Branch`, as regras ficam só na RAM do nó, que não tem RTC: uma queda de energia apaga as regras e a hora até uma nova sincronização. Gravar as regras na flash e pedir a hora à central (`Need_Time`) está nos branches `melhorias/passo1-*` (13/10/2026), ainda não mesclados. As telas: a lista de módulos (com renomear e as "Automações de Sala" por dia da semana e horário) e o cadastro dos códigos. O firmware não está na `main`: está nos branches `Comunicate-Branch` (15/07/2026) e `melhorias/passo1-firmware` (13/10/2026, ainda não mesclado), em PlatformIO. A ponte (`src/bridge.cpp`) liga o PC à malha painlessMesh e é a única com receptor IR. Os nós (`src/node.cpp`) só têm emissor IR, guardam os códigos na flash (LittleFS) e disparam sozinhos no horário, conferindo a cada 5 s. Não há cliente nem resultado medido.*
+
+*Nota (ajuste e ressalvas para a revisão): o 1º passo proposto dizia "Ele aprende os comandos do controle remoto do ar-condicionado da sala". No código, a leitura é pedida pela central (o `Require_IR` não leva o id de um módulo), os códigos ficam num arquivo só (`codes.json`) e a sincronização grava todos em cada módulo; um jogo só vale para todos os módulos, então salas com modelos de ar diferentes não são atendidas hoje; o passo passou a dizer que o módulo guarda os comandos aprendidos pela central. Hoje a importação da grade lê só a API do SACI da UFPB (centro "CI" fixo no QML e a tabela de horários da UFPB no script) e precisa de Python no PC; outra instituição pede uma integração nova. A UFPB e o SACI não entram no site. "Sem cabo entre as salas": os módulos conversam por Wi-Fi numa malha painlessMesh (`platformio.ini` e `include/node.h` dos dois branches de firmware).*
 
 #### Fleet Analytics BI (`fleet-analytics-bi`)
 
